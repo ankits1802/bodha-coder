@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.adapters.messenger import SmtpTwilioMessenger
+from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.api.routes import auth, billing, hq, notes, practice, respond, team, uploads, work
 from app.codes.icd import load_catalog
@@ -20,7 +20,7 @@ from app.core.errors import AppError, Invalid
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     app.state.store = S3ObjectStore(settings)
-    app.state.messenger = SmtpTwilioMessenger(settings)
+    app.state.messenger = build_messenger(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
     yield
 

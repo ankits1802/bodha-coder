@@ -11,6 +11,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  agentRules: false,
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
   },

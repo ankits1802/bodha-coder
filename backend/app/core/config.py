@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: str | None = None
     mail_from: str = "Bodha Coder <no-reply@bodha.health>"
+    mail_outbox_dir: str | None = None
     twilio_account_sid: str | None = None
     twilio_auth_token: str | None = None
     twilio_from: str | None = None

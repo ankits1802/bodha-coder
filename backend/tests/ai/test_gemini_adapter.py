@@ -200,3 +200,11 @@ def test_a_missing_api_key_is_a_configuration_error() -> None:
 )
 def test_transient_errors_are_told_apart(error: BaseException, transient: bool) -> None:
     assert is_transient_error(error) is transient
+
+
+async def test_spent_credits_are_named_and_not_retried() -> None:
+    client, models, _ = gemini(client_error(402))
+
+    with pytest.raises(ModelRequestRejected, match="no credits left"):
+        await client.generate("review", schema=SCHEMA)
+    assert len(models.calls) == 1

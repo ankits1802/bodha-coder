@@ -31,6 +31,7 @@ UPLOAD_POLL_SECONDS = 1.0
 UPLOAD_POLLS = 30
 SERVER_ERROR = 500
 BAD_REQUEST = 400
+PAYMENT_REQUIRED = 402
 
 _RETRYABLE_STATUS = frozenset({408, 409, 425, 429})
 _RETRYABLE_NAMES = frozenset(
@@ -267,6 +268,8 @@ def _model_error(error: Exception, name: str) -> ModelError | None:
     status = _http_status(error)
     if is_transient_error(error):
         return ModelUnavailable(f"Gemini {name} failed after retries ({type(error).__name__}).", status=status)
+    if isinstance(error, genai_errors.APIError) and error.code == PAYMENT_REQUIRED:
+        return ModelRequestRejected("The Gemini account has no credits left (HTTP 402).", status=error.code)
     if isinstance(error, genai_errors.APIError):
         return ModelRequestRejected(f"Gemini rejected {name} (HTTP {error.code}).", status=error.code)
     if isinstance(error, ValueError):

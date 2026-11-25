@@ -3,21 +3,25 @@ from __future__ import annotations
 import asyncio
 import smtplib
 import ssl
+from datetime import UTC, datetime
 from email.message import EmailMessage
+from pathlib import Path
 from typing import Protocol
+from uuid import uuid4
 
 import httpx
 
 from app.core.config import Settings
+from app.core.errors import Unavailable
 
 TWILIO_URL = "https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
 
 
-class MessengerNotConfigured(RuntimeError):
+class MessengerNotConfigured(Unavailable):
     pass
 
 
-class MessageNotSent(RuntimeError):
+class MessageNotSent(Unavailable):
     pass
 
 
@@ -34,7 +38,7 @@ class SmtpTwilioMessenger:
     async def email(self, to: str, *, subject: str, body: str) -> None:
         settings = self._settings
         if not settings.smtp_host:
-            raise MessengerNotConfigured("SMTP_HOST is not set")
+            raise MessengerNotConfigured("email is not set up")
         message = EmailMessage()
         message["From"], message["To"], message["Subject"] = settings.mail_from, to, subject
         message.set_content(body)
@@ -53,7 +57,7 @@ class SmtpTwilioMessenger:
     async def sms(self, to: str, *, body: str) -> None:
         settings = self._settings
         if not (settings.twilio_account_sid and settings.twilio_auth_token and settings.twilio_from):
-            raise MessengerNotConfigured("Twilio is not configured")
+            raise MessengerNotConfigured("text messages are not set up")
         async with httpx.AsyncClient(timeout=20) as client:
             response = await client.post(
                 TWILIO_URL.format(sid=settings.twilio_account_sid),
@@ -61,4 +65,26 @@ class SmtpTwilioMessenger:
                 auth=(settings.twilio_account_sid, settings.twilio_auth_token),
             )
         if response.status_code >= 400:
-            raise MessageNotSent(f"SMS provider answered {response.status_code}")
+            raise MessageNotSent(f"the text message was not sent ({response.status_code})")
+
+
+class OutboxMessenger:
+    def __init__(self, folder: Path) -> None:
+        self._folder = folder
+
+    async def email(self, to: str, *, subject: str, body: str) -> None:
+        await asyncio.to_thread(self._write, f"To: {to}\nSubject: {subject}\n\n{body}\n")
+
+    async def sms(self, to: str, *, body: str) -> None:
+        await asyncio.to_thread(self._write, f"To: {to}\nSMS\n\n{body}\n")
+
+    def _write(self, text: str) -> None:
+        self._folder.mkdir(parents=True, exist_ok=True)
+        name = f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%S%f')}-{uuid4().hex[:8]}.txt"
+        (self._folder / name).write_text(text, encoding="utf-8")
+
+
+def build_messenger(settings: Settings) -> Messenger:
+    if settings.mail_outbox_dir:
+        return OutboxMessenger(Path(settings.mail_outbox_dir))
+    return SmtpTwilioMessenger(settings)

@@ -7,7 +7,7 @@ from datetime import timedelta
 from app.adapters.gemini import GeminiClient
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.pdf_text import DocumentUnreadable
-from app.ai.errors import ModelRefused, ModelUnavailable
+from app.ai.errors import ModelRefused, ModelRequestRejected, ModelUnavailable
 from app.ai.review import review_note
 from app.codes.icd import IcdReleaseUnavailable, load_catalog
 from app.core.config import Settings, get_settings
@@ -18,7 +18,7 @@ from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_an
 logger = logging.getLogger("bodha.worker")
 RETRY_DELAYS = (timedelta(seconds=30), timedelta(minutes=2), timedelta(minutes=10))
 RECOVERY_INTERVAL_SECONDS = 60
-PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, IcdReleaseUnavailable)
+PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
 
 def retry_delay(attempts: int, settings: Settings) -> timedelta | None:
