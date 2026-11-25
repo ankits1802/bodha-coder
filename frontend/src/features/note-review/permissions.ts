@@ -11,7 +11,13 @@ export interface ReviewPermissions {
   retry: boolean;
   reopen: boolean;
   remind: boolean;
+  cancelRequest: boolean;
+  deleteNote: boolean;
+  editVisitType: boolean;
 }
+
+const DELETABLE: readonly string[] = ["queued", "ready", "failed", "approved"];
+const EDITABLE: readonly string[] = ["queued", "ready", "failed"];
 
 export function reviewPermissions(role: Role | null | undefined, detail: NoteDetail): ReviewPermissions {
   const { status, lane } = detail.note;
@@ -26,5 +32,8 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     retry: status === "failed" && canDo(role, "retry"),
     reopen: status === "approved" && canDo(role, "approve"),
     remind: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
+    cancelRequest: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
+    deleteNote: DELETABLE.includes(status) && canDo(role, "manageNotes"),
+    editVisitType: EDITABLE.includes(status) && canDo(role, "manageNotes"),
   };
 }

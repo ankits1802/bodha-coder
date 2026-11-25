@@ -65,6 +65,14 @@ class BulkApproveBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=200)
 
 
+class DeleteNotesBody(Body):
+    note_ids: list[str] = Field(min_length=1, max_length=500)
+
+
+class VisitTypeBody(Body):
+    visit_type: str = Field(min_length=1, max_length=40)
+
+
 class RetryBody(Body):
     note_ids: list[str] | None = Field(default=None, max_length=500)
 

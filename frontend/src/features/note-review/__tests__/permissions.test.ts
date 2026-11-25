@@ -17,4 +17,12 @@ describe("reviewPermissions", () => {
     expect(reviewPermissions("coder", detail("failed")).retry).toBe(true);
     expect(reviewPermissions("coder", detail("ready")).retry).toBe(false);
   });
+
+  it("lets uploaders delete a note until it is exported and change its visit type until it is approved", () => {
+    expect(reviewPermissions("coder", detail("approved")).deleteNote).toBe(true);
+    expect(reviewPermissions("coder", detail("exported")).deleteNote).toBe(false);
+    expect(reviewPermissions("cdi", detail("ready")).deleteNote).toBe(false);
+    expect(reviewPermissions("coder", detail("approved")).editVisitType).toBe(false);
+    expect(reviewPermissions("admin", detail("failed")).editVisitType).toBe(true);
+  });
 });

@@ -13,6 +13,8 @@ interface RequestListProps {
   onRemind: (() => void) | null;
   remindPending: boolean;
   remindMessage: string | null;
+  onCancel: (() => void) | null;
+  cancelPending: boolean;
 }
 
 function answerFor(request: AddendumRequestView, key: string): string | null {
@@ -47,13 +49,20 @@ function RequestItem({ request, remind }: { request: AddendumRequestView; remind
   );
 }
 
-export function RequestList({ requests, onRemind, remindPending, remindMessage }: RequestListProps) {
+export function RequestList({ requests, onRemind, remindPending, remindMessage, onCancel, cancelPending }: RequestListProps) {
   if (requests.length === 0) return null;
-  const remind = onRemind ? (
+  const remind = onRemind || onCancel ? (
     <span className="flex flex-wrap items-center gap-3">
-      <Button size="sm" onClick={onRemind} pending={remindPending}>
-        {REVIEW_TEXT.questions.remind}
-      </Button>
+      {onRemind ? (
+        <Button size="sm" onClick={onRemind} pending={remindPending}>
+          {REVIEW_TEXT.questions.remind}
+        </Button>
+      ) : null}
+      {onCancel ? (
+        <Button size="sm" variant="plain" onClick={onCancel} pending={cancelPending}>
+          {REVIEW_TEXT.questions.cancelRequest}
+        </Button>
+      ) : null}
       {remindMessage ? <span role="status" className="text-footnote text-secondary">{remindMessage}</span> : null}
     </span>
   ) : null;

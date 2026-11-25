@@ -24,7 +24,7 @@ export type Area =
   | "security"
   | "hq";
 
-export type Action = "decide" | "approve" | "ask" | "complianceDecision" | "retry" | "flag";
+export type Action = "decide" | "approve" | "ask" | "complianceDecision" | "retry" | "flag" | "manageNotes";
 
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
@@ -46,6 +46,7 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   complianceDecision: COMPLIANCE,
   retry: UPLOADERS,
   flag: DECIDERS,
+  manageNotes: UPLOADERS,
 };
 
 export function canUse(role: Role | null | undefined, area: Area): boolean {

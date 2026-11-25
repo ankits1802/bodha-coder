@@ -16,6 +16,8 @@ class ObjectStore(Protocol):
 
     async def signed_url(self, key: str, *, seconds: int) -> str: ...
 
+    async def delete(self, keys: list[str]) -> None: ...
+
 
 def note_document_key(practice_id: str, note_id: str) -> str:
     return f"practices/{practice_id}/notes/{note_id}/document.pdf"
@@ -23,6 +25,9 @@ def note_document_key(practice_id: str, note_id: str) -> str:
 
 def analysis_response_key(practice_id: str, note_id: str, revision: int) -> str:
     return f"practices/{practice_id}/notes/{note_id}/analyses/{revision}.json"
+
+
+DELETE_BATCH = 1000
 
 
 class S3ObjectStore:
@@ -55,3 +60,10 @@ class S3ObjectStore:
             Params={"Bucket": self._bucket, "Key": key, "ResponseContentDisposition": "inline"},
             ExpiresIn=seconds,
         )
+
+    async def delete(self, keys: list[str]) -> None:
+        for start in range(0, len(keys), DELETE_BATCH):
+            objects = [{"Key": key} for key in keys[start : start + DELETE_BATCH]]
+            await asyncio.to_thread(
+                self._client.delete_objects, Bucket=self._bucket, Delete={"Objects": objects, "Quiet": True}
+            )

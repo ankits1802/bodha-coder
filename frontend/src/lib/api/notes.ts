@@ -39,6 +39,18 @@ export function decideCompliance(
   return request<{ status: NoteStatus; lane: Lane | null }>(notePath(noteId, "/compliance"), { body: { decision, reason } });
 }
 
+export function deleteNotes(noteIds: string[]): Promise<{ deleted: string[] }> {
+  return request<{ deleted: string[] }>("/api/notes/delete", { body: { note_ids: noteIds } });
+}
+
+export function changeVisitType(noteId: string, visitType: string): Promise<{ status: NoteStatus }> {
+  return request<{ status: NoteStatus }>(notePath(noteId, "/visit-type"), { method: "PUT", body: { visit_type: visitType } });
+}
+
+export function cancelRequest(noteId: string): Promise<{ lane: string }> {
+  return request<{ lane: string }>(notePath(noteId, "/cancel-request"), { method: "POST" });
+}
+
 export function reopenNote(noteId: string): Promise<{ status: NoteStatus }> {
   return request<{ status: NoteStatus }>(notePath(noteId, "/reopen"), { method: "POST" });
 }

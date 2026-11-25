@@ -9,6 +9,7 @@ import type { ReviewActions } from "../useReviewActions";
 import { useReviewShortcuts } from "../useReviewShortcuts";
 import { ClaimBar } from "./ClaimBar";
 import { NoteHeading } from "./NoteHeading";
+import { NoteTools } from "./NoteTools";
 import { NotePanel } from "./NotePanel";
 import { ReviewDialogs, type OpenDialog } from "./ReviewDialogs";
 import { ReviewPanel } from "./ReviewPanel";
@@ -45,6 +46,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
     <>
       <div className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
         <NoteHeading note={detail.note} placeLabel={placeLabel} />
+        <NoteTools note={detail.note} permissions={permissions} onVisitType={(visitType) => void actions.changeVisitType(visitType)} />
         <StatusBanner
           note={detail.note}
           reason={detail.failure}

@@ -56,6 +56,10 @@ class FakeStore:
     async def signed_url(self, key: str, *, seconds: int) -> str:
         return f"https://storage.test/{key}?expires={seconds}"
 
+    async def delete(self, keys: list[str]) -> None:
+        for key in keys:
+            self.objects.pop(key, None)
+
 
 @dataclass
 class FakeMessenger:

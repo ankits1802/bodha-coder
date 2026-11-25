@@ -62,6 +62,8 @@ export function ReviewPanel({ detail, permissions, actions, onReplace, onAsk }: 
         onAsk={onAsk}
         onRemind={permissions.remind ? () => void remind() : null}
         remindPending={actions.remindPending}
+        onCancel={permissions.cancelRequest ? () => void actions.cancelRequest() : null}
+        cancelPending={actions.cancelPending}
         remindMessage={actions.remindError ?? (reminded ? REVIEW_TEXT.questions.reminded : null)}
       />
     ),

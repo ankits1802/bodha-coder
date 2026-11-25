@@ -14,6 +14,8 @@ interface QuestionsTabProps {
   onAsk: (() => void) | null;
   onRemind: (() => void) | null;
   remindPending: boolean;
+  onCancel: (() => void) | null;
+  cancelPending: boolean;
   remindMessage: string | null;
 }
 
@@ -21,7 +23,8 @@ function isQuestion(finding: Finding): boolean {
   return finding.kind === "cdi_query" || (finding.kind === "diagnosis" && finding.action === "ask");
 }
 
-export function QuestionsTab({ detail, editable, busyKey, onChoose, onAsk, onRemind, remindPending, remindMessage }: QuestionsTabProps) {
+export function QuestionsTab(props: QuestionsTabProps) {
+  const { detail, editable, busyKey, onChoose, onAsk, onRemind, remindPending, remindMessage, onCancel, cancelPending } = props;
   const questions = detail.findings.filter(isQuestion);
   const open = openQuestions(detail.findings).length;
   return (
@@ -41,7 +44,14 @@ export function QuestionsTab({ detail, editable, busyKey, onChoose, onAsk, onRem
           <Button onClick={onAsk}>{REVIEW_TEXT.questions.ask(open)}</Button>
         </div>
       ) : null}
-      <RequestList requests={detail.requests} onRemind={onRemind} remindPending={remindPending} remindMessage={remindMessage} />
+      <RequestList
+        requests={detail.requests}
+        onRemind={onRemind}
+        remindPending={remindPending}
+        remindMessage={remindMessage}
+        onCancel={onCancel}
+        cancelPending={cancelPending}
+      />
     </>
   );
 }

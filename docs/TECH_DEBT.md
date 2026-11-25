@@ -24,10 +24,11 @@ has no stay history. Clear it once admission data is available.
 The reporting-code table is vendored from ChartMate, where no coder has confirmed it yet
 (CODE-18). Clear it with a coder's review.
 
-### Uploaded PDFs can outlive a failed upload transaction
+### Stored files can outlive their notes
 
 Files are validated before storage, but a database failure after storage leaves objects with no
-note. Clear it with a sweep of unreferenced keys.
+note, and when deleting a note's files fails after its records are gone the failure is only logged.
+Clear it with a sweep of unreferenced keys.
 
 ### ESLint plugins declare an older ESLint peer
 

@@ -4,11 +4,21 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.bodies import AskBody, BilledBody, BulkApproveBody, ComplianceBody, DecisionsBody, FlagBody, RetryBody
+from app.api.bodies import (
+    AskBody,
+    BilledBody,
+    BulkApproveBody,
+    ComplianceBody,
+    DecisionsBody,
+    DeleteNotesBody,
+    FlagBody,
+    RetryBody,
+    VisitTypeBody,
+)
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
 from app.core.roles import APPROVERS, ASKERS, COMPLIANCE, DECIDERS, NOTE_READERS, UPLOADERS
-from app.services import addenda, note_view, review_actions
+from app.services import addenda, note_changes, note_view, review_actions
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
@@ -61,6 +71,27 @@ async def compliance(
 ) -> dict[str, str | None]:
     note = await review_actions.compliance_decision(db, actor, note_id, decision=body.decision, reason=body.reason)
     return {"status": note.status, "lane": note.lane}
+
+
+@router.post("/delete")
+async def delete_notes(
+    body: DeleteNotesBody, db: Db, store: Store, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+) -> dict[str, list[str]]:
+    return {"deleted": await note_changes.delete_notes(db, store, actor, body.note_ids)}
+
+
+@router.put("/{note_id}/visit-type")
+async def change_visit_type(
+    note_id: str, body: VisitTypeBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+) -> dict[str, str]:
+    note = await note_changes.change_visit_type(db, actor, note_id, body.visit_type)
+    return {"status": note.status}
+
+
+@router.post("/{note_id}/cancel-request")
+async def cancel_request(note_id: str, db: Db, actor: Annotated[Actor, Depends(require(*ASKERS))]) -> dict[str, str]:
+    note = await note_changes.cancel_request(db, actor, note_id)
+    return {"lane": note.lane or ""}
 
 
 @router.post("/{note_id}/reopen")
