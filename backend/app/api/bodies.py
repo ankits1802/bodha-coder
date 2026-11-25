@@ -79,6 +79,7 @@ class RetryBody(Body):
 
 class ExportBody(Body):
     note_ids: list[str] | None = Field(default=None, max_length=500)
+    again: bool = False
 
 
 class SectionBody(Body):

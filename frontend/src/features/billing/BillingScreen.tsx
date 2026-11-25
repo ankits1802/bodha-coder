@@ -22,7 +22,14 @@ const REMOTE_TEXT = { loading: BILLING_TEXT.loading, empty: BILLING_TEXT.empty, 
 const SEGMENTS = BILLING_SHOWS.map((value) => ({ value, label: BILLING_TEXT.show[value] }));
 
 function ExportButton({ show, rows, exporter }: { show: BillingShow; rows: BillingRow[] | null; exporter: ExportAction }) {
-  if (show !== "ready" || !rows || rows.length === 0) return null;
+  if (!rows || rows.length === 0 || show === "all") return null;
+  if (show === "exported") {
+    return (
+      <Button pending={exporter.pending} onClick={() => void exporter.downloadAgain(rows.map((row) => row.id))}>
+        {BILLING_TEXT.downloadAgain(formatCount(rows.length))}
+      </Button>
+    );
+  }
   return (
     <Button variant="primary" pending={exporter.pending} onClick={() => void exporter.exportAll(rows.length)}>
       {BILLING_TEXT.export(formatCount(rows.length))}

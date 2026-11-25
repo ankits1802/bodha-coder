@@ -31,7 +31,7 @@ async def billing_list(db: Db, actor: Biller, show: Literal["ready", "exported",
 
 @router.post("/billing/export")
 async def export(body: ExportBody, db: Db, actor: Biller) -> Response:
-    content = await billing.export_csv(db, actor, body.note_ids)
+    content = await billing.export_csv(db, actor, body.note_ids, again=body.again)
     name = f"bodha-claims-{utcnow():%Y%m%d-%H%M}.csv"
     return Response(content, media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{name}"'})
 

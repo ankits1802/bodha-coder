@@ -2,6 +2,7 @@ export const BILLING_TEXT = {
   title: "Ready to bill",
   subtitle: (count: string) => `${count} visits`,
   export: (count: string) => `Export ${count} visits`,
+  downloadAgain: (count: string) => `Download ${count} again`,
   exported: (count: string) => `${count} visits exported`,
   showLabel: "Show visits",
   show: {

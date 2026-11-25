@@ -15,6 +15,7 @@ from app.models import AddendumRequest, CodeSet, Note, Provider, User, utcnow
 from app.services.audit_log import record_access
 
 ROW_LIMIT = 500
+FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 EXPORT_COLUMNS = (
     "note_id",
     "patient",
@@ -110,32 +111,44 @@ def _row(
     }
 
 
-async def export_csv(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> str:
-    rows = await billing_rows(db, actor.practice_id, exported=False)
+async def export_csv(db: AsyncSession, actor: Actor, note_ids: list[str] | None, *, again: bool = False) -> str:
+    if again and not note_ids:
+        raise Invalid("choose the visits to download again")
+    rows = await billing_rows(db, actor.practice_id, exported=again)
     chosen = [row for row in rows if note_ids is None or row["id"] in note_ids]
     if not chosen:
         raise Invalid("nothing to export")
+    if not again:
+        stamp = utcnow()
+        for note in (await db.scalars(select(Note).where(Note.id.in_([row["id"] for row in chosen])))).all():
+            note.status, note.exported_at = "exported", stamp
+    action = "downloaded an export again" if again else "exported claims"
+    record_access(db, actor, action, detail=f"{len(chosen)} visits")
+    await db.commit()
+    return _csv(chosen)
+
+
+def _csv(rows: list[dict[str, Any]]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(EXPORT_COLUMNS)
-    for row in chosen:
-        writer.writerow(
-            [
-                row["id"],
-                row["patient_name"],
-                row["service_date"],
-                row["provider_name"],
-                row["npi"],
-                row["place_code"],
-                " ".join(row["cpt"]),
-                " ".join(row["icd10"]),
-                row["approved_by"],
-                row["approved_at"],
-            ]
-        )
-    stamp = utcnow()
-    for note in (await db.scalars(select(Note).where(Note.id.in_([row["id"] for row in chosen])))).all():
-        note.status, note.exported_at = "exported", stamp
-    record_access(db, actor, "exported claims", detail=f"{len(chosen)} visits")
-    await db.commit()
+    for row in rows:
+        values = [
+            row["id"],
+            row["patient_name"],
+            row["service_date"],
+            row["provider_name"],
+            row["npi"],
+            row["place_code"],
+            " ".join(row["cpt"]),
+            " ".join(row["icd10"]),
+            row["approved_by"],
+            row["approved_at"],
+        ]
+        writer.writerow([safe_cell(value) for value in values])
     return buffer.getvalue()
+
+
+def safe_cell(value: object) -> str:
+    text = "" if value is None else str(value)
+    return f"'{text}" if text[:1] in FORMULA_STARTS else text
