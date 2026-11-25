@@ -58,6 +58,21 @@ All settings are environment variables read by `backend/app/core/config.py`; `.e
 them. For Cloudflare R2 set `S3_ENDPOINT_URL=https://<account>.r2.cloudflarestorage.com`,
 `S3_REGION=auto` and `S3_SERVER_SIDE_ENCRYPTION=` (R2 encrypts at rest itself).
 
+### Email and text messages
+
+| Setting | Values |
+|---|---|
+| `EMAIL_TRANSPORT` | `ses` (Amazon SES API), `smtp` (any SMTP server over STARTTLS, including the SES SMTP endpoint), `outbox` (writes each message to `MAIL_OUTBOX_DIR`, for local runs) |
+| `SMS_TRANSPORT` | `sns` (Amazon SNS), `twilio`, `outbox` |
+| `MAIL_FROM` | a sender on a domain verified in SES, for example `Bodha Coder <no-reply@yourpractice.com>` |
+| `AWS_MESSAGING_REGION` | the SES and SNS region, for example `us-east-1` |
+| `SES_CONFIGURATION_SET` | optional, to track bounces and complaints |
+
+SES and SNS use the standard AWS credential chain: an IAM role on the server, or `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY`. The role needs `ses:SendEmail` and, for texts, `sns:Publish`. Move the SES
+account out of the sandbox and verify the sending domain (SPF, DKIM, DMARC) before inviting real users.
+Every email is sent as plain text with an HTML version; no message contains patient details.
+
 ## Checks
 
 Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene

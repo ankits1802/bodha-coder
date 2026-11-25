@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,12 +37,16 @@ class Settings(BaseSettings):
     ai_max_attempts: int = 3
     ai_poll_seconds: float = 2.0
 
+    email_transport: Literal["smtp", "ses", "outbox"] = "smtp"
+    sms_transport: Literal["twilio", "sns", "outbox"] = "twilio"
+    mail_from: str = "Bodha Coder <no-reply@bodha.health>"
+    mail_outbox_dir: str | None = None
+    aws_messaging_region: str = "us-east-1"
+    ses_configuration_set: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None
     smtp_password: str | None = None
-    mail_from: str = "Bodha Coder <no-reply@bodha.health>"
-    mail_outbox_dir: str | None = None
     twilio_account_sid: str | None = None
     twilio_auth_token: str | None = None
     twilio_from: str | None = None

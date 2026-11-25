@@ -43,7 +43,9 @@ Check here before writing a helper.
 | Module | Provides |
 |---|---|
 | `object_store.py` | `ObjectStore` protocol, `S3ObjectStore` (S3 and R2), key builders |
-| `messenger.py` | `Messenger` protocol, `SmtpTwilioMessenger` |
+| `messenger.py` | `Messenger` protocol, `build_messenger` (email: SES, SMTP or outbox; texts: SNS, Twilio or outbox), `OutboxMessenger` |
+| `email_senders.py`, `sms_senders.py` | `SesEmail`, `SmtpEmail`, `SnsSms`, `TwilioSms` |
+| `mail_layout.py` | `html_from_text` (the HTML version of every email) |
 | `pdf_text.py` | `read_pdf_text`, `DocumentUnreadable` |
 | `gemini.py` | `GeminiClient` (the `ModelClient` for Gemini) |
 
