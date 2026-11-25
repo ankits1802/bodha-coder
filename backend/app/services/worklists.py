@@ -26,7 +26,9 @@ async def lane_counts(db: AsyncSession, practice_id: str) -> dict[str, dict[str,
     return {lane: found.get(lane, {"total": 0, "due_soon": 0}) for lane in LANES}
 
 
-def queue_query(practice_id: str, *, lane: str | None, search: str | None, provider_id: str | None) -> Select[Any]:
+def queue_query(
+    practice_id: str, *, lane: str | None, search: str | None, provider_id: str | None, batch_id: str | None = None
+) -> Select[Any]:
     query = (
         select(Note, Provider.name)
         .join(Provider, Provider.id == Note.provider_id)
@@ -36,6 +38,8 @@ def queue_query(practice_id: str, *, lane: str | None, search: str | None, provi
         query = query.where(Note.lane == lane, Note.status == "ready")
     if provider_id:
         query = query.where(Note.provider_id == provider_id)
+    if batch_id:
+        query = query.where(Note.batch_id == batch_id)
     if search:
         pattern = f"%{search.strip()}%"
         query = query.where(or_(Note.patient_name.ilike(pattern), Note.file_name.ilike(pattern)))

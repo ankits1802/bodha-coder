@@ -112,6 +112,7 @@ export interface QueueQuery {
   lane?: Lane;
   search?: string;
   provider_id?: string;
+  batch_id?: string;
   offset?: number;
 }
 

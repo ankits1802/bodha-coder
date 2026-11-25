@@ -16,13 +16,13 @@ interface BeingReadProps {
   canOpenQueue: boolean;
 }
 
-function BatchState({ counts, canOpenQueue }: { counts: BatchCounts; canOpenQueue: boolean }) {
+function BatchState({ batchId, counts, canOpenQueue }: { batchId: string; counts: BatchCounts; canOpenQueue: boolean }) {
   if (counts.failed > 0) {
     return (
       <span className="flex flex-wrap items-center justify-between gap-3">
         <StatusDot tone="bad">{TODAY_TEXT.failed(formatCount(counts.failed))}</StatusDot>
         {canOpenQueue ? (
-          <Link href="/queue" className="text-subhead font-medium text-label underline">
+          <Link href={`/queue?batch=${encodeURIComponent(batchId)}`} className="text-subhead font-medium text-label underline">
             {TODAY_TEXT.openQueue}
           </Link>
         ) : null}
@@ -58,7 +58,7 @@ function BatchRow({ batch, placeNames, canOpenQueue }: BatchRowProps) {
         max={counts.total}
         tone={complete ? "ok" : "neutral"}
       />
-      <BatchState counts={counts} canOpenQueue={canOpenQueue} />
+      <BatchState batchId={batch.id} counts={counts} canOpenQueue={canOpenQueue} />
     </li>
   );
 }

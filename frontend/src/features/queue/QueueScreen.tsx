@@ -62,6 +62,14 @@ function QueueContent({ role }: { role: Role }) {
     <>
       <PageHeader title={QUEUE_TEXT.title} subtitle={totalWaiting(page)} actions={header} />
       <QueueFiltersBar filters={filters} lanes={page?.lanes ?? null} allTotal={page?.all_total} />
+      {filters.batchId ? (
+        <div className="flex items-center justify-between gap-3 rounded-panel bg-surface px-4 py-2 text-subhead shadow-panel">
+          <span>{QUEUE_TEXT.oneBatch}</span>
+          <Button size="sm" variant="plain" onClick={() => filters.update({ batch: null, offset: null })}>
+            {QUEUE_TEXT.allBatches}
+          </Button>
+        </div>
+      ) : null}
       {actions.notice ? <InlineAlert tone="ok">{actions.notice}</InlineAlert> : null}
       {actions.error ? <InlineAlert tone="bad">{actions.error}</InlineAlert> : null}
       <RemoteView state={queue.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0} onRetry={queue.reload}>

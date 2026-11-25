@@ -29,9 +29,12 @@ async def queue(
     lane: Annotated[str | None, Query(pattern="^(" + "|".join(LANES) + ")$")] = None,
     search: Annotated[str | None, Query(max_length=100)] = None,
     provider_id: str | None = None,
+    batch_id: str | None = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    query = worklists.queue_query(actor.practice_id, lane=lane, search=search, provider_id=provider_id)
+    query = worklists.queue_query(
+        actor.practice_id, lane=lane, search=search, provider_id=provider_id, batch_id=batch_id
+    )
     rows = await worklists.queue_rows(db, query, offset=offset)
     record_access(db, actor, "listed notes", detail=f"lane {lane or 'all'}, {len(rows)} rows")
     await db.commit()

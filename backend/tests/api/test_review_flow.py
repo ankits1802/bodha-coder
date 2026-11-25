@@ -91,3 +91,13 @@ async def test_invalid_codes_are_refused_at_upload(harness):
     )
     assert response.status_code == 422
     assert "9921" in response.json()["message"]
+
+
+async def test_the_queue_can_show_one_batch(harness):
+    practice = await practice_with_provider(harness)
+    first = (await upload_note(harness, practice)).json()["batch_id"]
+    await upload_note(harness, practice, file_name="2026-11-25 - GRANT THOMAS - 99213.pdf", body="Sinus pressure.")
+    everything = (await harness.client.get("/api/notes", headers=practice.admin)).json()
+    one = (await harness.client.get(f"/api/notes?batch_id={first}", headers=practice.admin)).json()
+    assert (everything["total"], one["total"]) == (2, 1)
+    assert one["items"][0]["patient_name"] == "Reyes Marisol"
