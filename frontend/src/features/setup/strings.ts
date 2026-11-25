@@ -97,6 +97,7 @@ export const PROVIDER_TEXT = {
     editTitle: "Edit provider",
     name: "Name",
     credential: "Credential",
+    active: "Active",
     specialty: "Specialty",
     npi: "NPI",
     place: "Usual place of service",

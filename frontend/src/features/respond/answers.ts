@@ -1,6 +1,16 @@
 import type { AddendumAnswer, AddendumQuestion } from "@/lib/api/types";
+import { RESPOND_TEXT } from "./strings";
 
 export const OTHER_ANSWER = "Other";
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+export function addendumDay(moment: Date): string {
+  return `${String(moment.getDate()).padStart(2, "0")} ${MONTHS[moment.getMonth()]} ${moment.getFullYear()}`;
+}
+
+export function addendumHeader(providerName: string, moment: Date): string {
+  return RESPOND_TEXT.addendumHeader(providerName, addendumDay(moment));
+}
 
 export interface AnswerDraft {
   choice: string | null;

@@ -10,7 +10,7 @@ import type { HqPractice } from "@/lib/api/types";
 import { PLAN_LABELS, PRACTICE_STATUS_LABELS } from "@/lib/labels";
 import { HQ_TEXT } from "../strings";
 import { ChoiceField, TextField } from "./FormFields";
-import { PLANS, STATUSES, editDraftFrom, practiceChanges, seatsError, type PracticeEditDraft } from "./practiceForm";
+import { PLANS, STATUSES, editDraftFrom, practiceChanges, seatsError, zoneOptions, type PracticeEditDraft } from "./practiceForm";
 
 const FORM_ID = "edit-practice";
 
@@ -26,6 +26,7 @@ export function EditPracticeDialog({ practice, onClose, onSaved }: EditPracticeD
   const save = useAction(updatePractice);
   const words = HQ_TEXT.practices.form;
   const seats = checked ? seatsError(draft.seats) : null;
+  const zones = zoneOptions(practice.time_zone);
   const set = (field: keyof PracticeEditDraft) => (value: string) => setDraft((current) => ({ ...current, [field]: value }));
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -66,6 +67,13 @@ export function EditPracticeDialog({ practice, onClose, onSaved }: EditPracticeD
         <ChoiceField label={words.plan} value={draft.plan} options={PLANS} labels={PLAN_LABELS} onChange={set("plan")} />
         <TextField label={words.seats} type="number" min={1} inputMode="numeric" value={draft.seats} error={seats} onChange={set("seats")} />
         <TextField label={words.renewsOn} type="date" value={draft.renews_on} onChange={set("renews_on")} />
+        <ChoiceField
+          label={words.timeZone}
+          value={draft.time_zone}
+          options={zones.options}
+          labels={zones.labels}
+          onChange={set("time_zone")}
+        />
         {save.error ? (
           <div className="sm:col-span-2">
             <InlineAlert tone="bad">{save.error}</InlineAlert>

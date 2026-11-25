@@ -21,5 +21,4 @@ export const TODAY_TEXT = {
   retry: "Try again",
   suggested: "Suggested",
   batchName: (provider: string, place: string, day: string) => `${provider} · ${place} · ${day}`,
-  placeCode: (code: string) => `POS ${code}`,
 } as const;

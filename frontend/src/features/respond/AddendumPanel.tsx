@@ -4,6 +4,7 @@ import { Panel } from "@/components/ui/Panel";
 import { RESPOND_TEXT } from "./strings";
 
 interface AddendumPanelProps {
+  header: string;
   lines: string[];
   confirmed: boolean;
   onConfirm: (confirmed: boolean) => void;
@@ -14,14 +15,14 @@ interface AddendumPanelProps {
   onSign: () => void;
 }
 
-export function AddendumPanel({ lines, confirmed, onConfirm, signable, pending, error, providerName, onSign }: AddendumPanelProps) {
+export function AddendumPanel({ header, lines, confirmed, onConfirm, signable, pending, error, providerName, onSign }: AddendumPanelProps) {
   return (
     <Panel aria-label={RESPOND_TEXT.previewTitle} className="flex flex-col gap-3.5 px-5 py-4.5">
       <div>
         <h2 className="m-0 mb-1 font-sans text-caption font-semibold text-tertiary">{RESPOND_TEXT.previewTitle}</h2>
         <div aria-live="polite">
           {lines.length > 0 ? (
-            lines.map((line) => (
+            [header, ...lines].map((line) => (
               <p key={line} className="m-0 text-body-lg">
                 {line}
               </p>

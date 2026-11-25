@@ -1,0 +1,40 @@
+import { describe, expect, it } from "vitest";
+import type { HqPractice } from "@/lib/api/types";
+import { editDraftFrom, practiceChanges, zoneOptions } from "../practiceForm";
+
+const PRACTICE: HqPractice = {
+  id: "p1",
+  name: "Lakeside Primary Care",
+  status: "active",
+  plan: "enterprise",
+  seats: 30,
+  users: 24,
+  providers: 168,
+  waiting: 288,
+  renews_on: "2027-03-01",
+  time_zone: "America/Chicago",
+};
+
+describe("practiceChanges", () => {
+  it("sends nothing when nothing changed", () => {
+    expect(practiceChanges(PRACTICE, editDraftFrom(PRACTICE))).toEqual({});
+  });
+
+  it("sends only the fields that changed", () => {
+    const draft = { ...editDraftFrom(PRACTICE), seats: "35", time_zone: "America/New_York" };
+    expect(practiceChanges(PRACTICE, draft)).toEqual({ seats: 35, time_zone: "America/New_York" });
+  });
+
+  it("clears the renewal date with null", () => {
+    expect(practiceChanges(PRACTICE, { ...editDraftFrom(PRACTICE), renews_on: "" })).toEqual({ renews_on: null });
+  });
+});
+
+describe("zoneOptions", () => {
+  it("keeps a zone outside the short list selectable", () => {
+    const zones = zoneOptions("Europe/London");
+    expect(zones.options).toContain("Europe/London");
+    expect(zones.labels["Europe/London"]).toBe("Europe/London");
+    expect(zoneOptions("America/Chicago").options).not.toContain("Europe/London");
+  });
+});

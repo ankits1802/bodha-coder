@@ -11,9 +11,11 @@ export interface ProviderDraft {
   email: string;
   phone: string;
   channel: Channel;
+  active: boolean;
 }
 
-export type ProviderErrors = Partial<Record<keyof ProviderDraft, string>>;
+export type ProviderTextField = Exclude<keyof ProviderDraft, "active">;
+export type ProviderErrors = Partial<Record<ProviderTextField, string>>;
 
 export function draftFrom(provider: Provider | null): ProviderDraft {
   return {
@@ -25,6 +27,7 @@ export function draftFrom(provider: Provider | null): ProviderDraft {
     email: provider?.email ?? "",
     phone: provider?.phone ?? "",
     channel: provider?.channel ?? "email",
+    active: provider?.active ?? true,
   };
 }
 
@@ -54,5 +57,6 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
     email: optional(draft.email),
     phone: optional(draft.phone),
     channel: draft.channel,
+    active: draft.active,
   };
 }

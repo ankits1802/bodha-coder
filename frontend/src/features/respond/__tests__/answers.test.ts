@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AddendumQuestion } from "@/lib/api/types";
-import { canSign, previewLines, toAnswers, type Drafts } from "../answers";
+import { addendumDay, addendumHeader, canSign, previewLines, toAnswers, type Drafts } from "../answers";
 
 const stage: AddendumQuestion = {
   key: "cdiq-1",
@@ -45,6 +45,17 @@ describe("addendum preview", () => {
   it("leaves out Other without a comment and unanswered questions", () => {
     const drafts: Drafts = { "cdiq-1": { choice: "Other", comment: "   " } };
     expect(previewLines(questions, drafts)).toEqual([]);
+  });
+});
+
+describe("addendum header", () => {
+  it("dates the header like the signed addendum, two-digit day and short English month", () => {
+    expect(addendumDay(new Date(2026, 11, 5))).toBe("05 Dec 2026");
+    expect(addendumDay(new Date(2026, 8, 30))).toBe("30 Sep 2026");
+  });
+
+  it("names the provider with the credential", () => {
+    expect(addendumHeader("Elena Varga, MD", new Date(2026, 10, 26))).toBe("Addendum by Elena Varga, MD, 26 Nov 2026.");
   });
 });
 

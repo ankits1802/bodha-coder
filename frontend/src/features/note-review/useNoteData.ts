@@ -3,10 +3,8 @@
 import { useRemote } from "@/hooks/useRemote";
 import { getNote } from "@/lib/api/notes";
 import type { Lane } from "@/lib/api/types";
-import { getPlaces } from "@/lib/api/uploads";
 import { getQueue } from "@/lib/api/work";
 import { LANE_ORDER } from "@/lib/labels";
-import { REVIEW_TEXT } from "./strings";
 
 export interface Neighbours {
   previous: string | null;
@@ -34,11 +32,4 @@ export function useNeighbours(noteId: string, lane: Lane | null): Neighbours {
   const at = ids.indexOf(noteId);
   if (at < 0) return { previous: null, next: ids.find((id) => id !== noteId) ?? null, index: null, total };
   return { previous: ids[at - 1] ?? null, next: ids[at + 1] ?? null, index: at + 1, total };
-}
-
-export function usePlaceLabel(code: string | null, canReadPlaces: boolean): string | null {
-  const remote = useRemote(canReadPlaces ? "places" : null, getPlaces);
-  if (code === null) return null;
-  const name = remote.state.status === "success" ? remote.state.data.find((place) => place.code === code)?.name : null;
-  return name ? REVIEW_TEXT.placeNamed(name, code) : REVIEW_TEXT.placeCode(code);
 }

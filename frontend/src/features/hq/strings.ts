@@ -71,6 +71,7 @@ export const HQ_TEXT = {
       seats: "Seats",
       status: "Status",
       renewsOn: "Renews on",
+      timeZone: "Time zone",
       cancel: "Cancel",
       add: "Add practice",
       save: "Save",
@@ -111,3 +112,14 @@ export const HQ_TEXT = {
     fileName: "bodha-activity.csv",
   },
 } as const;
+
+export const TIME_ZONE_LABELS: Record<string, string> = {
+  "America/New_York": "Eastern (New York)",
+  "America/Chicago": "Central (Chicago)",
+  "America/Denver": "Mountain (Denver)",
+  "America/Phoenix": "Arizona (Phoenix)",
+  "America/Los_Angeles": "Pacific (Los Angeles)",
+  "America/Anchorage": "Alaska (Anchorage)",
+  "Pacific/Honolulu": "Hawaii (Honolulu)",
+  UTC: "UTC",
+};

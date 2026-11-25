@@ -5,6 +5,7 @@ import { AreaGuard } from "@/components/shared/AreaGuard";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { usePlaceNames } from "@/hooks/usePlaceNames";
 import { useRemote } from "@/hooks/useRemote";
 import type { Role, TodaySummary } from "@/lib/api/types";
 import { getToday } from "@/lib/api/work";
@@ -15,7 +16,6 @@ import { BeingRead } from "./components/BeingRead";
 import { LaneCells } from "./components/LaneCells";
 import { UpNext } from "./components/UpNext";
 import { TODAY_TEXT } from "./strings";
-import { usePlaceNames } from "./usePlaceNames";
 
 const REMOTE_TEXT = { loading: TODAY_TEXT.loading, empty: TODAY_TEXT.empty, retry: TODAY_TEXT.retry };
 
@@ -34,12 +34,12 @@ function TodayActions({ role, firstNoteId }: { role: Role; firstNoteId: string |
 }
 
 function TodayBody({ data, role }: { data: TodaySummary; role: Role }) {
-  const placeNames = usePlaceNames(canUse(role, "upload"));
+  const placeNames = usePlaceNames();
   return (
     <>
       <LaneCells counts={data.lanes} role={role} />
       <div className="flex flex-wrap items-start gap-6">
-        {canUse(role, "queue") ? <UpNext rows={data.next_up} /> : null}
+        {canUse(role, "queue") ? <UpNext rows={data.next_up} placeNames={placeNames} /> : null}
         <BeingRead
           batches={data.batches}
           placeNames={placeNames}

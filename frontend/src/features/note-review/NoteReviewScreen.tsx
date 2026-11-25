@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { placeName, usePlaceNames } from "@/hooks/usePlaceNames";
 import { urlFor } from "@/lib/api/client";
 import type { Lane } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
@@ -11,7 +12,7 @@ import { ReviewTopBar } from "./components/ReviewTopBar";
 import { ReviewWorkspace } from "./components/ReviewWorkspace";
 import { reviewPermissions } from "./permissions";
 import { REVIEW_TEXT } from "./strings";
-import { parseLane, useNeighbours, useNote, usePlaceLabel } from "./useNoteData";
+import { parseLane, useNeighbours, useNote } from "./useNoteData";
 import { useReviewActions } from "./useReviewActions";
 
 const REMOTE_TEXT = { loading: REVIEW_TEXT.loading, empty: REVIEW_TEXT.notFound, retry: REVIEW_TEXT.retry };
@@ -26,8 +27,10 @@ function NoteReview({ noteId, lane }: { noteId: string; lane: Lane | null }) {
   const approved = () => (neighbours.next ? go(neighbours.next) : router.push(backHref));
   const actions = useReviewActions(noteId, { approved, changed: note.reload });
   const detail = note.state.status === "success" ? note.state.data : null;
-  const permissions = detail ? reviewPermissions(user?.role, detail) : null;
-  const placeLabel = usePlaceLabel(detail?.note.place_code ?? null, permissions?.readPlaces ?? false);
+  const placeNames = usePlaceNames();
+  const code = detail?.note.place_code ?? null;
+  const name = placeName(placeNames, code);
+  const placeLabel = code && name && name !== code ? REVIEW_TEXT.placeNamed(name, code) : code;
   const title = detail
     ? [detail.note.provider.name, placeLabel, formatCalendarDay(detail.note.service_date)].filter(Boolean).join(" · ")
     : null;

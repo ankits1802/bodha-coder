@@ -15,7 +15,9 @@ interface RequestHeaderProps {
 function patientLine(request: ProviderRequest): string {
   const { age, sex } = request.patient;
   const person = [age === null ? null : String(age), sex].filter((part) => part !== null && part !== "").join(", ");
-  return [person, formatCalendarDay(request.service_date, "long"), request.visit_type].filter(Boolean).join(" · ");
+  return [person, formatCalendarDay(request.service_date, "long"), request.visit_type, request.place_name]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function DocumentIcon() {
@@ -36,7 +38,12 @@ export function RequestHeader({ request, pdfPending, pdfError, onOpenPdf }: Requ
           <h1 className="m-0 text-large-title font-bold tracking-title">{request.patient.name ?? RESPOND_TEXT.patientUnknown}</h1>
           <p className="mt-1 mb-0 text-body-lg text-secondary">{patientLine(request)}</p>
           <p className="mt-2.5 mb-0 flex flex-wrap gap-x-4.5 gap-y-1.5 text-subhead text-secondary">
-            <span>{RESPOND_TEXT.requested(formatDateTime(request.requested_at))}</span>
+            <span>
+              {request.requested_by
+                ? RESPOND_TEXT.requestedBy(request.requested_by, formatDateTime(request.requested_at))
+                : RESPOND_TEXT.requested(formatDateTime(request.requested_at))}
+            </span>
+            {request.answered_at ? <span>{RESPOND_TEXT.signedAt(formatDateTime(request.answered_at))}</span> : null}
             {request.status === "sent" ? (
               <StatusDot tone="warn" className="text-secondary">
                 {RESPOND_TEXT.answerBy(formatDateTime(request.expires_at))}

@@ -8,7 +8,7 @@ from app.api.bodies import CodeRequestBody, CodeVerifyBody, RespondBody
 from app.api.wiring import Mail, Store
 from app.core.config import get_settings
 from app.core.deps import Db, ProviderActor, current_provider
-from app.models import Practice, User
+from app.models import PlaceOfService, Practice, User
 from app.services import addenda
 
 router = APIRouter(prefix="/respond", tags=["provider"])
@@ -30,6 +30,7 @@ async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
     request, note, provider, texts = await addenda.provider_request(db, actor)
     practice = await db.get_one(Practice, note.practice_id)
     requester = await db.get(User, request.sent_by) if request.sent_by else None
+    place = await db.get(PlaceOfService, note.place_code)
     return {
         "practice_name": practice.name,
         "provider_name": f"{provider.name}, {provider.credential}",
@@ -38,6 +39,7 @@ async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
         "service_date": note.service_date.isoformat(),
         "visit_type": note.visit_type,
         "place_code": note.place_code,
+        "place_name": place.name if place else None,
         "requested_by": requester.name if requester else None,
         "requested_at": request.created_at.isoformat(),
         "answered_at": request.answered_at.isoformat() if request.answered_at else None,

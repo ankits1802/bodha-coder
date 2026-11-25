@@ -8,7 +8,7 @@ import { useAction } from "@/hooks/useAction";
 import { addProvider, editProvider } from "@/lib/api/practice";
 import type { Channel, Place, Provider, ProviderInput } from "@/lib/api/types";
 import { ProviderFields } from "./ProviderFields";
-import { draftFrom, inputFrom, validateProvider, type ProviderDraft, type ProviderErrors } from "./providerForm";
+import { draftFrom, inputFrom, validateProvider, type ProviderDraft, type ProviderErrors, type ProviderTextField } from "./providerForm";
 import { PROVIDER_TEXT } from "./strings";
 
 const FORM_ID = "provider-form";
@@ -30,7 +30,7 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
   const save = useAction(saveProvider);
   const words = PROVIDER_TEXT.dialog;
 
-  function change(field: keyof ProviderDraft, value: string): void {
+  function change(field: ProviderTextField, value: string): void {
     setDraft((current) => ({ ...current, [field]: field === "channel" ? (value as Channel) : value }));
   }
 
@@ -59,7 +59,13 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
       }
     >
       <form id={FORM_ID} noValidate onSubmit={submit} className="flex flex-col gap-4">
-        <ProviderFields draft={draft} errors={errors} places={places} onChange={change} />
+        <ProviderFields
+          draft={draft}
+          errors={errors}
+          places={places}
+          onChange={change}
+          onActive={(active) => setDraft((current) => ({ ...current, active }))}
+        />
         {save.error ? <InlineAlert tone="bad">{save.error}</InlineAlert> : null}
       </form>
     </Dialog>

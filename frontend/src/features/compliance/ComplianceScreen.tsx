@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { usePlaceNames } from "@/hooks/usePlaceNames";
 import { useRemote } from "@/hooks/useRemote";
 import type { ComplianceList, Role } from "@/lib/api/types";
 import { getCompliance } from "@/lib/api/work";
@@ -30,17 +31,18 @@ interface BodyProps {
 }
 
 function ComplianceBody({ data, kind, canDecide, onDecided }: BodyProps) {
+  const placeNames = usePlaceNames();
   const rows = data.items.filter((row) => inKind(row, kind));
   const [featured, ...rest] = rows;
   return (
     <>
       <PatternBanner patterns={data.patterns} total={data.items.length} />
       {featured ? (
-        <FeaturedCase key={featured.id} row={featured} canDecide={canDecide} onDecided={onDecided} />
+        <FeaturedCase key={featured.id} row={featured} placeNames={placeNames} canDecide={canDecide} onDecided={onDecided} />
       ) : (
         <EmptyState title={COMPLIANCE_TEXT.emptyKind} />
       )}
-      <CaseList rows={rest} />
+      <CaseList rows={rest} placeNames={placeNames} />
     </>
   );
 }

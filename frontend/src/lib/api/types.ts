@@ -9,6 +9,7 @@ export interface PracticeSummary {
   name: string;
   checks: Checks;
   idle_minutes: number;
+  time_zone: string;
 }
 
 export interface User {
@@ -41,6 +42,14 @@ export interface MfaEnrolment {
 
 export type Lane = "approve" | "coder" | "provider" | "compliance";
 export type NoteStatus = "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+export type LaneReason =
+  | "flagged"
+  | "levels_too_high"
+  | "audit_risk"
+  | "waiting_on_provider"
+  | "code_changes"
+  | "questions"
+  | "matches";
 
 export interface LaneCount {
   total: number;
@@ -49,6 +58,8 @@ export interface LaneCount {
 
 export type LaneCounts = Record<Lane, LaneCount>;
 
+export type EmAction = "keep" | "lower" | "raise" | "replace" | "add" | "not_applicable";
+
 export interface NoteSummary {
   id: string;
   patient_name: string | null;
@@ -56,7 +67,12 @@ export interface NoteSummary {
   service_date: string;
   status: NoteStatus;
   lane: Lane | null;
+  lane_reason: LaneReason | null;
   headline: string | null;
+  place_code: string;
+  visit_type: string;
+  flag_reason: string | null;
+  flagged_by: string | null;
   due_at: string;
   file_name: string;
 }
@@ -64,6 +80,7 @@ export interface NoteSummary {
 export interface QueueRow extends NoteSummary {
   billed: string[];
   suggested: string[];
+  em_action: EmAction | null;
 }
 
 export interface BatchProgress {
@@ -100,8 +117,12 @@ export interface CompliancePattern {
   count: number;
 }
 
+export interface ComplianceRow extends QueueRow {
+  flagged_by_name: string | null;
+}
+
 export interface ComplianceList {
-  items: QueueRow[];
+  items: ComplianceRow[];
   patterns: CompliancePattern[];
 }
 
@@ -118,9 +139,6 @@ export interface ProviderRef {
 export interface NoteHeader extends NoteSummary {
   patient_age: number | null;
   patient_sex: string | null;
-  place_code: string;
-  visit_type: string;
-  flag_reason: string | null;
   provider: ProviderRef;
 }
 
@@ -373,6 +391,7 @@ export interface ProviderInput {
   email: string | null;
   phone: string | null;
   channel: Channel | null;
+  active: boolean;
 }
 
 export interface Place {
@@ -514,7 +533,11 @@ export interface ProviderRequest {
   patient: { name: string | null; age: number | null; sex: string | null };
   service_date: string;
   visit_type: string;
+  place_code: string;
+  place_name: string | null;
+  requested_by: string | null;
   requested_at: string;
+  answered_at: string | null;
   expires_at: string;
   questions: AddendumQuestion[];
   texts: { revision: number; source: TextSource; text: string }[];
@@ -547,6 +570,7 @@ export interface HqPractice {
   providers: number;
   waiting: number;
   renews_on: string | null;
+  time_zone: string;
 }
 
 export interface NewPractice {
@@ -555,13 +579,15 @@ export interface NewPractice {
   admin_email: string;
   plan: Plan;
   seats: number;
+  time_zone: string;
 }
 
 export interface PracticeUpdate {
   status?: PracticeStatus;
   plan?: Plan;
   seats?: number;
-  renews_on?: string;
+  renews_on?: string | null;
+  time_zone?: string;
 }
 
 export interface HqPlace {

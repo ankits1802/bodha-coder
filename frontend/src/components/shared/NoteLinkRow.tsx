@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Chevron } from "@/components/ui/Chevron";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { placeName, type PlaceNames } from "@/hooks/usePlaceNames";
 import type { Lane, QueueRow } from "@/lib/api/types";
 import { formatCalendarDay, formatDueIn } from "@/lib/format";
 import { noteStatus } from "./noteStatus";
@@ -10,10 +11,11 @@ import { SHARED_TEXT } from "./strings";
 interface NoteLinkRowProps {
   row: QueueRow;
   lane: Lane;
+  placeNames: PlaceNames;
   codes?: ReactNode;
 }
 
-export function NoteLinkRow({ row, lane, codes }: NoteLinkRowProps) {
+export function NoteLinkRow({ row, lane, placeNames, codes }: NoteLinkRowProps) {
   const status = noteStatus(row);
   const words = SHARED_TEXT.noteRow;
   return (
@@ -24,7 +26,7 @@ export function NoteLinkRow({ row, lane, codes }: NoteLinkRowProps) {
       >
         <span className="flex min-w-0 flex-1 basis-48 flex-col gap-0.5">
           <span className="truncate text-body-lg font-semibold">{row.patient_name ?? row.file_name}</span>
-          <span className="text-subhead text-secondary">{words.meta(row.provider_name, formatCalendarDay(row.service_date))}</span>
+          <span className="text-subhead text-secondary">{words.meta(row.provider_name, placeName(placeNames, row.place_code) ?? row.place_code, formatCalendarDay(row.service_date))}</span>
         </span>
         {codes}
         <StatusDot tone={status.tone} className="sm:w-37.5">

@@ -5,6 +5,7 @@ import { CodeChange } from "@/components/ui/CodeChange";
 import { CodeChip } from "@/components/ui/CodeChip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Panel } from "@/components/ui/Panel";
+import type { PlaceNames } from "@/hooks/usePlaceNames";
 import type { QueueRow } from "@/lib/api/types";
 import { codeHint } from "../codeHint";
 import { TODAY_TEXT } from "../strings";
@@ -25,7 +26,7 @@ function SuggestedCode({ row }: { row: QueueRow }) {
   );
 }
 
-export function UpNext({ rows }: { rows: QueueRow[] }) {
+export function UpNext({ rows, placeNames }: { rows: QueueRow[]; placeNames: PlaceNames }) {
   return (
     <section aria-labelledby="today-up-next" className="flex min-w-0 flex-[3_1_28rem] flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
@@ -42,7 +43,7 @@ export function UpNext({ rows }: { rows: QueueRow[] }) {
         ) : (
           <ul className="m-0 list-none divide-y divide-hairline p-0">
             {rows.map((row) => (
-              <NoteLinkRow key={row.id} row={row} lane="coder" codes={<SuggestedCode row={row} />} />
+              <NoteLinkRow key={row.id} row={row} lane="coder" placeNames={placeNames} codes={<SuggestedCode row={row} />} />
             ))}
           </ul>
         )}

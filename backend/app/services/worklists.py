@@ -48,12 +48,15 @@ async def queue_rows(
     rows = (await db.execute(query.offset(offset).limit(limit))).all()
     notes = [note for note, _ in rows]
     billed = await _billed_by_note(db, [note.id for note in notes])
-    changes = await _changes_by_analysis(db, [note.current_analysis_id for note in notes if note.current_analysis_id])
+    analysis_ids = [note.current_analysis_id for note in notes if note.current_analysis_id]
+    changes = await _changes_by_analysis(db, analysis_ids)
+    em_actions = await _em_actions(db, analysis_ids)
     return [
         {
             **summary(note, provider_name),
             "billed": billed.get(note.id, []),
             "suggested": changes.get(note.current_analysis_id or "", []),
+            "em_action": em_actions.get(note.current_analysis_id or ""),
         }
         for note, provider_name in rows
     ]
@@ -111,6 +114,17 @@ async def _changes_by_analysis(db: AsyncSession, analysis_ids: list[str]) -> dic
     for analysis_id, code in rows:
         found.setdefault(analysis_id, []).append(code)
     return found
+
+
+async def _em_actions(db: AsyncSession, analysis_ids: list[str]) -> dict[str, str]:
+    if not analysis_ids:
+        return {}
+    rows = await db.execute(
+        select(Suggestion.analysis_id, Suggestion.action).where(
+            Suggestion.analysis_id.in_(analysis_ids), Suggestion.kind == "em"
+        )
+    )
+    return dict(rows.tuples().all())
 
 
 async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, Any]:

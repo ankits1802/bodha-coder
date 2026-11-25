@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Panel } from "@/components/ui/Panel";
 import type { AddendumAnswer, AddendumQuestion } from "@/lib/api/types";
 import { AddendumPanel } from "./AddendumPanel";
-import { canSign, draftFor, previewLines, toAnswers, type AnswerDraft, type Drafts } from "./answers";
+import { addendumHeader, canSign, draftFor, previewLines, toAnswers, type AnswerDraft, type Drafts } from "./answers";
 import { QuestionCard } from "./QuestionCard";
 import { RESPOND_TEXT } from "./strings";
 
@@ -19,6 +19,7 @@ interface AnswerFormProps {
 export function AnswerForm({ questions, providerName, pending, error, onSign }: AnswerFormProps) {
   const [drafts, setDrafts] = useState<Drafts>({});
   const [confirmed, setConfirmed] = useState(false);
+  const [today] = useState(() => new Date());
   const signable = canSign(questions, drafts, confirmed);
 
   function change(key: string, draft: AnswerDraft): void {
@@ -43,6 +44,7 @@ export function AnswerForm({ questions, providerName, pending, error, onSign }: 
         ))}
       </Panel>
       <AddendumPanel
+        header={addendumHeader(providerName, today)}
         lines={previewLines(questions, drafts)}
         confirmed={confirmed}
         onConfirm={setConfirmed}

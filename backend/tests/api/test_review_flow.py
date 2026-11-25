@@ -18,6 +18,7 @@ async def test_an_uploaded_note_is_read_and_waits_for_a_coder(harness, icd_catal
         ["99215", "I10", "E11.9", "N18.30"],
     )
     assert queue["lanes"]["coder"]["total"] == 1
+    assert (row["lane_reason"], row["em_action"]) == ("code_changes", "lower")
 
     detail = (await harness.client.get(f"/api/notes/{row['id']}", headers=practice.admin)).json()
     assert detail["claim"] == ["99214", "E11.65", "N18.30", "I12.9", "R20.2"]

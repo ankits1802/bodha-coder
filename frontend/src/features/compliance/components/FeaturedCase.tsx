@@ -7,7 +7,8 @@ import { RemoteView } from "@/components/ui/RemoteView";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { useRemote } from "@/hooks/useRemote";
 import { getNote } from "@/lib/api/notes";
-import type { QueueRow } from "@/lib/api/types";
+import { placeName, type PlaceNames } from "@/hooks/usePlaceNames";
+import type { ComplianceRow } from "@/lib/api/types";
 import { formatCalendarDay, formatDueIn } from "@/lib/format";
 import { caseFacts } from "../complianceKinds";
 import { COMPLIANCE_TEXT } from "../strings";
@@ -17,15 +18,16 @@ import { CaseFactsView } from "./CaseFactsView";
 const REMOTE_TEXT = { loading: COMPLIANCE_TEXT.loadingCase, empty: COMPLIANCE_TEXT.emptyKind, retry: COMPLIANCE_TEXT.retry };
 
 interface FeaturedCaseProps {
-  row: QueueRow;
+  row: ComplianceRow;
+  placeNames: PlaceNames;
   canDecide: boolean;
   onDecided: (message: string) => void;
 }
 
-export function FeaturedCase({ row, canDecide, onDecided }: FeaturedCaseProps) {
+export function FeaturedCase({ row, placeNames, canDecide, onDecided }: FeaturedCaseProps) {
   const detail = useRemote(`compliance-case:${row.id}`, () => getNote(row.id));
   const status = noteStatus(row);
-  const facts = detail.state.status === "success" ? caseFacts(detail.state.data) : null;
+  const facts = detail.state.status === "success" ? caseFacts(detail.state.data, row) : null;
   return (
     <Panel as="article" aria-labelledby={`case-${row.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-hairline px-5 py-4.5">
@@ -34,7 +36,7 @@ export function FeaturedCase({ row, canDecide, onDecided }: FeaturedCaseProps) {
             {row.patient_name ?? row.file_name}
           </h2>
           <span className="text-subhead text-secondary">
-            {SHARED_TEXT.noteRow.meta(row.provider_name, formatCalendarDay(row.service_date))}
+            {SHARED_TEXT.noteRow.meta(row.provider_name, placeName(placeNames, row.place_code) ?? row.place_code, formatCalendarDay(row.service_date))}
           </span>
         </span>
         <span className="flex items-center gap-4.5">
@@ -46,7 +48,7 @@ export function FeaturedCase({ row, canDecide, onDecided }: FeaturedCaseProps) {
         </span>
       </div>
       <RemoteView state={detail.state} text={REMOTE_TEXT} onRetry={detail.reload}>
-        {(note) => <CaseFactsView facts={caseFacts(note)} />}
+        {(note) => <CaseFactsView facts={caseFacts(note, row)} />}
       </RemoteView>
       <CaseActions noteId={row.id} facts={facts} canDecide={canDecide} onDecided={onDecided} />
     </Panel>

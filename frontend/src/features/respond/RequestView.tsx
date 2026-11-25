@@ -34,10 +34,24 @@ const REMOTE_TEXT = { loading: RESPOND_TEXT.loading, empty: "", retry: RESPOND_T
 
 function Side({ request, result, pending, error, onSign }: SideProps) {
   if (result) {
-    return <SignedPanel title={RESPOND_TEXT.signedTitle} addendumText={result.addendum_text} serviceDate={request.service_date} />;
+    return (
+      <SignedPanel
+        title={RESPOND_TEXT.signedTitle}
+        addendumText={result.addendum_text}
+        serviceDate={request.service_date}
+        answeredAt={null}
+      />
+    );
   }
   if (request.status === "answered" && request.addendum_text) {
-    return <SignedPanel title={RESPOND_TEXT.answeredTitle} addendumText={request.addendum_text} serviceDate={request.service_date} />;
+    return (
+      <SignedPanel
+        title={RESPOND_TEXT.answeredTitle}
+        addendumText={request.addendum_text}
+        serviceDate={request.service_date}
+        answeredAt={request.answered_at}
+      />
+    );
   }
   if (request.status !== "sent") {
     return (

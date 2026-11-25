@@ -13,7 +13,7 @@ export const SHARED_TEXT = {
   codeAdded: "add",
   codeChanged: "changes to",
   noteRow: {
-    meta: (provider: string, day: string) => `${provider} · seen ${day}`,
+    meta: (provider: string, place: string, day: string) => `${provider} · ${place} · seen ${day}`,
     dueIn: "Due in",
   },
   noteStatus: {

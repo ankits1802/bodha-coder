@@ -36,6 +36,12 @@ export function localIsoDate(moment: Date = new Date()): string {
   return toIsoDate(calendarDateOf(moment));
 }
 
+export function isoDateInZone(moment: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(moment);
+  const value = (type: Intl.DateTimeFormatPartTypes): number => Number(parts.find((part) => part.type === type)?.value);
+  return toIsoDate({ year: value("year"), month: value("month"), day: value("day") });
+}
+
 export function localDateFromIso(text: string): Date | null {
   const parsed = parseIsoDate(text);
   return parsed ? new Date(parsed.year, parsed.month - 1, parsed.day) : null;

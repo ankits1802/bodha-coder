@@ -35,13 +35,13 @@ export function ProvidersTable({ providers, placeNames, onEdit }: ProvidersTable
       </thead>
       <tbody>
         {providers.map((provider) => (
-          <Tr key={provider.id}>
+          <Tr key={provider.id} className={provider.active ? "" : "text-secondary"}>
             <Td className="font-medium">
               {provider.name}
               <span className="ml-1.5 rounded-chip bg-chip px-1.5 py-px text-micro font-semibold text-label-soft">
                 {provider.credential}
               </span>
-              {provider.active ? null : <span className="ml-2 text-footnote text-tertiary">{PROVIDER_TEXT.inactive}</span>}
+              {provider.active ? null : <span className="ml-2 text-footnote font-normal">{PROVIDER_TEXT.inactive}</span>}
             </Td>
             <Td className="text-secondary">{provider.specialty ?? FORMAT_WORDS.empty}</Td>
             <Td className="tabular-nums">

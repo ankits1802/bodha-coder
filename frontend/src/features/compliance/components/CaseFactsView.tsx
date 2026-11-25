@@ -44,6 +44,12 @@ export function CaseFactsView({ facts }: { facts: CaseFacts }) {
           <p className="m-0">{facts.flagReason}</p>
         </div>
       ) : null}
+      {facts.flaggedBy ? (
+        <div>
+          <Label>{COMPLIANCE_TEXT.flaggedBy}</Label>
+          <p className="m-0">{facts.flaggedBy}</p>
+        </div>
+      ) : null}
       {facts.risks.length > 0 ? (
         <div className="min-w-0 flex-[1_1_20rem]">
           <Label>{COMPLIANCE_TEXT.risks}</Label>

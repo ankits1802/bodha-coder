@@ -35,6 +35,7 @@ const CODER: User = {
     name: "Lakeside Primary Care",
     checks: { em: true, icd: true, cdi: true, audit: true, mips: false },
     idle_minutes: 15,
+    time_zone: "America/Chicago",
   },
 };
 
@@ -52,11 +53,17 @@ const ROW: QueueRow = {
   service_date: "2026-11-25",
   status: "ready",
   lane: "coder",
+  lane_reason: "code_changes",
   headline: "Billed too high",
+  place_code: "11",
+  visit_type: "Established patient",
+  flag_reason: null,
+  flagged_by: null,
   due_at: "2026-11-27T18:00:00Z",
   file_name: "2026-11-25 - REYES MARISOL - 99215.pdf",
   billed: ["99215", "I10"],
   suggested: ["99214"],
+  em_action: "lower",
 };
 
 function page(items: QueueRow[]): QueuePage {

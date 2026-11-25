@@ -12,18 +12,6 @@ export class ApiError extends Error {
   }
 }
 
-interface ValidationDetail {
-  msg?: unknown;
-}
-
-function validationMessage(detail: unknown): string | null {
-  if (!Array.isArray(detail)) return null;
-  const messages = detail
-    .map((item: ValidationDetail) => (typeof item?.msg === "string" ? item.msg : null))
-    .filter((item): item is string => item !== null);
-  return messages.length > 0 ? messages.join("; ") : null;
-}
-
 function fallbackMessage(status: number): string {
   return API_MESSAGES.byStatus[status] ?? API_MESSAGES.unexpected;
 }
@@ -43,8 +31,6 @@ export async function errorFromResponse(response: Response): Promise<ApiError> {
       const code = typeof record.error === "string" ? record.error : "error";
       return new ApiError(response.status, code, record.message);
     }
-    const detail = validationMessage(record.detail);
-    if (detail) return new ApiError(response.status, "invalid", detail);
   }
   return new ApiError(response.status, "error", fallbackMessage(response.status));
 }

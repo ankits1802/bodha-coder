@@ -1,5 +1,5 @@
 import type { NoteDetail, Role } from "@/lib/api/types";
-import { canDo, canUse } from "@/lib/roles";
+import { canDo } from "@/lib/roles";
 import { openQuestions } from "./findings";
 
 export interface ReviewPermissions {
@@ -10,7 +10,6 @@ export interface ReviewPermissions {
   compliance: boolean;
   retry: boolean;
   remind: boolean;
-  readPlaces: boolean;
 }
 
 export function reviewPermissions(role: Role | null | undefined, detail: NoteDetail): ReviewPermissions {
@@ -25,6 +24,5 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     compliance: ready && inCompliance && canDo(role, "complianceDecision"),
     retry: status === "failed" && canDo(role, "retry"),
     remind: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
-    readPlaces: canUse(role, "upload"),
   };
 }

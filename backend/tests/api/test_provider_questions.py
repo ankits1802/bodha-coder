@@ -36,6 +36,7 @@ async def test_the_provider_answers_and_the_note_is_read_again(harness, icd_cata
     request = (await harness.client.get("/api/respond", headers=provider)).json()
     assert request["questions"][0]["options"] == ["Yes", "No", "Clinically undetermined", "Other"]
     assert request["texts"][0]["source"] == "document"
+    assert (request["place_name"], request["requested_by"]) == ("Office", "Practice Admin")
 
     answered = await harness.client.post(
         "/api/respond",

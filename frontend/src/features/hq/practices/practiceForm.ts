@@ -1,11 +1,18 @@
 import type { HqPractice, NewPractice, Plan, PracticeStatus, PracticeUpdate } from "@/lib/api/types";
 import { isIsoDate } from "@/lib/dates";
 import { isEmail } from "@/lib/validation";
-import { HQ_TEXT } from "../strings";
+import { HQ_TEXT, TIME_ZONE_LABELS } from "../strings";
 
 export const PLANS: readonly Plan[] = ["trial", "basic", "professional", "enterprise"];
 export const STATUSES: readonly PracticeStatus[] = ["trial", "active", "ended", "blocked"];
 const MAX_SEATS = 10_000;
+export const DEFAULT_TIME_ZONE = "America/Chicago";
+export const TIME_ZONES: readonly string[] = Object.keys(TIME_ZONE_LABELS);
+
+export function zoneOptions(current: string): { options: readonly string[]; labels: Record<string, string> } {
+  if (TIME_ZONES.includes(current)) return { options: TIME_ZONES, labels: TIME_ZONE_LABELS };
+  return { options: [...TIME_ZONES, current], labels: { ...TIME_ZONE_LABELS, [current]: current } };
+}
 
 const errors = HQ_TEXT.practices.form.errors;
 
@@ -20,6 +27,7 @@ export interface NewPracticeDraft {
   admin_email: string;
   plan: Plan;
   seats: string;
+  time_zone: string;
 }
 
 export type NewPracticeErrors = Partial<Record<keyof NewPracticeDraft, string>>;
@@ -41,6 +49,7 @@ export function newPracticeBody(draft: NewPracticeDraft): NewPractice {
     admin_email: draft.admin_email.trim(),
     plan: draft.plan,
     seats: Number(draft.seats),
+    time_zone: draft.time_zone,
   };
 }
 
@@ -49,10 +58,17 @@ export interface PracticeEditDraft {
   plan: Plan;
   seats: string;
   renews_on: string;
+  time_zone: string;
 }
 
 export function editDraftFrom(practice: HqPractice): PracticeEditDraft {
-  return { status: practice.status, plan: practice.plan, seats: String(practice.seats), renews_on: practice.renews_on ?? "" };
+  return {
+    status: practice.status,
+    plan: practice.plan,
+    seats: String(practice.seats),
+    renews_on: practice.renews_on ?? "",
+    time_zone: practice.time_zone,
+  };
 }
 
 export function practiceChanges(practice: HqPractice, draft: PracticeEditDraft): PracticeUpdate {
@@ -61,5 +77,7 @@ export function practiceChanges(practice: HqPractice, draft: PracticeEditDraft):
   if (draft.plan !== practice.plan) update.plan = draft.plan;
   if (Number(draft.seats) !== practice.seats) update.seats = Number(draft.seats);
   if (isIsoDate(draft.renews_on) && draft.renews_on !== practice.renews_on) update.renews_on = draft.renews_on;
+  if (draft.renews_on === "" && practice.renews_on !== null) update.renews_on = null;
+  if (draft.time_zone !== practice.time_zone) update.time_zone = draft.time_zone;
   return update;
 }

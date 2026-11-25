@@ -7,12 +7,20 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
 import { addPractice } from "@/lib/api/hq";
 import { PLAN_LABELS } from "@/lib/labels";
-import { HQ_TEXT } from "../strings";
+import { HQ_TEXT, TIME_ZONE_LABELS } from "../strings";
 import { ChoiceField, TextField } from "./FormFields";
-import { PLANS, newPracticeBody, validateNewPractice, type NewPracticeDraft, type NewPracticeErrors } from "./practiceForm";
+import {
+  DEFAULT_TIME_ZONE,
+  PLANS,
+  TIME_ZONES,
+  newPracticeBody,
+  validateNewPractice,
+  type NewPracticeDraft,
+  type NewPracticeErrors,
+} from "./practiceForm";
 
 const FORM_ID = "add-practice";
-const BLANK: NewPracticeDraft = { name: "", admin_name: "", admin_email: "", plan: "trial", seats: "10" };
+const BLANK: NewPracticeDraft = { name: "", admin_name: "", admin_email: "", plan: "trial", seats: "10", time_zone: DEFAULT_TIME_ZONE };
 
 interface AddPracticeDialogProps {
   onClose: () => void;
@@ -61,6 +69,13 @@ export function AddPracticeDialog({ onClose, onAdded }: AddPracticeDialogProps) 
         />
         <ChoiceField label={words.plan} value={draft.plan} options={PLANS} labels={PLAN_LABELS} onChange={set("plan")} />
         <TextField label={words.seats} type="number" min={1} inputMode="numeric" value={draft.seats} error={errors.seats} onChange={set("seats")} />
+        <ChoiceField
+          label={words.timeZone}
+          value={draft.time_zone}
+          options={TIME_ZONES}
+          labels={TIME_ZONE_LABELS}
+          onChange={set("time_zone")}
+        />
         {add.error ? (
           <div className="sm:col-span-2">
             <InlineAlert tone="bad">{add.error}</InlineAlert>

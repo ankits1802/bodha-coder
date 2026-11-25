@@ -14,6 +14,7 @@ export const COMPLIANCE_TEXT = {
   supported: "Supported",
   inTheNote: "In the note",
   flagReason: "Flagged because",
+  flaggedBy: "Flagged by",
   risks: "Audit risks",
   openNote: "Open note",
   keep: (code: string) => `Keep ${code}`,

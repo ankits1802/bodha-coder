@@ -1,22 +1,24 @@
 import { Field } from "@/components/ui/Field";
 import { Input, Select } from "@/components/ui/Input";
+import { Toggle } from "@/components/ui/Toggle";
 import type { Channel, Place } from "@/lib/api/types";
 import { CHANNEL_LABELS } from "@/lib/labels";
-import type { ProviderDraft, ProviderErrors } from "./providerForm";
+import type { ProviderDraft, ProviderErrors, ProviderTextField } from "./providerForm";
 import { CREDENTIALS, PROVIDER_TEXT } from "./strings";
 
 interface ProviderFieldsProps {
   draft: ProviderDraft;
   errors: ProviderErrors;
   places: Place[];
-  onChange: (field: keyof ProviderDraft, value: string) => void;
+  onChange: (field: ProviderTextField, value: string) => void;
+  onActive: (active: boolean) => void;
 }
 
 const CHANNELS: readonly Channel[] = ["email", "sms"];
 
-export function ProviderFields({ draft, errors, places, onChange }: ProviderFieldsProps) {
+export function ProviderFields({ draft, errors, places, onChange, onActive }: ProviderFieldsProps) {
   const words = PROVIDER_TEXT.dialog;
-  const text = (field: keyof ProviderDraft, label: string, type = "text", optional = true) => (
+  const text = (field: ProviderTextField, label: string, type = "text", optional = true) => (
     <Field label={label} error={errors[field]} optional={optional ? words.optional : undefined}>
       {(control) => (
         <Input {...control} type={type} value={draft[field]} onChange={(event) => onChange(field, event.target.value)} />
@@ -65,6 +67,12 @@ export function ProviderFields({ draft, errors, places, onChange }: ProviderFiel
       </Field>
       {text("email", words.email, "email")}
       {text("phone", words.phone, "tel")}
+      <div className="flex items-center justify-between gap-3 sm:col-span-2">
+        <span aria-hidden="true" className="text-subhead font-medium">
+          {words.active}
+        </span>
+        <Toggle label={words.active} checked={draft.active} onChange={onActive} />
+      </div>
     </div>
   );
 }

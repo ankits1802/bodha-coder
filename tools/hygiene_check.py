@@ -71,7 +71,8 @@ def tracked_files() -> list[Path]:
         text=True,
         check=True,
     ).stdout.splitlines()
-    return [ROOT / name for name in listed if (ROOT / name).suffix in TEXT_SUFFIXES or name.endswith(".gitignore")]
+    paths = [ROOT / name for name in listed if (ROOT / name).suffix in TEXT_SUFFIXES or name.endswith(".gitignore")]
+    return [path for path in paths if path.is_file()]
 
 
 def encoding_problems(raw: bytes) -> list[str]:

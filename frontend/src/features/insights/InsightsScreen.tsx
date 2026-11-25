@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
+import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { getInsights } from "@/lib/api/billing";
 import type { InsightDays, Insights } from "@/lib/api/types";
-import { localIsoDate } from "@/lib/dates";
 import { formatCalendarDay } from "@/lib/format";
 import { useSession } from "@/lib/session/useSession";
 import { DailyBars } from "./components/DailyBars";
@@ -36,7 +35,7 @@ function InsightsBody({ insights, start, today }: { insights: Insights; start: s
 function InsightsContent() {
   const params = useQueryParams();
   const days: InsightDays = parseDays(params.get("days"));
-  const [today] = useState(() => localIsoDate());
+  const today = usePracticeToday();
   const start = rangeStart(today, days);
   const insights = useRemote(`insights:${days}`, () => getInsights(days));
   const period = (

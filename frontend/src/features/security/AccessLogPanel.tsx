@@ -6,9 +6,10 @@ import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
+import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { getAccessLog } from "@/lib/api/practice";
 import { getTeam } from "@/lib/api/team";
-import { isIsoDate, localIsoDate } from "@/lib/dates";
+import { isIsoDate } from "@/lib/dates";
 import { saveFile } from "@/lib/download";
 import { accessLogCsv } from "./accessLog";
 import { AccessLogTable } from "./AccessLogTable";
@@ -18,7 +19,7 @@ const CONTROL = "h-7.5 rounded-control bg-surface px-2.5 text-subhead text-label
 
 export function AccessLogPanel() {
   const query = useQueryParams();
-  const today = localIsoDate();
+  const today = usePracticeToday();
   const requested = query.get("day");
   const day = requested && isIsoDate(requested) ? requested : today;
   const person = query.get("user");

@@ -139,7 +139,6 @@ export const REVIEW_TEXT = {
     retry: "Read again",
   },
   flagged: (reason: string) => `Flagged: ${reason}`,
-  placeCode: (code: string) => `POS ${code}`,
   placeNamed: (name: string, code: string) => `${name} (${code})`,
   claim: "Claim",
   claimEmpty: "No codes yet",

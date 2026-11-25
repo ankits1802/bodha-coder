@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Panel } from "@/components/ui/Panel";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { placeName, type PlaceNames } from "@/hooks/usePlaceNames";
 import type { BatchProgress } from "@/lib/api/types";
 import { formatCalendarDay, formatCount } from "@/lib/format";
 import { batchCounts, type BatchCounts } from "../batchProgress";
@@ -10,7 +11,7 @@ import { TODAY_TEXT } from "../strings";
 
 interface BeingReadProps {
   batches: BatchProgress[];
-  placeNames: Record<string, string>;
+  placeNames: PlaceNames;
   canUpload: boolean;
   canOpenQueue: boolean;
 }
@@ -34,13 +35,13 @@ function BatchState({ counts, canOpenQueue }: { counts: BatchCounts; canOpenQueu
 
 interface BatchRowProps {
   batch: BatchProgress;
-  placeNames: Record<string, string>;
+  placeNames: PlaceNames;
   canOpenQueue: boolean;
 }
 
 function BatchRow({ batch, placeNames, canOpenQueue }: BatchRowProps) {
   const counts = batchCounts(batch);
-  const place = placeNames[batch.place_code] ?? TODAY_TEXT.placeCode(batch.place_code);
+  const place = placeName(placeNames, batch.place_code) ?? batch.place_code;
   const name = TODAY_TEXT.batchName(batch.provider_name, place, formatCalendarDay(batch.service_date));
   const complete = counts.pending === 0 && counts.failed === 0;
   return (

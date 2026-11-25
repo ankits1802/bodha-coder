@@ -70,6 +70,7 @@ describe("provider answer form", () => {
     await user.click(within(form.causeGroup()).getByRole("radio", { name: "Yes" }));
 
     const preview = screen.getByRole("region", { name: "Addendum preview" });
+    expect(within(preview).getByText(/^Addendum by Elena Varga, MD, \d{2} [A-Z][a-z]{2} \d{4}\.$/)).toBeInTheDocument();
     expect(within(preview).getByText("What stage is the chronic kidney disease? Stage 4.")).toBeInTheDocument();
     expect(within(preview).getByText("Is the kidney disease due to the diabetes? Yes.")).toBeInTheDocument();
 
