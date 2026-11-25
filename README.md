@@ -1,0 +1,70 @@
+# Bodha Coder
+
+Clinical coding review. Bodha Coder reads each visit note, checks the billed codes against the
+documentation, and sends the note to the right person: ready to approve, needs a coder, ask the
+provider, or compliance. Approved codes are exported for billing.
+
+| Part | Stack |
+|---|---|
+| `frontend/` | Next.js (App Router), React, TypeScript, Tailwind CSS |
+| `backend/` | Python, FastAPI, SQLAlchemy, Alembic, Postgres |
+| AI | Gemini, one bundled structured call per note (E/M, ICD-10-CM, CDI queries, audit risk, MIPS) |
+| Files | S3 or Cloudflare R2 (any S3-compatible store) |
+
+## How a note moves
+
+1. A coder uploads the day's PDFs for one provider and date of service. Date, patient and billed
+   code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`.
+2. The worker reads the PDF (text layer, or the PDF itself for scans), runs the review and stores
+   the result as a new analysis revision with every suggestion, its reasoning and its evidence.
+3. The note lands in a lane. A coder accepts or keeps each suggestion, asks the provider, flags
+   it for compliance, or approves it.
+4. A provider opens a secure link, confirms a one-time code, answers, and signs an addendum; the
+   note is read again with the addendum.
+5. Approved notes appear in Ready to bill and are exported as CSV.
+
+Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Run it
+
+Backend (Python 3.12+):
+
+```
+cd backend
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
+copy .env.example .env
+alembic upgrade head
+python -m app.scripts.bootstrap_hq
+uvicorn app.main:app --port 8000
+python -m app.worker
+```
+
+Frontend (Node 24):
+
+```
+cd frontend
+npm ci
+npm run dev
+```
+
+The frontend proxies `/api` to `BACKEND_URL` (default `http://localhost:8000`).
+
+## Configuration
+
+All settings are environment variables read by `backend/app/core/config.py`; `.env.example` lists
+them. For Cloudflare R2 set `S3_ENDPOINT_URL=https://<account>.r2.cloudflarestorage.com`,
+`S3_REGION=auto` and `S3_SERVER_SIDE_ENCRYPTION=` (R2 encrypts at rest itself).
+
+## Checks
+
+Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
+check, ruff, the migrations up and down against Postgres, pytest, and the frontend lint, type
+check, tests and build.
+
+## Reused from ChartMate
+
+ICD-10-CM releases (CDC, public domain), the CMS 2026 physician fee schedule code list (codes
+only), the CMS MIPS 2026 catalog and reporting-code table, the practice MIPS list rules, and the
+CDI gap, audit checklist, E/M and MIPS review prompts. See
+[docs/decisions/0002-reuse-chartmate.md](docs/decisions/0002-reuse-chartmate.md).

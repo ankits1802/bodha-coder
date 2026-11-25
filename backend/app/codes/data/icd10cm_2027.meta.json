@@ -1,0 +1,11 @@
+{
+  "release": "2027",
+  "sourceUrl": "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2027/icd10cm-code-descriptions-2027.zip",
+  "sourceZipBytes": 2192779,
+  "sourceZipSha256": "93e3ad6004badf470c55bfe679b748ae88fd9b2b421851e409eec382c7713b9a",
+  "orderFile": "icd10cm-code-descriptions-2027/icd10cm-order-2027.txt",
+  "totalCodes": 98403,
+  "billableCodes": 74879,
+  "artefact": "icd10cm_2027.tsv.gz",
+  "artefactSha256": "9f4bb7341d9f4903caa9c1292a213b333acc9bf22a6259866132cfddfc3be72b"
+}
