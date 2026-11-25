@@ -138,6 +138,7 @@ export const REVIEW_TEXT = {
     approved: "Approved",
     exported: "Exported",
     retry: "Read again",
+    reopen: "Reopen",
   },
   flagged: (reason: string) => `Flagged: ${reason}`,
   placeNamed: (name: string, code: string) => `${name} (${code})`,

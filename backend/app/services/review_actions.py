@@ -212,6 +212,17 @@ async def retry(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     return note
 
 
+async def reopen(db: AsyncSession, actor: Actor, note_id: str) -> Note:
+    note = await note_for(db, actor, note_id)
+    if note.status != "approved":
+        raise Conflict("only an approved note that has not been exported can be reopened")
+    note.status, note.approved_by, note.approved_at = "ready", None, None
+    await refresh_placement(db, note)
+    record_access(db, actor, "reopened", note_id=note.id)
+    await db.commit()
+    return note
+
+
 async def retry_failed(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> list[str]:
     query = select(Note).where(Note.practice_id == actor.practice_id, Note.status == "failed").limit(RETRY_LIMIT)
     if note_ids is not None:

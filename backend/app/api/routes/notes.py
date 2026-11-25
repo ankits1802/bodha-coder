@@ -63,6 +63,12 @@ async def compliance(
     return {"status": note.status, "lane": note.lane}
 
 
+@router.post("/{note_id}/reopen")
+async def reopen(note_id: str, db: Db, actor: Approver) -> dict[str, str]:
+    note = await review_actions.reopen(db, actor, note_id)
+    return {"status": note.status}
+
+
 @router.post("/retry")
 async def retry_failed(
     body: RetryBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]

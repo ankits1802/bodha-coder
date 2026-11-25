@@ -7,14 +7,24 @@ interface StatusBannerProps {
   note: NoteHeader;
   reason: string | null;
   onRetry: (() => void) | null;
+  onReopen: (() => void) | null;
   retryPending: boolean;
 }
 
-export function StatusBanner({ note, reason, onRetry, retryPending }: StatusBannerProps) {
+export function StatusBanner({ note, reason, onRetry, onReopen, retryPending }: StatusBannerProps) {
   const words = REVIEW_TEXT.banner;
   if (note.status === "queued" || note.status === "reading") return <InlineAlert tone="warn">{words.reading}</InlineAlert>;
   if (note.status === "approved" || note.status === "exported") {
-    return <InlineAlert tone="ok">{note.status === "approved" ? words.approved : words.exported}</InlineAlert>;
+    const reopen = onReopen ? (
+      <Button size="sm" onClick={onReopen} pending={retryPending}>
+        {words.reopen}
+      </Button>
+    ) : null;
+    return (
+      <InlineAlert tone="ok" action={reopen}>
+        {note.status === "approved" ? words.approved : words.exported}
+      </InlineAlert>
+    );
   }
   if (note.status === "failed") {
     const action = onRetry ? (

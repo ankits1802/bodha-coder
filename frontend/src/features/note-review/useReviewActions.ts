@@ -1,7 +1,7 @@
 "use client";
 
 import { useAction } from "@/hooks/useAction";
-import { approveNote, decideCompliance, getNoteDocument, remindProvider, retryNote } from "@/lib/api/notes";
+import { approveNote, decideCompliance, getNoteDocument, remindProvider, reopenNote, retryNote } from "@/lib/api/notes";
 import type { ComplianceDecision } from "@/lib/api/types";
 import { openDocument } from "@/lib/openDocument";
 
@@ -16,12 +16,13 @@ export function useReviewActions(noteId: string, callbacks: ReviewCallbacks) {
     decideCompliance(noteId, decision, reason),
   );
   const retry = useAction(() => retryNote(noteId));
+  const reopen = useAction(() => reopenNote(noteId));
   const remind = useAction(() => remindProvider(noteId));
   const pdf = useAction(() => openDocument(() => getNoteDocument(noteId)));
 
   return {
-    pending: approve.pending || compliance.pending || retry.pending,
-    error: approve.error ?? compliance.error ?? retry.error ?? pdf.error,
+    pending: approve.pending || compliance.pending || retry.pending || reopen.pending,
+    error: approve.error ?? compliance.error ?? retry.error ?? reopen.error ?? pdf.error,
     remindError: remind.error,
     remindPending: remind.pending,
     pdfPending: pdf.pending,
@@ -37,6 +38,9 @@ export function useReviewActions(noteId: string, callbacks: ReviewCallbacks) {
     },
     retry: async () => {
       if ((await retry.run()).ok) callbacks.changed();
+    },
+    reopen: async () => {
+      if ((await reopen.run()).ok) callbacks.changed();
     },
     remind: () => remind.run(),
     openPdf: () => void pdf.run(),
