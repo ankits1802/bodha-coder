@@ -39,5 +39,6 @@ export const SHARED_TEXT = {
     hqOverview: "Overview",
     hqPractices: "Practices",
     hqActivity: "Activity log",
+    hqDemos: "Demo requests",
   },
 } as const;

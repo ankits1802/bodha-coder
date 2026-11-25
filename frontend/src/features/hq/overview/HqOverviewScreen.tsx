@@ -18,6 +18,8 @@ function OverviewStats({ overview }: { overview: HqOverview }) {
   const attempts = overview.read_last_24h + overview.failed_last_24h;
   return (
     <StatGrid label={words.statsLabel}>
+      <StatCell label={words.practices} value={formatCount(overview.practices)} />
+      <StatCell label={words.people} value={formatCount(overview.people)} />
       <StatCell label={words.read} value={formatCount(overview.read_last_24h)} />
       <StatCell label={words.waiting} value={formatCount(overview.waiting)} />
       <StatCell label={words.running} value={formatCount(overview.running)} />

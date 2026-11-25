@@ -66,3 +66,33 @@ async def test_a_flagged_note_shows_why_and_who_flagged_it(harness, icd_catalog)
         "Practice Admin",
     )
     assert (row["place_code"], row["visit_type"]) == ("11", "Established patient")
+
+
+async def test_hq_reads_demo_requests_and_renames_a_practice(harness):
+    sent = await harness.client.post(
+        "/api/demo-requests",
+        json={"name": "Dana Ortiz", "email": "dana@clinic.example.com", "organization": "Ortiz Family Medicine"},
+    )
+    assert sent.status_code == 204
+    hq = await _hq(harness)
+    rows = (await harness.client.get("/api/hq/demo-requests", headers=hq)).json()
+    assert [(row["name"], row["organization"]) for row in rows] == [("Dana Ortiz", "Ortiz Family Medicine")]
+
+    created = await harness.client.post(
+        "/api/hq/practices",
+        headers=hq,
+        json={
+            "name": "Lakeside",
+            "admin_name": "Practice Admin",
+            "admin_email": "admin@lakeside.example.com",
+            "plan": "professional",
+            "seats": 5,
+        },
+    )
+    renamed = await harness.client.patch(
+        f"/api/hq/practices/{created.json()['id']}", headers=hq, json={"name": "Lakeside Primary Care"}
+    )
+    assert renamed.status_code == 204
+    assert (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]["name"] == "Lakeside Primary Care"
+    overview = (await harness.client.get("/api/hq/overview", headers=hq)).json()
+    assert (overview["practices"], overview["people"]) == (1, 0)

@@ -57,6 +57,7 @@ export function EditPracticeDialog({ practice, onClose, onSaved }: EditPracticeD
       }
     >
       <form id={FORM_ID} noValidate onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+        <TextField label={words.name} value={draft.name} onChange={set("name")} />
         <ChoiceField
           label={words.status}
           value={draft.status}

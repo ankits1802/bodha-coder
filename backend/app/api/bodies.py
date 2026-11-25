@@ -158,6 +158,7 @@ class PracticeBody(Body):
 
 
 class PracticeUpdateBody(Body):
+    name: str | None = Field(default=None, min_length=2, max_length=200)
     status: str | None = None
     plan: str | None = None
     seats: int | None = Field(default=None, ge=1, le=10_000)

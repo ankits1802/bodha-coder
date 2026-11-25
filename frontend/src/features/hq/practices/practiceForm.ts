@@ -54,6 +54,7 @@ export function newPracticeBody(draft: NewPracticeDraft): NewPractice {
 }
 
 export interface PracticeEditDraft {
+  name: string;
   status: PracticeStatus;
   plan: Plan;
   seats: string;
@@ -63,6 +64,7 @@ export interface PracticeEditDraft {
 
 export function editDraftFrom(practice: HqPractice): PracticeEditDraft {
   return {
+    name: practice.name,
     status: practice.status,
     plan: practice.plan,
     seats: String(practice.seats),
@@ -73,6 +75,7 @@ export function editDraftFrom(practice: HqPractice): PracticeEditDraft {
 
 export function practiceChanges(practice: HqPractice, draft: PracticeEditDraft): PracticeUpdate {
   const update: PracticeUpdate = {};
+  if (draft.name.trim().length >= 2 && draft.name.trim() !== practice.name) update.name = draft.name.trim();
   if (draft.status !== practice.status) update.status = draft.status;
   if (draft.plan !== practice.plan) update.plan = draft.plan;
   if (Number(draft.seats) !== practice.seats) update.seats = Number(draft.seats);

@@ -12,7 +12,7 @@ from app.codes.places import UnknownPlaceOfService, setting_for
 from app.core.calendar import zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
-from app.models import Activity, Analysis, Note, PlaceOfService, Practice, Provider, User, utcnow
+from app.models import Activity, Analysis, DemoRequest, Note, PlaceOfService, Practice, Provider, User, utcnow
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
 from app.services.team import send_invite
@@ -35,7 +35,15 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
     failed = await db.scalar(
         select(func.count()).select_from(Analysis).where(Analysis.finished_at >= since, Analysis.status == "failed")
     )
+    practices = await db.scalar(
+        select(func.count()).select_from(Practice).where(Practice.status.in_(("trial", "active")))
+    )
+    people = await db.scalar(
+        select(func.count()).select_from(User).where(User.status == "active", User.practice_id.is_not(None))
+    )
     return {
+        "practices": practices or 0,
+        "people": people or 0,
         "read_last_24h": today[0],
         "tokens_last_24h": int(today[1]),
         "failed_last_24h": failed or 0,
@@ -153,6 +161,8 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
         raise Invalid("status, plan or seats is not allowed")
     if changes.get("time_zone"):
         practice.time_zone = zone_named(changes["time_zone"]).key
+    if changes.get("name"):
+        practice.name = changes["name"].strip()
     if status and status != practice.status and status in ("ended", "blocked"):
         for user in (await db.scalars(select(User).where(User.practice_id == practice.id))).all():
             await end_all_sessions(db, user)
@@ -198,6 +208,10 @@ async def set_place(db: AsyncSession, actor: Actor, code: str, *, name: str | No
     )
     await db.commit()
     return place
+
+
+async def demo_requests(db: AsyncSession) -> list[DemoRequest]:
+    return list((await db.scalars(select(DemoRequest).order_by(DemoRequest.created_at.desc()).limit(200))).all())
 
 
 async def activity(db: AsyncSession, *, practice_id: str | None) -> list[Activity]:

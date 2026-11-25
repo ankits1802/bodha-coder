@@ -14,6 +14,8 @@ export const HQ_TEXT = {
     loading: "Loading overview",
     empty: "No activity yet",
     statsLabel: "Reading in the last 24 hours",
+    practices: "Practices",
+    people: "People",
     read: "Read in 24 h",
     waiting: "Waiting",
     running: "Reading now",
@@ -96,6 +98,13 @@ export const HQ_TEXT = {
     cancel: "Cancel",
     save: "Add place",
     errors: { code: "Use the 2-digit CMS code", name: "Enter a name" },
+  },
+  demos: {
+    title: "Demo requests",
+    loading: "Loading demo requests",
+    empty: "No demo requests yet",
+    tableLabel: "Demo requests",
+    columns: { received: "Received", name: "Name", organization: "Organization", email: "Email", message: "Message" },
   },
   activity: {
     title: "Activity",

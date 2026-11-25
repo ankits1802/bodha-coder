@@ -562,6 +562,8 @@ export interface RespondResult {
 }
 
 export interface HqOverview {
+  practices: number;
+  people: number;
   read_last_24h: number;
   tokens_last_24h: number;
   failed_last_24h: number;
@@ -597,11 +599,21 @@ export interface NewPractice {
 }
 
 export interface PracticeUpdate {
+  name?: string;
   status?: PracticeStatus;
   plan?: Plan;
   seats?: number;
   renews_on?: string | null;
   time_zone?: string;
+}
+
+export interface DemoRequestRow {
+  id: string;
+  name: string;
+  email: string;
+  organization: string;
+  message: string | null;
+  received_at: string;
 }
 
 export interface HqPlace {

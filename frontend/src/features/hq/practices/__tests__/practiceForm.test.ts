@@ -29,6 +29,9 @@ describe("practiceChanges", () => {
 
   it("clears the renewal date with null", () => {
     expect(practiceChanges(PRACTICE, { ...editDraftFrom(PRACTICE), renews_on: "" })).toEqual({ renews_on: null });
+    expect(practiceChanges(PRACTICE, { ...editDraftFrom(PRACTICE), name: "  Lakeside Family Care " })).toEqual({
+      name: "Lakeside Family Care",
+    });
   });
 });
 

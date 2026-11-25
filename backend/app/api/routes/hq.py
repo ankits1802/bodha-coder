@@ -70,6 +70,21 @@ async def activity(db: Db, actor: HqActor, practice_id: str | None = None) -> li
     ]
 
 
+@router.get("/hq/demo-requests")
+async def demo_requests(db: Db, actor: HqActor) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": row.id,
+            "name": row.name,
+            "email": row.email,
+            "organization": row.organization,
+            "message": row.message,
+            "received_at": row.created_at.isoformat(),
+        }
+        for row in await hq.demo_requests(db)
+    ]
+
+
 @router.post("/demo-requests", status_code=204)
 async def demo_request(body: DemoBody, db: Db) -> None:
     db.add(DemoRequest(name=body.name, email=str(body.email), organization=body.organization, message=body.message))
