@@ -19,6 +19,7 @@ export const HQ_TEXT = {
     read: "Read in 24 h",
     waiting: "Waiting",
     running: "Reading now",
+    readingNow: (count: string) => `${count} reading now`,
     failed: "Could not read",
     failedShare: (share: string) => `${share} of attempts`,
     tokens: "Model tokens in 24 h",

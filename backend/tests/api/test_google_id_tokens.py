@@ -80,7 +80,7 @@ async def test_an_id_token_is_refused_when_any_check_fails(changes):
 
 async def test_the_pkce_challenge_matches_the_rfc_7636_example():
     assert (
-        pkce_challenge("dBjftJeZ4CVP-mJ0kB2ypLN9EFqtSDGnTSgJOX6t8U0") == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        pkce_challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk") == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
     )
 
 
