@@ -27,6 +27,8 @@ export const HQ_TEXT = {
     busiest: "Most waiting",
     noneWaiting: "No notes waiting",
     blocked: "Blocked",
+    couldNotRead: (count: number, reason: string | null) =>
+      `${count === 1 ? "1 note" : `${count} notes`} could not be read${reason ? `: ${reason}` : ""}`,
     endsIn: (days: number) => (days === 1 ? "Plan ends tomorrow" : `Plan ends in ${days} days`),
     endsToday: "Plan ends today",
     renewalPassed: "Renewal date passed",

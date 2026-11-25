@@ -29,6 +29,11 @@ function Figure({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function auditRiskLabel(detail: NoteDetail): string {
+  if (detail.analysis?.status !== "succeeded") return FORMAT_WORDS.empty;
+  return highestAuditRisk(detail.findings) ?? REVIEW_TEXT.kv.none;
+}
+
 export function SummaryPanel({ detail }: { detail: NoteDetail }) {
   const status = noteStatus(detail.note);
   const em = detail.findings.find((finding) => finding.kind === "em");
@@ -48,7 +53,7 @@ export function SummaryPanel({ detail }: { detail: NoteDetail }) {
       <dl className="m-0 flex flex-auto flex-wrap gap-y-3 overflow-hidden">
         <Figure label={words.changes} value={codeChangeCount(detail.findings)} />
         <Figure label={words.questions} value={openQuestions(detail.findings).length} />
-        <Figure label={words.auditRisk} value={highestAuditRisk(detail.findings) ?? words.none} />
+        <Figure label={words.auditRisk} value={auditRiskLabel(detail)} />
         <Figure label={words.cdiScore} value={typeof score === "number" ? score : FORMAT_WORDS.empty} />
       </dl>
     </Panel>

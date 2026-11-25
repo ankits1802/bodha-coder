@@ -35,9 +35,13 @@ async def queue(
     rows = await worklists.queue_rows(db, query, offset=offset)
     record_access(db, actor, "listed notes", detail=f"lane {lane or 'all'}, {len(rows)} rows")
     await db.commit()
+    everything = worklists.queue_query(actor.practice_id, lane=None, search=None, provider_id=None)
     return {
         "items": rows,
         "lanes": await worklists.lane_counts(db, actor.practice_id),
+        "total": await worklists.count_of(db, query),
+        "all_total": await worklists.count_of(db, everything),
+        "failed": await worklists.failed_count(db, actor.practice_id),
         "page_size": worklists.PAGE_SIZE,
     }
 

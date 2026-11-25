@@ -66,8 +66,8 @@ const ROW: QueueRow = {
   em_action: "lower",
 };
 
-function page(items: QueueRow[]): QueuePage {
-  return { items, lanes: LANES, page_size: 50 };
+function page(items: QueueRow[], failed = 0): QueuePage {
+  return { items, lanes: LANES, total: 10, all_total: 12, failed, page_size: 50 };
 }
 
 describe("QueueScreen", () => {
@@ -113,6 +113,13 @@ describe("QueueScreen", () => {
     expect(screen.getByText("99215")).toBeInTheDocument();
     expect(screen.getByText("I10")).toBeInTheDocument();
     expect(screen.getByText("99214")).toBeInTheDocument();
+    expect(screen.getByText("10 notes, sorted by when they're due")).toBeInTheDocument();
+  });
+
+  it("offers to read again the notes that could not be read", async () => {
+    vi.mocked(getQueue).mockResolvedValue(page([ROW], 2));
+    render(<QueueScreen />);
+    expect(await screen.findByRole("button", { name: "Read 2 again" })).toBeInTheDocument();
     expect(screen.getByText("10 notes, sorted by when they're due")).toBeInTheDocument();
   });
 });

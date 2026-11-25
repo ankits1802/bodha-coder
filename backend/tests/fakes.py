@@ -107,3 +107,11 @@ def text_pdf(text: str) -> bytes:
     body += b"".join(f"{offset:010d} 00000 n \n".encode() for offset in offsets)
     body += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
     return body
+
+
+@dataclass
+class FailingReviewer:
+    error: Exception
+
+    async def __call__(self, client: ModelClient, inputs: ReviewInputs) -> ReviewOutcome:
+        raise self.error

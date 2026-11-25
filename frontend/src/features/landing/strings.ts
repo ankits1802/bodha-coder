@@ -47,10 +47,10 @@ export const LANDING_TEXT = {
   },
   security: {
     title: "Private by design.",
-    lead: "Built for HIPAA from the first line.",
+    lead: "Patient details stay where they belong.",
     items: [
       "Two-step verification",
-      "Every access logged for six years",
+      "Every note opened, changed or exported is logged",
       "Encrypted documents, short-lived links",
       "No patient details in messages",
       "Automatic sign-out",

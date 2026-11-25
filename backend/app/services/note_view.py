@@ -77,6 +77,7 @@ def _analysis(analysis: Analysis | None) -> dict[str, Any] | None:
         "prompt_version": analysis.prompt_version,
         "finished_at": analysis.finished_at.isoformat() if analysis.finished_at else None,
         "failed_sections": analysis.context.get("failed_sections", []),
+        "error": analysis.error,
         "cdi": {
             key: (report.get("cdi") or {}).get(key)
             for key in ("overallCDIScore", "summaryGuidance", "codeLinkingOpportunities")

@@ -5,11 +5,12 @@ import { REVIEW_TEXT } from "../strings";
 
 interface StatusBannerProps {
   note: NoteHeader;
+  reason: string | null;
   onRetry: (() => void) | null;
   retryPending: boolean;
 }
 
-export function StatusBanner({ note, onRetry, retryPending }: StatusBannerProps) {
+export function StatusBanner({ note, reason, onRetry, retryPending }: StatusBannerProps) {
   const words = REVIEW_TEXT.banner;
   if (note.status === "queued" || note.status === "reading") return <InlineAlert tone="warn">{words.reading}</InlineAlert>;
   if (note.status === "approved" || note.status === "exported") {
@@ -23,7 +24,7 @@ export function StatusBanner({ note, onRetry, retryPending }: StatusBannerProps)
     ) : null;
     return (
       <InlineAlert tone="bad" action={action}>
-        {words.failed}
+        {reason ? words.failedBecause(reason) : words.failed}
       </InlineAlert>
     );
   }

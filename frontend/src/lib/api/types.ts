@@ -102,6 +102,9 @@ export interface TodaySummary {
 export interface QueuePage {
   items: QueueRow[];
   lanes: LaneCounts;
+  total: number;
+  all_total: number;
+  failed: number;
   page_size: number;
 }
 
@@ -186,6 +189,7 @@ export interface AnalysisView {
   prompt_version: string | null;
   finished_at: string | null;
   failed_sections: string[];
+  error: string | null;
   cdi: {
     overallCDIScore: number | null;
     summaryGuidance: string | null;
@@ -571,6 +575,8 @@ export interface HqPractice {
   waiting: number;
   renews_on: string | null;
   time_zone: string;
+  failed_24h: number;
+  last_failure: string | null;
 }
 
 export interface NewPractice {

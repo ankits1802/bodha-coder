@@ -13,6 +13,8 @@ const PRACTICE: HqPractice = {
   waiting: 288,
   renews_on: "2027-03-01",
   time_zone: "America/Chicago",
+  failed_24h: 0,
+  last_failure: null,
 };
 
 describe("practiceChanges", () => {

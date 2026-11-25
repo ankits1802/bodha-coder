@@ -65,6 +65,10 @@ class BulkApproveBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=200)
 
 
+class RetryBody(Body):
+    note_ids: list[str] | None = Field(default=None, max_length=500)
+
+
 class ExportBody(Body):
     note_ids: list[str] | None = Field(default=None, max_length=500)
 

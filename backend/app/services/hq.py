@@ -63,6 +63,7 @@ async def practices(db: AsyncSession) -> list[dict[str, Any]]:
             )
         ).all()
     )
+    failures = await _recent_failures(db, utcnow() - timedelta(hours=24))
     rows = await db.scalars(select(Practice).order_by(Practice.name))
     return [
         {
@@ -76,9 +77,30 @@ async def practices(db: AsyncSession) -> list[dict[str, Any]]:
             "waiting": waiting.get(p.id, 0),
             "renews_on": p.renews_on.isoformat() if p.renews_on else None,
             "time_zone": p.time_zone,
+            "failed_24h": failures.get(p.id, (0, None))[0],
+            "last_failure": failures.get(p.id, (0, None))[1],
         }
         for p in rows
     ]
+
+
+async def _recent_failures(db: AsyncSession, since: Any) -> dict[str, tuple[int, str | None]]:
+    failed = (Analysis.status == "failed", Analysis.finished_at >= since)
+    counts = await db.execute(
+        select(Note.practice_id, func.count())
+        .join(Note, Note.id == Analysis.note_id)
+        .where(*failed)
+        .group_by(Note.practice_id)
+    )
+    latest = await db.execute(
+        select(Note.practice_id, Analysis.error)
+        .join(Note, Note.id == Analysis.note_id)
+        .where(*failed)
+        .order_by(Note.practice_id, Analysis.finished_at.desc())
+        .distinct(Note.practice_id)
+    )
+    reasons = dict(latest.tuples().all())
+    return {practice_id: (count, reasons.get(practice_id)) for practice_id, count in counts.tuples().all()}
 
 
 async def create_practice(

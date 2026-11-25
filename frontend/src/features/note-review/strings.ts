@@ -134,6 +134,7 @@ export const REVIEW_TEXT = {
   banner: {
     reading: "Bodha is reading this note.",
     failed: "This note could not be read.",
+    failedBecause: (reason: string) => `This note could not be read. ${reason}`,
     approved: "Approved",
     exported: "Exported",
     retry: "Read again",

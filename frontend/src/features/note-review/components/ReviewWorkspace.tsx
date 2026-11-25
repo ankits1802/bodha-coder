@@ -45,7 +45,10 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
     <>
       <div className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
         <NoteHeading note={detail.note} placeLabel={placeLabel} />
-        <StatusBanner note={detail.note} onRetry={permissions.retry ? () => void actions.retry() : null} retryPending={actions.pending} />
+        <StatusBanner
+          note={detail.note}
+          reason={detail.analysis?.status === "failed" ? detail.analysis.error : null}
+          onRetry={permissions.retry ? () => void actions.retry() : null} retryPending={actions.pending} />
         <SummaryPanel detail={detail} />
         <div className="flex flex-wrap items-start gap-6">
           <NotePanel texts={detail.texts} findings={detail.findings} />

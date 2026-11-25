@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.bodies import AskBody, BilledBody, BulkApproveBody, ComplianceBody, DecisionsBody, FlagBody
+from app.api.bodies import AskBody, BilledBody, BulkApproveBody, ComplianceBody, DecisionsBody, FlagBody, RetryBody
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
 from app.core.roles import APPROVERS, ASKERS, COMPLIANCE, DECIDERS, NOTE_READERS, UPLOADERS
@@ -61,6 +61,13 @@ async def compliance(
 ) -> dict[str, str | None]:
     note = await review_actions.compliance_decision(db, actor, note_id, decision=body.decision, reason=body.reason)
     return {"status": note.status, "lane": note.lane}
+
+
+@router.post("/retry")
+async def retry_failed(
+    body: RetryBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+) -> dict[str, list[str]]:
+    return {"queued": await review_actions.retry_failed(db, actor, body.note_ids)}
 
 
 @router.post("/{note_id}/retry")

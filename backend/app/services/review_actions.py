@@ -18,6 +18,7 @@ from app.services.placement import current_decisions, current_findings, refresh_
 from app.services.routing import choices_for, claim
 
 INFO_KINDS = ("cdi_gap", "audit_risk", "audit_finding", "mips")
+RETRY_LIMIT = 500
 
 
 def allowed_choices(finding: Finding) -> tuple[str, ...]:
@@ -209,6 +210,20 @@ async def retry(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     await request_analysis(db, note, reason="retry")
     await db.commit()
     return note
+
+
+async def retry_failed(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> list[str]:
+    query = select(Note).where(Note.practice_id == actor.practice_id, Note.status == "failed").limit(RETRY_LIMIT)
+    if note_ids is not None:
+        query = query.where(Note.id.in_(note_ids))
+    notes = list((await db.scalars(query)).all())
+    for note in notes:
+        note.status = "queued"
+        await request_analysis(db, note, reason="retry")
+    if notes:
+        record_access(db, actor, "asked to read again", detail=f"{len(notes)} notes")
+    await db.commit()
+    return [note.id for note in notes]
 
 
 async def _open_note(db: AsyncSession, actor: Actor, note_id: str) -> Note:

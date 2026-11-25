@@ -42,6 +42,15 @@ def queue_query(practice_id: str, *, lane: str | None, search: str | None, provi
     return query.order_by(Note.due_at, Note.created_at)
 
 
+async def count_of(db: AsyncSession, query: Select[Any]) -> int:
+    return await db.scalar(select(func.count()).select_from(query.order_by(None).subquery())) or 0
+
+
+async def failed_count(db: AsyncSession, practice_id: str) -> int:
+    query = select(Note.id).where(Note.practice_id == practice_id, Note.status == "failed")
+    return await count_of(db, query)
+
+
 async def queue_rows(
     db: AsyncSession, query: Select[Any], *, offset: int, limit: int = PAGE_SIZE
 ) -> list[dict[str, Any]]:

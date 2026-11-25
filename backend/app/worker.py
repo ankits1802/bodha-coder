@@ -21,6 +21,16 @@ RECOVERY_INTERVAL_SECONDS = 60
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
 
+def failure_reason(error: Exception) -> str:
+    if isinstance(error, TimeoutError):
+        return "Reading this note took too long."
+    if isinstance(error, PERMANENT_FAILURES + (ModelUnavailable,)) and str(error):
+        return str(error)
+    if isinstance(error, OSError):
+        return "A storage or network error stopped the read."
+    return f"Something went wrong while reading this note ({type(error).__name__})."
+
+
 def retry_delay(attempts: int, settings: Settings) -> timedelta | None:
     if attempts >= settings.ai_max_attempts:
         return None
@@ -37,12 +47,12 @@ async def process_one(deps: AnalysisDeps, settings: Settings) -> bool:
             await asyncio.wait_for(run_analysis(db, claimed, deps), timeout=settings.ai_job_timeout_seconds)
             return True
         except PERMANENT_FAILURES as error:
-            reason, retry_in = f"{type(error).__name__}: {error}", None
+            reason, retry_in = failure_reason(error), None
         except (ModelUnavailable, TimeoutError, OSError) as error:
-            reason, retry_in = type(error).__name__, retry_delay(attempts, settings)
+            reason, retry_in = failure_reason(error), retry_delay(attempts, settings)
         except Exception as error:
             logger.exception("analysis %s failed unexpectedly", analysis_id)
-            reason, retry_in = type(error).__name__, None
+            reason, retry_in = failure_reason(error), None
         await db.rollback()
         await fail_attempt(db, await db.get_one(Analysis, analysis_id), reason, retry_in=retry_in)
         return True

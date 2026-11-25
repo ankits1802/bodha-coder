@@ -39,6 +39,10 @@ export function decideCompliance(
   return request<{ status: NoteStatus; lane: Lane | null }>(notePath(noteId, "/compliance"), { body: { decision, reason } });
 }
 
+export function retryFailedNotes(noteIds: string[] | null): Promise<{ queued: string[] }> {
+  return request<{ queued: string[] }>("/api/notes/retry", { body: { note_ids: noteIds } });
+}
+
 export function retryNote(noteId: string): Promise<{ status: NoteStatus }> {
   return request<{ status: NoteStatus }>(notePath(noteId, "/retry"), { method: "POST" });
 }

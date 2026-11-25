@@ -6,12 +6,19 @@ import { getProviders } from "@/lib/api/uploads";
 import type { QueueFilters } from "../useQueueFilters";
 import { QueueToolbar } from "./QueueToolbar";
 
-export function QueueFiltersBar({ filters, lanes }: { filters: QueueFilters; lanes: LaneCounts | null }) {
+interface QueueFiltersBarProps {
+  filters: QueueFilters;
+  lanes: LaneCounts | null;
+  allTotal: number | undefined;
+}
+
+export function QueueFiltersBar({ filters, lanes, allTotal }: QueueFiltersBarProps) {
   const providers = useRemote("queue-providers", getProviders);
   return (
     <QueueToolbar
       lane={filters.lane}
       lanes={lanes}
+      allTotal={allTotal}
       search={filters.search}
       providerId={filters.providerId}
       providers={providers.state.status === "success" ? providers.state.data : []}

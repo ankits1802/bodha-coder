@@ -2,6 +2,8 @@ export const QUEUE_TEXT = {
   title: "Review queue",
   subtitle: (count: string) => `${count} notes, sorted by when they're due`,
   reviewNext: "Review next",
+  readAgain: (count: string) => `Read ${count} again`,
+  readingAgain: (count: string) => `${count} sent to be read again`,
   laneFilter: "Show notes",
   all: "All",
   search: "Search",

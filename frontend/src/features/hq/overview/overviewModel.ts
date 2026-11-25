@@ -21,11 +21,17 @@ function renewalReason(practice: HqPractice): AttentionItem | null {
   return { practice, tone: "warn", reason: days === 0 ? words.endsToday : words.endsIn(days) };
 }
 
+function failureReason(practice: HqPractice): AttentionItem | null {
+  if (practice.failed_24h === 0) return null;
+  return { practice, tone: "bad", reason: HQ_TEXT.overview.couldNotRead(practice.failed_24h, practice.last_failure) };
+}
+
 export function attentionItems(practices: HqPractice[]): AttentionItem[] {
   return practices
-    .map((practice) =>
+    .flatMap((practice) => [
+      failureReason(practice),
       practice.status === "blocked" ? { practice, tone: "bad" as const, reason: HQ_TEXT.overview.blocked } : renewalReason(practice),
-    )
+    ])
     .filter((item): item is AttentionItem => item !== null);
 }
 
