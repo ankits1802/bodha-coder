@@ -421,8 +421,16 @@ export interface BillingRow {
   icd10: string[];
 }
 
+export interface BillingSummary {
+  ready: number;
+  exported_today: number;
+  held_for_provider: number;
+}
+
 export interface BillingList {
   items: BillingRow[];
+  summary: BillingSummary;
+  limit: number;
 }
 
 export type InsightDays = 7 | 14 | 30 | 90;

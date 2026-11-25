@@ -133,7 +133,7 @@ async def _em_actions(db: AsyncSession, analysis_ids: list[str]) -> dict[str, st
             Suggestion.analysis_id.in_(analysis_ids), Suggestion.kind == "em"
         )
     )
-    return dict(rows.tuples().all())
+    return {analysis_id: action for analysis_id, action in rows.all()}
 
 
 async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, Any]:
@@ -176,7 +176,8 @@ async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str,
 async def user_names(db: AsyncSession, user_ids: set[str]) -> dict[str, str]:
     if not user_ids:
         return {}
-    return dict((await db.execute(select(User.id, User.name).where(User.id.in_(user_ids)))).tuples().all())
+    rows = await db.execute(select(User.id, User.name).where(User.id.in_(user_ids)))
+    return {user_id: name for user_id, name in rows.all()}
 
 
 async def compliance_patterns(db: AsyncSession, practice_id: str) -> list[dict[str, Any]]:

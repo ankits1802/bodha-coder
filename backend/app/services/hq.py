@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
@@ -99,10 +100,10 @@ async def _recent_failures(db: AsyncSession, since: Any) -> dict[str, tuple[int,
         .join(Note, Note.id == Analysis.note_id)
         .where(*failed)
         .order_by(Note.practice_id, Analysis.finished_at.desc())
-        .distinct(Note.practice_id)
+        .ext(distinct_on(Note.practice_id))
     )
-    reasons = dict(latest.tuples().all())
-    return {practice_id: (count, reasons.get(practice_id)) for practice_id, count in counts.tuples().all()}
+    reasons: dict[str, str | None] = {practice_id: error for practice_id, error in latest.all()}
+    return {practice_id: (count, reasons.get(practice_id)) for practice_id, count in counts.all()}
 
 
 async def create_practice(

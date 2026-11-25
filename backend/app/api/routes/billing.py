@@ -22,7 +22,11 @@ async def billing_list(db: Db, actor: Biller, show: Literal["ready", "exported",
     rows = await billing.billing_rows(db, actor.practice_id, exported=exported)
     record_access(db, actor, "listed billing", detail=f"{len(rows)} rows")
     await db.commit()
-    return {"items": rows}
+    return {
+        "items": rows,
+        "summary": await billing.billing_summary(db, actor.practice_id, actor.zone),
+        "limit": billing.ROW_LIMIT,
+    }
 
 
 @router.post("/billing/export")

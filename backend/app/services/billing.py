@@ -3,15 +3,18 @@ from __future__ import annotations
 import csv
 import io
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.calendar import day_bounds, today_in
 from app.core.deps import Actor
 from app.core.errors import Invalid
-from app.models import CodeSet, Note, Provider, User, utcnow
+from app.models import AddendumRequest, CodeSet, Note, Provider, User, utcnow
 from app.services.audit_log import record_access
 
+ROW_LIMIT = 500
 EXPORT_COLUMNS = (
     "note_id",
     "patient",
@@ -61,11 +64,28 @@ async def billing_rows(db: AsyncSession, practice_id: str, *, exported: bool | N
     )
     if exported is not None:
         query = query.where(Note.exported_at.is_not(None) if exported else Note.exported_at.is_(None))
-    rows = (await db.execute(query.limit(500))).all()
+    rows = (await db.execute(query.limit(ROW_LIMIT))).all()
     return [
         _row(note, provider, approver, final_codes, billed_codes)
         for note, provider, approver, final_codes, billed_codes in rows
     ]
+
+
+async def billing_summary(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, int]:
+    start, end = day_bounds(today_in(zone), zone)
+    mine = Note.practice_id == practice_id
+    ready = select(func.count()).select_from(Note).where(mine, Note.status == "approved", Note.exported_at.is_(None))
+    exported = select(func.count()).select_from(Note).where(mine, Note.exported_at >= start, Note.exported_at < end)
+    held = select(func.count(func.distinct(AddendumRequest.note_id))).where(
+        AddendumRequest.practice_id == practice_id,
+        AddendumRequest.status == "sent",
+        AddendumRequest.hold_claim.is_(True),
+    )
+    return {
+        "ready": await db.scalar(ready) or 0,
+        "exported_today": await db.scalar(exported) or 0,
+        "held_for_provider": await db.scalar(held) or 0,
+    }
 
 
 def _row(

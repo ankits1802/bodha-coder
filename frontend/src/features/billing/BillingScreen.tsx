@@ -61,9 +61,12 @@ function BillingContent() {
       <RemoteView state={billing.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0} onRetry={billing.reload}>
         {(data) => (
           <>
-            <BillingStats rows={data.items} />
+            <BillingStats billing={data} />
             {filter}
             <BillingTable rows={data.items} />
+            {data.items.length >= data.limit ? (
+              <p className="m-0 text-subhead text-secondary">{BILLING_TEXT.firstRows(formatCount(data.limit))}</p>
+            ) : null}
           </>
         )}
       </RemoteView>
