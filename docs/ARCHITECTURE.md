@@ -27,6 +27,9 @@ Nothing a person or the model produced is overwritten.
 | `access_log` | every PHI read, change and export (who, what, when, from where) | append-only |
 | `activity` | administrative changes (setup, team, MIPS list, HQ) | append-only |
 
+The models declare no ORM relationships, so a flush does not order inserts by foreign key and ids
+are assigned at flush: flush a new row before adding rows that reference it.
+
 The queued `analyses` row is the job. The worker records `attempts`, `error` and timing on it.
 
 ## Object storage (S3 or R2)

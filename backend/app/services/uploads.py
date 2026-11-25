@@ -124,6 +124,7 @@ async def _add_note(db: AsyncSession, store: ObjectStore, actor: Actor, batch: B
         due_at=due_at(batch.service_date),
     )
     db.add(note)
+    await db.flush()
     db.add(
         CodeSet(
             note_id=note_id,
@@ -134,7 +135,6 @@ async def _add_note(db: AsyncSession, store: ObjectStore, actor: Actor, batch: B
             codes=[code.as_json() for code in billed],
         )
     )
-    await db.flush()
     await request_analysis(db, note, reason="upload")
     return note
 
