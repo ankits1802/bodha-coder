@@ -29,7 +29,7 @@ async def _provider_session(harness, token: str) -> dict[str, str]:
 async def test_the_provider_answers_and_the_note_is_read_again(harness, icd_catalog):
     practice, note_id = await reviewed_note(harness, icd_catalog)
     token = await _ask(harness, practice, note_id)
-    assert harness.messenger.sent[-1][0] == "varga@clinic.test"
+    assert harness.messenger.sent[-1][0] == "varga@clinic.example.com"
     assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 409
 
     provider = await _provider_session(harness, token)

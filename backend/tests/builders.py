@@ -41,7 +41,7 @@ async def sign_in(client: AsyncClient, email: str, *, secret_box: dict[str, str]
     return {"Authorization": f"Bearer {body['access_token']}"}
 
 
-async def create_hq_user(email: str = "hq@bodha.test") -> None:
+async def create_hq_user(email: str = "hq@bodha.example.com") -> None:
     async with SessionFactory() as db:
         db.add(User(email=email, name="Bodha Admin", role="hq", status="active", password_hash=hash_password(PASSWORD)))
         await db.commit()
@@ -109,7 +109,7 @@ class Practice:
 
 
 async def practice_with_provider(
-    harness: Harness, *, name: str = "Lakeside", admin_email: str = "admin@lakeside.test"
+    harness: Harness, *, name: str = "Lakeside", admin_email: str = "admin@lakeside.example.com"
 ) -> Practice:
     secrets: dict[str, str] = {}
     await create_hq_user(f"hq-{admin_email}")
@@ -125,7 +125,7 @@ async def practice_with_provider(
             "specialty": "Internal medicine",
             "npi": "1234567893",
             "place_code": "11",
-            "email": "varga@clinic.test",
+            "email": "varga@clinic.example.com",
         },
     )
     assert provider.status_code == 200, provider.text
