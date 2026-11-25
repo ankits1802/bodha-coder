@@ -1,0 +1,68 @@
+import type { PracticeRole, Role } from "@/lib/api/types";
+
+export const PRACTICE_ROLES: readonly PracticeRole[] = ["admin", "coder", "cdi", "compliance", "biller", "viewer"];
+const HQ: readonly Role[] = ["hq"];
+const ADMINS: readonly Role[] = ["admin"];
+const UPLOADERS: readonly Role[] = ["admin", "coder"];
+const NOTE_READERS: readonly Role[] = ["admin", "coder", "cdi", "compliance", "biller"];
+const DECIDERS: readonly Role[] = ["admin", "coder", "cdi", "compliance"];
+const APPROVERS: readonly Role[] = ["admin", "coder", "compliance"];
+const ASKERS: readonly Role[] = ["admin", "coder", "cdi"];
+const COMPLIANCE: readonly Role[] = ["admin", "compliance"];
+const BILLERS: readonly Role[] = ["admin", "biller"];
+const INSIGHT_READERS: readonly Role[] = ["admin", "compliance", "viewer"];
+
+export type Area =
+  | "today"
+  | "upload"
+  | "queue"
+  | "compliance"
+  | "billing"
+  | "insights"
+  | "setup"
+  | "team"
+  | "security"
+  | "hq";
+
+export type Action = "decide" | "approve" | "ask" | "complianceDecision" | "retry" | "flag";
+
+const AREA_ROLES: Record<Area, readonly Role[]> = {
+  today: PRACTICE_ROLES,
+  upload: UPLOADERS,
+  queue: NOTE_READERS,
+  compliance: COMPLIANCE,
+  billing: BILLERS,
+  insights: INSIGHT_READERS,
+  setup: ADMINS,
+  team: ADMINS,
+  security: ADMINS,
+  hq: HQ,
+};
+
+const ACTION_ROLES: Record<Action, readonly Role[]> = {
+  decide: DECIDERS,
+  approve: APPROVERS,
+  ask: ASKERS,
+  complianceDecision: COMPLIANCE,
+  retry: UPLOADERS,
+  flag: DECIDERS,
+};
+
+export function canUse(role: Role | null | undefined, area: Area): boolean {
+  return role != null && AREA_ROLES[area].includes(role);
+}
+
+export function canDo(role: Role | null | undefined, action: Action): boolean {
+  return role != null && ACTION_ROLES[action].includes(role);
+}
+
+export function homeFor(role: Role): string {
+  return role === "hq" ? "/hq" : "/today";
+}
+
+export const HQ_IDLE_MINUTES = 15;
+
+export function idleMinutesFor(role: Role, practiceIdleMinutes: number | null | undefined): number {
+  if (role === "hq" || practiceIdleMinutes == null) return HQ_IDLE_MINUTES;
+  return practiceIdleMinutes;
+}

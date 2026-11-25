@@ -1,0 +1,24 @@
+import { request, requestNothing } from "./client";
+import type { InviteBody, MemberUpdate, TeamList } from "./types";
+
+const memberPath = (userId: string, suffix = ""): string => `/api/team/${encodeURIComponent(userId)}${suffix}`;
+
+export function getTeam(): Promise<TeamList> {
+  return request<TeamList>("/api/team");
+}
+
+export function inviteMember(body: InviteBody): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/team", { body });
+}
+
+export function updateMember(userId: string, update: MemberUpdate): Promise<void> {
+  return requestNothing(memberPath(userId), { method: "PATCH", body: update });
+}
+
+export function resetMemberMfa(userId: string): Promise<void> {
+  return requestNothing(memberPath(userId, "/reset-mfa"), { method: "POST" });
+}
+
+export function resendInvite(userId: string): Promise<void> {
+  return requestNothing(memberPath(userId, "/resend-invite"), { method: "POST" });
+}

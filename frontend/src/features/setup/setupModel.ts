@@ -1,0 +1,47 @@
+import type { PracticeSetup, SetupSectionKey } from "@/lib/api/types";
+import { SETUP_TEXT, type SetupNavKey } from "./strings";
+
+export const SECTION_ORDER: readonly (SetupSectionKey | "providers")[] = [
+  "practice_details",
+  "providers",
+  "payers",
+  "payments",
+  "coding_rules",
+  "charge_capture",
+  "documentation_rules",
+  "compliance",
+  "reports",
+  "contacts",
+  "patient_registration",
+  "software",
+];
+
+export const NAV_ORDER: readonly SetupNavKey[] = [...SECTION_ORDER, "mips"];
+
+export type SectionMarker = "complete" | "incomplete" | "attention" | "none";
+
+export function isNavKey(value: string | null): value is SetupNavKey {
+  return value !== null && (NAV_ORDER as readonly string[]).includes(value);
+}
+
+export function markerFor(key: SetupNavKey, setup: PracticeSetup): SectionMarker {
+  if (key === "mips") return "none";
+  if (key === "providers" && setup.missing_npi > 0) return "attention";
+  return setup.sections[key]?.complete ? "complete" : "incomplete";
+}
+
+export function fieldLabel(field: string): string {
+  const known = SETUP_TEXT.fields[field];
+  if (known) return known;
+  const words = field.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export function valuesFor(fields: string[], stored: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(fields.map((field) => [field, stored[field] ?? ""]));
+}
+
+export function sameValues(left: Record<string, string>, right: Record<string, string>): boolean {
+  const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
+  return [...keys].every((key) => (left[key] ?? "") === (right[key] ?? ""));
+}

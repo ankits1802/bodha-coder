@@ -33,3 +33,9 @@ with a practice time zone.
 
 Files are validated before storage, but a database failure after storage leaves objects with no
 note. Clear it with a sweep of unreferenced keys.
+
+### ESLint plugins declare an older ESLint peer
+
+`eslint-plugin-react`, `-import` and `-jsx-a11y` (through `eslint-config-next`) still declare
+ESLint 9 as their peer, so ESLint 10 installs with peer overrides. Lint runs and reports correctly.
+Clear it when the plugins declare ESLint 10.
