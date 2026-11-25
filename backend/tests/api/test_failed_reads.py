@@ -24,7 +24,7 @@ async def test_a_note_that_could_not_be_read_says_why_and_can_be_read_again(harn
     assert page["items"][0]["status"] == "failed"
 
     detail = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()
-    assert (detail["analysis"]["status"], detail["analysis"]["error"]) == ("failed", REASON)
+    assert (detail["note"]["status"], detail["failure"]) == ("failed", REASON)
 
     retried = await harness.client.post("/api/notes/retry", headers=practice.admin, json={})
     assert retried.json() == {"queued": [note_id]}

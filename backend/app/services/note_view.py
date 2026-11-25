@@ -40,6 +40,7 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
                 "channel": provider.channel,
             },
         },
+        "failure": await _latest_failure(db, note.id) if note.status == "failed" else None,
         "texts": await _texts(db, note.id),
         "analysis": _analysis(analysis),
         "findings": [
@@ -55,6 +56,15 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
         "history": await _history(db, note.id, note.practice_id),
         "requests": await _requests(db, note.id),
     }
+
+
+async def _latest_failure(db: AsyncSession, note_id: str) -> str | None:
+    return await db.scalar(
+        select(Analysis.error)
+        .where(Analysis.note_id == note_id, Analysis.status == "failed")
+        .order_by(Analysis.revision.desc())
+        .limit(1)
+    )
 
 
 async def _texts(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
@@ -77,7 +87,6 @@ def _analysis(analysis: Analysis | None) -> dict[str, Any] | None:
         "prompt_version": analysis.prompt_version,
         "finished_at": analysis.finished_at.isoformat() if analysis.finished_at else None,
         "failed_sections": analysis.context.get("failed_sections", []),
-        "error": analysis.error,
         "cdi": {
             key: (report.get("cdi") or {}).get(key)
             for key in ("overallCDIScore", "summaryGuidance", "codeLinkingOpportunities")

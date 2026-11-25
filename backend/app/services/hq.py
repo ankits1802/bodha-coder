@@ -88,12 +88,14 @@ async def _recent_failures(db: AsyncSession, since: Any) -> dict[str, tuple[int,
     failed = (Analysis.status == "failed", Analysis.finished_at >= since)
     counts = await db.execute(
         select(Note.practice_id, func.count())
+        .select_from(Analysis)
         .join(Note, Note.id == Analysis.note_id)
         .where(*failed)
         .group_by(Note.practice_id)
     )
     latest = await db.execute(
         select(Note.practice_id, Analysis.error)
+        .select_from(Analysis)
         .join(Note, Note.id == Analysis.note_id)
         .where(*failed)
         .order_by(Note.practice_id, Analysis.finished_at.desc())

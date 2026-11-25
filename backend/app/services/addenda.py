@@ -72,7 +72,7 @@ async def create_request(
     db.add(request)
     await db.flush()
     await refresh_placement(db, note)
-    await _send_link(messenger, provider, channel, token, await db.get_one(Practice, note.practice_id))
+    await send_link(messenger, provider, channel, token, await db.get_one(Practice, note.practice_id))
     record_access(db, actor, "asked provider", note_id=note.id, detail=f"{len(edits)} questions by {channel}")
     await db.commit()
     return request
@@ -98,9 +98,12 @@ def _question(finding: Any, text: str) -> dict[str, Any]:
     }
 
 
-async def _send_link(messenger: Messenger, provider: Provider, channel: str, token: str, practice: Practice) -> None:
+async def send_link(
+    messenger: Messenger, provider: Provider, channel: str, token: str, practice: Practice, *, reminder: bool = False
+) -> None:
     link = f"{get_settings().app_url}/respond#{token}"
-    body = f"{practice.name} has questions about one of your visit notes. Open securely: {link}"
+    lead = "Reminder: " if reminder else ""
+    body = f"{lead}{practice.name} has questions about one of your visit notes. Open securely: {link}"
     if channel == "email":
         await messenger.email(provider.email or "", subject=f"Questions from {practice.name}", body=body)
     else:
@@ -120,7 +123,7 @@ async def remind(db: AsyncSession, messenger: Messenger, actor: Actor, note_id: 
         utcnow() + timedelta(hours=get_settings().addendum_link_hours),
     )
     provider = await db.get_one(Provider, request.provider_id)
-    await _send_link(messenger, provider, request.channel, token, await db.get_one(Practice, note.practice_id))
+    await send_link(messenger, provider, request.channel, token, await db.get_one(Practice, note.practice_id))
     await db.commit()
 
 

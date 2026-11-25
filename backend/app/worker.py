@@ -5,6 +5,7 @@ import logging
 from datetime import timedelta
 
 from app.adapters.gemini import GeminiClient
+from app.adapters.messenger import Messenger, build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.pdf_text import DocumentUnreadable
 from app.ai.errors import ModelRefused, ModelRequestRejected, ModelUnavailable
@@ -14,10 +15,12 @@ from app.core.config import Settings, get_settings
 from app.core.db import SessionFactory
 from app.models import Analysis
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
+from app.services.reminders import expire_requests, send_due_reminders
 
 logger = logging.getLogger("bodha.worker")
 RETRY_DELAYS = (timedelta(seconds=30), timedelta(minutes=2), timedelta(minutes=10))
 RECOVERY_INTERVAL_SECONDS = 60
+REMINDER_INTERVAL_SECONDS = 300
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
 
@@ -75,13 +78,24 @@ async def recovery_loop(settings: Settings) -> None:
         await asyncio.sleep(RECOVERY_INTERVAL_SECONDS)
 
 
+async def reminder_loop(messenger: Messenger) -> None:
+    while True:
+        try:
+            async with SessionFactory() as db:
+                await expire_requests(db)
+                await send_due_reminders(db, messenger)
+        except Exception:
+            logger.exception("provider reminders failed")
+        await asyncio.sleep(REMINDER_INTERVAL_SECONDS)
+
+
 async def run() -> None:
     settings = get_settings()
     deps = AnalysisDeps(
         review_note, GeminiClient(settings), S3ObjectStore(settings), await asyncio.to_thread(load_catalog)
     )
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
-    await asyncio.gather(*loops, recovery_loop(settings))
+    await asyncio.gather(*loops, recovery_loop(settings), reminder_loop(build_messenger(settings)))
 
 
 if __name__ == "__main__":

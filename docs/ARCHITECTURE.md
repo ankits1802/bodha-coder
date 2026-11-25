@@ -8,8 +8,11 @@
 | Worker | `python -m app.worker` | claims queued analyses (`FOR UPDATE SKIP LOCKED`), runs the review, stores results |
 | Web | `next start` | the web client; proxies `/api` to the API |
 
-Both Python processes share Postgres and the object store. The worker runs `AI_WORKERS` loops and a
-recovery loop that re-queues analyses left running by a stopped worker.
+Both Python processes share Postgres and the object store. The worker runs `AI_WORKERS` loops, a
+recovery loop that re-queues analyses left running by a stopped worker, and a reminder loop every five
+minutes: provider requests past their link expiry become `expired` (the note returns to its lane and a
+held claim is released), and unanswered requests get at most two reminders, at 12 and 36 hours, each
+with a fresh link.
 
 ## Data model and revisions
 

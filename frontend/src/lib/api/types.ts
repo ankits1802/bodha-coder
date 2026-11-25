@@ -189,7 +189,6 @@ export interface AnalysisView {
   prompt_version: string | null;
   finished_at: string | null;
   failed_sections: string[];
-  error: string | null;
   cdi: {
     overallCDIScore: number | null;
     summaryGuidance: string | null;
@@ -328,6 +327,7 @@ export interface AddendumRequestView {
 export interface NoteDetail {
   note: NoteHeader;
   texts: NoteText[];
+  failure: string | null;
   analysis: AnalysisView | null;
   findings: Finding[];
   claim: string[];
