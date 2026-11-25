@@ -55,7 +55,7 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
         "sections": sections,
         "complete": sum(1 for item in sections.values() if item["complete"]),
         "total": len(sections),
-        "checks": practice.checks,
+        "checks": practice_checks(practice),
         "missing_npi": sum(1 for p in providers if not p.npi),
     }
 
@@ -75,9 +75,15 @@ async def save_section(db: AsyncSession, actor: Actor, key: str, values: dict[st
     await db.commit()
 
 
+def practice_checks(practice: Practice) -> dict[str, bool]:
+    return {**DEFAULT_CHECKS, **practice.checks}
+
+
 async def save_checks(db: AsyncSession, actor: Actor, checks: dict[str, bool]) -> None:
     if set(checks) != set(DEFAULT_CHECKS):
         raise Invalid(f"checks must be exactly: {', '.join(DEFAULT_CHECKS)}")
+    if checks["hcc"] and not checks["icd"]:
+        raise Invalid("risk adjustment needs the diagnosis check")
     practice = actor.practice
     if practice is None:
         raise NotFound("practice not found")
@@ -88,15 +94,13 @@ async def save_checks(db: AsyncSession, actor: Actor, checks: dict[str, bool]) -
     await db.commit()
 
 
-async def save_security(
-    db: AsyncSession, actor: Actor, *, mfa_roles: list[str], idle_minutes: int, private: bool
-) -> None:
+async def save_security(db: AsyncSession, actor: Actor, *, mfa_roles: list[str], idle_minutes: int) -> None:
     if not set(mfa_roles) <= set(PRACTICE_ROLES) or idle_minutes not in IDLE_MINUTES_CHOICES:
         raise Invalid("choose roles and an inactivity limit from the list")
     practice = actor.practice
     if practice is None:
         raise NotFound("practice not found")
-    practice.mfa_roles, practice.idle_minutes, practice.private_messages = sorted(set(mfa_roles)), idle_minutes, private
+    practice.mfa_roles, practice.idle_minutes = sorted(set(mfa_roles)), idle_minutes
     record_activity(
         db,
         actor,

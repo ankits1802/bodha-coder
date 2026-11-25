@@ -8,11 +8,11 @@ const keysFor = (role: Role): string[] => navFor(role).map((item) => item.key);
 describe("role-based navigation", () => {
   it("shows each role only the screens its routes allow", () => {
     expect(keysFor("admin")).toEqual(["today", "upload", "queue", "compliance", "billing", "insights", "setup", "team", "security"]);
-    expect(keysFor("coder")).toEqual(["today", "upload", "queue"]);
-    expect(keysFor("cdi")).toEqual(["today", "queue"]);
-    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "insights"]);
-    expect(keysFor("biller")).toEqual(["today", "queue", "billing"]);
-    expect(keysFor("viewer")).toEqual(["today", "insights"]);
+    expect(keysFor("coder")).toEqual(["today", "upload", "queue", "security"]);
+    expect(keysFor("cdi")).toEqual(["today", "queue", "security"]);
+    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "insights", "security"]);
+    expect(keysFor("biller")).toEqual(["today", "queue", "billing", "security"]);
+    expect(keysFor("viewer")).toEqual(["today", "insights", "security"]);
     expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqActivity", "hqDemos"]);
   });
 
@@ -24,6 +24,8 @@ describe("role-based navigation", () => {
     expect(canDo("coder", "complianceDecision")).toBe(false);
     expect(canDo("coder", "retry")).toBe(true);
     expect(canDo("viewer", "flag")).toBe(false);
+    expect(canDo("admin", "manageSecurity")).toBe(true);
+    expect(canDo("coder", "manageSecurity")).toBe(false);
   });
 
   it("marks only the current screen as active", () => {

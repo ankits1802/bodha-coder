@@ -1,0 +1,37 @@
+{
+  "model": "CMS-HCC V28",
+  "paymentYear": "2027",
+  "serviceYear": "2026",
+  "software": "CMS_HCC_v28_2027_T1_initial_package_v2",
+  "sourcePage": "https://www.cms.gov/medicare/payment/medicare-advantage-rates-statistics/risk-adjustment/2027-model-software-icd-10-mappings",
+  "sourceUrl": "https://www.cms.gov/files/zip/py-2027-initial-model-software.zip",
+  "retrievedOn": "2026-11-26",
+  "sourceZipBytes": 418340,
+  "sourceZipSha256": "dfe79fd72605f9a6902dabe9ee45844672f0f97edc50931f091df31f3d43feae",
+  "packageSha256": "8d29cb4621371d07074cdbaf6432394d994fb0c94b2c2766e7f27e7f31587e6a",
+  "sourceFiles": {
+    "ICD10_CC_mappings_CMS_HCC_2027_v28_initial.csv": "93307f974301b2a5d406ec6b095246e08601b54e346a4ad5fa5d82db59e1522e",
+    "V28_CE_Relative_Factors.csv": "ed8b9fe9de9d743372821657f657da059bc91d9d42cfe1e47954680737d03049",
+    "V28_HCC_Hierarchies.csv": "e572d4de6317aee0374e618e1dd4f56cb4114a8295ee0102a48b77e2b04121a3",
+    "V28_Diagnosis_Categories.csv": "fc5b1ccb905e7a0aab19f56b6f0079a8627a8b0b3aef98c1bbc6413ce272d36a",
+    "V28_Interactions.csv": "9187340bdd7352bff0c3fb19839f7141e722bd084c76487cf9a0e51576820147"
+  },
+  "icdFiscalYears": [
+    "2025",
+    "2026"
+  ],
+  "segments": {
+    "aged": "COMMUNITY_NA",
+    "disabled": "COMMUNITY_ND"
+  },
+  "transform": "ICD-10 rows whose CC is a payment HCC of the hierarchy file, with the MCE age, age and sex edits; HCC, count and community interaction relative factors for the non-dual aged and disabled segments, blank factors written as 0 as the CMS software reads them; hierarchies and diagnosis categories per HCC",
+  "mappingArtefact": "hcc_v28_2027_icd.tsv.gz",
+  "mappingSha256": "ba04ddd916cdb43568fc4eb8f5614d71cedf3e43c608756a0ed2f9f73c4e46cf",
+  "mappingRows": 8933,
+  "mappingRowsNotPayment": 0,
+  "modelArtefact": "hcc_v28_2027_model.tsv.gz",
+  "modelSha256": "fe1a88bf4ee2e1b5a23f62dd0f2a81f2f8de190dc4a7d27cd296f593393fc469",
+  "categories": 115,
+  "countVariables": 10,
+  "interactions": 6
+}

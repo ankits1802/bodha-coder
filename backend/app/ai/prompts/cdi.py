@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.ai.prompts.targeting import SUGGESTED_TEXT_RULES, TARGETING_INSTRUCTION
 
-__all__ = ["CDI_TASK"]
+__all__ = ["CDI_TASK", "COMPLIANT_QUERY_RULES"]
 
 _MISSION = """
 You are a Clinical Documentation Improvement (CDI) specialist with expertise in documentation that supports
@@ -83,11 +83,7 @@ For each opportunity:
 }
 """
 
-_QUERIES = """
-# QUERY RECOMMENDATIONS
-
-When documentation is conflicting, incomplete, ambiguous or missing a clinically supported detail, recommend a
-provider query. Every query follows the AHIMA/ACDIS Guidelines for Achieving a Compliant Query Practice:
+COMPLIANT_QUERY_RULES = """Every query follows the AHIMA/ACDIS Guidelines for Achieving a Compliant Query Practice:
 - It is NON-LEADING: it presents the clinical indicators from the note and asks the provider to clarify, without
   stating or implying the answer you expect.
 - It never mentions reimbursement, payment, money, revenue, DRGs, risk scores, quality measures or audits, and
@@ -96,7 +92,16 @@ provider query. Every query follows the AHIMA/ACDIS Guidelines for Achieving a C
   not support.
 - A yes or no question is allowed only to resolve conflicting documentation of a diagnosis already documented,
   never to introduce a new diagnosis.
+"""
 
+_QUERIES = (
+    """
+# QUERY RECOMMENDATIONS
+
+When documentation is conflicting, incomplete, ambiguous or missing a clinically supported detail, recommend a
+provider query. """
+    + COMPLIANT_QUERY_RULES
+    + """
 For each query:
 {
   "query": "[The clinical indicators from the note, then the question]",
@@ -121,6 +126,7 @@ Examples:
 
 query must be stable across two scans of the same unchanged note, for the same reason finding must be.
 """
+)
 
 _SCORE = (
     """

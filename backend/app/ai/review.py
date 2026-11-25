@@ -18,6 +18,7 @@ from app.ai.contracts import (
     Section,
 )
 from app.ai.errors import ModelError
+from app.ai.hcc import HccReview, hcc_review
 from app.ai.json_text import parse_json_loose
 from app.ai.mips import MipsReview, empty_mips, scope_allows_nothing, scoped_mips
 from app.ai.parts import SECTION_ORDER, TOP_UP_OPTIONAL, Part, in_part_order
@@ -26,7 +27,7 @@ from app.ai.prompts.frame import render_review_prompt
 
 __all__ = ["PROMPT_VERSION", "review_note"]
 
-PROMPT_VERSION = "2026.11.1"
+PROMPT_VERSION = "2026.11.2"
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,8 @@ def _check_inputs(inputs: ReviewInputs) -> None:
         raise ValueError(f"ReviewInputs.sections names unknown sections: {', '.join(unknown)}.")
     if note_text_to_review(inputs) is None and not inputs.pdf:
         raise ValueError("ReviewInputs has neither note text nor a PDF to review.")
+    if "hcc" in inputs.sections and "diagnoses" not in inputs.sections:
+        raise ValueError("ReviewInputs asks for hcc without diagnoses: risk adjustment maps the documented diagnoses.")
 
 
 def _model_parts(inputs: ReviewInputs) -> tuple[Part, ...]:
@@ -120,6 +123,7 @@ def _report(valid: Mapping[Part, Any], inputs: ReviewInputs) -> ReviewReport:
         cdi=stamp_cdi_ids(valid["cdi"]) if "cdi" in valid else None,
         audit=stamp_audit_ids(valid["audit"]) if "audit" in valid else None,
         mips=_mips(valid, inputs),
+        hcc=_hcc(valid, inputs),
     )
 
 
@@ -137,6 +141,12 @@ def _mips(valid: Mapping[Part, Any], inputs: ReviewInputs) -> MipsReview | None:
     if "mips" not in valid:
         return None
     return scoped_mips(valid["mips"], inputs.mips_scope)
+
+
+def _hcc(valid: Mapping[Part, Any], inputs: ReviewInputs) -> HccReview | None:
+    if "hcc" not in valid:
+        return None
+    return hcc_review(valid["hcc"], inputs.service_date)
 
 
 def _failed_sections(parts: Sequence[Part], valid: Mapping[Part, Any]) -> frozenset[Section]:

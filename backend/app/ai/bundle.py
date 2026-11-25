@@ -10,6 +10,7 @@ from pydantic import AfterValidator, TypeAdapter, ValidationError, create_model
 from app.ai.audit import AuditChecklistOutput
 from app.ai.cdi import CDIGapScanOutput
 from app.ai.contracts import BilledCode, CodeReview, DiagnosisFinding, EmReview, PatientFacts
+from app.ai.hcc import HccScanOutput
 from app.ai.mips import MIPSQualityMeasuresOutput
 from app.ai.parts import Part
 from app.ai.schema import gemini_schema
@@ -41,6 +42,7 @@ _PART_TYPES: Mapping[Part, Any] = MappingProxyType(
         "cdi": CDIGapScanOutput,
         "audit": AuditChecklistOutput,
         "mips": MIPSQualityMeasuresOutput,
+        "hcc": HccScanOutput,
     }
 )
 

@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { FORGOT_PASSWORD_PATH } from "@/lib/api/auth";
+import { QUIET_LINK } from "./QuietButton";
 import { SIGN_IN_TEXT } from "./strings";
 
 interface CredentialsFormProps {
@@ -63,6 +66,9 @@ export function CredentialsForm({ pending, error, onSubmit }: CredentialsFormPro
       <Button type="submit" variant="primary" size="lg" pending={pending} className="w-full">
         {SIGN_IN_TEXT.continue}
       </Button>
+      <Link href={FORGOT_PASSWORD_PATH} className={QUIET_LINK}>
+        {SIGN_IN_TEXT.forgotPassword}
+      </Link>
     </form>
   );
 }

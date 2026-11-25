@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from urllib.parse import parse_qs, urlsplit
 
 import pyotp
 from httpx import AsyncClient
+from sqlalchemy import update
 
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.core.config import get_settings
@@ -13,7 +15,7 @@ from app.core.security import hash_password
 from app.models import User
 from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.fakes import NOTE_TEXT, FakeMessenger, FakeStore, ScriptedReviewer, text_pdf
+from tests.fakes import NOTE_TEXT, FakeGoogle, FakeMessenger, FakeStore, ScriptedReviewer, text_pdf
 
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
@@ -25,6 +27,7 @@ class Harness:
     client: AsyncClient
     store: FakeStore
     messenger: FakeMessenger
+    google: FakeGoogle
 
 
 async def sign_in(client: AsyncClient, email: str, *, secret_box: dict[str, str] | None = None) -> dict[str, str]:
@@ -36,9 +39,22 @@ async def sign_in(client: AsyncClient, email: str, *, secret_box: dict[str, str]
         if body["mfa"] == "setup":
             setup = await client.post("/api/auth/mfa/setup", json={"mfa_token": body["mfa_token"]})
             box[email] = setup.json()["secret"]
-        code = pyotp.TOTP(box[email]).now()
-        body = (await client.post("/api/auth/mfa/verify", json={"mfa_token": body["mfa_token"], "code": code})).json()
+        body = await pass_two_step(client, email, body["mfa_token"], box[email])
     return {"Authorization": f"Bearer {body['access_token']}"}
+
+
+async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret: str) -> dict:
+    await forget_last_code(email)
+    code = pyotp.TOTP(secret).now()
+    response = await client.post("/api/auth/mfa/verify", json={"mfa_token": mfa_token, "code": code})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+async def forget_last_code(email: str) -> None:
+    async with SessionFactory() as db:
+        await db.execute(update(User).where(User.email == email).values(mfa_last_step=None))
+        await db.commit()
 
 
 async def create_hq_user(email: str = "hq@bodha.example.com") -> None:
@@ -130,6 +146,27 @@ async def practice_with_provider(
     )
     assert provider.status_code == 200, provider.text
     return Practice(practice_id, admin, provider.json()["id"], secrets)
+
+
+async def practice_with_member(harness: Harness, *, name: str, email: str, role: str) -> Practice:
+    practice = await practice_with_provider(harness)
+    invited = await harness.client.post(
+        "/api/team", headers=practice.admin, json={"name": name, "email": email, "role": role}
+    )
+    assert invited.status_code == 200, invited.text
+    await accept_invite(harness)
+    return practice
+
+
+async def back_from_google(harness: Harness, code: str):
+    start = await harness.client.get("/api/auth/google/start")
+    assert start.status_code == 302, start.text
+    state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
+    return await harness.client.get("/api/auth/google/callback", params={"code": code, "state": state})
+
+
+def sign_in_page(fragment: str) -> str:
+    return f"{get_settings().app_url}/sign-in#{fragment}"
 
 
 async def upload_note(harness: Harness, practice: Practice, *, file_name: str = FILE_NAME, body: str = NOTE_TEXT):

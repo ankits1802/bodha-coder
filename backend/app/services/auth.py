@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import timedelta
 
 import qrcode
@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.deps import ACTIVE_PRACTICE_STATUSES
+from app.core.deps import ensure_practice_open
 from app.core.errors import Invalid, Unauthorized
 from app.core.security import (
     PASSWORD_MIN_LENGTH,
@@ -19,17 +19,20 @@ from app.core.security import (
     hash_password,
     issue_token,
     mfa_uri,
-    new_mfa_secret,
     random_token,
     read_token,
-    verify_mfa,
     verify_password,
 )
 from app.models import Practice, Session, User, UserToken, utcnow
+from app.services.audit_log import record_sign_in
+from app.services.rate_limits import LOGIN_PER_EMAIL, LOGIN_PER_IP, MFA_PER_USER, hit
+from app.services.recovery_codes import replace_recovery_codes, use_recovery_code
+from app.services.two_step import accept_code, enrol_secret
 
 MFA_TOKEN_MINUTES = 5
 TOKEN_HOURS = {"invite": 72, "reset": 1}
 SIGN_IN_FAILED = "email or password is not correct"
+PASSWORD_METHOD = "password"
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,7 @@ class Tokens:
     access: str
     refresh: str
     user: User
+    recovery_codes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,59 +56,92 @@ class MfaEnrolment:
     qr_image: str
 
 
+@dataclass(frozen=True)
+class PendingSignIn:
+    user: User
+    method: str
+
+
 async def login(
     db: AsyncSession, email: str, password: str, *, ip: str | None, agent: str | None
 ) -> Tokens | MfaChallenge:
-    user = await db.scalar(select(User).where(User.email == email.strip().lower()))
+    address = email.strip().lower()
+    await hit(db, LOGIN_PER_EMAIL, address)
+    await hit(db, LOGIN_PER_IP, ip)
+    user = await db.scalar(select(User).where(User.email == address))
     password_ok = verify_password(password, user.password_hash if user else None)
     if user is None or user.status != "active" or not password_ok:
         raise Unauthorized(SIGN_IN_FAILED)
+    return await sign_in_user(db, user, method=PASSWORD_METHOD, ip=ip, agent=agent)
+
+
+async def sign_in_user(
+    db: AsyncSession, user: User, *, method: str, ip: str | None, agent: str | None
+) -> Tokens | MfaChallenge:
     practice = await _practice_for(db, user)
     if user.mfa_enabled or user.role == "hq" or (practice is not None and user.role in practice.mfa_roles):
         step = "verify" if user.mfa_enabled else "setup"
-        return MfaChallenge(step, issue_token("mfa", user.id, MFA_TOKEN_MINUTES))
-    return await start_session(db, user, ip=ip, agent=agent)
+        return MfaChallenge(step, issue_token("mfa", user.id, MFA_TOKEN_MINUTES, via=method))
+    return await start_session(db, user, method=method, ip=ip, agent=agent)
 
 
 async def _practice_for(db: AsyncSession, user: User) -> Practice | None:
     if user.practice_id is None:
         return None
     practice = await db.get_one(Practice, user.practice_id)
-    if practice.status not in ACTIVE_PRACTICE_STATUSES:
-        raise Unauthorized("your practice is not active")
+    ensure_practice_open(practice)
     return practice
 
 
-async def _mfa_user(db: AsyncSession, mfa_token: str) -> User:
+async def _pending(db: AsyncSession, mfa_token: str) -> PendingSignIn:
     try:
-        user = await db.get(User, read_token(mfa_token, "mfa")["sub"])
+        claims = read_token(mfa_token, "mfa")
     except TokenError as error:
         raise Unauthorized("sign in again") from error
+    user = await db.get(User, claims["sub"])
     if user is None or user.status != "active":
         raise Unauthorized("sign in again")
-    return user
+    await _practice_for(db, user)
+    return PendingSignIn(user, str(claims.get("via", PASSWORD_METHOD)))
 
 
 async def mfa_enrol(db: AsyncSession, mfa_token: str) -> MfaEnrolment:
-    user = await _mfa_user(db, mfa_token)
+    user = (await _pending(db, mfa_token)).user
     if user.mfa_enabled:
         raise Invalid("two-step verification is already set up")
-    user.mfa_secret = new_mfa_secret()
+    secret = enrol_secret(user)
     await db.commit()
-    uri = mfa_uri(user.mfa_secret, user.email)
+    uri = mfa_uri(secret, user.email)
     svg = qrcode.make(uri, image_factory=qrcode.image.svg.SvgPathImage).to_string()
-    return MfaEnrolment(user.mfa_secret, uri, "data:image/svg+xml;base64," + base64.b64encode(svg).decode())
+    return MfaEnrolment(secret, uri, "data:image/svg+xml;base64," + base64.b64encode(svg).decode())
 
 
 async def mfa_verify(db: AsyncSession, mfa_token: str, code: str, *, ip: str | None, agent: str | None) -> Tokens:
-    user = await _mfa_user(db, mfa_token)
-    if not verify_mfa(user.mfa_secret, code.strip()):
+    pending = await _pending(db, mfa_token)
+    user = pending.user
+    await hit(db, MFA_PER_USER, user.id)
+    if not accept_code(user, code):
         raise Unauthorized("that code is not correct")
+    if user.mfa_enabled:
+        return await start_session(db, user, method=pending.method, ip=ip, agent=agent)
     user.mfa_enabled = True
-    return await start_session(db, user, ip=ip, agent=agent)
+    codes = await replace_recovery_codes(db, user)
+    tokens = await start_session(db, user, method=pending.method, ip=ip, agent=agent)
+    return replace(tokens, recovery_codes=codes)
 
 
-async def start_session(db: AsyncSession, user: User, *, ip: str | None, agent: str | None) -> Tokens:
+async def mfa_recover(
+    db: AsyncSession, mfa_token: str, recovery_code: str, *, ip: str | None, agent: str | None
+) -> Tokens:
+    pending = await _pending(db, mfa_token)
+    user = pending.user
+    await hit(db, MFA_PER_USER, user.id)
+    if not user.mfa_enabled or not await use_recovery_code(db, user, recovery_code):
+        raise Unauthorized("that recovery code is not correct")
+    return await start_session(db, user, method=f"{pending.method} and a recovery code", ip=ip, agent=agent)
+
+
+async def start_session(db: AsyncSession, user: User, *, method: str, ip: str | None, agent: str | None) -> Tokens:
     refresh = random_token()
     settings = get_settings()
     db.add(
@@ -116,6 +153,7 @@ async def start_session(db: AsyncSession, user: User, *, ip: str | None, agent: 
             user_agent=(agent or "")[:300] or None,
         )
     )
+    record_sign_in(db, user, method=method, ip=ip, agent=agent)
     user.last_active_at = utcnow()
     await db.commit()
     return Tokens(_access_token(user), refresh, user)

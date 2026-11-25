@@ -1,24 +1,48 @@
 "use client";
 
+import { useState } from "react";
 import { CodeForm } from "./CodeForm";
+import { RecoveryCodeForm } from "./RecoveryCodeForm";
 import { SIGN_IN_TEXT } from "./strings";
 
-interface MfaVerifyProps {
-  email: string;
+export interface Submission {
   pending: boolean;
   error: string | null;
-  onSubmit: (code: string) => void;
+  onSubmit: (value: string) => void;
+}
+
+interface MfaVerifyProps {
+  email: string | null;
+  code: Submission;
+  recovery: Submission;
   onCancel: () => void;
 }
 
-export function MfaVerify({ email, pending, error, onSubmit, onCancel }: MfaVerifyProps) {
+export function MfaVerify({ email, code, recovery, onCancel }: MfaVerifyProps) {
+  const [usingRecovery, setUsingRecovery] = useState(false);
   return (
     <div className="flex flex-col gap-5.5">
       <div className="flex flex-col gap-1 text-center">
         <h2 className="m-0 font-sans text-headline font-semibold tracking-snug">{SIGN_IN_TEXT.verifyTitle}</h2>
-        <p className="m-0 text-body text-secondary">{SIGN_IN_TEXT.verifyPrompt(email)}</p>
+        {usingRecovery ? null : (
+          <p className="m-0 text-body text-secondary">
+            {email ? SIGN_IN_TEXT.verifyPrompt(email) : SIGN_IN_TEXT.verifyPromptPlain}
+          </p>
+        )}
       </div>
-      <CodeForm pending={pending} error={error} onSubmit={onSubmit} onCancel={onCancel} />
+      {usingRecovery ? (
+        <RecoveryCodeForm
+          {...recovery}
+          onCancel={onCancel}
+          alternative={{ label: SIGN_IN_TEXT.useSixDigits, onSelect: () => setUsingRecovery(false) }}
+        />
+      ) : (
+        <CodeForm
+          {...code}
+          onCancel={onCancel}
+          alternative={{ label: SIGN_IN_TEXT.useRecoveryCode, onSelect: () => setUsingRecovery(true) }}
+        />
+      )}
     </div>
   );
 }

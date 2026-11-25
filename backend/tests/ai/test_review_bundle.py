@@ -10,7 +10,7 @@ from app.ai.review import review_note
 from tests.ai.answers import NOTE, PDF, as_text, em_answer, full_answer, patient_answer, review_inputs
 from tests.fakes import FakeModelClient
 
-EVERY_PART = {"patient", "em", "diagnoses", "code_review", "cdi", "audit", "mips"}
+EVERY_PART = {"patient", "em", "diagnoses", "code_review", "cdi", "audit", "mips", "hcc"}
 
 
 async def test_a_full_valid_bundle_yields_a_report_from_one_call() -> None:
@@ -20,7 +20,7 @@ async def test_a_full_valid_bundle_yields_a_report_from_one_call() -> None:
 
     assert len(client.calls) == 1
     assert client.calls[0].requested_parts() == EVERY_PART
-    assert outcome.prompt_version == "2026.11.1"
+    assert outcome.prompt_version == "2026.11.2"
     assert outcome.failed_sections == frozenset()
     assert [reply.model for reply in outcome.replies] == ["fake-gemini"]
     report = outcome.report

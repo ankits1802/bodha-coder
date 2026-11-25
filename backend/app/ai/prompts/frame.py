@@ -11,12 +11,13 @@ from app.ai.prompts.code_review import CODE_REVIEW_TASK
 from app.ai.prompts.context import note_text_to_review, render_context, render_note
 from app.ai.prompts.diagnoses import DIAGNOSES_TASK
 from app.ai.prompts.em import EM_TASK
+from app.ai.prompts.hcc import HCC_TASK
 from app.ai.prompts.mips import render_mips_task
 from app.ai.prompts.patient import EXTRACTED_TEXT_TASK, PATIENT_TASK
 
 __all__ = ["render_review_prompt"]
 
-_COUNT_WORDS = ("NO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT")
+_COUNT_WORDS = ("NO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE")
 
 _HEAD = """
 You are a medical coding engine reviewing ONE clinical note for a certified coder. You will perform {count} separate
@@ -55,6 +56,7 @@ _TITLES: Mapping[Part, str] = MappingProxyType(
         "cdi": "CDI GAP SCAN",
         "audit": "DOCUMENTATION AUDIT",
         "mips": "MIPS QUALITY MEASURES",
+        "hcc": "RISK ADJUSTMENT: SUSPECTED CONDITIONS",
     }
 )
 
@@ -67,6 +69,7 @@ _FIXED_TASKS: Mapping[Part, str] = MappingProxyType(
         "code_review": CODE_REVIEW_TASK,
         "cdi": CDI_TASK,
         "audit": AUDIT_TASK,
+        "hcc": HCC_TASK,
     }
 )
 

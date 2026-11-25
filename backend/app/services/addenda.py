@@ -17,6 +17,7 @@ from app.models import AddendumRequest, Note, NoteText, Practice, Provider, utcn
 from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_provider_access
 from app.services.placement import current_decisions, current_findings, refresh_placement
+from app.services.rate_limits import PROVIDER_CODE_PER_REQUEST, hit
 from app.services.review_actions import note_for
 from app.services.routing import choices_for, open_questions
 
@@ -136,6 +137,7 @@ async def _open_request(db: AsyncSession, token: str) -> AddendumRequest:
 
 async def send_code(db: AsyncSession, messenger: Messenger, token: str) -> str:
     request = await _open_request(db, token)
+    await hit(db, PROVIDER_CODE_PER_REQUEST, request.id)
     provider = await db.get_one(Provider, request.provider_id)
     code = random_code()
     request.code_hash, request.code_expires_at, request.code_attempts = (

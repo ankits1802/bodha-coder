@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, IdMixin, utcnow
 
-DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False}
+DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
 ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
 NOTE_STATUSES = ("queued", "reading", "ready", "failed", "approved", "exported")
 LANES = ("approve", "coder", "provider", "compliance")
@@ -82,8 +82,10 @@ class User(IdMixin, Base):
     role: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16), default="invited")
     password_hash: Mapped[str | None] = mapped_column(String(100))
-    mfa_secret: Mapped[str | None] = mapped_column(String(64))
+    mfa_secret: Mapped[str | None] = mapped_column(String(200))
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    mfa_last_step: Mapped[int | None] = mapped_column(Integer)
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     last_active_at: Mapped[datetime | None] = _timestamp()
 
@@ -107,6 +109,23 @@ class Session(IdMixin, Base):
     revoked_at: Mapped[datetime | None] = _timestamp()
     user_agent: Mapped[str | None] = mapped_column(String(300))
     ip: Mapped[str | None] = mapped_column(String(64))
+
+
+class RecoveryCode(IdMixin, Base):
+    __tablename__ = "recovery_codes"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(64))
+    used_at: Mapped[datetime | None] = _timestamp()
+
+
+class RateEvent(IdMixin, Base):
+    __tablename__ = "rate_events"
+    __table_args__ = (
+        Index("ix_rate_events_key", "bucket", "key_hash", "created_at"),
+        Index("ix_rate_events_created_at", "created_at"),
+    )
+    bucket: Mapped[str] = mapped_column(String(24))
+    key_hash: Mapped[str] = mapped_column(String(64))
 
 
 class PlaceOfService(Base):

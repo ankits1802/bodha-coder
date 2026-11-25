@@ -55,6 +55,10 @@
   --color-chart-low: #0A6FE0;
   --color-chart-warn: #E08A00;
   --color-chart-bad: #E0352B;
+  --color-google-blue: #4285F4;
+  --color-google-green: #34A853;
+  --color-google-yellow: #FBBC05;
+  --color-google-red: #EA4335;
 
   --text-micro: 11px;
   --text-micro--line-height: 15px;

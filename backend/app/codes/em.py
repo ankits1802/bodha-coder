@@ -18,10 +18,15 @@ class EmFamily:
     id: str
     label: str
     levels: tuple[EmLevel, ...]
+    add_ons: tuple[EmLevel, ...] = ()
 
 
 def _family(family_id: str, label: str, *levels: tuple[str, str, str]) -> EmFamily:
     return EmFamily(family_id, label, tuple(EmLevel(*level) for level in levels))
+
+
+def _timed_family(family_id: str, label: str, level: tuple[str, str], add_on: tuple[str, str]) -> EmFamily:
+    return EmFamily(family_id, label, (EmLevel(level[0], "", level[1]),), (EmLevel(add_on[0], "", add_on[1]),))
 
 
 EM_FAMILIES: tuple[EmFamily, ...] = (
@@ -80,6 +85,13 @@ EM_FAMILIES: tuple[EmFamily, ...] = (
         ("99232", "Moderate", "35"),
         ("99233", "High", "50"),
     ),
+    _family(
+        "inpatient_same_day",
+        "Hospital inpatient or observation, admitted and discharged the same date",
+        ("99234", "Low", "45"),
+        ("99235", "Moderate", "70"),
+        ("99236", "High", "85"),
+    ),
     _family("inpatient_discharge", "Hospital discharge", ("99238", "", "30 or less"), ("99239", "", "over 30")),
     _family(
         "inpatient_consult",
@@ -97,6 +109,12 @@ EM_FAMILIES: tuple[EmFamily, ...] = (
         ("99283", "Low", ""),
         ("99284", "Moderate", ""),
         ("99285", "High", ""),
+    ),
+    _timed_family(
+        "critical_care",
+        "Critical care",
+        ("99291", "30-74"),
+        ("99292", "each additional 30 beyond the first 74"),
     ),
     _family(
         "home_new",

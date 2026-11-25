@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import BaseModel
@@ -8,39 +7,54 @@ from pydantic import BaseModel
 from app.ai.contracts import DiagnosisFinding, EmReview, ReviewReport
 from app.codes.billing_codes import Code, is_known_cpt
 from app.codes.em import compare_em, describe_em, is_em_code
+from app.codes.hcc import hcc_model_for
 from app.codes.icd import IcdRelease, format_icd
+from app.services.code_additions import add_on_findings, modifier_findings
+from app.services.finding import Finding
+from app.services.risk_adjustment import risk_adjustment_findings
 
-CODE_CHANGE_ACTIONS = ("lower", "raise", "replace", "add", "remove", "review")
-SEVERE_AUDIT = ("Critical",)
+__all__ = [
+    "Finding",
+    "audit_findings",
+    "build_findings",
+    "cdi_findings",
+    "cpt_findings",
+    "diagnosis_findings",
+    "em_finding",
+    "mips_findings",
+    "visit_findings",
+]
 
-
-@dataclass(frozen=True)
-class Finding:
-    kind: str
-    key: str
-    action: str
-    title: str
-    reasoning: str
-    code_before: str | None = None
-    code_after: str | None = None
-    evidence: tuple[str, ...] = ()
-    severity: str | None = None
-    detail: dict[str, Any] = field(default_factory=dict)
-    default_choice: str = "accept"
+MIPS_DETAIL_KEYS = (
+    "macro",
+    "status",
+    "reportingCodes",
+    "reportingCodesWithheld",
+    "exceptionExclusion",
+    "addedByOrganization",
+)
 
 
 def build_findings(report: ReviewReport, billed: tuple[Code, ...], icd: IcdRelease) -> list[Finding]:
     verdicts = {item.code.upper(): item for item in (report.code_review.items if report.code_review else [])}
     findings: list[Finding] = []
     if report.em is not None:
-        findings.append(em_finding(report.em, billed, report.code_review.em_reason if report.code_review else ""))
+        findings += visit_findings(report.em, billed, report.code_review.em_reason if report.code_review else "")
     findings += cpt_findings(billed, verdicts)
     if report.diagnoses is not None:
         findings += diagnosis_findings(report.diagnoses, billed, icd)
+    hcc_model = hcc_model_for(report.hcc.paymentYear) if report.hcc is not None else None
+    findings += risk_adjustment_findings(report, billed, icd, hcc_model)
     findings += cdi_findings(_section(report.cdi))
     findings += audit_findings(_section(report.audit))
     findings += mips_findings(_section(report.mips))
     return findings
+
+
+def visit_findings(em: EmReview, billed: tuple[Code, ...], em_reason: str) -> list[Finding]:
+    visit = em_finding(em, billed, em_reason)
+    add_ons = add_on_findings(em, billed, visit)
+    return [visit, *modifier_findings(em, billed, visit, add_ons), *add_ons]
 
 
 def em_finding(em: EmReview, billed: tuple[Code, ...], em_reason: str) -> Finding:
@@ -314,16 +328,7 @@ def mips_findings(mips: dict[str, Any] | None) -> list[Finding]:
             measure.get("measureName", ""),
             measure.get("eligibilityRationale", ""),
             default_choice="keep",
-            detail={
-                key: measure.get(key)
-                for key in (
-                    "macro",
-                    "reportingCodes",
-                    "reportingCodesWithheld",
-                    "exceptionExclusion",
-                    "addedByOrganization",
-                )
-            },
+            detail={key: measure.get(key) for key in MIPS_DETAIL_KEYS},
         )
         for measure in mips.get("eligibleMeasures", [])
     ]

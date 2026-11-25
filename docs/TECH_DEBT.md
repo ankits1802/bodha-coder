@@ -9,11 +9,6 @@ Request bodies are pydantic models, responses are dictionaries built by the serv
 OpenAPI document does not describe them and the frontend mirrors them by hand. Clear it with
 response models per route and generated frontend types.
 
-### No rate limits
-
-Login, the provider code endpoints and demo requests have no rate limit beyond the code attempt
-cap. Clear it with a sliding-window limit per address and account.
-
 ### Nursing-facility initial visit once per stay
 
 ChartMate's rule that 99304 to 99306 bill once per stay (CODE-100) is not ported because Bodha

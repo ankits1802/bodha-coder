@@ -1,11 +1,12 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
 import type { Choice, CodeJson, Finding, FindingAction, FindingKind, MdmElements, NoteHistory } from "@/lib/api/types";
+import { FORMAT_WORDS } from "@/lib/format";
 import type { HighlightTone, Mark } from "@/lib/highlight";
 import { REVIEW_TEXT } from "./strings";
 
-export const CODE_KINDS: readonly FindingKind[] = ["em", "code_review", "modifier", "diagnosis"];
+export const CODE_KINDS: readonly FindingKind[] = ["em", "modifier", "code_review", "diagnosis"];
 const QUESTION_KINDS: readonly FindingKind[] = ["cdi_query", "diagnosis"];
-const CHANGE_KINDS: readonly FindingKind[] = ["em", "diagnosis", "code_review"];
+const CHANGE_KINDS: readonly FindingKind[] = ["em", "diagnosis", "code_review", "modifier"];
 const CHANGE_ACTIONS: readonly FindingAction[] = ["lower", "raise", "replace", "add", "remove", "review"];
 const SEVERITY_ORDER = ["Critical", "High", "Medium", "Low"];
 
@@ -55,6 +56,82 @@ export function findingStatus(finding: Pick<Finding, "kind" | "action">): Findin
     return { tone: "warn", label };
   }
   return CODE_STATUS[finding.action] ?? { tone: "neutral", label: REVIEW_TEXT.status.info };
+}
+
+export const RISK_SUMMARY_KEY = "hcc";
+const SUSPECTED_PREFIX = "hcc:";
+
+export function isRiskFinding(finding: Pick<Finding, "key">): boolean {
+  return finding.key === RISK_SUMMARY_KEY || finding.key.startsWith(SUSPECTED_PREFIX);
+}
+
+export function isCodeFinding(finding: Finding): boolean {
+  return CODE_KINDS.includes(finding.kind) && !isRiskFinding(finding);
+}
+
+export function suspectedConditions(findings: Finding[]): Finding[] {
+  return findings.filter((item) => item.key.startsWith(SUSPECTED_PREFIX));
+}
+
+export type RiskStatus = "captured" | "missed" | "unsupported";
+const RISK_STATUSES: readonly RiskStatus[] = ["captured", "missed", "unsupported"];
+
+export interface RiskCategory {
+  hcc: string;
+  label: string;
+  status: RiskStatus;
+  codes: string[];
+  factor: number | null;
+}
+
+export interface RiskSummary {
+  available: boolean;
+  model: string | null;
+  paymentYear: string | null;
+  segment: string | null;
+  scoreBilled: number | null;
+  scoreDocumented: number | null;
+  categories: RiskCategory[];
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function riskCategory(value: unknown): RiskCategory | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const status = RISK_STATUSES.find((item) => item === row.status);
+  const hcc = textValue(row.hcc);
+  if (!status || !hcc) return null;
+  return { hcc, label: textValue(row.label) ?? hcc, status, codes: stringList(row.codes), factor: numberValue(row.factor) };
+}
+
+export function riskSummary(findings: Finding[]): RiskSummary | null {
+  const summary = findings.find((item) => item.key === RISK_SUMMARY_KEY);
+  if (!summary) return null;
+  const detail = summary.detail;
+  const rows = Array.isArray(detail.categories) ? detail.categories : [];
+  return {
+    available: detail.available === true,
+    model: textValue(detail.model),
+    paymentYear: textValue(detail.payment_year),
+    segment: textValue(detail.segment),
+    scoreBilled: numberValue(detail.score_billed),
+    scoreDocumented: numberValue(detail.score_documented),
+    categories: rows.map(riskCategory).filter((row): row is RiskCategory => row !== null),
+  };
+}
+
+export function formatRiskScore(value: number | null): string {
+  return value === null ? FORMAT_WORDS.empty : value.toFixed(3);
+}
+
+export type MeasureStatus = "met" | "missing" | "not_applicable";
+const MEASURE_STATUSES: readonly MeasureStatus[] = ["met", "missing", "not_applicable"];
+
+export function measureStatus(finding: Finding): MeasureStatus | null {
+  return MEASURE_STATUSES.find((status) => status === finding.detail.status) ?? null;
 }
 
 export function openQuestions(findings: Finding[]): Finding[] {

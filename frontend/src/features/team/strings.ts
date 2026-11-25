@@ -1,6 +1,7 @@
 import type { RoleFilter } from "./teamModel";
 
 export type ConfirmKind = "block" | "unblock" | "reset";
+export type SendKind = "invite" | "password";
 
 export const TEAM_TEXT = {
   title: "Team",
@@ -25,8 +26,17 @@ export const TEAM_TEXT = {
   you: "You",
   roleFor: (name: string) => `Role for ${name}`,
   moreFor: (name: string) => `More for ${name}`,
-  menu: { reset: "Reset two-step", resend: "Resend invite", block: "Block", unblock: "Unblock" },
-  resent: (email: string) => `Invite sent to ${email}`,
+  menu: {
+    reset: "Reset two-step",
+    resend: "Resend invite",
+    passwordReset: "Send password reset",
+    block: "Block",
+    unblock: "Unblock",
+  },
+  sent: {
+    invite: (email: string) => `Invite sent to ${email}`,
+    password: (email: string) => `Password reset sent to ${email}`,
+  } satisfies Record<SendKind, (email: string) => string>,
   roleChanged: (name: string) => `${name} must sign in again`,
   confirm: {
     cancel: "Cancel",

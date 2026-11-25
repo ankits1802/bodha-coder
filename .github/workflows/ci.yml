@@ -40,6 +40,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://bodha:bodha@localhost:5432/bodha_test
       SECRET_KEY: ci-only-secret-key-not-used-anywhere-else-000
+      MFA_ENCRYPTION_KEY: r82y_stK1vWEyUBZPhFP7mD-iRuxW7iR3s-SXmQ3sHU=
       S3_BUCKET: ci-bucket
       COOKIE_SECURE: "true"
       APP_URL: https://app.test

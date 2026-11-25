@@ -8,7 +8,7 @@ provider, or compliance. Approved codes are exported for billing.
 |---|---|
 | `frontend/` | Next.js (App Router), React, TypeScript, Tailwind CSS |
 | `backend/` | Python, FastAPI, SQLAlchemy, Alembic, Postgres |
-| AI | Gemini, one bundled structured call per note (E/M, ICD-10-CM, CDI queries, audit risk, MIPS) |
+| AI | Gemini, one bundled structured call per note (E/M with modifiers and add-on codes, ICD-10-CM, CDI queries, audit risk, MIPS, risk adjustment) |
 | Files | S3 or Cloudflare R2 (any S3-compatible store) |
 
 ## How a note moves
@@ -73,11 +73,31 @@ SES and SNS use the standard AWS credential chain: an IAM role on the server, or
 account out of the sandbox and verify the sending domain (SPF, DKIM, DMARC) before inviting real users.
 Every email is sent as plain text with an HTML version; no message contains patient details.
 
+### Sign-in and two-step verification
+
+| Setting | Values |
+|---|---|
+| `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
+
+Register `{APP_URL}/api/auth/google/callback` (for example `https://coder.example.com/api/auth/google/callback`)
+as the client's authorised redirect URI; requests reach the API through the web server's `/api` proxy.
+Google only signs in people who already have a Bodha Coder account with the same email, and two-step
+verification still applies to them. Sign-in, password reset, two-step codes, Google returns, provider
+codes and demo requests are rate limited per address and account, so uvicorn must see the visitor's
+address (`--proxy-headers` and `--forwarded-allow-ips`, above).
+
 ## Checks
 
 Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
 check, ruff, the migrations up and down against Postgres, pytest, and the frontend lint, type
 check, tests and build.
+
+## Data sources
+
+| Data | Source | Retrieved |
+|---|---|---|
+| CMS-HCC V28 ICD-10 mapping, relative factors, hierarchies, interactions (`backend/app/codes/data/hcc_v28_2027*`) | CMS PY 2027 initial model software, [py-2027-initial-model-software.zip](https://www.cms.gov/files/zip/py-2027-initial-model-software.zip) (package `CMS_HCC_v28_2027_T1_initial_package_v2`); SHA-256 values in `hcc_v28_2027.meta.json` | 2026-11-26 |
 
 ## Reused from ChartMate
 

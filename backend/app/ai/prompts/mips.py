@@ -237,6 +237,14 @@ For each measure whose denominator IS met and to which no documented exclusion a
 - macro: the measure's macro, each placeholder kept or filled per RULE 3, with no code
 - exceptionExclusion: null unless the note documents one of the measure's listed exceptions; then name it and where
   the note shows it. It is never a placeholder and never a guess.
+- status, exactly one of:
+  - "met": the note itself documents everything the measure asks for at this encounter, so every slot of the macro
+    is filled from the note and no [PLACEHOLDER: ...] is left
+  - "missing": the denominator is met but at least one thing the measure asks for is not documented, so the macro
+    keeps at least one [PLACEHOLDER: ...]
+  - "not_applicable": the note documents one of the measure's listed exceptions, named in exceptionExclusion
+  For an inverse measure, "met" still means only that the note documents what the measure asks for (for #001, the
+  most recent HbA1c or GMI value and its date), never that the result is good or bad.
 
 For example, for a patient aged 70 with type 2 diabetes and no eye exam in the note:
 {
@@ -246,7 +254,8 @@ For example, for a patient aged 70 with type 2 diabetes and no eye exam in the n
   denominator.",
   "macro": "Diabetic eye exam by an eye care professional: [PLACEHOLDER: record the date and result of the most
   recent retinal or dilated eye exam, or the referral placed].",
-  "exceptionExclusion": null
+  "exceptionExclusion": null,
+  "status": "missing"
 }
 
 # FALLBACK

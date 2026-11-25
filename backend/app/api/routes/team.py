@@ -54,3 +54,8 @@ async def reset_mfa(user_id: str, db: Db, actor: Admin) -> None:
 @router.post("/{user_id}/resend-invite", status_code=204)
 async def resend(user_id: str, db: Db, mail: Mail, actor: Admin) -> None:
     await team.resend_invite(db, mail, actor, user_id)
+
+
+@router.post("/{user_id}/reset-password", status_code=204)
+async def reset_password(user_id: str, db: Db, mail: Mail, actor: Admin) -> None:
+    await team.send_password_reset(db, mail, actor, user_id)

@@ -8,9 +8,10 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.adapters.google_oidc import build_google_sign_in
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
-from app.api.routes import auth, billing, hq, notes, practice, respond, team, uploads, work
+from app.api.routes import account, auth, billing, google, hq, notes, practice, respond, team, uploads, work
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import AppError, Invalid
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     app.state.store = S3ObjectStore(settings)
     app.state.messenger = build_messenger(settings)
+    app.state.google = build_google_sign_in(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
     yield
 
@@ -29,7 +31,7 @@ app = FastAPI(
     title="Bodha Coder", lifespan=lifespan, docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json"
 )
 
-for module in (auth, work, notes, uploads, billing, practice, team, respond, hq):
+for module in (auth, google, account, work, notes, uploads, billing, practice, team, respond, hq):
     app.include_router(module.router, prefix="/api")
 
 

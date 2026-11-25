@@ -5,16 +5,23 @@ import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { CODE_LENGTH, CodeInput } from "@/components/shared/CodeInput";
 import { isSixDigitCode } from "@/lib/validation";
+import { QuietButton } from "./QuietButton";
 import { SIGN_IN_TEXT } from "./strings";
+
+export interface Alternative {
+  label: string;
+  onSelect: () => void;
+}
 
 interface CodeFormProps {
   pending: boolean;
   error: string | null;
   onSubmit: (code: string) => void;
   onCancel: () => void;
+  alternative?: Alternative;
 }
 
-export function CodeForm({ pending, error, onSubmit, onCancel }: CodeFormProps) {
+export function CodeForm({ pending, error, onSubmit, onCancel, alternative }: CodeFormProps) {
   const [code, setCode] = useState("");
   const [incomplete, setIncomplete] = useState(false);
 
@@ -40,13 +47,10 @@ export function CodeForm({ pending, error, onSubmit, onCancel }: CodeFormProps) 
       <Button type="submit" variant="primary" size="lg" pending={pending} className="w-full">
         {SIGN_IN_TEXT.verify}
       </Button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="cursor-pointer self-center rounded-control border-0 bg-transparent px-2 py-1 text-body text-secondary hover:text-label"
-      >
-        {SIGN_IN_TEXT.differentAccount}
-      </button>
+      <div className="flex flex-col items-center gap-1">
+        {alternative ? <QuietButton onClick={alternative.onSelect}>{alternative.label}</QuietButton> : null}
+        <QuietButton onClick={onCancel}>{SIGN_IN_TEXT.differentAccount}</QuietButton>
+      </div>
     </form>
   );
 }

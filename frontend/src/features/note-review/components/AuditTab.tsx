@@ -2,6 +2,7 @@ import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import type { AnalysisView, Finding, NoteDetail } from "@/lib/api/types";
 import { REVIEW_TEXT } from "../strings";
 import { AuditChecklist } from "./AuditChecklist";
+import { MipsSection } from "./MipsSection";
 import { TabSection } from "./TabSection";
 
 const SEVERITY_TONES: Record<string, StatusTone> = { Critical: "bad", High: "bad", Medium: "warn", Low: "neutral" };
@@ -65,7 +66,7 @@ export function AuditTab({ detail }: { detail: NoteDetail }) {
       <Listed title={words.risks} findings={risks} />
       <Listed title={words.findings} findings={notes} />
       {audit ? <AuditChecklist audit={audit} /> : null}
-      <Listed title={words.mips} findings={mips} />
+      <MipsSection measures={mips} />
     </>
   );
 }

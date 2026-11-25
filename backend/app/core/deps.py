@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.calendar import zone_named
+from app.core.calendar import today_in, zone_named
 from app.core.db import get_session
 from app.core.errors import Forbidden, Unauthorized
 from app.core.security import TokenError, read_token
@@ -50,6 +50,17 @@ class ProviderActor:
     user_agent: str | None
 
 
+class PlanEnded(Forbidden):
+    pass
+
+
+def ensure_practice_open(practice: Practice | None) -> None:
+    if practice is None or practice.status not in ACTIVE_PRACTICE_STATUSES:
+        raise Unauthorized("your practice is not active")
+    if practice.renews_on is not None and practice.renews_on < today_in(zone_named(practice.time_zone)):
+        raise PlanEnded(f"This practice's plan ended on {practice.renews_on.isoformat()}")
+
+
 def bearer(authorization: str | None) -> str:
     scheme, _, token = (authorization or "").partition(" ")
     if scheme.lower() != "bearer" or not token:
@@ -66,8 +77,8 @@ async def current_actor(request: Request, db: Db, authorization: Annotated[str |
     if user is None or user.status != "active" or user.token_version != claims.get("ver"):
         raise Unauthorized("session ended")
     practice = await db.get(Practice, user.practice_id) if user.practice_id else None
-    if user.role != "hq" and (practice is None or practice.status not in ACTIVE_PRACTICE_STATUSES):
-        raise Unauthorized("practice is not active")
+    if user.role != "hq":
+        ensure_practice_open(practice)
     now = utcnow()
     if user.last_active_at is None or now - user.last_active_at > ACTIVITY_WRITE_INTERVAL:
         user.last_active_at = now

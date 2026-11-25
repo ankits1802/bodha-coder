@@ -1,17 +1,17 @@
 import { Table, Th } from "@/components/ui/Table";
 import type { PracticeRole, TeamMember } from "@/lib/api/types";
 import { MemberRow } from "./MemberRow";
-import { TEAM_TEXT, type ConfirmKind } from "./strings";
+import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
 
 interface TeamTableProps {
   members: TeamMember[];
   selfId: string | null;
   onRole: (member: TeamMember, role: PracticeRole) => void;
   onConfirm: (kind: ConfirmKind, member: TeamMember) => void;
-  onResend: (member: TeamMember) => void;
+  onSend: (kind: SendKind, member: TeamMember) => void;
 }
 
-export function TeamTable({ members, selfId, onRole, onConfirm, onResend }: TeamTableProps) {
+export function TeamTable({ members, selfId, onRole, onConfirm, onSend }: TeamTableProps) {
   const columns = TEAM_TEXT.columns;
   return (
     <Table label={TEAM_TEXT.tableLabel} minWidth="lg">
@@ -34,7 +34,7 @@ export function TeamTable({ members, selfId, onRole, onConfirm, onResend }: Team
             isSelf={member.id === selfId}
             onRole={onRole}
             onConfirm={onConfirm}
-            onResend={onResend}
+            onSend={onSend}
           />
         ))}
       </tbody>

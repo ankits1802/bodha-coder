@@ -29,6 +29,19 @@ class PasswordBody(Body):
     password: str = Field(min_length=10, max_length=200)
 
 
+class ForgotBody(Body):
+    email: EmailStr
+
+
+class RecoveryBody(Body):
+    mfa_token: str
+    recovery_code: str = Field(min_length=16, max_length=40)
+
+
+class MfaCodeBody(Body):
+    code: str = Field(pattern=r"^\d{6}$")
+
+
 class PreviewBody(Body):
     file_names: list[str] = Field(max_length=500)
 
@@ -93,7 +106,6 @@ class ChecksBody(Body):
 class SecurityBody(Body):
     mfa_roles: list[str]
     idle_minutes: int
-    private_messages: bool
 
 
 class ProviderBody(Body):

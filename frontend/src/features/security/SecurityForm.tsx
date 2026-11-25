@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { FilterSelect } from "@/components/ui/FilterSelect";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { refreshSession } from "@/lib/api/client";
 import { saveSecurity } from "@/lib/api/practice";
@@ -29,14 +28,12 @@ interface SecurityFormProps {
 export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
   const [roles, setRoles] = useState<Set<PracticeRole>>(() => new Set(settings.mfa_roles));
   const [idle, setIdle] = useState<IdleMinutes>(settings.idle_minutes);
-  const [hidden, setHidden] = useState(settings.private_messages);
   const [saved, setSaved] = useState(false);
   const save = useAction(saveAndRefresh);
   const chosen = PRACTICE_ROLES.filter((role) => roles.has(role));
   const dirty =
     chosen.join() !== PRACTICE_ROLES.filter((role) => settings.mfa_roles.includes(role)).join() ||
-    idle !== settings.idle_minutes ||
-    hidden !== settings.private_messages;
+    idle !== settings.idle_minutes;
 
   function toggleRole(role: PracticeRole, on: boolean): void {
     setSaved(false);
@@ -49,7 +46,7 @@ export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
   }
 
   async function submit(): Promise<void> {
-    const outcome = await save.run({ mfa_roles: chosen, idle_minutes: idle, private_messages: hidden });
+    const outcome = await save.run({ mfa_roles: chosen, idle_minutes: idle });
     if (!outcome.ok) return;
     setSaved(true);
     onSaved();
@@ -74,17 +71,6 @@ export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
             </option>
           ))}
         </FilterSelect>
-      </div>
-      <div className={ROW}>
-        <span>{SECURITY_TEXT.privateMessages}</span>
-        <Toggle
-          label={SECURITY_TEXT.privateMessages}
-          checked={hidden}
-          onChange={(on) => {
-            setSaved(false);
-            setHidden(on);
-          }}
-        />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-hairline px-4.5 py-3">
         {save.error ? <InlineAlert tone="bad">{save.error}</InlineAlert> : null}

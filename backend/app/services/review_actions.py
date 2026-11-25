@@ -27,7 +27,7 @@ def allowed_choices(finding: Finding) -> tuple[str, ...]:
     if finding.kind == "cdi_query":
         return ("ask", "skip")
     if finding.action == "add":
-        return ("add", "skip")
+        return ("add", "skip") if finding.kind == "diagnosis" else ("accept", "keep")
     if finding.action == "ask":
         return ("ask", "keep") if finding.code_before else ("ask", "skip")
     return ("accept", "keep")

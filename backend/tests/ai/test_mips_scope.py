@@ -11,6 +11,7 @@ BLOOD_PRESSURE = {
     "eligibilityRationale": "Hypertension with a recorded blood pressure.",
     "macro": "Most recent blood pressure: 148/92 on the date of service.",
     "exceptionExclusion": None,
+    "status": "met",
 }
 WITHHELD_117 = (
     "Reporting codes not shown: the measure name on this card is not CMS's 2026 title for MIPS #117 "

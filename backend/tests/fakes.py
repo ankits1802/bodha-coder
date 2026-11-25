@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.adapters.google_oidc import GoogleIdentity, GoogleRefused
 from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
 
 NOTE_TEXT = (
@@ -80,6 +81,29 @@ class FakeMessenger:
         found = re.search(r"\b(\d{6})\b", self.sent[-1][1])
         assert found, "no code in the last message"
         return found.group(1)
+
+
+@dataclass(frozen=True)
+class GoogleExchange:
+    code: str
+    verifier: str
+    nonce: str
+
+
+@dataclass
+class FakeGoogle:
+    enabled: bool = True
+    identities: dict[str, GoogleIdentity] = field(default_factory=dict)
+    exchanges: list[GoogleExchange] = field(default_factory=list)
+
+    def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str:
+        return f"https://accounts.example.com/auth?state={state}"
+
+    async def identity(self, code: str, *, verifier: str, nonce: str) -> GoogleIdentity:
+        self.exchanges.append(GoogleExchange(code, verifier, nonce))
+        if code not in self.identities:
+            raise GoogleRefused("Google did not accept the sign-in")
+        return self.identities[code]
 
 
 @dataclass

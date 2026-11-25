@@ -8,6 +8,7 @@ export const SET_PASSWORD_TEXT = {
   submit: "Set password",
   done: "Password set",
   signIn: "Sign in",
-  invalidLink: "This link is not valid. Ask your admin for a new invitation.",
+  invalidLink: "This link is no longer valid.",
+  newLink: "Get a new link",
   loading: "Loading",
 } as const;

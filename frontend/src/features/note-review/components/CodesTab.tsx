@@ -1,5 +1,5 @@
 import type { Choice, Finding, NoteDetail } from "@/lib/api/types";
-import { CODE_KINDS, codeLabel, latestBilled } from "../findings";
+import { CODE_KINDS, codeLabel, isCodeFinding, latestBilled } from "../findings";
 import { REVIEW_TEXT } from "../strings";
 import { BilledCodesEditor } from "./BilledCodesEditor";
 import { DecisionControl } from "./DecisionControl";
@@ -18,7 +18,7 @@ function kindOrder(finding: Finding): number {
 }
 
 export function CodesTab({ detail, editable, busyKey, onChoose, onSaved }: CodesTabProps) {
-  const findings = detail.findings.filter((item) => CODE_KINDS.includes(item.kind)).sort((a, b) => kindOrder(a) - kindOrder(b));
+  const findings = detail.findings.filter(isCodeFinding).sort((a, b) => kindOrder(a) - kindOrder(b));
   return (
     <>
       {findings.length === 0 ? <p className="m-0 px-5 py-6 text-secondary">{REVIEW_TEXT.noCodeFindings}</p> : null}

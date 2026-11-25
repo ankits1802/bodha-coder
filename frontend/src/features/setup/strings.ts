@@ -74,6 +74,7 @@ export const SETUP_TEXT = {
       cdi: "Questions for providers",
       audit: "Audit risk",
       mips: "Quality measures (MIPS)",
+      hcc: "Risk adjustment (HCC)",
     } satisfies Record<CheckKey, string>,
   },
 } as const;

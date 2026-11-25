@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useAction } from "@/hooks/useAction";
-import { resendInvite, resetMemberMfa, updateMember } from "@/lib/api/team";
+import { resendInvite, resetMemberMfa, sendPasswordReset, updateMember } from "@/lib/api/team";
 import type { PracticeRole, TeamMember } from "@/lib/api/types";
-import { TEAM_TEXT, type ConfirmKind } from "./strings";
+import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
 
 export interface PendingConfirm {
   kind: ConfirmKind;
@@ -34,10 +34,10 @@ export function useTeamActions(onChanged: () => void) {
     onChanged();
   }
 
-  async function resend(member: TeamMember): Promise<void> {
+  async function send(kind: SendKind, member: TeamMember): Promise<void> {
     setNotice(null);
-    const outcome = await quick.run(() => resendInvite(member.id));
-    if (outcome.ok) setNotice(TEAM_TEXT.resent(member.email));
+    const outcome = await quick.run(() => (kind === "invite" ? resendInvite(member.id) : sendPasswordReset(member.id)));
+    if (outcome.ok) setNotice(TEAM_TEXT.sent[kind](member.email));
   }
 
   function openConfirm(kind: ConfirmKind, member: TeamMember): void {
@@ -60,7 +60,7 @@ export function useTeamActions(onChanged: () => void) {
     confirmBusy: confirmed.pending,
     confirmError: confirmed.error,
     changeRole,
-    resend,
+    send,
     openConfirm,
     closeConfirm: () => setPending(null),
     confirmPending,

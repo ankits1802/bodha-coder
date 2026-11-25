@@ -38,3 +38,13 @@ class Invalid(AppError):
 class Unavailable(AppError):
     status_code = 503
     code = "unavailable"
+
+
+class RateLimited(AppError):
+    status_code = 429
+    code = "rate_limited"
+
+    def __init__(self, minutes: int) -> None:
+        unit = "minute" if minutes == 1 else "minutes"
+        super().__init__(f"Too many attempts. Try again in {minutes} {unit}.")
+        self.minutes = minutes

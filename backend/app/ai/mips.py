@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 from app.codes.mips_reporting_codes import attach_reporting_codes, restrict_to_scope
 from app.codes.mips_scope import MipsScope
 
 __all__ = [
+    "MACRO_PLACEHOLDER",
+    "MEASURE_STATUSES",
     "NO_MEASURE_IN_SCOPE",
     "EligibleMeasure",
+    "MeasureStatus",
     "MIPSQualityMeasuresOutput",
     "MipsMeasure",
     "MipsReview",
@@ -24,6 +27,18 @@ __all__ = [
 NO_MEASURE_IN_SCOPE = (
     "MIPS: this practice's measure list names no current CMS quality measure, so no measure was checked."
 )
+MACRO_PLACEHOLDER = "[PLACEHOLDER:"
+
+MeasureStatus = Literal["met", "missing", "not_applicable"]
+MEASURE_STATUSES: tuple[MeasureStatus, ...] = ("met", "missing", "not_applicable")
+_STATUS_SPELLINGS = {"not applicable": "not_applicable", "not-applicable": "not_applicable", "n/a": "not_applicable"}
+
+
+def _measure_status(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    wanted = value.strip().lower()
+    return _STATUS_SPELLINGS.get(wanted, wanted)
 
 
 class EligibleMeasure(BaseModel):
@@ -32,6 +47,18 @@ class EligibleMeasure(BaseModel):
     eligibilityRationale: str
     macro: str
     exceptionExclusion: str | None = None
+    status: MeasureStatus
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _normalize_status(cls, value: Any) -> Any:
+        return _measure_status(value)
+
+    @model_validator(mode="after")
+    def _met_only_when_nothing_is_left_to_fill(self) -> EligibleMeasure:
+        if self.status == "met" and MACRO_PLACEHOLDER in self.macro:
+            self.status = "missing"
+        return self
 
 
 class MIPSQualityMeasuresOutput(BaseModel):
@@ -62,6 +89,7 @@ class MipsScopeRecord(BaseModel):
 
 
 class MipsMeasure(EligibleMeasure):
+    status: MeasureStatus | None = None
     reportingCodes: ReportingCodes | None = None
     reportingCodesWithheld: str | None = None
     addedByOrganization: bool = False

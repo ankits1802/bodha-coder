@@ -6,21 +6,22 @@ import type { PracticeRole, TeamMember } from "@/lib/api/types";
 import { FORMAT_WORDS, formatSince } from "@/lib/format";
 import { MEMBER_STATUS_LABELS, ROLE_LABELS } from "@/lib/labels";
 import { PRACTICE_ROLES } from "@/lib/roles";
-import { TEAM_TEXT, type ConfirmKind } from "./strings";
+import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
 
 interface MemberRowProps {
   member: TeamMember;
   isSelf: boolean;
   onRole: (member: TeamMember, role: PracticeRole) => void;
   onConfirm: (kind: ConfirmKind, member: TeamMember) => void;
-  onResend: (member: TeamMember) => void;
+  onSend: (kind: SendKind, member: TeamMember) => void;
 }
 
-function menuFor(member: TeamMember, props: Pick<MemberRowProps, "onConfirm" | "onResend">): MenuItem[] {
+function menuFor(member: TeamMember, props: Pick<MemberRowProps, "onConfirm" | "onSend">): MenuItem[] {
   const words = TEAM_TEXT.menu;
   const items: MenuItem[] = [];
   if (member.mfa_enabled) items.push({ key: "reset", label: words.reset, onSelect: () => props.onConfirm("reset", member) });
-  if (member.status === "invited") items.push({ key: "resend", label: words.resend, onSelect: () => props.onResend(member) });
+  if (member.status === "invited") items.push({ key: "resend", label: words.resend, onSelect: () => props.onSend("invite", member) });
+  if (member.status === "active") items.push({ key: "password", label: words.passwordReset, onSelect: () => props.onSend("password", member) });
   if (member.status === "blocked") items.push({ key: "unblock", label: words.unblock, onSelect: () => props.onConfirm("unblock", member) });
   else items.push({ key: "block", label: words.block, tone: "danger", onSelect: () => props.onConfirm("block", member) });
   return items;
@@ -41,7 +42,7 @@ function TwoStep({ member }: { member: TeamMember }) {
   );
 }
 
-export function MemberRow({ member, isSelf, onRole, onConfirm, onResend }: MemberRowProps) {
+export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberRowProps) {
   const blocked = member.status === "blocked";
   const editable = !isSelf && !blocked && member.role !== "hq";
   return (
@@ -83,7 +84,7 @@ export function MemberRow({ member, isSelf, onRole, onConfirm, onResend }: Membe
         <LastActive member={member} />
       </Td>
       <Td className="w-10">
-        <MenuButton label={TEAM_TEXT.moreFor(member.name)} items={menuFor(member, { onConfirm, onResend })} disabled={isSelf} />
+        <MenuButton label={TEAM_TEXT.moreFor(member.name)} items={menuFor(member, { onConfirm, onSend })} disabled={isSelf} />
       </Td>
     </Tr>
   );

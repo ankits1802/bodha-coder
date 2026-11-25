@@ -22,3 +22,7 @@ export function resetMemberMfa(userId: string): Promise<void> {
 export function resendInvite(userId: string): Promise<void> {
   return requestNothing(memberPath(userId, "/resend-invite"), { method: "POST" });
 }
+
+export function sendPasswordReset(userId: string): Promise<void> {
+  return requestNothing(memberPath(userId, "/reset-password"), { method: "POST" });
+}

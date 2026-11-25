@@ -10,7 +10,11 @@ import { saveChecks } from "@/lib/api/practice";
 import type { CheckKey, Checks } from "@/lib/api/types";
 import { SETUP_TEXT } from "./strings";
 
-const CHECK_ORDER: readonly CheckKey[] = ["em", "icd", "cdi", "audit", "mips"];
+const CHECK_ORDER: readonly CheckKey[] = ["em", "icd", "cdi", "audit", "mips", "hcc"];
+
+function withAllChecks(checks: Checks): Checks {
+  return { ...checks, hcc: checks.hcc ?? false };
+}
 
 interface ChecksPanelProps {
   checks: Checks;
@@ -18,10 +22,11 @@ interface ChecksPanelProps {
 }
 
 export function ChecksPanel({ checks, onSaved }: ChecksPanelProps) {
-  const [draft, setDraft] = useState<Checks>(checks);
+  const [draft, setDraft] = useState<Checks>(() => withAllChecks(checks));
   const [saved, setSaved] = useState(false);
   const save = useAction(saveChecks);
-  const dirty = CHECK_ORDER.some((key) => draft[key] !== checks[key]);
+  const stored = withAllChecks(checks);
+  const dirty = CHECK_ORDER.some((key) => draft[key] !== stored[key]);
   const words = SETUP_TEXT.checks;
 
   async function submit(): Promise<void> {
@@ -39,7 +44,7 @@ export function ChecksPanel({ checks, onSaved }: ChecksPanelProps) {
           <span>{words.labels[key]}</span>
           <Toggle
             label={words.labels[key]}
-            checked={draft[key]}
+            checked={draft[key] ?? false}
             onChange={(on) => {
               setSaved(false);
               setDraft((current) => ({ ...current, [key]: on }));

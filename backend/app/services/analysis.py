@@ -20,7 +20,7 @@ from app.models import Analysis, CodeSet, MipsList, Note, NoteText, Practice, Su
 from app.services.findings import Finding, build_findings
 from app.services.placement import refresh_placement
 
-SECTION_BY_CHECK = {"em": "em", "icd": "diagnoses", "cdi": "cdi", "audit": "audit", "mips": "mips"}
+SECTION_BY_CHECK = {"em": "em", "icd": "diagnoses", "cdi": "cdi", "audit": "audit", "mips": "mips", "hcc": "hcc"}
 Reviewer = Callable[[ModelClient, ReviewInputs], Awaitable[ReviewOutcome]]
 
 

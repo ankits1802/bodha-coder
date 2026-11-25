@@ -68,7 +68,7 @@ export function TeamScreen() {
               selfId={user?.id ?? null}
               onRole={(member, role) => void actions.changeRole(member, role)}
               onConfirm={actions.openConfirm}
-              onResend={(member) => void actions.resend(member)}
+              onSend={(kind, member) => void actions.send(kind, member)}
             />
           )}
         </RemoteView>

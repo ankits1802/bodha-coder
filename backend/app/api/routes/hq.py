@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from app.api.bodies import DemoBody, PlaceBody, PracticeBody, PracticeUpdateBody
-from app.api.wiring import Mail
+from app.api.wiring import Mail, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
 from app.services import hq
+from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"])
 HqActor = Annotated[Actor, Depends(require(*HQ))]
@@ -86,6 +87,7 @@ async def demo_requests(db: Db, actor: HqActor) -> list[dict[str, Any]]:
 
 
 @router.post("/demo-requests", status_code=204)
-async def demo_request(body: DemoBody, db: Db) -> None:
+async def demo_request(body: DemoBody, request: Request, db: Db) -> None:
+    await hit(db, DEMO_PER_IP, client_of(request)[0])
     db.add(DemoRequest(name=body.name, email=str(body.email), organization=body.organization, message=body.message))
     await db.commit()

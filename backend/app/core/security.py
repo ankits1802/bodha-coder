@@ -7,14 +7,22 @@ from typing import Any
 import bcrypt
 import jwt
 import pyotp
+from cryptography.fernet import Fernet, InvalidToken
 
 from app.core.config import get_settings
+from app.core.errors import Unavailable
 
 ALGORITHM = "HS256"
 PASSWORD_MIN_LENGTH = 10
+MFA_DRIFT_STEPS = 1
+MFA_SECRET_PREFIX = "v1:"
 
 
 class TokenError(Exception):
+    pass
+
+
+class MfaKeyUnavailable(Unavailable):
     pass
 
 
@@ -69,5 +77,37 @@ def mfa_uri(secret: str, email: str) -> str:
     return pyotp.TOTP(secret).provisioning_uri(name=email, issuer_name=get_settings().mfa_issuer)
 
 
-def verify_mfa(secret: str | None, code: str) -> bool:
-    return secret is not None and pyotp.TOTP(secret).verify(code, valid_window=1)
+def mfa_step_for(secret: str, code: str, *, after: int | None) -> int | None:
+    totp = pyotp.TOTP(secret)
+    current = totp.timecode(datetime.now(UTC))
+    for step in range(current - MFA_DRIFT_STEPS, current + MFA_DRIFT_STEPS + 1):
+        if (after is None or step > after) and hmac.compare_digest(totp.generate_otp(step), code):
+            return step
+    return None
+
+
+def is_sealed_mfa_secret(stored: str) -> bool:
+    return stored.startswith(MFA_SECRET_PREFIX)
+
+
+def seal_mfa_secret(secret: str) -> str:
+    return MFA_SECRET_PREFIX + _mfa_cipher().encrypt(secret.encode()).decode()
+
+
+def open_mfa_secret(stored: str) -> str:
+    if not is_sealed_mfa_secret(stored):
+        return stored
+    try:
+        return _mfa_cipher().decrypt(stored.removeprefix(MFA_SECRET_PREFIX).encode()).decode()
+    except InvalidToken as error:
+        raise MfaKeyUnavailable("two-step verification cannot be read on this server") from error
+
+
+def _mfa_cipher() -> Fernet:
+    key = get_settings().mfa_encryption_key
+    if not key:
+        raise MfaKeyUnavailable("two-step verification is not set up on this server")
+    try:
+        return Fernet(key)
+    except ValueError as error:
+        raise MfaKeyUnavailable("two-step verification is not set up on this server") from error

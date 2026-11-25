@@ -14,7 +14,7 @@ NOTE = (
 )
 PDF = b"%PDF-1.4 scanned note without a text layer"
 BILLED = (BilledCode("99215", "CPT"), BilledCode("E11.9", "ICD-10"))
-ALL_SECTIONS: tuple[Section, ...] = ("em", "diagnoses", "code_review", "cdi", "audit", "mips")
+ALL_SECTIONS: tuple[Section, ...] = ("em", "diagnoses", "code_review", "cdi", "audit", "mips", "hcc")
 
 
 def review_inputs(
@@ -59,7 +59,14 @@ def em_answer() -> dict[str, Any]:
         "alternative_code": "99213",
         "alternative_reason": "Data is limited.",
         "modifiers": [],
-        "add_on_codes": [],
+        "add_on_codes": [
+            {
+                "code": "96127",
+                "name": "Depression screening",
+                "reason": "PHQ-9 administered and scored.",
+                "evidence": ["PHQ-9 score 4"],
+            }
+        ],
     }
 
 
@@ -160,6 +167,22 @@ def eye_exam_measure(name: str = "Diabetes: Eye Exam") -> dict[str, Any]:
         "eligibilityRationale": "A 67-year-old with type 2 diabetes.",
         "macro": "Diabetic eye exam by an eye care professional: [PLACEHOLDER: record the date and result].",
         "exceptionExclusion": None,
+        "status": "missing",
+    }
+
+
+def hcc_answer(*suspected: dict[str, Any]) -> dict[str, Any]:
+    return {"suspected": list(suspected)}
+
+
+def obesity_suspected() -> dict[str, Any]:
+    return {
+        "condition": "Morbid (severe) obesity",
+        "icd10": "E66.01",
+        "indicators": "BMI 41.6 recorded at this visit.",
+        "evidence": ["BMI 41.6"],
+        "query": "The vital signs record a BMI of 41.6. Please clarify the clinical significance of this finding.",
+        "options": ["Morbid (severe) obesity due to excess calories", "Obesity, unspecified", "Other"],
     }
 
 
@@ -172,6 +195,7 @@ def full_answer(**overrides: Any) -> dict[str, Any]:
         "cdi": cdi_answer(),
         "audit": audit_answer(),
         "mips": mips_answer(),
+        "hcc": hcc_answer(obesity_suspected()),
     }
     answer.update(overrides)
     return {key: value for key, value in answer.items() if value is not None}

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     refresh_token_days: int = 7
     session_idle_minutes: int = 30
     mfa_issuer: str = "Bodha Coder"
+    mfa_encryption_key: str | None = None
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
     bootstrap_hq_email: str | None = None
     bootstrap_hq_password: str | None = None
 

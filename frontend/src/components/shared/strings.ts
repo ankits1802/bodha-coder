@@ -10,6 +10,14 @@ export const SHARED_TEXT = {
   platformAdministration: "Platform administration",
   notAllowed: "Your role can't open this page.",
   goHome: "Go to Today",
+  recoveryCodes: {
+    listLabel: "Recovery codes",
+    copy: "Copy",
+    copied: "Copied",
+    copyFailed: "Couldn't copy",
+    download: "Download",
+    fileName: "bodha-coder-recovery-codes.txt",
+  },
   codeAdded: "add",
   codeChanged: "changes to",
   noteRow: {

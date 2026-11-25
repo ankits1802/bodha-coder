@@ -1,8 +1,8 @@
 export type PracticeRole = "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
 export type Role = "hq" | PracticeRole;
 
-export type CheckKey = "em" | "icd" | "cdi" | "audit" | "mips";
-export type Checks = Record<CheckKey, boolean>;
+export type CheckKey = "em" | "icd" | "cdi" | "audit" | "mips" | "hcc";
+export type Checks = Record<Exclude<CheckKey, "hcc">, boolean> & Partial<Record<"hcc", boolean>>;
 
 export interface PracticeSummary {
   id: string;
@@ -38,6 +38,32 @@ export interface MfaEnrolment {
   secret: string;
   uri: string;
   qr_image: string;
+}
+
+export interface MfaVerified extends SignedIn {
+  recovery_codes?: string[];
+}
+
+export interface SignInProviders {
+  google: boolean;
+}
+
+export interface SignedInDevice {
+  id: string;
+  created_at: string;
+  last_used_at: string;
+  ip: string | null;
+  user_agent: string | null;
+  current: boolean;
+}
+
+export interface RecoveryCodeStatus {
+  enabled: boolean;
+  remaining: number;
+}
+
+export interface RecoveryCodes {
+  codes: string[];
 }
 
 export type Lane = "approve" | "coder" | "provider" | "compliance";
@@ -476,7 +502,6 @@ export type IdleMinutes = 5 | 10 | 15 | 30;
 export interface SecuritySettings {
   mfa_roles: PracticeRole[];
   idle_minutes: IdleMinutes;
-  private_messages: boolean;
 }
 
 export interface PracticeSetup {

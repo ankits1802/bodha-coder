@@ -4,14 +4,15 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Literal, Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.ai.audit import AuditChecklistOutput
 from app.ai.cdi import CDIGapScanOutput
+from app.ai.hcc import HccReview
 from app.ai.mips import MipsReview
 from app.codes.mips_scope import MipsScope
 
-Section = Literal["em", "diagnoses", "code_review", "cdi", "audit", "mips"]
+Section = Literal["em", "diagnoses", "code_review", "cdi", "audit", "mips", "hcc"]
 Setting = Literal["office", "nursing_facility", "inpatient", "emergency", "home", "telehealth"]
 DiagnosisStatus = Literal["supported", "needs_specificity", "suspected", "unsupported"]
 Verdict = Literal["keep", "lower", "raise", "replace", "remove"]
@@ -68,6 +69,26 @@ class MdmElements(BaseModel):
     risk: MdmElement
 
 
+class ModifierSuggestion(BaseModel):
+    modifier: str
+    code: str = ""
+    reason: str = ""
+    evidence: list[str] = Field(default_factory=list)
+
+
+class AddOnSuggestion(BaseModel):
+    code: str
+    name: str = ""
+    reason: str = ""
+    evidence: list[str] = Field(default_factory=list)
+
+
+def _bare_codes_as(field: str, value: Any) -> Any:
+    if not isinstance(value, list):
+        return value
+    return [{field: item} if isinstance(item, str) else item for item in value]
+
+
 class EmReview(BaseModel):
     code: str
     basis: Literal["MDM", "Time"] = "MDM"
@@ -79,8 +100,18 @@ class EmReview(BaseModel):
     next_level_needs: list[str] = Field(default_factory=list)
     alternative_code: str | None = None
     alternative_reason: str | None = None
-    modifiers: list[str] = Field(default_factory=list)
-    add_on_codes: list[str] = Field(default_factory=list)
+    modifiers: list[ModifierSuggestion] = Field(default_factory=list)
+    add_on_codes: list[AddOnSuggestion] = Field(default_factory=list)
+
+    @field_validator("modifiers", mode="before")
+    @classmethod
+    def _bare_modifiers(cls, value: Any) -> Any:
+        return _bare_codes_as("modifier", value)
+
+    @field_validator("add_on_codes", mode="before")
+    @classmethod
+    def _bare_add_ons(cls, value: Any) -> Any:
+        return _bare_codes_as("code", value)
 
 
 class DiagnosisFinding(BaseModel):
@@ -120,6 +151,7 @@ class ReviewReport(BaseModel):
     cdi: CDIGapScanOutput | None = None
     audit: AuditChecklistOutput | None = None
     mips: MipsReview | None = None
+    hcc: HccReview | None = None
 
 
 @dataclass(frozen=True)

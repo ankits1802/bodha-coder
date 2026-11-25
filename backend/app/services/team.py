@@ -11,6 +11,9 @@ from app.core.roles import INVITABLE_ROLES
 from app.models import User
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions, issue_user_token
+from app.services.password_reset import send_reset_email
+from app.services.recovery_codes import clear_recovery_codes
+from app.services.two_step import forget_two_step
 
 
 async def team(db: AsyncSession, actor: Actor) -> list[User]:
@@ -82,9 +85,19 @@ async def update_member(
 
 async def reset_mfa(db: AsyncSession, actor: Actor, user_id: str) -> None:
     user = await member(db, actor, user_id)
-    user.mfa_enabled, user.mfa_secret = False, None
+    forget_two_step(user)
+    await clear_recovery_codes(db, user)
     await end_all_sessions(db, user)
     record_activity(db, actor, "two-step reset", practice_id=actor.practice_id, detail=user.name)
+    await db.commit()
+
+
+async def send_password_reset(db: AsyncSession, messenger: Messenger, actor: Actor, user_id: str) -> None:
+    user = await member(db, actor, user_id)
+    if user.status == "blocked":
+        raise Conflict("unblock this member before resetting their password")
+    await send_reset_email(db, messenger, user)
+    record_activity(db, actor, "password reset sent", practice_id=actor.practice_id, detail=user.name)
     await db.commit()
 
 

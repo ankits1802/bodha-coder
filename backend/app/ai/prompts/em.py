@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from app.codes.em import EM_FAMILIES, EmFamily, EmLevel
+from collections.abc import Mapping
 
-__all__ = ["EM_TASK", "render_em_families"]
+from app.codes.em import EM_FAMILIES, EmFamily, EmLevel
+from app.codes.modifiers import PROCEDURE_MODIFIERS, VISIT_MODIFIERS
+
+__all__ = ["EM_TASK", "render_em_families", "render_modifier_list"]
 
 _MDM_LEVELS = ("Straightforward", "Low", "Moderate", "High")
 
@@ -11,9 +14,16 @@ _FAMILY_IDS_BY_SETTING: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("nursing_facility", ("nursing_initial", "nursing_subsequent", "nursing_discharge")),
     (
         "inpatient (hospital inpatient or observation)",
-        ("inpatient_initial", "inpatient_subsequent", "inpatient_discharge", "inpatient_consult"),
+        (
+            "inpatient_initial",
+            "inpatient_subsequent",
+            "inpatient_same_day",
+            "inpatient_discharge",
+            "inpatient_consult",
+            "critical_care",
+        ),
     ),
-    ("emergency", ("emergency",)),
+    ("emergency", ("emergency", "critical_care")),
     ("home (home or residence)", ("home_new", "home_established")),
 )
 
@@ -42,7 +52,16 @@ _STEP_1_TAIL = """
   audio-only visit. Place of service 02 or 10 marks a telehealth visit.
 
 Notes on the table:
-- The lowest initial and subsequent nursing facility and inpatient codes cover straightforward or low MDM.
+- The lowest initial, subsequent and same-day nursing facility and inpatient codes cover straightforward or low
+  MDM.
+- Same-day admission and discharge (99234-99236) is for a hospital inpatient or observation stay of 8 hours or
+  more that starts and ends on the same calendar date, with a separate admission encounter and discharge
+  encounter. A stay of less than 8 hours is coded with the initial codes (99221-99223) alone; a discharge on
+  another date is an initial code plus a discharge code.
+- Critical care (99291) is selected on documented critical care time alone, in any setting: 30-74 minutes on the
+  date is 99291, once per date. Each additional full 30 minutes is one unit of the add-on 99292 (put it in
+  add_on_codes): Medicare pays the first 99292 at 104 minutes or more in total. Under 30 minutes is not critical
+  care: code the E/M family of the setting instead. Critical care has no MDM level.
 - 99211 and 99281 ("Minimal") may not require a physician or other qualified health professional and have no MDM
   level or time threshold.
 - The emergency department has no new or established distinction, and its codes are never selected on time.
@@ -66,9 +85,9 @@ OVERRIDES the table in STEP 1:
   health risk assessment, personalized prevention plan, medication review, cognitive assessment, functional and
   fall-risk review, list of current providers and suppliers, and the written screening schedule.
 - A separately identifiable problem addressed at the same visit is NOT folded into the G-code. Put the E/M code for
-  that problem in add_on_codes and add modifier 25, naming the problem in justification. Do this ONLY when the note
-  documents evaluation and management of a problem distinct from the wellness visit, not for the wellness
-  screening itself.
+  that problem in add_on_codes and add modifier 25 with that E/M code as its code, naming the problem in
+  justification. Do this ONLY when the note documents evaluation and management of a problem distinct from the
+  wellness visit, not for the wellness screening itself.
 - The screening instruments the note documents remain billable add-ons: apply STEP 4 to an AWV exactly as to any
   other note.
 - If the service is an AWV but neither the visitType nor the note says whether it is the first one, choose G0439
@@ -189,16 +208,36 @@ Prolonged service:
 Wound debridement:
 - 97597 and 97598
 - Trigger: debridement documented, with the surface area and depth
+
+Critical care:
+- 99292 (each additional 30 minutes beyond the first 74)
+- Trigger: 99291 is the code and the documented critical care time is 104 minutes or more
 """
 
-_STEP_5 = """
+_STEP_5_HEAD = """
 # STEP 5: MODIFIERS
 
-- 25 (significant, separately identifiable E/M): an E/M on the same day as a procedure or another service, when
-  the note documents E/M work beyond that service
-- 59, XE, XP, XS or XU (distinct procedural service): procedures that must be shown to be distinct
-- 95 (audio-video telehealth) or 93 (audio-only): the visit was telehealth (setting "telehealth", or place of
-  service 02 or 10)
+List every modifier the note supports, each with the code it belongs on. Only these modifiers are accepted; the
+application shows any other one for review and never adds it to the claim.
+
+On the visit (E/M) code:
+"""
+
+_STEP_5_MIDDLE = """
+
+On a billed procedure or other non-E/M code from billedCodes, never on an E/M code:
+"""
+
+_STEP_5_TAIL = """
+
+Rules:
+- 25: an E/M on the same day as a procedure or another service, only when the note documents E/M work that is
+  significant and separately identifiable from that service. Never for the decision to do a minor procedure alone.
+- 95 for an audio-video visit, 93 for an audio-only visit: the setting is "telehealth" or the place of service is
+  02 or 10, and the note documents how the visit was held.
+- 59 or XE, XP, XS, XU: a procedure that is distinct from another one billed the same day (a separate encounter,
+  practitioner, structure or non-overlapping service). Prefer the X modifier that names the reason.
+- Never a modifier the note does not support, and never one only to bypass an edit.
 """
 
 _OUTPUT = """
@@ -207,7 +246,7 @@ _OUTPUT = """
 - code: the E/M code (or the AWV G-code) the documentation supports. The code only: never a code description.
 - basis: "MDM" or "Time"
 - mdm_level: "Straightforward", "Low", "Moderate" or "High"; null for an AWV or a code without an MDM level
-  (99211, 99281, discharge codes)
+  (99211, 99281, discharge codes, critical care)
 - mdm_elements: the three MDM elements, each {"level", "reason"}: problems (number and complexity of problems
   addressed), data (amount and complexity of data reviewed and analyzed) and risk (risk of complications,
   morbidity or mortality of patient management). Each level is "Straightforward", "Low", "Moderate" or "High";
@@ -222,8 +261,14 @@ _OUTPUT = """
   40 minutes or more"). Empty for the highest level of the family, an AWV, or a code that is not level-selected.
   Describe documentation of work actually done only: never suggest documenting work that was not performed.
 - alternative_code and alternative_reason: the next most defensible code and why, or null
-- modifiers: the modifiers the note supports, two characters each without a hyphen (for example "25", "95")
-- add_on_codes: the add-on codes STEP 4 supports, codes only
+- modifiers: the modifiers STEP 5 supports, whether or not they were billed, each
+  {"modifier", "code", "reason", "evidence"}: modifier is two characters without a hyphen (for example "25");
+  code is the code it belongs on, "" for the visit code you selected; reason is one sentence naming what the note
+  shows; evidence holds verbatim quotes from the note
+- add_on_codes: the add-on codes STEP 4 supports, whether or not they were billed, each
+  {"code", "name", "reason", "evidence"}: code is the CPT or HCPCS code only; name is a short name for the
+  service (for example "Depression screening"); reason is one sentence naming the documented trigger and time;
+  evidence holds verbatim quotes from the note
 """
 
 
@@ -237,7 +282,13 @@ def render_em_families() -> str:
 
 
 def _family_line(family: EmFamily) -> str:
-    return f"  {family.label}: " + "; ".join(_level_text(level) for level in family.levels)
+    levels = [_level_text(level) for level in family.levels]
+    levels += [f"add-on {_level_text(level)}" for level in family.add_ons]
+    return f"  {family.label}: " + "; ".join(levels)
+
+
+def render_modifier_list(modifiers: Mapping[str, str]) -> str:
+    return "\n".join(f"- {modifier}: {meaning}" for modifier, meaning in modifiers.items())
 
 
 def _level_text(level: EmLevel) -> str:
@@ -258,6 +309,10 @@ EM_TASK = (
     + _STEP_2
     + _STEP_3
     + _STEP_4
-    + _STEP_5
+    + _STEP_5_HEAD
+    + render_modifier_list(VISIT_MODIFIERS)
+    + _STEP_5_MIDDLE
+    + render_modifier_list(PROCEDURE_MODIFIERS)
+    + _STEP_5_TAIL
     + _OUTPUT
 )

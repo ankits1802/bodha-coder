@@ -23,13 +23,7 @@ async def setup(db: Db, actor: Admin) -> dict[str, Any]:
     overview = await practice_setup.setup_overview(db, practice) if practice else {}
     return {
         **overview,
-        "security": {
-            "mfa_roles": practice.mfa_roles,
-            "idle_minutes": practice.idle_minutes,
-            "private_messages": practice.private_messages,
-        }
-        if practice
-        else None,
+        "security": {"mfa_roles": practice.mfa_roles, "idle_minutes": practice.idle_minutes} if practice else None,
     }
 
 
@@ -45,9 +39,7 @@ async def save_checks(body: ChecksBody, db: Db, actor: Admin) -> None:
 
 @router.put("/practice/security", status_code=204)
 async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
-    await practice_setup.save_security(
-        db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes, private=body.private_messages
-    )
+    await practice_setup.save_security(db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes)
 
 
 @router.get("/providers")
