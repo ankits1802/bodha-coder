@@ -20,6 +20,7 @@ dependencies = [
     "google-genai==3.6.1",
     "boto3==1.44.12",
     "httpx==0.28.1",
+    "tzdata==2026.6",
 ]
 
 [project.optional-dependencies]

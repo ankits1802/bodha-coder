@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 
 from app.api.bodies import ChecksBody, ImportBody, MipsBody, ProviderBody, SectionBody, SecurityBody
+from app.core.calendar import day_bounds, today_in
 from app.core.deps import Actor, Db, require
-from app.core.roles import ADMINS, PRACTICE_ROLES, UPLOADERS
+from app.core.roles import ADMINS, PRACTICE_ROLES
 from app.models import AccessLog, PlaceOfService, Provider
 from app.services import practice_setup
 
@@ -89,7 +90,7 @@ async def import_providers(body: ImportBody, db: Db, actor: Admin) -> dict[str, 
 
 
 @router.get("/places")
-async def places(db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS, *ADMINS))]) -> list[dict[str, str]]:
+async def places(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES))]) -> list[dict[str, str]]:
     rows = await db.scalars(select(PlaceOfService).where(PlaceOfService.active.is_(True)).order_by(PlaceOfService.code))
     return [{"code": row.code, "name": row.name} for row in rows]
 
@@ -107,13 +108,13 @@ async def save_mips(body: MipsBody, db: Db, actor: Admin) -> dict[str, list[str]
 
 @router.get("/access-log")
 async def access_log(db: Db, actor: Admin, day: date | None = None, user_id: str | None = None) -> list[dict[str, Any]]:
-    start = datetime.combine(day or datetime.now(UTC).date(), time.min, UTC)
+    start, end = day_bounds(day or today_in(actor.zone), actor.zone)
     query = (
         select(AccessLog)
         .where(
             AccessLog.practice_id == actor.practice_id,
             AccessLog.created_at >= start,
-            AccessLog.created_at < start + timedelta(days=1),
+            AccessLog.created_at < end,
         )
         .order_by(AccessLog.created_at.desc())
         .limit(500)

@@ -62,6 +62,19 @@ Keys carry ids only, never names. PDFs are opened through signed links that expi
    URL fragment. The provider confirms a one-time code sent to the contact on file, answers, and
    signs; the answers become a new note text revision and a new analysis is queued.
 
+## Calendar days
+
+Each practice has a time zone (HQ sets it). Due dates (the end of the day of service plus the
+turnaround), the addendum date, insights per day, recent batches and the access-log day are all
+computed in that zone through `app/core/calendar.py`. Instants are stored and sent in UTC.
+
+## Lanes
+
+`notes.lane` is the worklist, `notes.lane_reason` says why in a fixed vocabulary (`flagged`,
+`levels_too_high`, `audit_risk`, `waiting_on_provider`, `code_changes`, `questions`, `matches`), and
+`notes.headline` is the sentence people read. Screens sort and filter on the reason, never the
+headline.
+
 ## Security
 
 Access tokens live in memory and carry a version; blocking, a role change, a password set or a

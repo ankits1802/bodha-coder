@@ -11,6 +11,7 @@ Check here before writing a helper.
 | `security.py` | `hash_password`, `verify_password`, `issue_token`, `read_token`, `digest`, `same_digest`, `random_token`, `random_code`, TOTP helpers |
 | `errors.py` | `AppError` and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable` |
 | `roles.py` | role groups used by every route guard |
+| `calendar.py` | `zone_named`, `day_bounds`, `today_in` (practice calendar days) |
 | `deps.py` | `Db`, `Actor`, `current_actor`, `require(*roles)`, `ProviderActor`, `current_provider` |
 
 ## backend/app/codes

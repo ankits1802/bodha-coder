@@ -92,6 +92,7 @@ class ProviderBody(Body):
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=32)
     channel: Literal["email", "sms"] | None = None
+    active: bool = True
 
 
 class ImportBody(Body):
@@ -140,6 +141,7 @@ class PracticeBody(Body):
     admin_email: EmailStr
     plan: str
     seats: int = Field(ge=1, le=10_000)
+    time_zone: str = Field(default="America/Chicago", max_length=64)
 
 
 class PracticeUpdateBody(Body):
@@ -147,6 +149,7 @@ class PracticeUpdateBody(Body):
     plan: str | None = None
     seats: int | None = Field(default=None, ge=1, le=10_000)
     renews_on: date | None = None
+    time_zone: str | None = Field(default=None, max_length=64)
 
 
 class PlaceBody(Body):

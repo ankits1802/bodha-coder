@@ -4,10 +4,12 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.calendar import zone_named
 from app.core.db import get_session
 from app.core.errors import Forbidden, Unauthorized
 from app.core.security import TokenError, read_token
@@ -31,6 +33,12 @@ class Actor:
         if self.practice is None:
             raise Forbidden("this action needs a practice account")
         return self.practice.id
+
+    @property
+    def zone(self) -> ZoneInfo:
+        if self.practice is None:
+            raise Forbidden("this action needs a practice account")
+        return zone_named(self.practice.time_zone)
 
 
 @dataclass(frozen=True)

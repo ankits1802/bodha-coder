@@ -36,7 +36,7 @@ python -m venv .venv
 copy .env.example .env
 alembic upgrade head
 python -m app.scripts.bootstrap_hq
-uvicorn app.main:app --port 8000
+uvicorn app.main:app --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1
 python -m app.worker
 ```
 
@@ -48,7 +48,9 @@ npm ci
 npm run dev
 ```
 
-The frontend proxies `/api` to `BACKEND_URL` (default `http://localhost:8000`).
+The frontend proxies `/api` to `BACKEND_URL` (default `http://localhost:8000`). Run uvicorn with
+`--proxy-headers` and `--forwarded-allow-ips` set to the web server's address so the access log
+records the visitor's address, not the proxy's.
 
 ## Configuration
 

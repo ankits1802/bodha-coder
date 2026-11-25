@@ -15,7 +15,7 @@ router = APIRouter(tags=["work"])
 
 @router.get("/today")
 async def today(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES))]) -> dict[str, Any]:
-    summary = await worklists.today(db, actor.practice_id)
+    summary = await worklists.today(db, actor.practice_id, actor.zone)
     if actor.user.role == "viewer":
         summary["next_up"] = []
     return summary
@@ -46,6 +46,9 @@ async def queue(
 async def compliance(db: Db, actor: Annotated[Actor, Depends(require(*COMPLIANCE))]) -> dict[str, Any]:
     query = worklists.queue_query(actor.practice_id, lane="compliance", search=None, provider_id=None)
     rows = await worklists.queue_rows(db, query, offset=0)
+    names = await worklists.user_names(db, {row["flagged_by"] for row in rows if row["flagged_by"]})
+    for row in rows:
+        row["flagged_by_name"] = names.get(row["flagged_by"] or "")
     record_access(db, actor, "listed compliance notes", detail=f"{len(rows)} rows")
     await db.commit()
     return {"items": rows, "patterns": await worklists.compliance_patterns(db, actor.practice_id)}

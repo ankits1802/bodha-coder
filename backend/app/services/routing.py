@@ -13,6 +13,7 @@ QUESTION_KINDS = ("cdi_query", "diagnosis")
 @dataclass(frozen=True)
 class Placement:
     lane: str
+    reason: str
     headline: str
 
 
@@ -32,28 +33,29 @@ def place(findings: list[Finding], *, flagged: bool, cleared: bool, awaiting_pro
     gap = em.detail.get("level_difference", 0) if em else 0
     automatic = bool(severe) or (em is not None and em.action == "lower" and gap >= COMPLIANCE_LEVEL_GAP)
     if flagged or (automatic and not cleared):
-        return Placement("compliance", _compliance_headline(flagged, gap))
+        return _compliance_placement(flagged, gap)
     if awaiting_provider:
-        return Placement("provider", "Waiting on provider")
+        return Placement("provider", "waiting_on_provider", "Waiting on provider")
     changes = [
         item
         for item in findings
         if item.action in CODE_CHANGE_ACTIONS and item.kind in ("em", "diagnosis", "code_review")
     ]
     if changes:
-        return Placement("coder", _change_headline(em, changes))
+        return Placement("coder", "code_changes", _change_headline(em, changes))
     questions = open_questions(findings, choices_for(findings, {}))
     if questions:
-        return Placement("provider", f"{len(questions)} question{'s' if len(questions) > 1 else ''} to send")
-    return Placement("approve", "Matches the note")
+        count = len(questions)
+        return Placement("provider", "questions", f"{count} question{'s' if count > 1 else ''} to send")
+    return Placement("approve", "matches", "Matches the note")
 
 
-def _compliance_headline(flagged: bool, gap: int) -> str:
+def _compliance_placement(flagged: bool, gap: int) -> Placement:
     if flagged:
-        return "Flagged for compliance"
+        return Placement("compliance", "flagged", "Flagged for compliance")
     if gap >= COMPLIANCE_LEVEL_GAP:
-        return f"{gap} levels too high"
-    return "High audit risk"
+        return Placement("compliance", "levels_too_high", f"{gap} levels too high")
+    return Placement("compliance", "audit_risk", "High audit risk")
 
 
 def _change_headline(em: Finding | None, changes: list[Finding]) -> str:

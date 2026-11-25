@@ -64,25 +64,28 @@ def test_needs_detail_diagnoses_are_open_questions(findings):
 
 def test_one_level_too_high_goes_to_a_coder(findings):
     placement = place(findings, flagged=False, cleared=False, awaiting_provider=False)
-    assert (placement.lane, placement.headline) == ("coder", "Billed too high")
+    assert (placement.lane, placement.reason, placement.headline) == ("coder", "code_changes", "Billed too high")
 
 
 def test_two_levels_too_high_goes_to_compliance_unless_cleared():
     em = Finding("em", "em", "lower", "Nursing facility", "", "99310", "99308", detail={"level_difference": 2})
-    assert place([em], flagged=False, cleared=False, awaiting_provider=False).lane == "compliance"
+    placed = place([em], flagged=False, cleared=False, awaiting_provider=False)
+    assert (placed.lane, placed.reason, placed.headline) == ("compliance", "levels_too_high", "2 levels too high")
     assert place([em], flagged=False, cleared=True, awaiting_provider=False).lane == "coder"
 
 
 def test_a_critical_audit_risk_goes_to_compliance():
     risk = Finding("audit_risk", "risk-1", "info", "Cloned note", "", severity="Critical", default_choice="keep")
-    assert place([risk], flagged=False, cleared=False, awaiting_provider=False).headline == "High audit risk"
+    placed = place([risk], flagged=False, cleared=False, awaiting_provider=False)
+    assert (placed.lane, placed.reason, placed.headline) == ("compliance", "audit_risk", "High audit risk")
 
 
 def test_matching_codes_are_ready_to_approve():
     em = Finding("em", "em", "keep", "Office visit", "", "99214", "99214", default_choice="keep")
     placement = place([em], flagged=False, cleared=False, awaiting_provider=False)
-    assert (placement.lane, placement.headline) == ("approve", "Matches the note")
+    assert (placement.lane, placement.reason, placement.headline) == ("approve", "matches", "Matches the note")
 
 
 def test_a_pending_provider_request_waits_on_the_provider(findings):
-    assert place(findings, flagged=False, cleared=False, awaiting_provider=True).lane == "provider"
+    placed = place(findings, flagged=False, cleared=False, awaiting_provider=True)
+    assert (placed.lane, placed.reason) == ("provider", "waiting_on_provider")

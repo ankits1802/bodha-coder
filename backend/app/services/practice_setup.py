@@ -122,7 +122,7 @@ async def validated_provider(db: AsyncSession, values: dict[str, Any]) -> dict[s
 
 
 async def save_provider(db: AsyncSession, actor: Actor, values: dict[str, Any], *, provider_id: str | None) -> Provider:
-    clean = await validated_provider(db, values)
+    clean = {**await validated_provider(db, values), "active": bool(values.get("active", True))}
     if provider_id is None:
         provider = Provider(practice_id=actor.practice_id, **clean)
         db.add(provider)

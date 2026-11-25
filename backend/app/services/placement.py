@@ -57,4 +57,5 @@ async def refresh_placement(db: AsyncSession, note: Note) -> None:
         cleared=note.compliance_cleared_by is not None,
         awaiting_provider=await awaiting_provider(db, note.id),
     )
-    note.lane, note.headline, note.status = placement.lane, placement.headline, "ready"
+    note.lane, note.lane_reason, note.headline = placement.lane, placement.reason, placement.headline
+    note.status = "ready"

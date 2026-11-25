@@ -36,4 +36,4 @@ async def export(body: ExportBody, db: Db, actor: Biller) -> Response:
 async def insight(
     db: Db, actor: Annotated[Actor, Depends(require(*INSIGHT_READERS))], days: Literal[7, 14, 30, 90] = 14
 ) -> dict[str, Any]:
-    return await insights.insights(db, actor.practice_id, days=days)
+    return await insights.insights(db, actor.practice_id, days=days, time_zone=actor.zone.key)

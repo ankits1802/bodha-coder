@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import Date, cast, func, select
+from sqlalchemy import Date, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Analysis, Note, Provider, Suggestion, utcnow
@@ -18,7 +18,7 @@ OUTCOME_BY_ACTION = {
 }
 
 
-async def insights(db: AsyncSession, practice_id: str, *, days: int) -> dict[str, Any]:
+async def insights(db: AsyncSession, practice_id: str, *, days: int, time_zone: str) -> dict[str, Any]:
     since = utcnow() - timedelta(days=days)
     first_runs = (
         select(Analysis)
@@ -26,11 +26,8 @@ async def insights(db: AsyncSession, practice_id: str, *, days: int) -> dict[str
         .where(Note.practice_id == practice_id, Analysis.revision == 1, Analysis.finished_at >= since)
         .subquery()
     )
-    per_day = await db.execute(
-        select(cast(first_runs.c.finished_at, Date), func.count())
-        .group_by(cast(first_runs.c.finished_at, Date))
-        .order_by(1)
-    )
+    local_day = cast(func.timezone(time_zone, first_runs.c.finished_at), Date)
+    per_day = await db.execute(select(local_day, func.count()).group_by(text("1")).order_by(text("1")))
     timing = (
         await db.execute(
             select(func.count(), func.count().filter(Note.approved_at <= Note.due_at)).where(

@@ -24,11 +24,6 @@ has no stay history. Clear it once admission data is available.
 The reporting-code table is vendored from ChartMate, where no coder has confirmed it yet
 (CODE-18). Clear it with a coder's review.
 
-### Due dates use the UTC day
-
-`due_at` is the start of the day after the date of service in UTC plus the turnaround. Clear it
-with a practice time zone.
-
 ### Uploaded PDFs can outlive a failed upload transaction
 
 Files are validated before storage, but a database failure after storage leaves objects with no

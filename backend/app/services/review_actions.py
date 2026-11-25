@@ -89,7 +89,7 @@ async def approve(db: AsyncSession, actor: Actor, note_id: str, *, reason: str =
             actor_id=actor.user.id,
         )
     )
-    note.status, note.lane, note.headline = "approved", None, "Approved"
+    note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
     note.approved_by, note.approved_at = actor.user.id, utcnow()
     record_access(db, actor, "approved", note_id=note.id, detail=", ".join(code.label() for code in codes))
     await db.commit()

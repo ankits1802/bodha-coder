@@ -36,15 +36,14 @@ async def add_practice(body: PracticeBody, db: Db, mail: Mail, actor: HqActor) -
         admin_email=body.admin_email,
         plan=body.plan,
         seats=body.seats,
+        time_zone=body.time_zone,
     )
     return {"id": practice.id}
 
 
 @router.patch("/hq/practices/{practice_id}", status_code=204)
 async def edit_practice(practice_id: str, body: PracticeUpdateBody, db: Db, actor: HqActor) -> None:
-    await hq.update_practice(
-        db, actor, practice_id, status=body.status, plan=body.plan, seats=body.seats, renews_on=body.renews_on
-    )
+    await hq.update_practice(db, actor, practice_id, body.model_dump(exclude_unset=True))
 
 
 @router.get("/hq/places")

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
+from app.core.calendar import zone_named
 from app.core.config import get_settings
 from app.core.deps import Actor, ProviderActor
 from app.core.errors import Conflict, Invalid, NotFound, Unauthorized
@@ -209,7 +210,9 @@ async def answer(db: AsyncSession, actor: ProviderActor, answers: list[Answer], 
     if not confirmed:
         raise Invalid("confirm the answers are clinically accurate")
     chosen = _validated(request.questions, answers)
-    text = addendum_text(provider.name, request.questions, chosen)
+    practice = await db.get_one(Practice, note.practice_id)
+    signed_on = datetime.now(zone_named(practice.time_zone)).date()
+    text = addendum_text(f"{provider.name}, {provider.credential}", request.questions, chosen, signed_on=signed_on)
     request.answers = [{"key": item.key, "choice": item.choice, "comment": item.comment} for item in chosen]
     request.addendum_text, request.status, request.answered_at = text, "answered", utcnow()
     db.add(
@@ -241,9 +244,10 @@ def _validated(questions: list[dict[str, Any]], answers: list[Answer]) -> list[A
     return chosen
 
 
-def addendum_text(provider_name: str, questions: list[dict[str, Any]], answers: list[Answer]) -> str:
-    stamp = utcnow().strftime("%d %b %Y")
-    lines = [f"Addendum by {provider_name}, {stamp}."]
+def addendum_text(
+    provider_label: str, questions: list[dict[str, Any]], answers: list[Answer], *, signed_on: date
+) -> str:
+    lines = [f"Addendum by {provider_label}, {signed_on.strftime('%d %b %Y')}."]
     for question, item in zip(questions, answers, strict=True):
         reply = (item.comment or "").strip() if item.choice == OTHER_ANSWER else item.choice
         extra = f" {item.comment.strip()}" if item.comment and item.choice != OTHER_ANSWER else ""

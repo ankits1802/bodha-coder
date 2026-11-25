@@ -61,5 +61,6 @@ def user_view(user: User, practice: Any | None) -> dict[str, Any]:
             "name": practice.name,
             "checks": practice.checks,
             "idle_minutes": practice.idle_minutes,
+            "time_zone": practice.time_zone,
         },
     }

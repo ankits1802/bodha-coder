@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from datetime import timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import LANES, Batch, CodeSet, Note, Provider, Suggestion, utcnow
+from app.core.calendar import today_in
+from app.models import LANES, Batch, CodeSet, Note, Provider, Suggestion, User, utcnow
 
 PAGE_SIZE = 50
 DUE_SOON = timedelta(hours=24)
@@ -65,7 +67,12 @@ def summary(note: Note, provider_name: str) -> dict[str, Any]:
         "service_date": note.service_date.isoformat(),
         "status": note.status,
         "lane": note.lane,
+        "lane_reason": note.lane_reason,
         "headline": note.headline,
+        "place_code": note.place_code,
+        "visit_type": note.visit_type,
+        "flag_reason": note.flag_reason,
+        "flagged_by": note.flagged_by,
         "due_at": note.due_at.isoformat(),
         "file_name": note.file_name,
     }
@@ -106,12 +113,12 @@ async def _changes_by_analysis(db: AsyncSession, analysis_ids: list[str]) -> dic
     return found
 
 
-async def today(db: AsyncSession, practice_id: str) -> dict[str, Any]:
+async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, Any]:
     lanes = await lane_counts(db, practice_id)
     next_up = await queue_rows(
         db, queue_query(practice_id, lane="coder", search=None, provider_id=None), offset=0, limit=3
     )
-    since = utcnow().date() - timedelta(days=RECENT_BATCH_DAYS)
+    since = today_in(zone) - timedelta(days=RECENT_BATCH_DAYS)
     batch_rows = await db.execute(
         select(Batch.id, Provider.name, Batch.service_date, Batch.place_code, Note.status, func.count())
         .join(Provider, Provider.id == Batch.provider_id)
@@ -141,6 +148,12 @@ async def today(db: AsyncSession, practice_id: str) -> dict[str, Any]:
         "next_up": next_up,
         "batches": sorted(batches.values(), key=lambda item: item["service_date"], reverse=True),
     }
+
+
+async def user_names(db: AsyncSession, user_ids: set[str]) -> dict[str, str]:
+    if not user_ids:
+        return {}
+    return dict((await db.execute(select(User.id, User.name).where(User.id.in_(user_ids)))).tuples().all())
 
 
 async def compliance_patterns(db: AsyncSession, practice_id: str) -> list[dict[str, Any]]:

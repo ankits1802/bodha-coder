@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_store import ObjectStore, note_document_key
 from app.codes.billing_codes import Code, FilenameFacts, parse_code_list, parse_note_filename
 from app.codes.places import setting_for
+from app.core.calendar import day_bounds
 from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
@@ -47,8 +49,8 @@ def preview(file_names: list[str]) -> list[FilenameFacts]:
     return [parse_note_filename(name) for name in file_names]
 
 
-def due_at(service_date: date) -> datetime:
-    day_after = datetime.combine(service_date + timedelta(days=1), time.min, UTC)
+def due_at(service_date: date, zone: ZoneInfo) -> datetime:
+    _, day_after = day_bounds(service_date, zone)
     return day_after + timedelta(hours=get_settings().turnaround_hours)
 
 
@@ -121,7 +123,7 @@ async def _add_note(db: AsyncSession, store: ObjectStore, actor: Actor, batch: B
         service_date=batch.service_date,
         visit_type=file.visit_type or batch.visit_type,
         place_code=batch.place_code,
-        due_at=due_at(batch.service_date),
+        due_at=due_at(batch.service_date, actor.zone),
     )
     db.add(note)
     await db.flush()

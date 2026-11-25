@@ -36,6 +36,16 @@ SUGGESTION_KINDS = (
 )
 CHOICES = ("accept", "keep", "ask", "add", "skip")
 CODE_SET_KINDS = ("billed", "final")
+LANE_REASONS = (
+    "flagged",
+    "levels_too_high",
+    "audit_risk",
+    "waiting_on_provider",
+    "code_changes",
+    "questions",
+    "matches",
+)
+DEFAULT_TIME_ZONE = "America/Chicago"
 
 
 def _one_of(column: str, values: tuple[str, ...]) -> CheckConstraint:
@@ -60,6 +70,7 @@ class Practice(IdMixin, Base):
     mfa_roles: Mapped[list[str]] = mapped_column(JSONB, default=lambda: ["admin", "compliance"])
     idle_minutes: Mapped[int] = mapped_column(Integer, default=15)
     private_messages: Mapped[bool] = mapped_column(Boolean, default=True)
+    time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
 
 
 class User(IdMixin, Base):
@@ -137,6 +148,10 @@ class Note(IdMixin, Base):
         Index("ix_notes_work", "practice_id", "status", "lane", "due_at"),
         _one_of("status", NOTE_STATUSES),
         CheckConstraint("lane IS NULL OR lane IN ('approve', 'coder', 'provider', 'compliance')", name="lane_allowed"),
+        CheckConstraint(
+            "lane_reason IS NULL OR lane_reason IN (" + ", ".join(f"'{item}'" for item in LANE_REASONS) + ")",
+            name="lane_reason_allowed",
+        ),
     )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
@@ -154,6 +169,7 @@ class Note(IdMixin, Base):
     place_code: Mapped[str] = mapped_column(String(2))
     status: Mapped[str] = mapped_column(String(16), default="queued")
     lane: Mapped[str | None] = mapped_column(String(16))
+    lane_reason: Mapped[str | None] = mapped_column(String(24))
     headline: Mapped[str | None] = mapped_column(String(120))
     flag_reason: Mapped[str | None] = mapped_column(Text)
     flagged_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
