@@ -94,3 +94,14 @@ The public page at `/` (`features/landing`) follows the rules above with these a
 | Truthful figures | A figure is structural ("every suggested code checked against the official code set", "one in ten held") or computed from the visitor's inputs, as in the estimator, which shows its arithmetic and "Your numbers, not ours."; no customer counts, logos, testimonials, certifications or outcome statistics |
 | Controls | Role tabs follow the WAI-ARIA tabs pattern (arrows, Home, End, one tab in the tab order); questions are buttons with `aria-expanded` inside level 3 headings; the estimator pairs each range with a labelled number field and names the allowed range beside an invalid value |
 | Phones | Section links collapse behind a Sections button below 1024px; the brand, Sign in and Start free stay in the bar |
+
+## Plans and pricing
+
+| Rule | How |
+|---|---|
+| Plan cards | `PlanCard` is shared by `/plan` and `/pricing`: name, price in whole dollars with its unit (per provider / month or / year, Free for the trial length, Custom), and the limits as a list. The Monthly / Annual segmented control names the months a year saves inside the Annual segment |
+| Choosing | On `/plan` the two plans bought online are native radios drawn as cards (the whole card is the label; checked and focus rings from `OPTION_CARD`); one primary "Choose plan" acts on the choice and opens "Pay with" (Card via Stripe, PayPal) only when both are set up. A subscriber sees "Manage billing" instead (primary for Stripe; secondary beside a danger "Cancel at period end" for PayPal, which confirms first). Enterprise is a secondary "Contact sales" |
+| Status | The plan's standing is a dot and a word (Trial, Active, Payment due, Ending, Canceled); usage reads `3 of 5` |
+| Banner | Admins see one inline alert at the top of the content for a trial's last days or a failed payment, with a link to `/plan` and "Hide until tomorrow"; it is not shown on `/plan` |
+| Pricing page | `/pricing` uses the landing nav (section links point back to `/`) and the landing type scale; "Start free trial" is primary on the trial card only, secondary on the paid cards, and Enterprise opens the demo request |
+

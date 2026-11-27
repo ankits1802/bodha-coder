@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "@/lib/session/useSession";
+import { PlanBanner } from "../plan-banner/PlanBanner";
 import { useShortcuts } from "../shortcuts/useShortcuts";
 import { SHARED_TEXT } from "../strings";
 import { Sidebar } from "./Sidebar";
@@ -45,7 +46,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Sidebar user={user} collapsed={collapsed} onToggle={sidebar.toggle} onNavigate={() => setMenuOpen(false)} />
       </div>
       <main id="main" tabIndex={-1} className="min-w-0 flex-1 px-4 pt-8 pb-12 outline-none sm:px-8 lg:px-12 lg:pt-10">
-        <div className="flex max-w-content flex-col gap-6">{children}</div>
+        <div className="flex max-w-content flex-col gap-6">
+          <PlanBanner role={user.role} />
+          {children}
+        </div>
       </main>
     </div>
   );

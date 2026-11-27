@@ -13,6 +13,8 @@ recovery loop that re-queues analyses left running by a stopped worker, and a re
 minutes: provider requests past their link expiry become `expired` (the note returns to its lane and a
 held claim is released), and unanswered requests get at most two reminders, at 12 and 36 hours, each
 with a fresh link. Once a day it deletes stored files that no record holds (the orphan sweep, below).
+Every 15 minutes it brings each live subscription's billed quantity in line with the practice's active
+providers (Plans and billing, below).
 
 ## API types
 
@@ -52,6 +54,8 @@ Nothing a person or the model produced is overwritten.
 | `user_identities` | the sign-in service subject bound to a user (`provider` `google`, `microsoft` or `yahoo`, `subject`); one per user and provider, one user per provider subject | added on first use, deleted with the user |
 | `practices.signup` | how the practice began: `{"source": "hq"}`, or for self sign-up `source` `self`, `agreement_version`, `accepted_at`, `accepted_by` (user id), `method` (`email` or the provider) and `ip` | written once when the practice is created |
 | `rate_events` | one row per counted attempt (bucket, hashed key, time) | deleted once outside the window |
+| `subscriptions` | a practice's paid subscription (one per practice): `provider` (`stripe`, `paypal`), customer and subscription ids, `plan`, `interval` (`monthly`, `annual`), `status` (`pending`, `active`, `past_due`, `canceled`, `expired`), `current_period_end`, `cancel_at_period_end`, `quantity`, `past_due_since` | current state, written only from verified webhooks and the quantity sync; history in `activity` |
+| `billing_events` | each processed Stripe or PayPal webhook (primary key provider and event id, kind, received) | written once; a repeat is ignored |
 | `remittances` | one 835 payment (ST/SE transaction) of an uploaded file: payer, payment date, file key, the file's SHA-256 (`file_sha256`) | one per payment; a file with several payments shares its key |
 | `remittance_lines` | each service line paid: claim reference, patient, date of service, billed and paid codes and amounts (cents), CAS adjustments, status, the plan type whose appeal window applies (`appeal_plan_type`, appealable lines only), matched note; `appeal_by` holds the date written by uploads before migration 0007 | written once at upload |
 | `audit_runs` | one blind audit or training set: purpose, scope, provider or specialty, period, notes requested, who started it, status (`done` once every note is coded) | one per draw |
@@ -222,6 +226,22 @@ filters by the caller's practice. Provider sessions are a separate token type va
 | Recovery codes | ten single-use codes (`xxxx-xxxx-xxxx-xxxx`, about 79 bits each) made when two-step setup completes and returned once; stored as SHA-256 hashes in `recovery_codes`. `POST /api/auth/mfa/recover` uses one in place of the six digits; `POST /api/auth/recovery-codes` replaces them after a current six-digit code; an admin's two-step reset deletes them |
 | Rate limits | `services.rate_limits.hit(db, rule, key)` stores one `rate_events` row per attempt (bucket, SHA-256 of the key, time) under a per-key advisory lock, so every API process shares the count; it deletes the key's expired rows and purges rows older than the longest window (`FOR UPDATE SKIP LOCKED`). Over the limit is a 429 "Too many attempts. Try again in N minutes." |
 | Signed-in devices | `GET /api/auth/sessions` lists the caller's live refresh sessions (the refresh cookie marks the current one); signing one out, or every other one, revokes them and bumps the token version so their access tokens stop at once while this device refreshes silently |
+
+## Plans and billing
+
+Decision: [0028](decisions/0028-subscription-billing.md).
+
+| Piece | How it works |
+|---|---|
+| Catalog | `services/plans.py`: `CATALOG` (trial, essentials, professional, enterprise; prices in cents per active provider, user and provider limits), `price_id(settings, provider, plan, interval)` from `STRIPE_PRICE_*` and `PAYPAL_PLAN_*`, `plan_for_price` (the reverse), `prices_complete`. `GET /api/plans` (public) lists the plans and the processors that are fully configured |
+| Limits | `services/plan_limits.py`: users are capped by the plan, and also by `practices.seats` while no subscription is live; active providers by the plan. Invite, unblock, provider add or reactivation and CSV import answer 409 `the Trial plan allows up to 2 active providers` (or users), or `all seats are in use` |
+| Plan screen | `GET /api/plan` (admins): plan, `standing` (`trial`, `active`, `past_due`, `canceling`, `canceled`, `managed`), `renews_on`, trial days left, users and active providers against their limits, and the subscription (`managed_by` `portal` for Stripe, `cancel` for PayPal) |
+| Checkout | `POST /api/plan/checkout` `{plan, interval, provider}` (admins; essentials or professional; 409 while a subscription is live or when the practice has more active providers than the plan allows): Stripe Checkout in subscription mode (price for plan and interval, quantity `max(1, active providers)`, the admin's email or the known customer, `client_reference_id` and metadata `practice_id`, promotion codes) or a PayPal subscription (`plan_id`, quantity, `custom_id`), returning to `{APP_URL}/plan?checkout=done` or `=cancelled`. Answers `{url}`; writes `checkout started` |
+| Manage | `POST /api/plan/portal` (Stripe Billing Portal session, or PayPal's automatic payments page) and `POST /api/plan/cancel` (Stripe `cancel_at_period_end`, PayPal cancel); neither changes stored state |
+| Webhooks | `POST /api/billing-webhooks/{stripe,paypal}` (no session): verify the signature (400 otherwise), record the event in `billing_events` (a repeat answers 204 and does nothing), fetch the subscription from the processor and apply it (`services/subscription_events.py`): live states make the practice `active` on the subscription's plan with `renews_on` = the period end (or the grace end while past due); a canceled or expired subscription that was live keeps access to its period end; webhooks never lift a block. Writes `subscription changed` |
+| Quantity | `services/quantity_sync.py`: after provider changes (a background task) and every 15 minutes (worker), each live subscription whose quantity differs from `max(1, active providers)` is updated (Stripe item quantity with prorations, PayPal revise); a failure waits for the next sweep. Writes `subscription quantity changed` |
+| HQ | practices rows carry `billing_provider`, `billing_status`, `billing_interval`; while a subscription is live HQ cannot change plan or renewal (409), and the practice cannot be deleted |
+| Web | `/plan` (Plan and billing, admins), the trial and past-due banner at the top of every admin screen (hidden for the day when dismissed, a local-storage date), and the public `/pricing` page |
 
 ## Defensibility
 

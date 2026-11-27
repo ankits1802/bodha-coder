@@ -22,6 +22,7 @@ export type Area =
   | "insights"
   | "setup"
   | "team"
+  | "plan"
   | "security"
   | "help"
   | "hq";
@@ -48,6 +49,7 @@ const AREA_ROLES: Record<Area, readonly Role[]> = {
   insights: INSIGHT_READERS,
   setup: ADMINS,
   team: ADMINS,
+  plan: ADMINS,
   security: PRACTICE_ROLES,
   help: PRACTICE_ROLES,
   hq: HQ,

@@ -156,6 +156,18 @@ export type HqPlace = Schemas["HqPlace"];
 export type HqActivityEntry = Schemas["HqActivityEntry"];
 export type HqActivityPage = Schemas["HqActivityPage"];
 
+export type PlanCatalog = Schemas["PlanCatalog"];
+export type PlanTerms = Schemas["PlanTerms"];
+export type PlanStatus = Schemas["PlanStatus"];
+export type PlanStanding = PlanStatus["standing"];
+export type PlanSubscription = Schemas["PlanSubscription"];
+export type BillingProvider = PlanSubscription["provider"];
+export type BillingInterval = PlanSubscription["interval"];
+export type BillingStatus = PlanSubscription["status"];
+export type CheckoutRequest = Schemas["CheckoutBody"];
+export type CheckoutPlan = CheckoutRequest["plan"];
+export type RedirectLink = Schemas["RedirectLink"];
+
 export type DayNote = Schemas["DayNote"];
 export type DayDuplicate = Schemas["DayDuplicate"];
 export type DayLevelCount = Schemas["DayLevelCount"];

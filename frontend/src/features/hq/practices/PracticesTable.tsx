@@ -7,6 +7,7 @@ import { MEMBER_STATUS_LABELS, PLAN_LABELS } from "@/lib/labels";
 import { practiceStatusView, renewalLine } from "../practiceStatus";
 import { HQ_TEXT } from "../strings";
 import { adminLinkLabel, canDeletePractice, canSendAdminLink, type PracticeActionKind } from "./practiceActions";
+import { billingView } from "./practiceBilling";
 
 interface PracticesTableProps {
   practices: HqPractice[];
@@ -66,6 +67,16 @@ function SelfSignUp({ practice }: { practice: HqPractice }) {
   );
 }
 
+function BillingLine({ practice }: { practice: HqPractice }) {
+  const view = billingView(practice);
+  if (!view) return null;
+  return (
+    <StatusDot tone={view.tone} className="mt-0.5 text-footnote">
+      {view.label}
+    </StatusDot>
+  );
+}
+
 function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowActions) {
   const status = practiceStatusView(practice);
   return (
@@ -82,6 +93,7 @@ function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowAct
       <Td>
         {PLAN_LABELS[practice.plan]}
         <span className="block text-footnote text-secondary">{renewalLine(practice)}</span>
+        <BillingLine practice={practice} />
       </Td>
       <Td className="text-right tabular-nums">{formatCount(practice.waiting)}</Td>
       <Td>

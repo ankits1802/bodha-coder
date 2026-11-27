@@ -1597,6 +1597,42 @@
         "title": "CdiOverview",
         "type": "object"
       },
+      "CheckoutBody": {
+        "additionalProperties": false,
+        "properties": {
+          "interval": {
+            "enum": [
+              "monthly",
+              "annual"
+            ],
+            "title": "Interval",
+            "type": "string"
+          },
+          "plan": {
+            "enum": [
+              "essentials",
+              "professional"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "stripe",
+              "paypal"
+            ],
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan",
+          "interval",
+          "provider"
+        ],
+        "title": "CheckoutBody",
+        "type": "object"
+      },
       "Checks": {
         "additionalProperties": false,
         "properties": {
@@ -4547,6 +4583,54 @@
             ],
             "title": "Admin Status"
           },
+          "billing_interval": {
+            "anyOf": [
+              {
+                "enum": [
+                  "monthly",
+                  "annual"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Interval"
+          },
+          "billing_provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "stripe",
+                  "paypal"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Provider"
+          },
+          "billing_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "active",
+                  "past_due",
+                  "canceled",
+                  "expired"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Status"
+          },
           "failed_24h": {
             "title": "Failed 24H",
             "type": "integer"
@@ -4573,7 +4657,7 @@
           "plan": {
             "enum": [
               "trial",
-              "basic",
+              "essentials",
               "professional",
               "enterprise"
             ],
@@ -4658,7 +4742,10 @@
           "last_failure",
           "admin_name",
           "admin_email",
-          "admin_status"
+          "admin_status",
+          "billing_provider",
+          "billing_status",
+          "billing_interval"
         ],
         "title": "HqPractice",
         "type": "object"
@@ -6661,6 +6748,302 @@
         "title": "PlaceBody",
         "type": "object"
       },
+      "PlanCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PlanTerms"
+            },
+            "title": "Plans",
+            "type": "array"
+          },
+          "providers": {
+            "items": {
+              "enum": [
+                "stripe",
+                "paypal"
+              ],
+              "type": "string"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "trial_days": {
+            "title": "Trial Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plans",
+          "providers",
+          "trial_days"
+        ],
+        "title": "PlanCatalog",
+        "type": "object"
+      },
+      "PlanStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "plan": {
+            "enum": [
+              "trial",
+              "essentials",
+              "professional",
+              "enterprise"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "provider_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Limit"
+          },
+          "providers": {
+            "title": "Providers",
+            "type": "integer"
+          },
+          "renews_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renews On"
+          },
+          "standing": {
+            "enum": [
+              "trial",
+              "active",
+              "past_due",
+              "canceling",
+              "canceled",
+              "managed"
+            ],
+            "title": "Standing",
+            "type": "string"
+          },
+          "subscription": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanSubscription"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trial_days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Days Left"
+          },
+          "user_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Limit"
+          },
+          "users": {
+            "title": "Users",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan",
+          "standing",
+          "renews_on",
+          "trial_days_left",
+          "users",
+          "user_limit",
+          "providers",
+          "provider_limit",
+          "subscription"
+        ],
+        "title": "PlanStatus",
+        "type": "object"
+      },
+      "PlanSubscription": {
+        "additionalProperties": false,
+        "properties": {
+          "cancel_at_period_end": {
+            "title": "Cancel At Period End",
+            "type": "boolean"
+          },
+          "current_period_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          },
+          "interval": {
+            "enum": [
+              "monthly",
+              "annual"
+            ],
+            "title": "Interval",
+            "type": "string"
+          },
+          "managed_by": {
+            "enum": [
+              "portal",
+              "cancel"
+            ],
+            "title": "Managed By",
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "stripe",
+              "paypal"
+            ],
+            "title": "Provider",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "active",
+              "past_due",
+              "canceled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "interval",
+          "status",
+          "cancel_at_period_end",
+          "current_period_end",
+          "quantity",
+          "managed_by"
+        ],
+        "title": "PlanSubscription",
+        "type": "object"
+      },
+      "PlanTerms": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annual Cents"
+          },
+          "annual_months_free": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annual Months Free"
+          },
+          "key": {
+            "enum": [
+              "trial",
+              "essentials",
+              "professional",
+              "enterprise"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "max_providers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Providers"
+          },
+          "max_users": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Users"
+          },
+          "monthly_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Cents"
+          },
+          "pricing": {
+            "enum": [
+              "free",
+              "per_provider",
+              "custom"
+            ],
+            "title": "Pricing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "pricing",
+          "monthly_cents",
+          "annual_cents",
+          "annual_months_free",
+          "max_users",
+          "max_providers"
+        ],
+        "title": "PlanTerms",
+        "type": "object"
+      },
       "PointerChoice": {
         "additionalProperties": false,
         "properties": {
@@ -8568,6 +8951,20 @@
           "codes"
         ],
         "title": "RecoveryCodes",
+        "type": "object"
+      },
+      "RedirectLink": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "RedirectLink",
         "type": "object"
       },
       "RemittanceAdjustment": {
@@ -11947,6 +12344,51 @@
         "summary": "Billing List",
         "tags": [
           "billing"
+        ]
+      }
+    },
+    "/api/billing-webhooks/{provider}": {
+      "post": {
+        "operationId": "billing_webhook_api_billing_webhooks__provider__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Billing Webhook",
+        "tags": [
+          "plan"
         ]
       }
     },
@@ -16867,6 +17309,326 @@
         "summary": "Places",
         "tags": [
           "practice"
+        ]
+      }
+    },
+    "/api/plan": {
+      "get": {
+        "operationId": "plan_api_plan_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Plan",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/api/plan/cancel": {
+      "post": {
+        "operationId": "cancel_api_plan_cancel_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Cancel",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/api/plan/checkout": {
+      "post": {
+        "operationId": "checkout_api_plan_checkout_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Checkout",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/api/plan/portal": {
+      "post": {
+        "operationId": "portal_api_plan_portal_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedirectLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Portal",
+        "tags": [
+          "plan"
+        ]
+      }
+    },
+    "/api/plans": {
+      "get": {
+        "operationId": "plans_api_plans_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Plans",
+        "tags": [
+          "plan"
         ]
       }
     },

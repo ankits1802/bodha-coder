@@ -15,6 +15,7 @@ const PRIVATE_PATHS = [
   "/quality",
   "/setup",
   "/team",
+  "/plan",
   "/security",
   "/help",
   "/hq",

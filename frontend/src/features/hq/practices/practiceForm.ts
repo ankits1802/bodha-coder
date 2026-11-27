@@ -3,7 +3,7 @@ import { isIsoDate } from "@/lib/dates";
 import { isEmail } from "@/lib/validation";
 import { HQ_TEXT } from "../strings";
 
-export const PLANS: readonly Plan[] = ["trial", "basic", "professional", "enterprise"];
+export const PLANS: readonly Plan[] = ["trial", "essentials", "professional", "enterprise"];
 export const STATUSES: readonly PracticeStatus[] = ["trial", "active", "ended", "blocked"];
 const MAX_SEATS = 10_000;
 

@@ -19,6 +19,7 @@ describe("role-based navigation", () => {
       "quality",
       "setup",
       "team",
+      "plan",
       "security",
     ]);
     expect(keysFor("coder")).toEqual(["today", "upload", "queue", "training", "security"]);

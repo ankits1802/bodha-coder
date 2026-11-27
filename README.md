@@ -128,6 +128,18 @@ sign in and HQ adds every practice. Sign-in, sign-up, password reset, two-step c
 provider codes and demo requests are rate limited per address and account, so uvicorn must see the
 visitor's address (`--proxy-headers` and `--forwarded-allow-ips`, above).
 
+### Plans and billing
+
+| Setting | Values |
+|---|---|
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_*` | card payments through Stripe Checkout and the Billing Portal; offered once the key, the webhook secret and all four price ids are set |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_ENVIRONMENT`, `PAYPAL_PLAN_*` | PayPal subscriptions; offered once the app credentials, the webhook id and all four plan ids are set |
+| `BILLING_GRACE_DAYS` | days of access after a failed payment (7) |
+
+Admins choose a plan on `/plan`; prices and limits live in `backend/app/services/plans.py`, and only
+verified webhooks change a subscription. Setting up the products, prices, portal and webhooks:
+[docs/DEPLOY.md](docs/DEPLOY.md#set-up-stripe-and-paypal).
+
 ### Gemini on Vertex AI
 
 Clinical notes are PHI. Send them to Gemini through Vertex AI, which Google's HIPAA BAA covers; the

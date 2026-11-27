@@ -16,6 +16,7 @@ export type NavIconName =
   | "search"
   | "help"
   | "book"
+  | "receipt"
   | "sidebar"
   | "signOut";
 
@@ -45,6 +46,7 @@ const PATHS: Record<NavIconName, ReactNode> = {
     </>
   ),
   shield: <path d="M8 1.8l5 2v4c0 3-2.1 5.3-5 6.4-2.9-1.1-5-3.4-5-6.4v-4z" {...STROKE} />,
+  receipt: <path d="M3.5 1.8h9v12.4l-1.8-1.2-1.8 1.2L7.1 13l-1.8 1.2-1.8-1.2zM6 5.5h4M6 8h4M6 10.5h2.5" {...STROKE} />,
   card: (
     <>
       <rect x="1.8" y="3.5" width="12.4" height="9" rx="2" {...STROKE} />

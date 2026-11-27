@@ -6,10 +6,10 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `config.py` | `Settings` (refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default; `refuse_unready_signup()` raises `SignupNotReady` when production has self sign-up on without `BAA_URL` and `TERMS_URL`, called first in the API lifespan; blank `TERMS_URL`, `BAA_URL`, `PRIVACY_URL` read as unset), `get_settings()` |
+| `config.py` | `Settings` (billing settings in `BILLING_SETTINGS` read blank as unset; refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default; `refuse_unready_signup()` raises `SignupNotReady` when production has self sign-up on without `BAA_URL` and `TERMS_URL`, called first in the API lifespan; blank `TERMS_URL`, `BAA_URL`, `PRIVACY_URL` read as unset), `get_settings()` |
 | `db.py` | `engine`, `SessionFactory`, `get_session` |
 | `security.py` | `hash_password`, `verify_password`, `issue_token`, `read_token`, `digest`, `same_digest`, `random_token`, `random_code`, TOTP helpers (`mfa_step_for`, `mfa_uri`, `new_mfa_secret`), `seal_mfa_secret` / `open_mfa_secret` / `is_sealed_mfa_secret` (Fernet, `MFA_ENCRYPTION_KEY`), `MfaKeyUnavailable` |
-| `errors.py` | `AppError` and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable`, `RateLimited` (429) |
+| `errors.py` | `AppError` (400) and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable`, `RateLimited` (429) |
 | `roles.py` | role groups used by every route guard |
 | `calendar.py` | `zone_named`, `day_bounds`, `today_in` (practice calendar days), `shift_years(day, years)` (29 February becomes the 28th in a common year) |
 | `deps.py` | `Db`, `Actor`, `current_actor`, `require(*roles)`, `ProviderActor`, `current_provider`, `ensure_practice_open`, `PlanEnded` |
@@ -67,6 +67,10 @@ Check here before writing a helper.
 | `demo_model.py`, `demo_answers.py` | `DemoModelClient(DemoCodeBook)` (the `ModelClient` for `GEMINI_BACKEND=demo`: canned review bundles, model `DEMO_MODEL`), `demo_outcome(document)` (first SHA-256 byte modulo five over `DEMO_OUTCOMES`), `read_request(prompt, pdf)`; `DemoCodeBook` takes `em_ladder` and an ICD-10-CM describer from the worker, as adapters do not import `codes` |
 | `oidc_providers.py` | the sign-in service registry `PROVIDERS` (`GOOGLE`, `MICROSOFT`, `YAHOO` as `ProviderSpec`: discovery address, algorithms, required claims, issuer rule, email-trust rule, settings names), `PROVIDER_NAMES`, `provider_label(name)`, `tenant_allowed(tenant, tid)`, `display_name(claims)`, `IdentityRefused`, `UnverifiedEmail`, `ProviderUnreachable` |
 | `oidc.py` | `IdentityProvider` protocol, `OidcProvider` (one OpenID Connect client: discovery, PKCE S256, code exchange, `identity_from(id_token, nonce=)`), `ProviderIdentity` (provider, subject, email, name), `ProviderConfig`, `Endpoints`, `endpoints_from(document)` (https endpoints only), `build_identity_providers(settings)`, `pkce_challenge` |
+| `billing_contract.py` | the payment processor contract: `BillingProvider` protocol (`checkout_url`, `manage_url`, `cancel_at_period_end`, `set_quantity`, `read_event`, `subscription`), `CheckoutRequest`, `SubscriptionRef`, `ProcessorEvent`, `ProcessorSubscription` (status in the stored vocabulary), `WebhookRefused` (400), `BillingUnavailable` (503, fixed message), `PAYMENT_SUCCEEDED`, `PAYMENT_FAILED` |
+| `stripe_billing.py` | `StripeBilling(api, webhook_secret=)` (Checkout sessions, Billing Portal, item quantity with prorations, `Stripe-Signature` checked on the raw body), `StripeSdk` (the `StripeApi` binding over the official SDK, async through httpx; Stripe errors become `BillingUnavailable`), `checkout_params`, `subscription_state` (period end from the subscription item), `event_subscription_id`, `STRIPE_STATUSES`, `HANDLED_EVENTS` |
+| `paypal_billing.py` | `PayPalBilling(PayPalConfig, httpx.AsyncClient)` (REST API with a cached OAuth token; subscriptions, cancel, revise; webhooks verified through `verify-webhook-signature`), `paypal_client(environment)`, `checkout_body`, `subscription_state`, `event_subscription_id`, `PAYPAL_STATUSES`, `HANDLED_EVENTS`, `API_HOSTS` |
+| `billing_providers.py` | `build_billing_providers(settings)` (a processor is built only when its credentials are set), `PROVIDER_NAMES` |
 
 ## backend/app/services (shared by several routes)
 
@@ -85,6 +89,11 @@ Check here before writing a helper.
 | `identity_sign_in.py` | `start(provider)`, `finish(db, provider, returned, ip=, agent=)` (tokens, a two-step challenge, or the `ProviderIdentity` to sign up), `bind_identity(db, user, provider, subject)` (one subject per user and provider), `SignInRefused` (`reason`) |
 | `signup.py` | `signup_options(settings)`, `check_email_signup` (open, agreement, time zone, rate limits), `request_email_signup(db, messenger, form, ip=, agent=)` (the background half: existing-account email or trial practice and invite), `identity_token`, `pending_identity(token)`, `complete_identity_signup(db, token, form, visitor)`, `EmailSignup`, `IdentitySignup`, `Visitor` |
 | `practice_accounts.py` | `add_practice_with_admin(db, PracticeDraft, AdminDraft) -> NewPractice` (used by HQ and self sign-up), `email_in_use`, `normal_email`, `signup_source(practice)`, `SIGNUP_SOURCES` |
+| `plans.py` | `CATALOG` (immutable; `PlanTerms`: name, pricing `free`, `per_provider` or `custom`, cents per provider a month and a year, `max_users`, `max_providers`, `self_checkout`), `PLAN_KEYS`, `CHECKOUT_PLANS`, `PRICINGS`, `plan_terms(key)`, `price_cents(terms, interval, providers)`, `annual_months_free(terms)`, `price_id(settings, provider, plan, interval)`, `plan_for_price`, `prices_complete`, `PRICE_SETTING_PREFIX` |
+| `plan_limits.py` | `ensure_user_room(db, practice)`, `ensure_provider_room(db, practice, adding)` (409 naming the plan and limit), `user_limit(practice, subscription)` (the plan's, and seats while no subscription is live), `provider_limit`, `subscription_for(db, practice_id, lock=)`, `is_live`, `LIVE_STATUSES`, `active_provider_count`, `user_count` |
+| `subscriptions.py` | `plan_catalog`, `offered_providers(providers, settings)`, `plan_overview(db, practice)`, `standing`, `start_checkout(db, actor, providers, CheckoutChoice)`, `manage_link`, `cancel_subscription`, `subscription_ref(row)`, `refuse_manual_change(subscription)` (HQ's plan and renewal edits while a subscription is live), `STANDINGS`, `MANAGED_BY`, `PROVIDER_LABELS` |
+| `subscription_events.py` | `receive_webhook(db, provider, body, headers)` (verify, record once, fetch, apply, commit), `apply_subscription(db, provider_name, state, payment=, now=)` (the status-to-access rules), `access_until(row, zone, grace_days)` |
+| `quantity_sync.py` | `sync_quantities(db, providers, practice_id=)` (live subscriptions to `max(1, active providers)`; a processor failure waits for the next run) |
 | `rate_limits.py` | `RateRule`, `hit(db, rule, key)`, the rules (`LOGIN_PER_EMAIL`, `IDENTITY_PER_IP`, `SIGNUP_PER_IP`, `SIGNUP_PER_EMAIL` and the rest) |
 | `two_step.py` | `enrol_secret`, `accept_code` (replay-safe, re-encrypts legacy secrets), `forget_two_step` |
 | `recovery_codes.py` | `replace_recovery_codes`, `use_recovery_code`, `clear_recovery_codes`, `remaining_recovery_codes` |
@@ -140,6 +149,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `quality.py`, `training.py`, `evaluations.py` | `Rate`, `AgreementSummary`, `ElementComparison`, `ClaimElements`, sample, autonomy and level-mix views; blind review and training views; evaluation runs (`EvalSummary` all omittable, as a queued run stores `{}`) |
 | `health.py` | `Health`, `Readiness`, `PASSED`, `FAILED` |
 | `signup.py` | `PendingIdentity` (email, name, provider) |
+| `plan.py` | `PlanCatalog`, `PlanTerms`, `PlanStatus`, `PlanSubscription`, `RedirectLink`, `BillingProviderName`, `BillingInterval` |
 
 ## frontend/src (shared)
 
@@ -157,6 +167,10 @@ dictionaries and the model validates them (see Architecture, API types).
 | `hooks/useRemote.ts` | `useRemote(key, load, keepSeconds = 0)` (loading, error and success; serves a fresh cached or prefetched value at once and shares a request already running for the key) |
 | `hooks/remoteCache.ts` | `prefetchRemote(key, load)` (kept `PREFETCH_SECONDS`), `loadRemote`, `readRemote`, `keepRemote`, `writeRemote`, `editRemote`, `forgetRemote`, `LOOKUP_SECONDS` (places, payers, providers); emptied when the session ends |
 | `hooks/useRememberedParams.ts` | `useRememberedParams(screen, keys)` (restores a screen's last filters per user from local storage when it opens without any; never the search text), `rememberedParams` |
+| `components/ui/RadioOption.tsx` | `RadioOption` (a native radio drawn as a bordered option row: focus ring, checked ring), `OPTION_CARD` (the checked and focus rings for a larger card holding a radio) |
+| `components/shared/plan-cards/` | `PlanCard` (a plan's name, price for the period and limits, with an action slot; used by `/plan` and `/pricing`), `IntervalControl` (Monthly or Annual with the months a year saves), `cardPrice`, `limitLines`, `mostMonthsFree`, `PLAN_CARD_TEXT` |
+| `components/shared/plan-banner/` | `PlanBanner` (admins: trial days left or a failed payment, linking to `/plan`, hidden for the day once dismissed), `bannerFor(status)` |
+| `hooks/usePlanStatus.ts`, `hooks/usePlanCatalog.ts` | `usePlanStatus(enabled)` (`GET /api/plan`, cached a minute; shared by the banner and the plan screen), `usePlanCatalog()` (`GET /api/plans`), `PLAN_STATUS_KEY`, `PLAN_CATALOG_KEY` |
 | `components/ui/PasswordInput.tsx` | `PasswordInput` (every password field: a show or hide button inside the field with `aria-pressed`; focus stays in the field; `look` `boxed` or `bare`) |
 | `components/shared/sign-in-providers/` | `ProviderButtons` ("Continue with …" for each enabled service), `ProviderMark` (inline Google, Microsoft and Yahoo marks), `providerName` |
 | `hooks/useSignInOptions.ts` | `useSignInOptions()` (`GET /api/auth/providers`), `loadedOptions` |
@@ -172,5 +186,5 @@ dictionaries and the model validates them (see Architecture, API types).
 | `components/shared/rates.ts` | `formatRate` (`50% (9.5%–90.5%)`), `formatInterval`, `formatCounted` for a `Rate` with its 95% interval (Wilson or bootstrap) |
 | `lib/api/types.ts` | the API types screens import: aliases over the generated `components["schemas"]` and literal unions derived from them, plus the query and form types the client composes |
 | `lib/api/schema.ts` | generated by `npm run api:types` from `openapi.json`; never edited by hand |
-| `lib/format.ts` | `formatCalendarDay(isoDate \| null, style)` (`—` for null; `complete` spells the whole day), `parseCalendarDay(text)` (day first, ISO or `27 Nov 2026`; `null` when it cannot be read), `formatMonthYear`, `MONTH_NAMES`, `WEEKDAY_NAMES` and `WEEK_STARTS_ON` (Monday, as en-GB), `formatPercent`, `formatMoney`, `formatMinutes`, `formatDueIn`, `formatSince` and the other shared formatters |
+| `lib/format.ts` | `formatWholeDollars(cents)` (plan prices, `$1,490`), `formatCalendarDay(isoDate \| null, style)` (`—` for null; `complete` spells the whole day), `parseCalendarDay(text)` (day first, ISO or `27 Nov 2026`; `null` when it cannot be read), `formatMonthYear`, `MONTH_NAMES`, `WEEKDAY_NAMES` and `WEEK_STARTS_ON` (Monday, as en-GB), `formatPercent`, `formatMoney`, `formatMinutes`, `formatDueIn`, `formatSince` and the other shared formatters |
 | `lib/dates.ts` | `parseIsoDate`, `toIsoDate`, `isIsoDate`, `localIsoDate`, `isoDateInZone`, `addDays`, `addMonths` (keeps the day where the month allows), `dayInMonth`, `daysInMonth`, `weekdayOf`, `clampIsoDate`, `isWithin`, `monthWeeks(year, month, weekStartsOn)` |

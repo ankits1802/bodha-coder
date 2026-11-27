@@ -9,12 +9,13 @@ from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
+from app.adapters.billing_providers import PROVIDER_NAMES as BILLING_NAMES
 from app.adapters.oidc_providers import PROVIDER_NAMES
 from app.core.db import SessionFactory
 from app.main import app
 from app.models import Base
 from tests.builders import Harness
-from tests.fakes import FakeMessenger, FakeProvider, FakeStore
+from tests.fakes import FakeBillingProvider, FakeMessenger, FakeProvider, FakeStore
 
 BACKEND = Path(__file__).resolve().parents[2]
 KEPT_TABLES = ("places_of_service",)
@@ -39,5 +40,7 @@ async def harness(icd_catalog) -> AsyncIterator[Harness]:
     providers = {name: FakeProvider(name) for name in PROVIDER_NAMES}
     app.state.store, app.state.messenger, app.state.icd = store, messenger, icd_catalog
     app.state.identity_providers = providers
+    billing = {name: FakeBillingProvider(name) for name in BILLING_NAMES}
+    app.state.billing_providers = billing
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://app.test") as client:
-        yield Harness(client, store, messenger, providers)
+        yield Harness(client, store, messenger, providers, billing)

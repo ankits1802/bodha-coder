@@ -203,6 +203,8 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `SECRET_KEY` | yes | yes | yes | secret |
 | `MFA_ENCRYPTION_KEY` | yes | | | secret |
 | `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_SECRET`, `YAHOO_CLIENT_SECRET` | yes | | | secret |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_SECRET` | yes | yes | | secret |
+| `STRIPE_PRICE_*` (four), `PAYPAL_CLIENT_ID`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_ENVIRONMENT`, `PAYPAL_PLAN_*` (four), `BILLING_GRACE_DAYS` | yes | yes | | plain |
 | `GOOGLE_CREDENTIALS_JSON` (the Vertex AI service account credential) | | yes | | secret |
 | `GEMINI_BACKEND=vertex`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` | | yes | | plain |
 | `APP_URL=https://coder.example.com`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
@@ -253,6 +255,73 @@ A sign-in service is on only when both its client id and secret are set. Registe
   it), a client secret, and the optional ID token claims `email` and `xms_edov`. Without `xms_edov` only
   personal Microsoft accounts are trusted.
 - Yahoo: an app with OpenID Connect permissions `openid`, `email` and `profile`.
+
+### Plans and billing settings
+
+Practices choose a plan and pay by card (Stripe) or PayPal on `/plan`
+([0028](decisions/0028-subscription-billing.md)). A processor is offered only when its credentials and
+all four of its price ids are set; with none set, `/plan` shows the plans without a way to pay and HQ
+sets plans by hand as before.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | empty | the restricted or secret API key (`sk_live_…`, `sk_test_…` in test mode) |
+| `STRIPE_WEBHOOK_SECRET` | empty | the signing secret of the webhook endpoint (`whsec_…`) |
+| `STRIPE_PRICE_ESSENTIALS_MONTHLY`, `STRIPE_PRICE_ESSENTIALS_ANNUAL`, `STRIPE_PRICE_PROFESSIONAL_MONTHLY`, `STRIPE_PRICE_PROFESSIONAL_ANNUAL` | empty | the Stripe price ids (`price_…`) |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | empty | the REST app's credentials |
+| `PAYPAL_WEBHOOK_ID` | empty | the id of the app's webhook, used to verify each event |
+| `PAYPAL_ENVIRONMENT` | `sandbox` | `sandbox` (`api-m.sandbox.paypal.com`) or `live` (`api-m.paypal.com`) |
+| `PAYPAL_PLAN_ESSENTIALS_MONTHLY`, `PAYPAL_PLAN_ESSENTIALS_ANNUAL`, `PAYPAL_PLAN_PROFESSIONAL_MONTHLY`, `PAYPAL_PLAN_PROFESSIONAL_ANNUAL` | empty | the PayPal billing plan ids (`P-…`) |
+| `BILLING_GRACE_DAYS` | `7` | days of access after a failed payment (0 to 60) |
+
+The worker needs the same billing settings as the API: it keeps each subscription's quantity equal to
+the practice's active providers.
+
+### Set up Stripe and PayPal
+
+Amounts must match `backend/app/services/plans.py`; change both together. Do everything in Stripe test
+mode and the PayPal sandbox first, run a checkout, a renewal (Stripe test clocks), a failed payment and
+a cancellation, then repeat in live mode.
+
+Stripe (Dashboard):
+
+1. Products: create **Bodha Coder Essentials** and **Bodha Coder Professional**. On each, add two
+   recurring prices in USD, per unit (the unit is one active provider), tax behaviour as your accountant
+   advises: Essentials $149.00 monthly and $1,490.00 yearly; Professional $249.00 monthly and $2,490.00
+   yearly. Copy the four `price_…` ids into `STRIPE_PRICE_*`.
+2. Settings, Billing, Customer portal: turn on update payment method, view invoice history, cancel
+   subscriptions (at the end of the billing period) and switch plans between the four prices above
+   (quantity changes off: Bodha sets the quantity). Set the default return link to `{APP_URL}/plan`.
+3. Settings, Billing, Subscriptions and emails: turn on Smart Retries and choose to mark the
+   subscription unpaid or cancel it after the last retry; send failed-payment emails.
+4. Developers, Webhooks: add the endpoint `{APP_URL}/api/billing-webhooks/stripe` (for example
+   `https://coder.example.com/api/billing-webhooks/stripe`) with exactly these events:
+   `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+   `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Copy its signing secret
+   into `STRIPE_WEBHOOK_SECRET`.
+5. Developers, API keys: put the secret key (or a restricted key with write access to Checkout
+   Sessions, Customer portal, Subscriptions and read access to Prices) in `STRIPE_SECRET_KEY`.
+
+PayPal (developer.paypal.com):
+
+1. Apps & Credentials (Sandbox, later Live): create a REST app; copy its client id and secret into
+   `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; leave `PAYPAL_ENVIRONMENT=sandbox` until going live.
+2. Create two products (`POST /v1/catalogs/products`, type `SERVICE`) and four billing plans
+   (`POST /v1/billing/plans`), each with one regular cycle (`total_cycles` 0), `quantity_supported`
+   true, and a fixed price per unit in USD: Essentials 149.00 every 1 MONTH and 1490.00 every 1 YEAR;
+   Professional 249.00 every 1 MONTH and 2490.00 every 1 YEAR; `payment_failure_threshold` 3. Copy the
+   four `P-…` ids into `PAYPAL_PLAN_*`.
+3. In the app, add the webhook `{APP_URL}/api/billing-webhooks/paypal` with these events:
+   `BILLING.SUBSCRIPTION.ACTIVATED`, `BILLING.SUBSCRIPTION.RE-ACTIVATED`, `BILLING.SUBSCRIPTION.UPDATED`,
+   `BILLING.SUBSCRIPTION.CANCELLED`, `BILLING.SUBSCRIPTION.SUSPENDED`, `BILLING.SUBSCRIPTION.EXPIRED`,
+   `BILLING.SUBSCRIPTION.PAYMENT.FAILED`, `PAYMENT.SALE.COMPLETED`, `PAYMENT.SALE.DENIED`. Copy the
+   webhook id into `PAYPAL_WEBHOOK_ID`.
+
+Both: webhooks reach the API through the web server's `/api` proxy, which passes the body unchanged.
+The local address (`http://localhost:3000`) is not reachable from the processors: use the Stripe CLI
+(`stripe listen --forward-to localhost:3000/api/billing-webhooks/stripe`, which prints a `whsec_…` for
+`STRIPE_WEBHOOK_SECRET`) or a TLS tunnel for PayPal. Nothing about a patient is ever sent: only the
+admin's email, the practice id, the plan and the provider count.
 
 ### Database: RDS for PostgreSQL 17
 
@@ -314,6 +383,8 @@ A sign-in service is on only when both its client id and secret are set. Registe
 | `bodha/<env>/mfa-encryption-key` | api |
 | `bodha/<env>/google-client-secret` | api |
 | `bodha/<env>/google-credentials` (Vertex AI service account) | worker, as `GOOGLE_CREDENTIALS_JSON` |
+| `bodha/<env>/stripe` (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) | api, worker |
+| `bodha/<env>/paypal-client-secret` | api, worker |
 | `bodha/<env>/bootstrap-hq` | the one-off bootstrap task, deleted afterwards |
 
 Encrypt every secret with a customer managed key and inject them through the task definition's

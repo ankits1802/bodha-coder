@@ -7,6 +7,8 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
+from app.adapters.billing_contract import BillingProvider
+from app.adapters.billing_providers import build_billing_providers
 from app.adapters.demo_answers import DemoCodeBook
 from app.adapters.demo_model import DemoModelClient
 from app.adapters.gemini import GeminiClient
@@ -29,6 +31,7 @@ from app.services.evaluation_runs import fail_evaluation, fail_stale_evaluations
 from app.services.file_sweep import sweep_orphan_files
 from app.services.intake import poll_intake
 from app.services.job_control import queue_counts, requeue_interrupted
+from app.services.quantity_sync import sync_quantities
 from app.services.query_governance import escalate_unanswered
 from app.services.records import purge_access_logs
 from app.services.reminders import expire_requests, send_due_reminders
@@ -43,6 +46,7 @@ INTAKE_INTERVAL_SECONDS = 60
 EVALUATION_INTERVAL_SECONDS = 60
 ESCALATION_INTERVAL_SECONDS = 3_600
 SWEEP_INTERVAL_SECONDS = 86_400
+QUANTITY_SYNC_INTERVAL_SECONDS = 900
 STALE_EVALUATION = timedelta(hours=6)
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
@@ -157,6 +161,11 @@ async def escalate_once(messenger: Messenger) -> None:
         await escalate_unanswered(db, messenger, utcnow())
 
 
+async def sync_quantities_once(billing: dict[str, BillingProvider]) -> None:
+    async with SessionFactory() as db:
+        await sync_quantities(db, billing)
+
+
 async def evaluate_once(deps: AnalysisDeps) -> None:
     async with SessionFactory() as db:
         await fail_stale_evaluations(db, older_than=STALE_EVALUATION)
@@ -193,6 +202,7 @@ async def run() -> None:
     deps = AnalysisDeps(review_note, model_client(settings, icd), S3ObjectStore(settings), icd)
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
     messenger, listing = build_messenger(settings), S3ListingStore(settings)
+    billing = build_billing_providers(settings)
     everything = asyncio.gather(
         *loops,
         recovery_loop(settings),
@@ -203,6 +213,7 @@ async def run() -> None:
         every(EVALUATION_INTERVAL_SECONDS, "evaluation", lambda: evaluate_once(deps)),
         every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
         every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),
+        every(QUANTITY_SYNC_INTERVAL_SECONDS, "subscription quantity sync", lambda: sync_quantities_once(billing)),
     )
     with suppress(NotImplementedError):
         asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, everything.cancel)

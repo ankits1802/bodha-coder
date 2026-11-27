@@ -32,7 +32,7 @@ export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
 
 export const PLAN_LABELS: Record<Plan, string> = {
   trial: "Trial",
-  basic: "Basic",
+  essentials: "Essentials",
   professional: "Professional",
   enterprise: "Enterprise",
 };

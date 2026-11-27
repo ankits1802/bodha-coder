@@ -1,3 +1,4 @@
+import type { BillingProvider, BillingStatus } from "@/lib/api/types";
 import type { PracticeFilter } from "./practices/practiceFilters";
 
 export const HQ_TEXT = {
@@ -65,6 +66,17 @@ export const HQ_TEXT = {
     },
     noAdmin: "No admin",
     selfSignUp: "Self sign-up",
+    billing: {
+      providers: { stripe: "Stripe", paypal: "PayPal" } satisfies Record<BillingProvider, string>,
+      statuses: {
+        pending: "Checkout open",
+        active: "Paying",
+        past_due: "Past due",
+        canceled: "Canceled",
+        expired: "Expired",
+      } satisfies Record<BillingStatus, string>,
+      line: (status: string, provider: string) => `${status} · ${provider}`,
+    },
     moreFor: (name: string) => `More for ${name}`,
     menu: {
       edit: "Edit",

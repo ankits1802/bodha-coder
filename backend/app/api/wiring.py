@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from fastapi import Cookie, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.billing_contract import BillingProvider
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
@@ -46,6 +47,10 @@ def identity_provider(request: Request, provider: str) -> IdentityProvider:
     return found
 
 
+def billing_providers(request: Request) -> dict[str, BillingProvider]:
+    return request.app.state.billing_providers
+
+
 def client_of(request: Request) -> tuple[str | None, str | None]:
     return (request.client.host if request.client else None), request.headers.get("user-agent")
 
@@ -55,6 +60,7 @@ Mail = Annotated[Messenger, Depends(messenger)]
 Icd = Annotated[IcdCatalog, Depends(icd)]
 IdentityProviders = Annotated[dict[str, IdentityProvider], Depends(identity_providers)]
 ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
+BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_providers)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
 OidcCookie = Annotated[str | None, Cookie(alias=OIDC_COOKIE)]
 SignupCookie = Annotated[str | None, Cookie(alias=SIGNUP_COOKIE)]

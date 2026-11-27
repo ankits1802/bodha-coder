@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy import select
 
+from app.adapters.billing_contract import BillingProvider
 from app.api.bodies import ChecksBody, ImportBody, MipsBody, PayerBody, ProviderBody, SectionBody, SecurityBody
 from app.api.responses.base import Created, ExactRoute
 from app.api.responses.practice import (
@@ -18,11 +20,13 @@ from app.api.responses.practice import (
     PracticeSetup,
 )
 from app.api.responses.practice import Provider as ProviderView
+from app.api.wiring import BillingProviders
 from app.core.calendar import today_in
+from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, PRACTICE_ROLES
 from app.models import PlaceOfService, Provider
-from app.services import payers, practice_setup, records
+from app.services import payers, practice_setup, quantity_sync, records
 from app.services.provider_details import details_view
 
 router = APIRouter(tags=["practice"], route_class=ExactRoute)
@@ -112,20 +116,36 @@ async def providers(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_RO
     ]
 
 
+def _quantity_sync(billing: BillingProviders, background: BackgroundTasks) -> Callable[[str], None]:
+    return lambda practice_id: background.add_task(_sync_quantity, billing, practice_id)
+
+
+SyncQuantity = Annotated[Callable[[str], None], Depends(_quantity_sync)]
+
+
 @router.post("/providers", response_model=Created)
-async def add_provider(body: ProviderBody, db: Db, actor: Admin) -> dict[str, str]:
+async def add_provider(body: ProviderBody, db: Db, actor: Admin, sync: SyncQuantity) -> dict[str, str]:
     provider = await practice_setup.save_provider(db, actor, body.model_dump(), provider_id=None)
+    sync(actor.practice_id)
     return {"id": provider.id}
 
 
 @router.put("/providers/{provider_id}", status_code=204)
-async def edit_provider(provider_id: str, body: ProviderBody, db: Db, actor: Admin) -> None:
+async def edit_provider(provider_id: str, body: ProviderBody, db: Db, actor: Admin, sync: SyncQuantity) -> None:
     await practice_setup.save_provider(db, actor, body.model_dump(), provider_id=provider_id)
+    sync(actor.practice_id)
 
 
 @router.post("/providers/import", response_model=ImportedProviders)
-async def import_providers(body: ImportBody, db: Db, actor: Admin) -> dict[str, int]:
-    return {"imported": await practice_setup.import_providers(db, actor, body.csv)}
+async def import_providers(body: ImportBody, db: Db, actor: Admin, sync: SyncQuantity) -> dict[str, int]:
+    imported = await practice_setup.import_providers(db, actor, body.csv)
+    sync(actor.practice_id)
+    return {"imported": imported}
+
+
+async def _sync_quantity(billing: dict[str, BillingProvider], practice_id: str) -> None:
+    async with SessionFactory() as db:
+        await quantity_sync.sync_quantities(db, billing, practice_id=practice_id)
 
 
 @router.get("/places", response_model=list[Place])

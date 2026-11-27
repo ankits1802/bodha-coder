@@ -13,10 +13,23 @@ from app.codes.places import UnknownPlaceOfService, setting_for
 from app.core.calendar import shift_years, today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
-from app.models import Activity, Analysis, DemoRequest, Note, PlaceOfService, Practice, Provider, User, utcnow
+from app.models import (
+    Activity,
+    Analysis,
+    DemoRequest,
+    Note,
+    PlaceOfService,
+    Practice,
+    Provider,
+    Subscription,
+    User,
+    utcnow,
+)
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
 from app.services.password_reset import send_reset_email
+from app.services.plan_limits import subscription_for
+from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import (
     AdminDraft,
     PracticeDraft,
@@ -24,10 +37,10 @@ from app.services.practice_accounts import (
     email_in_use,
     signup_source,
 )
+from app.services.subscriptions import refuse_manual_change
 from app.services.team import send_invite
 from app.services.worklists import count_of
 
-PLANS = ("trial", "basic", "professional", "enterprise")
 STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
 ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
@@ -72,8 +85,25 @@ async def practices(db: AsyncSession) -> list[dict[str, Any]]:
     }
     admins = await _first_admins(db)
     failures = await _recent_failures(db, utcnow() - timedelta(hours=24))
+    billing = {row.practice_id: row for row in await db.scalars(select(Subscription))}
     rows = await db.scalars(select(Practice).order_by(Practice.name))
-    return [_practice_row(p, counts, admins.get(p.id), failures.get(p.id, (0, None))) for p in rows]
+    return [
+        {
+            **_practice_row(p, counts, admins.get(p.id), failures.get(p.id, (0, None))),
+            **_billing_view(billing.get(p.id)),
+        }
+        for p in rows
+    ]
+
+
+def _billing_view(subscription: Subscription | None) -> dict[str, Any]:
+    if subscription is None:
+        return {"billing_provider": None, "billing_status": None, "billing_interval": None}
+    return {
+        "billing_provider": subscription.provider,
+        "billing_status": subscription.status,
+        "billing_interval": subscription.interval,
+    }
 
 
 def _practice_row(
@@ -146,7 +176,7 @@ async def create_practice(
     seats: int,
     time_zone: str,
 ) -> Practice:
-    if plan not in PLANS or seats < 1:
+    if plan not in PLAN_KEYS or seats < 1:
         raise Invalid("choose a plan and at least one seat")
     zone_named(time_zone)
     if await email_in_use(db, admin_email):
@@ -168,8 +198,11 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     if practice is None:
         raise NotFound("practice not found")
     status, plan, seats = changes.get("status"), changes.get("plan"), changes.get("seats")
-    if (status and status not in STATUSES) or (plan and plan not in PLANS) or (seats is not None and seats < 1):
+    if (status and status not in STATUSES) or (plan and plan not in PLAN_KEYS) or (seats is not None and seats < 1):
         raise Invalid("status, plan or seats is not allowed")
+    renewal_changed = "renews_on" in changes and changes["renews_on"] != practice.renews_on
+    if renewal_changed or (plan and plan != practice.plan):
+        refuse_manual_change(await subscription_for(db, practice.id))
     if changes.get("time_zone"):
         practice.time_zone = zone_named(changes["time_zone"]).key
     if changes.get("name"):
@@ -264,6 +297,7 @@ async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, 
 
 async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str) -> date:
     practice = await _practice(db, practice_id)
+    refuse_manual_change(await subscription_for(db, practice.id))
     today = today_in(zone_named(practice.time_zone))
     start = max(today, practice.renews_on) if practice.renews_on else today
     practice.renews_on = shift_years(start, 1)

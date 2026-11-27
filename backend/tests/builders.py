@@ -15,7 +15,15 @@ from app.core.security import hash_password
 from app.models import User
 from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.fakes import NOTE_TEXT, FakeMessenger, FakeProvider, FakeStore, ScriptedReviewer, text_pdf
+from tests.fakes import (
+    NOTE_TEXT,
+    FakeBillingProvider,
+    FakeMessenger,
+    FakeProvider,
+    FakeStore,
+    ScriptedReviewer,
+    text_pdf,
+)
 
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
@@ -28,6 +36,7 @@ class Harness:
     store: FakeStore
     messenger: FakeMessenger
     providers: dict[str, FakeProvider]
+    billing: dict[str, FakeBillingProvider]
 
     @property
     def google(self) -> FakeProvider:

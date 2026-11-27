@@ -5,6 +5,21 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 WEB_SCHEMES = ("https://", "http://")
+BILLING_SETTINGS = (
+    "stripe_secret_key",
+    "stripe_webhook_secret",
+    "stripe_price_essentials_monthly",
+    "stripe_price_essentials_annual",
+    "stripe_price_professional_monthly",
+    "stripe_price_professional_annual",
+    "paypal_client_id",
+    "paypal_client_secret",
+    "paypal_webhook_id",
+    "paypal_plan_essentials_monthly",
+    "paypal_plan_essentials_annual",
+    "paypal_plan_professional_monthly",
+    "paypal_plan_professional_annual",
+)
 
 
 class SignupNotReady(RuntimeError):
@@ -77,9 +92,32 @@ class Settings(BaseSettings):
     privacy_url: str | None = None
     agreement_version: str = Field(default="unpublished", min_length=1, max_length=40)
 
+    stripe_secret_key: SecretStr | None = None
+    stripe_webhook_secret: SecretStr | None = None
+    stripe_price_essentials_monthly: str | None = None
+    stripe_price_essentials_annual: str | None = None
+    stripe_price_professional_monthly: str | None = None
+    stripe_price_professional_annual: str | None = None
+    paypal_client_id: str | None = None
+    paypal_client_secret: SecretStr | None = None
+    paypal_webhook_id: str | None = None
+    paypal_environment: Literal["sandbox", "live"] = "sandbox"
+    paypal_plan_essentials_monthly: str | None = None
+    paypal_plan_essentials_annual: str | None = None
+    paypal_plan_professional_monthly: str | None = None
+    paypal_plan_professional_annual: str | None = None
+    billing_grace_days: int = Field(default=7, ge=0, le=60)
+
     turnaround_hours: int = 48
     addendum_link_hours: int = 72
     provider_session_minutes: int = 30
+
+    @field_validator(*BILLING_SETTINGS, mode="before")
+    @classmethod
+    def _blank_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("terms_url", "baa_url", "privacy_url", mode="before")
     @classmethod

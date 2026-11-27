@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from app.adapters.billing_contract import (
+    BillingUnavailable,
+    CheckoutRequest,
+    ProcessorEvent,
+    ProcessorSubscription,
+    SubscriptionRef,
+    WebhookRefused,
+)
 from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, provider_label
 from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
@@ -123,6 +133,40 @@ class FakeProvider:
 
     def returns(self, code: str, *, subject: str, email: str, name: str = "") -> None:
         self.identities[code] = ProviderIdentity(self.name, subject, email, name)
+
+
+@dataclass
+class FakeBillingProvider:
+    name: str
+    checkouts: list[CheckoutRequest] = field(default_factory=list)
+    cancelled: list[str] = field(default_factory=list)
+    quantities: list[tuple[str, int]] = field(default_factory=list)
+    subscriptions: dict[str, ProcessorSubscription] = field(default_factory=dict)
+    unavailable: bool = False
+
+    async def checkout_url(self, request: CheckoutRequest) -> str:
+        self.checkouts.append(request)
+        return f"https://pay.example.com/{self.name}/checkout"
+
+    async def manage_url(self, ref: SubscriptionRef, *, return_url: str) -> str:
+        return f"https://pay.example.com/{self.name}/manage/{ref.subscription_id}"
+
+    async def cancel_at_period_end(self, ref: SubscriptionRef) -> None:
+        self.cancelled.append(ref.subscription_id)
+
+    async def set_quantity(self, ref: SubscriptionRef, quantity: int) -> None:
+        if self.unavailable:
+            raise BillingUnavailable()
+        self.quantities.append((ref.subscription_id, quantity))
+
+    async def read_event(self, body: bytes, headers: Mapping[str, str]) -> ProcessorEvent:
+        if headers.get("x-test-signature") != "valid":
+            raise WebhookRefused()
+        sent = json.loads(body)
+        return ProcessorEvent(sent["id"], sent["type"], sent.get("subscription"), sent.get("payment"))
+
+    async def subscription(self, subscription_id: str) -> ProcessorSubscription:
+        return self.subscriptions[subscription_id]
 
 
 @dataclass

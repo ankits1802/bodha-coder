@@ -4,12 +4,14 @@ import { NAV_SECTIONS, sectionHref } from "./anchors";
 import styles from "./landing.module.css";
 import { NavShell } from "./motion/NavShell";
 import { SectionMenu } from "./nav/SectionMenu";
+import { PRICING_PATH, PRICING_TEXT } from "./pricing/strings";
 import { StartTrialButton } from "./StartTrialButton";
 import { LANDING_TEXT } from "./strings";
 
-export function LandingNav() {
+export function LandingNav({ sectionBase = "" }: { sectionBase?: string }) {
   const words = LANDING_TEXT.nav;
-  const links = NAV_SECTIONS.map((key) => ({ href: sectionHref(key), label: LANDING_TEXT.sections[key] }));
+  const links = NAV_SECTIONS.map((key) => ({ href: `${sectionBase}${sectionHref(key)}`, label: LANDING_TEXT.sections[key] }));
+  const menuLinks = [...links, { href: PRICING_PATH, label: PRICING_TEXT.nav }];
   return (
     <NavShell label={words.label} className={styles.nav}>
       <div className="mx-auto flex min-h-13 max-w-landing items-center justify-between gap-4 px-6 py-2">
@@ -24,13 +26,18 @@ export function LandingNav() {
               </a>
             </li>
           ))}
+          <li>
+            <Link href={PRICING_PATH} className={`hover:text-label ${styles.link}`}>
+              {PRICING_TEXT.nav}
+            </Link>
+          </li>
         </ul>
         <div className="flex items-center gap-4 text-callout text-label-soft sm:gap-6.5">
           <Link href="/sign-in" className={`whitespace-nowrap hover:text-label ${styles.link}`}>
             {words.signIn}
           </Link>
           <StartTrialButton size="sm" label={words.startFree} />
-          <SectionMenu label={words.sections} links={links} />
+          <SectionMenu label={words.sections} links={menuLinks} />
         </div>
       </div>
     </NavShell>

@@ -21,6 +21,9 @@ const BASE: HqPractice = {
   admin_name: "Priya Raman",
   admin_email: "priya@northside.example.com",
   admin_status: "active",
+  billing_provider: null,
+  billing_status: null,
+  billing_interval: null,
 };
 
 const SELF: HqPractice = { ...BASE, id: "p2", name: "Harbor Pediatrics", status: "trial", plan: "trial", source: "self", signed_up_on: "2026-11-27" };
@@ -34,5 +37,15 @@ describe("PracticesTable", () => {
     expect(within(harbor).getByText("Self sign-up")).toBeInTheDocument();
     expect(within(harbor).getByText("27 Nov 2026")).toBeInTheDocument();
     expect(within(northside).queryByText("Self sign-up")).not.toBeInTheDocument();
+  });
+
+  it("shows how a paying practice pays and whether the payment is in good standing", () => {
+    const paying: HqPractice = { ...BASE, billing_provider: "paypal", billing_status: "past_due", billing_interval: "annual" };
+    render(<PracticesTable practices={[paying, SELF]} onEdit={vi.fn()} onAction={vi.fn()} />);
+    const northside = screen.getByText("Northside Clinic").closest("tr");
+    const harbor = screen.getByText("Harbor Pediatrics").closest("tr");
+    if (!harbor || !northside) throw new Error("rows not rendered");
+    expect(within(northside).getByText("Past due · PayPal")).toBeInTheDocument();
+    expect(within(harbor).queryByText(/Stripe|PayPal/)).not.toBeInTheDocument();
   });
 });

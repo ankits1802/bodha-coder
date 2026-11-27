@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
@@ -12,6 +12,7 @@ from app.models import User
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions, issue_user_token
 from app.services.password_reset import send_reset_email
+from app.services.plan_limits import ensure_user_room
 from app.services.recovery_codes import clear_recovery_codes
 from app.services.two_step import forget_two_step
 
@@ -23,12 +24,8 @@ async def team(db: AsyncSession, actor: Actor) -> list[User]:
 async def invite(db: AsyncSession, messenger: Messenger, actor: Actor, *, name: str, email: str, role: str) -> User:
     if role not in INVITABLE_ROLES:
         raise Forbidden("that role cannot be invited")
-    practice = actor.practice
-    seats = await db.scalar(
-        select(func.count()).select_from(User).where(User.practice_id == actor.practice_id, User.status != "blocked")
-    )
-    if practice is None or (seats or 0) >= practice.seats:
-        raise Conflict("all seats are in use")
+    practice = actor.own_practice
+    await ensure_user_room(db, practice)
     address = email.strip().lower()
     if await db.scalar(select(User.id).where(User.email == address)):
         raise Conflict("someone already uses that email")
@@ -69,6 +66,8 @@ async def update_member(
             raise Forbidden("that role cannot be given")
         user.role = role
         await end_all_sessions(db, user)
+    if blocked is False and user.status == "blocked":
+        await ensure_user_room(db, actor.own_practice)
     if blocked is not None:
         user.status = "blocked" if blocked else ("active" if user.password_hash else "invited")
         await end_all_sessions(db, user)

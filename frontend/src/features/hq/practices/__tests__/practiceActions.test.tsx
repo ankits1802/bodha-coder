@@ -30,6 +30,9 @@ const PRACTICE: HqPractice = {
   admin_name: "Priya Raman",
   admin_email: "priya@lakeside.example.com",
   admin_status: "invited",
+  billing_provider: null,
+  billing_status: null,
+  billing_interval: null,
 };
 
 describe("practice actions", () => {

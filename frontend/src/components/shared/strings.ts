@@ -72,6 +72,7 @@ export const SHARED_TEXT = {
     quality: "Quality",
     setup: "Practice setup",
     team: "Team",
+    plan: "Plan and billing",
     security: "Security",
     hqOverview: "Overview",
     hqPractices: "Practices",

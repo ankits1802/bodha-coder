@@ -35,6 +35,7 @@ from app.models import (
     Remittance,
     RemittanceLine,
     Session,
+    Subscription,
     Suggestion,
     User,
     UserIdentity,
@@ -42,6 +43,7 @@ from app.models import (
 )
 from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_activity
+from app.services.plan_limits import is_live, subscription_for
 from app.services.uploads import check_pdf
 from app.services.worklists import count_of
 
@@ -63,7 +65,7 @@ FIXED_DOCUMENT_STATUSES = ("exported", "reading")
 DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
 QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
-PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity)
+PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity, Subscription)
 USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity)
 
 
@@ -194,6 +196,8 @@ async def delete_practice(
         raise Conflict("end or block the practice before deleting it")
     if confirm_name.strip() != practice.name:
         raise Invalid("type the practice name exactly as shown to delete it")
+    if is_live(await subscription_for(db, practice_id)):
+        raise Conflict("cancel the practice's subscription before deleting it")
     name = practice.name
     await _delete_practice_rows(db, practice_id)
     record_activity(db, actor, PRACTICE_DELETED, practice_id=practice_id, detail=name)

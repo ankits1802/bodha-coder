@@ -1,4 +1,11 @@
 from app.models.base import Base, new_id, utcnow
+from app.models.billing import (
+    BILLING_INTERVALS,
+    BILLING_PROVIDERS,
+    SUBSCRIPTION_STATUSES,
+    BillingEvent,
+    Subscription,
+)
 from app.models.quality import AuditRun, AuditSample, EvalCase, EvalRun
 from app.models.remittance import Remittance, RemittanceLine
 from app.models.tables import (
@@ -37,12 +44,15 @@ from app.models.tables import (
 __all__ = [
     "ACCESS_DETAIL_LENGTH",
     "ANALYSIS_STATUSES",
+    "BILLING_INTERVALS",
+    "BILLING_PROVIDERS",
     "CHOICES",
     "CODE_SET_KINDS",
     "DEFAULT_CHECKS",
     "LANES",
     "NOTE_STATUSES",
     "ROLES",
+    "SUBSCRIPTION_STATUSES",
     "SUGGESTION_KINDS",
     "AccessLog",
     "Activity",
@@ -52,6 +62,7 @@ __all__ = [
     "AuditSample",
     "Base",
     "Batch",
+    "BillingEvent",
     "CodeSet",
     "Decision",
     "DemoRequest",
@@ -68,6 +79,7 @@ __all__ = [
     "Remittance",
     "RemittanceLine",
     "Session",
+    "Subscription",
     "Suggestion",
     "User",
     "UserIdentity",

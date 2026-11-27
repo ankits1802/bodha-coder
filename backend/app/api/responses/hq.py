@@ -2,7 +2,9 @@ from typing import Literal
 
 from app.api.responses.base import View
 from app.api.responses.team import MemberStatus
-from app.services.hq import PLANS, STATUSES
+from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, SUBSCRIPTION_STATUSES
+from app.services.hq import STATUSES
+from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import SIGNUP_SOURCES
 
 __all__ = [
@@ -31,7 +33,7 @@ class HqPractice(View):
     id: str
     name: str
     status: Literal[STATUSES]
-    plan: Literal[PLANS]
+    plan: Literal[PLAN_KEYS]
     seats: int
     users: int
     providers: int
@@ -45,6 +47,9 @@ class HqPractice(View):
     admin_name: str | None
     admin_email: str | None
     admin_status: MemberStatus | None
+    billing_provider: Literal[BILLING_PROVIDERS] | None
+    billing_status: Literal[SUBSCRIPTION_STATUSES] | None
+    billing_interval: Literal[BILLING_INTERVALS] | None
 
 
 class AdminLinkSent(View):

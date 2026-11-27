@@ -16,6 +16,7 @@ from app.core.roles import PRACTICE_ROLES
 from app.models import DEFAULT_CHECKS, MipsList, PlaceOfService, Practice, Provider
 from app.services.audit_log import record_activity
 from app.services.payers import has_active_payer, payer_list
+from app.services.plan_limits import ensure_provider_room
 from app.services.provider_details import DETAIL_FIELDS, validated_details
 
 SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
@@ -141,17 +142,23 @@ async def save_provider(db: AsyncSession, actor: Actor, values: dict[str, Any], 
     clean = {**await validated_provider(db, values), "active": bool(values.get("active", True))}
     if values.get("details") is not None:
         clean["details"] = validated_details(values["details"])
-    if provider_id is None:
-        provider = Provider(practice_id=actor.practice_id, **{"details": {}, **clean})
-        db.add(provider)
-    else:
-        provider = await db.get(Provider, provider_id)
-        if provider is None or provider.practice_id != actor.practice_id:
-            raise NotFound("provider not found")
-        for field, value in clean.items():
-            setattr(provider, field, value)
+    provider = await _provider_to_save(db, actor, provider_id)
+    if clean["active"] and not provider.active:
+        await ensure_provider_room(db, actor.own_practice, 1)
+    for field, value in clean.items():
+        setattr(provider, field, value)
+    db.add(provider)
     record_activity(db, actor, "provider saved", practice_id=actor.practice_id, detail=clean["name"] or "")
     await db.commit()
+    return provider
+
+
+async def _provider_to_save(db: AsyncSession, actor: Actor, provider_id: str | None) -> Provider:
+    if provider_id is None:
+        return Provider(practice_id=actor.practice_id, details={}, active=False)
+    provider = await db.get(Provider, provider_id)
+    if provider is None or provider.practice_id != actor.practice_id:
+        raise NotFound("provider not found")
     return provider
 
 
@@ -165,6 +172,7 @@ async def import_providers(db: AsyncSession, actor: Actor, csv_text: str) -> int
             cleaned.append({**await validated_provider(db, values), "details": details})
         except Invalid as error:
             raise Invalid(f"row {number}: {error.message}") from error
+    await ensure_provider_room(db, actor.own_practice, len(cleaned))
     for values in cleaned:
         db.add(Provider(practice_id=actor.practice_id, **values))
     record_activity(db, actor, "providers imported", practice_id=actor.practice_id, detail=f"{len(cleaned)} providers")

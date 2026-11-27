@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from app.adapters.billing_providers import build_billing_providers
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.oidc import build_identity_providers
@@ -20,6 +21,7 @@ from app.api.routes import (
     hq,
     identity,
     notes,
+    plan,
     practice,
     respond,
     signup,
@@ -49,6 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.store = S3ObjectStore(settings)
     app.state.messenger = build_messenger(settings)
     app.state.identity_providers = build_identity_providers(settings)
+    app.state.billing_providers = build_billing_providers(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
     yield
 
@@ -57,7 +60,22 @@ app = FastAPI(
     title="Bodha Coder", lifespan=lifespan, docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json"
 )
 
-for module in (health, auth, identity, signup, account, work, notes, uploads, billing, practice, team, respond, hq):
+for module in (
+    health,
+    auth,
+    identity,
+    signup,
+    account,
+    work,
+    notes,
+    uploads,
+    billing,
+    practice,
+    plan,
+    team,
+    respond,
+    hq,
+):
     app.include_router(module.router, prefix="/api")
 app.include_router(defensibility_router, prefix="/api")
 app.include_router(quality_router, prefix="/api")

@@ -6,7 +6,8 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
-from app.models import ACCESS_DETAIL_LENGTH
+from app.models import ACCESS_DETAIL_LENGTH, BILLING_INTERVALS, BILLING_PROVIDERS
+from app.services.plans import CHECKOUT_PLANS
 
 
 class Body(BaseModel):
@@ -256,3 +257,9 @@ class IdentitySignupBody(Body):
 
 class SignupBody(IdentitySignupBody):
     email: EmailStr
+
+
+class CheckoutBody(Body):
+    plan: Literal[CHECKOUT_PLANS]
+    interval: Literal[BILLING_INTERVALS]
+    provider: Literal[BILLING_PROVIDERS]
