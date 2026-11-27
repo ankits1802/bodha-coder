@@ -1,5 +1,22 @@
 import { request, requestNothing } from "./client";
-import type { AskBody, Choice, ComplianceDecision, Lane, NoteDetail, NoteStatus } from "./types";
+import type {
+  ApprovedNotes,
+  AskBody,
+  AssignedNotes,
+  Choice,
+  ComplianceDecision,
+  ComplianceOutcome,
+  DeletedNotes,
+  DocumentLink,
+  NoteDetail,
+  NoteLane,
+  NotePayer,
+  NoteState,
+  PayerOption,
+  QueuedNotes,
+  RequestCancelled,
+  RequestCreated,
+} from "./types";
 
 const notePath = (noteId: string, suffix = ""): string => `/api/notes/${encodeURIComponent(noteId)}${suffix}`;
 
@@ -7,14 +24,14 @@ export function getNote(noteId: string): Promise<NoteDetail> {
   return request<NoteDetail>(notePath(noteId));
 }
 
-export function getNoteDocument(noteId: string): Promise<{ url: string }> {
-  return request<{ url: string }>(notePath(noteId, "/document"));
+export function getNoteDocument(noteId: string): Promise<DocumentLink> {
+  return request<DocumentLink>(notePath(noteId, "/document"));
 }
 
-export function replaceNoteDocument(noteId: string, file: File): Promise<{ status: NoteStatus }> {
+export function replaceNoteDocument(noteId: string, file: File): Promise<NoteState> {
   const form = new FormData();
   form.set("file", file, file.name);
-  return request<{ status: NoteStatus }>(notePath(noteId, "/document"), { method: "POST", form });
+  return request<NoteState>(notePath(noteId, "/document"), { method: "POST", form });
 }
 
 export function saveDecisions(noteId: string, choices: Record<string, Choice>): Promise<NoteDetail> {
@@ -25,70 +42,64 @@ export function saveBilledCodes(noteId: string, codes: string): Promise<NoteDeta
   return request<NoteDetail>(notePath(noteId, "/billed-codes"), { method: "PUT", body: { codes } });
 }
 
-export function approveNote(noteId: string): Promise<{ status: NoteStatus }> {
-  return request<{ status: NoteStatus }>(notePath(noteId, "/approve"), { method: "POST" });
+export function approveNote(noteId: string): Promise<NoteState> {
+  return request<NoteState>(notePath(noteId, "/approve"), { method: "POST" });
 }
 
-export function approveNotes(noteIds: string[]): Promise<{ approved: string[] }> {
-  return request<{ approved: string[] }>("/api/notes/approve", { body: { note_ids: noteIds } });
+export function approveNotes(noteIds: string[]): Promise<ApprovedNotes> {
+  return request<ApprovedNotes>("/api/notes/approve", { body: { note_ids: noteIds } });
 }
 
-export function flagNote(noteId: string, reason: string): Promise<{ lane: Lane | null }> {
-  return request<{ lane: Lane | null }>(notePath(noteId, "/flag"), { body: { reason } });
+export function flagNote(noteId: string, reason: string): Promise<NoteLane> {
+  return request<NoteLane>(notePath(noteId, "/flag"), { body: { reason } });
 }
 
 export function decideCompliance(
   noteId: string,
   decision: ComplianceDecision,
   reason: string | null,
-): Promise<{ status: NoteStatus; lane: Lane | null }> {
-  return request<{ status: NoteStatus; lane: Lane | null }>(notePath(noteId, "/compliance"), { body: { decision, reason } });
-}
-
-export interface PayerOption {
-  id: string;
-  name: string;
-  plan_type: string | null;
+): Promise<ComplianceOutcome> {
+  return request<ComplianceOutcome>(notePath(noteId, "/compliance"), { body: { decision, reason } });
 }
 
 export function getPayers(): Promise<PayerOption[]> {
   return request<PayerOption[]>("/api/payers");
 }
 
-export function setNotePayer(noteId: string, payer: string | null): Promise<{ payer: string | null }> {
-  return request<{ payer: string | null }>(notePath(noteId, "/payer"), { method: "PUT", body: { payer } });
+export function setNotePayer(noteId: string, payer: string | null): Promise<NotePayer> {
+  return request<NotePayer>(notePath(noteId, "/payer"), { method: "PUT", body: { payer } });
 }
 
-export function deleteNotes(noteIds: string[]): Promise<{ deleted: string[] }> {
-  return request<{ deleted: string[] }>("/api/notes/delete", { body: { note_ids: noteIds } });
+export function deleteNotes(noteIds: string[]): Promise<DeletedNotes> {
+  return request<DeletedNotes>("/api/notes/delete", { body: { note_ids: noteIds } });
 }
 
-export function assignNotes(noteIds: string[], userId: string | null): Promise<{ assigned: string[] }> {
-  return request<{ assigned: string[] }>("/api/notes/assign", { body: { note_ids: noteIds, user_id: userId } });
+export function assignNotes(noteIds: string[], userId: string | null): Promise<AssignedNotes> {
+  return request<AssignedNotes>("/api/notes/assign", { body: { note_ids: noteIds, user_id: userId } });
 }
 
-export function changeVisitType(noteId: string, visitType: string): Promise<{ status: NoteStatus }> {
-  return request<{ status: NoteStatus }>(notePath(noteId, "/visit-type"), { method: "PUT", body: { visit_type: visitType } });
+export function changeVisitType(noteId: string, visitType: string): Promise<NoteState> {
+  return request<NoteState>(notePath(noteId, "/visit-type"), { method: "PUT", body: { visit_type: visitType } });
 }
 
-export function cancelRequest(noteId: string): Promise<{ lane: string }> {
-  return request<{ lane: string }>(notePath(noteId, "/cancel-request"), { method: "POST" });
+export function cancelRequest(noteId: string): Promise<RequestCancelled> {
+  return request<RequestCancelled>(notePath(noteId, "/cancel-request"), { method: "POST" });
 }
 
-export function reopenNote(noteId: string): Promise<{ status: NoteStatus }> {
-  return request<{ status: NoteStatus }>(notePath(noteId, "/reopen"), { method: "POST" });
+export function reopenNote(noteId: string): Promise<NoteState> {
+  return request<NoteState>(notePath(noteId, "/reopen"), { method: "POST" });
 }
 
-export function retryFailedNotes(noteIds: string[] | null): Promise<{ queued: string[] }> {
-  return request<{ queued: string[] }>("/api/notes/retry", { body: { note_ids: noteIds } });
+export function retryFailedNotes(noteIds: string[] | null): Promise<QueuedNotes> {
+  return request<QueuedNotes>("/api/notes/retry", { body: { note_ids: noteIds } });
 }
 
-export function retryNote(noteId: string): Promise<{ status: NoteStatus }> {
-  return request<{ status: NoteStatus }>(notePath(noteId, "/retry"), { method: "POST" });
+export function retryNote(noteId: string): Promise<NoteState> {
+  return request<NoteState>(notePath(noteId, "/retry"), { method: "POST" });
 }
 
-export function askProvider(noteId: string, body: AskBody): Promise<{ request_id: string }> {
-  return request<{ request_id: string }>(notePath(noteId, "/ask"), { body });
+export function askProvider(noteId: string, body: AskBody): Promise<RequestCreated> {
+  return request<RequestCreated>(notePath(noteId, "/ask"), { body });
 }
 
 export function remindProvider(noteId: string): Promise<void> {

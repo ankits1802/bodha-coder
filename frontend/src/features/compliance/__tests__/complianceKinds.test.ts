@@ -20,6 +20,7 @@ function row(id: string, laneReason: LaneReason | null, headline: string): Compl
     due_at: "2026-11-26T18:00:00Z",
     file_name: "ruth.pdf",
     assigned_to: null,
+    payer: null,
     assignee_name: null,
     billed: ["99310"],
     suggested: ["99308"],

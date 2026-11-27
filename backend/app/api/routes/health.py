@@ -9,25 +9,25 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.api.responses.base import ExactRoute
+from app.api.responses.health import FAILED, PASSED, Health, Readiness
 from app.core.deps import Db
 
-router = APIRouter(tags=["health"])
+router = APIRouter(tags=["health"], route_class=ExactRoute)
 logger = logging.getLogger("bodha.health")
 READY_TIMEOUT_SECONDS = 2.0
-PASSED = "ok"
-FAILED = "unavailable"
 
 
 class BucketCheck(Protocol):
     async def check_bucket(self) -> None: ...
 
 
-@router.get("/health")
+@router.get("/health", response_model=Health)
 async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@router.get("/health/ready")
+@router.get("/health/ready", response_model=Readiness, responses={503: {"model": Readiness}})
 async def ready(request: Request, db: Db) -> JSONResponse:
     store: BucketCheck = request.app.state.store
     database, storage = await asyncio.gather(

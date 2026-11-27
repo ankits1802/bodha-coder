@@ -5,22 +5,24 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
+from app.api.responses.auth import SignInProviders
+from app.api.responses.base import ExactRoute
 from app.api.wiring import Google, GoogleCookie, clear_google_cookie, client_of, set_google_cookie, set_refresh_cookie
 from app.core.config import get_settings
 from app.core.deps import Db, PlanEnded
 from app.core.errors import RateLimited
 from app.services import auth, google_sign_in
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"], route_class=ExactRoute)
 SIGNED_IN_FRAGMENT = "signed_in"
 
 
-@router.get("/providers")
+@router.get("/providers", response_model=SignInProviders)
 async def providers(google: Google) -> dict[str, bool]:
     return {"google": google.enabled}
 
 
-@router.get("/google/start")
+@router.get("/google/start", response_class=RedirectResponse, status_code=302)
 async def google_start(google: Google) -> RedirectResponse:
     started = google_sign_in.start(google)
     response = RedirectResponse(started.url, status_code=302)
@@ -28,7 +30,7 @@ async def google_start(google: Google) -> RedirectResponse:
     return response
 
 
-@router.get("/google/callback")
+@router.get("/google/callback", response_class=RedirectResponse, status_code=302)
 async def google_callback(
     request: Request,
     db: Db,

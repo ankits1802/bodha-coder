@@ -1,6 +1,7 @@
 import { request, requestNothing } from "./client";
 import type {
-  AdminLink,
+  AdminLinkSent,
+  Created,
   DemoRequest,
   DemoRequestRow,
   HqActivityPage,
@@ -10,6 +11,7 @@ import type {
   HqPractice,
   NewPractice,
   PracticeUpdate,
+  Renewal,
 } from "./types";
 
 export function getHqOverview(): Promise<HqOverview> {
@@ -20,8 +22,8 @@ export function getHqPractices(): Promise<HqPractice[]> {
   return request<HqPractice[]>("/api/hq/practices");
 }
 
-export function addPractice(body: NewPractice): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/hq/practices", { body });
+export function addPractice(body: NewPractice): Promise<Created> {
+  return request<Created>("/api/hq/practices", { body });
 }
 
 const practicePath = (practiceId: string, suffix = ""): string => `/api/hq/practices/${encodeURIComponent(practiceId)}${suffix}`;
@@ -30,12 +32,12 @@ export function updatePractice(practiceId: string, update: PracticeUpdate): Prom
   return requestNothing(practicePath(practiceId), { method: "PATCH", body: update });
 }
 
-export function sendAdminLink(practiceId: string): Promise<{ sent: AdminLink }> {
-  return request<{ sent: AdminLink }>(practicePath(practiceId, "/admin-link"), { method: "POST" });
+export function sendAdminLink(practiceId: string): Promise<AdminLinkSent> {
+  return request<AdminLinkSent>(practicePath(practiceId, "/admin-link"), { method: "POST" });
 }
 
-export function renewPractice(practiceId: string): Promise<{ renews_on: string }> {
-  return request<{ renews_on: string }>(practicePath(practiceId, "/renew"), { method: "POST" });
+export function renewPractice(practiceId: string): Promise<Renewal> {
+  return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST" });
 }
 
 export function deletePractice(practiceId: string, confirmName: string): Promise<void> {

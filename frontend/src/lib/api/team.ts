@@ -1,5 +1,5 @@
 import { request, requestNothing } from "./client";
-import type { InviteBody, MemberUpdate, TeamList } from "./types";
+import type { Created, InviteBody, MemberUpdate, TeamList } from "./types";
 
 const memberPath = (userId: string, suffix = ""): string => `/api/team/${encodeURIComponent(userId)}${suffix}`;
 
@@ -7,8 +7,8 @@ export function getTeam(): Promise<TeamList> {
   return request<TeamList>("/api/team");
 }
 
-export function inviteMember(body: InviteBody): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/team", { body });
+export function inviteMember(body: InviteBody): Promise<Created> {
+  return request<Created>("/api/team", { body });
 }
 
 export function updateMember(userId: string, update: MemberUpdate): Promise<void> {

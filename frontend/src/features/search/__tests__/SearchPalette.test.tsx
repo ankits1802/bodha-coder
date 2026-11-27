@@ -20,7 +20,7 @@ function signIn(role: Role): void {
     practice: {
       id: "practice-1",
       name: "Lakeside Primary Care",
-      checks: { em: true, icd: true, cdi: true, audit: true, mips: false },
+      checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false },
       idle_minutes: 15,
       time_zone: "America/Chicago",
     },
@@ -45,6 +45,7 @@ function note(id: string, patient: string, status: NoteSummary["status"]): NoteS
     due_at: "2026-11-28T06:00:00Z",
     file_name: `${patient}.pdf`,
     assigned_to: null,
+    payer: null,
   };
 }
 

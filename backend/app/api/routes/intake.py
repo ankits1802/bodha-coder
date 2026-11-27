@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends
 from pydantic import Field
 
 from app.api.bodies import Body
+from app.api.responses.base import ExactRoute
+from app.api.responses.practice import IntakeView
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS
 from app.models import Practice
 from app.services import intake_settings
 
-router = APIRouter(tags=["intake"])
+router = APIRouter(tags=["intake"], route_class=ExactRoute)
 Admin = Annotated[Actor, Depends(require(*ADMINS))]
 
 
@@ -23,11 +25,11 @@ class IntakeBody(Body):
     visit_type: str = Field(min_length=1, max_length=40)
 
 
-@router.get("/practice/intake")
+@router.get("/practice/intake", response_model=IntakeView)
 async def intake(db: Db, actor: Admin) -> dict[str, Any]:
     return intake_settings.intake_view(await db.get_one(Practice, actor.practice_id))
 
 
-@router.put("/practice/intake")
+@router.put("/practice/intake", response_model=IntakeView)
 async def save_intake(body: IntakeBody, db: Db, actor: Admin) -> dict[str, Any]:
     return await intake_settings.save_intake(db, actor, body.model_dump())

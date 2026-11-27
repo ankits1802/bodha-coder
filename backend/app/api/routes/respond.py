@@ -5,27 +5,29 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends
 
 from app.api.bodies import CodeRequestBody, CodeVerifyBody, RespondBody, SwitchBody
+from app.api.responses.base import DocumentLink, ExactRoute
+from app.api.responses.respond import CodeSent, OtherRequest, ProviderRequest, ProviderToken, RespondResult
 from app.api.wiring import Mail, Store
 from app.core.config import get_settings
 from app.core.deps import Db, ProviderActor, current_provider
 from app.models import PlaceOfService, Practice, User
 from app.services import addenda
 
-router = APIRouter(prefix="/respond", tags=["provider"])
+router = APIRouter(prefix="/respond", tags=["provider"], route_class=ExactRoute)
 ProviderSession = Annotated[ProviderActor, Depends(current_provider)]
 
 
-@router.post("/code")
+@router.post("/code", response_model=CodeSent)
 async def send_code(body: CodeRequestBody, db: Db, mail: Mail) -> dict[str, str]:
     return {"sent_to": await addenda.send_code(db, mail, body.token)}
 
 
-@router.post("/verify")
+@router.post("/verify", response_model=ProviderToken)
 async def verify(body: CodeVerifyBody, db: Db) -> dict[str, str]:
     return {"provider_token": await addenda.verify_code(db, body.token, body.code)}
 
 
-@router.get("")
+@router.get("", response_model=ProviderRequest)
 async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
     request, note, provider, texts = await addenda.provider_request(db, actor)
     practice = await db.get_one(Practice, note.practice_id)
@@ -50,7 +52,7 @@ async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
     }
 
 
-@router.get("/others")
+@router.get("/others", response_model=list[OtherRequest])
 async def others(db: Db, actor: ProviderSession) -> list[dict[str, Any]]:
     return [
         {
@@ -64,18 +66,18 @@ async def others(db: Db, actor: ProviderSession) -> list[dict[str, Any]]:
     ]
 
 
-@router.post("/switch")
+@router.post("/switch", response_model=ProviderToken)
 async def switch(body: SwitchBody, db: Db, actor: ProviderSession) -> dict[str, str]:
     return {"provider_token": await addenda.switch_request(db, actor, body.request_id)}
 
 
-@router.get("/document")
+@router.get("/document", response_model=DocumentLink)
 async def document(db: Db, store: Store, actor: ProviderSession) -> dict[str, str]:
     key = await addenda.provider_document_key(db, actor)
     return {"url": await store.signed_url(key, seconds=get_settings().pdf_link_seconds)}
 
 
-@router.post("")
+@router.post("", response_model=RespondResult)
 async def respond(body: RespondBody, db: Db, actor: ProviderSession) -> dict[str, str]:
     answers = [addenda.Answer(item.key, item.choice, item.comment) for item in body.answers]
     request = await addenda.answer(db, actor, answers, confirmed=body.confirmed)

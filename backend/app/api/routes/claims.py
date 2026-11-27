@@ -8,12 +8,14 @@ from pydantic import Field
 
 from app.api.blinding import SightedReader
 from app.api.bodies import Body
+from app.api.responses.base import ExactRoute
+from app.api.responses.claims import ClaimChecks, ClaimLinesExport
 from app.core.deps import Actor, Db, require
 from app.core.roles import BILLERS
 from app.models import utcnow
 from app.services import claim_checks, claim_lines
 
-router = APIRouter(tags=["claims"])
+router = APIRouter(tags=["claims"], route_class=ExactRoute)
 Biller = Annotated[Actor, Depends(require(*BILLERS))]
 
 
@@ -22,7 +24,11 @@ class ClaimLinesBody(Body):
     format: Literal["csv", "json"] = "json"
 
 
-@router.post("/billing/claim-lines", response_model=None)
+@router.post(
+    "/billing/claim-lines",
+    response_model=ClaimLinesExport,
+    responses={200: {"content": {"text/csv": {"schema": {"type": "string"}}}}},
+)
 async def lines(body: ClaimLinesBody, db: Db, actor: Biller) -> Response | dict[str, Any]:
     claims = await claim_lines.claim_lines(db, actor, body.note_ids)
     if body.format == "json":
@@ -35,6 +41,6 @@ async def lines(body: ClaimLinesBody, db: Db, actor: Biller) -> Response | dict[
     )
 
 
-@router.get("/notes/{note_id}/claim-checks")
+@router.get("/notes/{note_id}/claim-checks", response_model=ClaimChecks)
 async def checks(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]:
     return await claim_checks.claim_checks(db, actor, note_id)

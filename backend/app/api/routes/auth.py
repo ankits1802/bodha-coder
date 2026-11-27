@@ -6,6 +6,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 
 from app.adapters.messenger import Messenger
 from app.api.bodies import ForgotBody, LoginBody, MfaBody, MfaStartBody, PasswordBody, RecoveryBody
+from app.api.responses.auth import MfaChallenge, MfaEnrolment, SignedIn, User
+from app.api.responses.base import ExactRoute
 from app.api.wiring import Mail, RefreshCookie, clear_refresh_cookie, client_of, set_refresh_cookie, user_view
 from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, current_actor
@@ -13,7 +15,7 @@ from app.core.errors import Unauthorized
 from app.models import Practice
 from app.services import auth, password_reset
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"], route_class=ExactRoute)
 
 
 async def _signed_in(db: Db, response: Response, tokens: auth.Tokens) -> dict[str, Any]:
@@ -25,7 +27,7 @@ async def _signed_in(db: Db, response: Response, tokens: auth.Tokens) -> dict[st
     return body
 
 
-@router.post("/login")
+@router.post("/login", response_model=SignedIn | MfaChallenge)
 async def login(body: LoginBody, request: Request, response: Response, db: Db) -> dict[str, Any]:
     ip, agent = client_of(request)
     result = await auth.login(db, body.email, body.password, ip=ip, agent=agent)
@@ -34,26 +36,26 @@ async def login(body: LoginBody, request: Request, response: Response, db: Db) -
     return await _signed_in(db, response, result)
 
 
-@router.post("/mfa/setup")
+@router.post("/mfa/setup", response_model=MfaEnrolment)
 async def mfa_setup(body: MfaStartBody, db: Db) -> dict[str, str]:
     enrolment = await auth.mfa_enrol(db, body.mfa_token)
     return {"secret": enrolment.secret, "uri": enrolment.uri, "qr_image": enrolment.qr_image}
 
 
-@router.post("/mfa/verify")
+@router.post("/mfa/verify", response_model=SignedIn)
 async def mfa_verify(body: MfaBody, request: Request, response: Response, db: Db) -> dict[str, Any]:
     ip, agent = client_of(request)
     return await _signed_in(db, response, await auth.mfa_verify(db, body.mfa_token, body.code, ip=ip, agent=agent))
 
 
-@router.post("/mfa/recover")
+@router.post("/mfa/recover", response_model=SignedIn)
 async def mfa_recover(body: RecoveryBody, request: Request, response: Response, db: Db) -> dict[str, Any]:
     ip, agent = client_of(request)
     tokens = await auth.mfa_recover(db, body.mfa_token, body.recovery_code, ip=ip, agent=agent)
     return await _signed_in(db, response, tokens)
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=SignedIn)
 async def refresh(response: Response, db: Db, refresh_token: RefreshCookie = None) -> dict[str, Any]:
     if not refresh_token:
         raise Unauthorized("sign in again")
@@ -82,6 +84,6 @@ async def _send_reset(mail: Messenger, email: str) -> None:
         await password_reset.send_reset_for_email(db, mail, email)
 
 
-@router.get("/me")
+@router.get("/me", response_model=User)
 async def me(actor: Annotated[Actor, Depends(current_actor)]) -> dict[str, Any]:
     return user_view(actor.user, actor.practice)

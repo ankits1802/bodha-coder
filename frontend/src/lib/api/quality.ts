@@ -3,14 +3,21 @@ import type {
   BlindAnswer,
   BlindStep,
   BlindSubmitted,
+  Created,
+  DocumentLink,
   EvalCandidate,
+  EvalCandidateList,
+  EvalCaseAdded,
+  EvalCaseList,
   EvalCaseRow,
   EvalRunView,
   EvalRuns,
   LevelMix,
   ProviderAutonomy,
+  ProviderAutonomyList,
   QualityOptions,
   SampleInput,
+  SampleList,
   SampleOverview,
   SampleResults,
   TrainingFeedback,
@@ -25,11 +32,11 @@ export function getQualityOptions(): Promise<QualityOptions> {
 }
 
 export async function getSamples(): Promise<SampleOverview[]> {
-  return (await request<{ items: SampleOverview[] }>("/api/quality/samples")).items;
+  return (await request<SampleList>("/api/quality/samples")).items;
 }
 
-export function startSample(input: SampleInput): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/quality/samples", { body: input });
+export function startSample(input: SampleInput): Promise<Created> {
+  return request<Created>("/api/quality/samples", { body: input });
 }
 
 export function getSampleResults(sampleId: string): Promise<SampleResults> {
@@ -37,7 +44,7 @@ export function getSampleResults(sampleId: string): Promise<SampleResults> {
 }
 
 export async function getProviderAutonomy(): Promise<ProviderAutonomy[]> {
-  return (await request<{ items: ProviderAutonomy[] }>("/api/quality/providers")).items;
+  return (await request<ProviderAutonomyList>("/api/quality/providers")).items;
 }
 
 export function setAutoApprove(providerId: string, on: boolean): Promise<ProviderAutonomy> {
@@ -60,15 +67,15 @@ export function queueEvaluation(): Promise<EvalRunView> {
 }
 
 export async function getEvalCases(): Promise<EvalCaseRow[]> {
-  return (await request<{ items: EvalCaseRow[] }>("/api/quality/eval-cases")).items;
+  return (await request<EvalCaseList>("/api/quality/eval-cases")).items;
 }
 
 export async function getEvalCandidates(): Promise<EvalCandidate[]> {
-  return (await request<{ items: EvalCandidate[] }>("/api/quality/eval-cases/candidates")).items;
+  return (await request<EvalCandidateList>("/api/quality/eval-cases/candidates")).items;
 }
 
-export function addEvalCase(noteId: string): Promise<{ id: string; note_id: string }> {
-  return request<{ id: string; note_id: string }>("/api/quality/eval-cases", { body: { note_id: noteId } });
+export function addEvalCase(noteId: string): Promise<EvalCaseAdded> {
+  return request<EvalCaseAdded>("/api/quality/eval-cases", { body: { note_id: noteId } });
 }
 
 export function removeEvalCase(noteId: string): Promise<void> {
@@ -79,8 +86,8 @@ export function getBlindStep(sampleId: string): Promise<BlindStep> {
   return request<BlindStep>(`/api/blind-review/${segment(sampleId)}/next`);
 }
 
-export function getBlindDocument(itemId: string): Promise<{ url: string }> {
-  return request<{ url: string }>(`/api/blind-review/items/${segment(itemId)}/document`);
+export function getBlindDocument(itemId: string): Promise<DocumentLink> {
+  return request<DocumentLink>(`/api/blind-review/items/${segment(itemId)}/document`);
 }
 
 export function submitBlindAnswer(itemId: string, answer: BlindAnswer): Promise<BlindSubmitted> {
@@ -96,9 +103,9 @@ export function getTraining(): Promise<TrainingOverview> {
 }
 
 export async function getTrainingSets(): Promise<SampleOverview[]> {
-  return (await request<{ items: SampleOverview[] }>("/api/training/sets")).items;
+  return (await request<SampleList>("/api/training/sets")).items;
 }
 
-export function assignTraining(input: TrainingInput): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/training/sets", { body: input });
+export function assignTraining(input: TrainingInput): Promise<Created> {
+  return request<Created>("/api/training/sets", { body: input });
 }

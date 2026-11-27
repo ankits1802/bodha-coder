@@ -63,6 +63,8 @@ jobs:
       - run: pip install --no-deps --editable .
       - run: ruff check .
       - run: ruff format --check .
+      - run: python ../tools/export_openapi.py
+      - run: git diff --exit-code -- ../frontend/openapi.json
       - run: alembic upgrade head
       - run: alembic downgrade base
       - run: pytest -q
@@ -80,6 +82,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm run api:types
+      - run: git diff --exit-code -- src/lib/api/schema.ts
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

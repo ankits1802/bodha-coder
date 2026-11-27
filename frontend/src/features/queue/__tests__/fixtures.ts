@@ -8,7 +8,7 @@ export const CODER: User = {
   practice: {
     id: "practice-1",
     name: "Lakeside Primary Care",
-    checks: { em: true, icd: true, cdi: true, audit: true, mips: false },
+    checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false },
     idle_minutes: 15,
     time_zone: "America/Chicago",
   },
@@ -37,6 +37,7 @@ export const ROW: QueueRow = {
   due_at: "2026-11-27T18:00:00Z",
   file_name: "2026-11-25 - REYES MARISOL - 99215.pdf",
   assigned_to: null,
+  payer: null,
   assignee_name: null,
   billed: ["99215", "I10"],
   suggested: ["99214"],

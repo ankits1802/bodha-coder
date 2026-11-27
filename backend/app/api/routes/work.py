@@ -4,6 +4,8 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
+from app.api.responses.base import ExactRoute
+from app.api.responses.work import ComplianceList, QueuePage, SearchResults, TodaySummary
 from app.core.deps import Actor, Db, require
 from app.core.roles import COMPLIANCE, NOTE_READERS, PRACTICE_ROLES
 from app.models import LANES
@@ -11,12 +13,12 @@ from app.services import worklists
 from app.services.audit_log import record_access
 from app.services.search import SEARCH_LIMIT, search_notes
 
-router = APIRouter(tags=["work"])
+router = APIRouter(tags=["work"], route_class=ExactRoute)
 Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 ASSIGNED_FILTER = r"^(me|none|[0-9a-f-]{36})$"
 
 
-@router.get("/today")
+@router.get("/today", response_model=TodaySummary)
 async def today(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES))]) -> dict[str, Any]:
     summary = await worklists.today(db, actor.practice_id, actor.zone)
     if actor.user.role == "viewer":
@@ -24,7 +26,7 @@ async def today(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES)
     return summary
 
 
-@router.get("/notes")
+@router.get("/notes", response_model=QueuePage)
 async def queue(
     *,
     db: Db,
@@ -58,12 +60,12 @@ async def queue(
     }
 
 
-@router.get("/search")
+@router.get("/search", response_model=SearchResults)
 async def find_notes(db: Db, actor: Reader, q: Annotated[str, Query(max_length=200)]) -> dict[str, Any]:
     return {"items": await search_notes(db, actor, q), "limit": SEARCH_LIMIT}
 
 
-@router.get("/compliance")
+@router.get("/compliance", response_model=ComplianceList)
 async def compliance(db: Db, actor: Annotated[Actor, Depends(require(*COMPLIANCE))]) -> dict[str, Any]:
     query = worklists.queue_query(actor.practice_id, lane="compliance", search=None, provider_id=None)
     rows = await worklists.queue_rows(db, query, offset=0)

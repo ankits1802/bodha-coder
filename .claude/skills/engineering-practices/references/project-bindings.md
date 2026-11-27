@@ -4,7 +4,7 @@ The only project-specific file of the three practice skills (`engineering-practi
 `backend-practices`, `frontend-practices`). The rules live in the skills; the facts below change
 with the project. Review this file whenever the layout, tooling or commands change.
 
-Last reviewed: 2026-11-26.
+Last reviewed: 2026-11-27.
 
 ## What this repository is
 
@@ -31,14 +31,15 @@ backend/app/adapters/   one adapter per external service: Gemini, S3/R2 object s
 backend/app/services/   domain services: findings and routing (pure), analysis pipeline,
                         uploads, review actions, addenda, auth, team, practice setup, worklists,
                         billing, insights, note view, HQ, audit logs
-backend/app/api/        entry points: request bodies, wiring, routes/<area>.py (thin handlers)
+backend/app/api/        entry points: request bodies, wiring, routes/<area>.py (thin handlers),
+                        responses/<area>.py (the response model of every JSON route)
 backend/app/worker.py   the analysis worker process (python -m app.worker)
 backend/app/scripts/    entry points: bootstrap_hq
 backend/app/main.py     the ASGI app
 backend/alembic/        migrations; 0001 executes a frozen DDL file compiled from the models
 backend/tests/          tests; they run on GitHub Actions against Postgres
 frontend/               Next.js App Router web client
-tools/                  hygiene_check.py and its baseline
+tools/                  hygiene_check.py and its baseline, export_openapi.py (frontend/openapi.json)
 infra/ses_intake/       the email intake Lambda function (deployed on its own; standard library and boto3)
 docs/                   living documents and the decision log
 ```
@@ -60,7 +61,8 @@ models   -> (nothing else)
 
 Frontend source (`frontend/src`): `app/` routes, `components/ui/` generic primitives,
 `components/shared/` domain pieces used by two or more features, `features/<feature>/` one folder
-per screen, `lib/` the one API client, session, formatters and roles.
+per screen, `lib/` the one API client, session, formatters and roles. API types come from the backend:
+`lib/api/schema.ts` is generated from `openapi.json`, and `lib/api/types.ts` names its schemas for the screens.
 
 ## Shared layer and its catalogue
 
@@ -94,6 +96,7 @@ A development machine runs the formatters, the linters and the hygiene check.
 | backend lint and format | `cd backend; .venv\Scripts\python.exe -m ruff check .` and `... -m ruff format .` |
 | tools and infra lint and format | `backend\.venv\Scripts\python.exe -m ruff check tools infra` and `... -m ruff format tools infra` |
 | frontend lint | `cd frontend; npm run lint` |
+| regenerate the API types after an API change | `backend\.venv\Scripts\python.exe tools\export_openapi.py`, then `cd frontend; npm run api:types` |
 | CI only: backend tests | `pytest -q` after `alembic upgrade head` against the Postgres service |
 | CI only: frontend | `npm run typecheck`, `npm test`, `npm run build` |
 

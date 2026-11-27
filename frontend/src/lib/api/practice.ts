@@ -1,9 +1,11 @@
 import { request, requestNothing } from "./client";
 import type {
-  AccessLogEntry,
+  AccessLogPage,
   Checks,
+  Created,
+  ImportedProviders,
+  MipsChoice,
   MipsOverview,
-  Page,
   PayerInput,
   PracticeSetup,
   ProviderInput,
@@ -27,37 +29,37 @@ export function saveSecurity(settings: SecuritySettings): Promise<void> {
   return requestNothing("/api/practice/security", { method: "PUT", body: settings });
 }
 
-export function addProvider(provider: ProviderInput): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/providers", { body: provider });
+export function addProvider(provider: ProviderInput): Promise<Created> {
+  return request<Created>("/api/providers", { body: provider });
 }
 
 export function editProvider(providerId: string, provider: ProviderInput): Promise<void> {
   return requestNothing(`/api/providers/${encodeURIComponent(providerId)}`, { method: "PUT", body: provider });
 }
 
-export function importProviders(csv: string): Promise<{ imported: number }> {
-  return request<{ imported: number }>("/api/providers/import", { body: { csv } });
+export function importProviders(csv: string): Promise<ImportedProviders> {
+  return request<ImportedProviders>("/api/providers/import", { body: { csv } });
 }
 
 export function getMips(): Promise<MipsOverview> {
   return request<MipsOverview>("/api/mips");
 }
 
-export function saveMips(measureIds: string[], expectedMeasureIds: string[]): Promise<{ measure_ids: string[] }> {
-  return request<{ measure_ids: string[] }>("/api/mips", {
+export function saveMips(measureIds: string[], expectedMeasureIds: string[]): Promise<MipsChoice> {
+  return request<MipsChoice>("/api/mips", {
     method: "PUT",
     body: { measure_ids: measureIds, expected_measure_ids: expectedMeasureIds },
   });
 }
 
-export function getAccessLog(day: string | null, userId: string | null, offset: number): Promise<Page<AccessLogEntry>> {
-  return request<Page<AccessLogEntry>>("/api/access-log", { query: { day, user_id: userId, offset } });
+export function getAccessLog(day: string | null, userId: string | null, offset: number): Promise<AccessLogPage> {
+  return request<AccessLogPage>("/api/access-log", { query: { day, user_id: userId, offset } });
 }
 
 const payerPath = (payerId: string): string => `/api/practice/payers/${encodeURIComponent(payerId)}`;
 
-export function addPayer(payer: PayerInput): Promise<{ id: string }> {
-  return request<{ id: string }>("/api/practice/payers", { body: payer });
+export function addPayer(payer: PayerInput): Promise<Created> {
+  return request<Created>("/api/practice/payers", { body: payer });
 }
 
 export function changePayer(payerId: string, payer: PayerInput): Promise<void> {

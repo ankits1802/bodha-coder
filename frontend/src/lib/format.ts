@@ -65,7 +65,8 @@ export function formatMinutes(minutes: number | null): string {
   return `${tenthsFormat.format(minutes / (24 * 60))} d`;
 }
 
-export function formatCalendarDay(isoDate: string, style: DayStyle = "short"): string {
+export function formatCalendarDay(isoDate: string | null, style: DayStyle = "short"): string {
+  if (isoDate === null) return FORMAT_WORDS.empty;
   const local = localDateFromIso(isoDate);
   return local ? DAY_FORMATS[style].format(local).replace(",", "") : isoDate;
 }

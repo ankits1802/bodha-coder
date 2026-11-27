@@ -5,6 +5,8 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.bodies import DeletePracticeBody, DemoBody, PlaceBody, PracticeBody, PracticeUpdateBody
+from app.api.responses.base import Created, ExactRoute
+from app.api.responses.hq import AdminLinkSent, DemoRequestRow, HqActivityPage, HqOverview, HqPlace, HqPractice, Renewal
 from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
@@ -12,21 +14,21 @@ from app.models import DemoRequest
 from app.services import hq, records
 from app.services.rate_limits import DEMO_PER_IP, hit
 
-router = APIRouter(tags=["hq"])
+router = APIRouter(tags=["hq"], route_class=ExactRoute)
 HqActor = Annotated[Actor, Depends(require(*HQ))]
 
 
-@router.get("/hq/overview")
+@router.get("/hq/overview", response_model=HqOverview)
 async def overview(db: Db, actor: HqActor) -> dict[str, Any]:
     return await hq.overview(db)
 
 
-@router.get("/hq/practices")
+@router.get("/hq/practices", response_model=list[HqPractice])
 async def practices(db: Db, actor: HqActor) -> list[dict[str, Any]]:
     return await hq.practices(db)
 
 
-@router.post("/hq/practices")
+@router.post("/hq/practices", response_model=Created)
 async def add_practice(body: PracticeBody, db: Db, mail: Mail, actor: HqActor) -> dict[str, str]:
     practice = await hq.create_practice(
         db,
@@ -52,17 +54,17 @@ async def delete_practice(practice_id: str, body: DeletePracticeBody, db: Db, st
     await records.delete_practice(db, store, actor, practice_id, confirm_name=body.confirm_name)
 
 
-@router.post("/hq/practices/{practice_id}/admin-link")
+@router.post("/hq/practices/{practice_id}/admin-link", response_model=AdminLinkSent)
 async def admin_link(practice_id: str, db: Db, mail: Mail, actor: HqActor) -> dict[str, str]:
     return {"sent": await hq.send_admin_link(db, mail, actor, practice_id)}
 
 
-@router.post("/hq/practices/{practice_id}/renew")
+@router.post("/hq/practices/{practice_id}/renew", response_model=Renewal)
 async def renew(practice_id: str, db: Db, actor: HqActor) -> dict[str, str]:
     return {"renews_on": (await hq.renew_practice(db, actor, practice_id)).isoformat()}
 
 
-@router.get("/hq/places")
+@router.get("/hq/places", response_model=list[HqPlace])
 async def places(db: Db, actor: HqActor) -> list[dict[str, Any]]:
     return [{"code": p.code, "name": p.name, "active": p.active} for p in await hq.places(db)]
 
@@ -72,7 +74,7 @@ async def set_place(code: str, body: PlaceBody, db: Db, actor: HqActor) -> None:
     await hq.set_place(db, actor, code, name=body.name, active=body.active)
 
 
-@router.get("/hq/activity")
+@router.get("/hq/activity", response_model=HqActivityPage)
 async def activity(
     db: Db,
     actor: HqActor,
@@ -99,7 +101,7 @@ async def activity(
     }
 
 
-@router.get("/hq/demo-requests")
+@router.get("/hq/demo-requests", response_model=list[DemoRequestRow])
 async def demo_requests(db: Db, actor: HqActor) -> list[dict[str, Any]]:
     return [
         {

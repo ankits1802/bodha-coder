@@ -64,6 +64,22 @@ The frontend proxies `/api` to `BACKEND_URL` (default `http://localhost:8000`). 
 `--proxy-headers` and `--forwarded-allow-ips` set to the web server's address so the access log
 records the visitor's address, not the proxy's.
 
+### API types
+
+Every JSON route declares a response model (`backend/app/api/responses/`), and the frontend's API
+types are generated from the OpenAPI document. After changing a route, a response model or a request
+body, regenerate both files from the repository root and commit them:
+
+```
+backend\.venv\Scripts\python.exe tools\export_openapi.py
+cd frontend
+npm run api:types
+```
+
+The first writes `frontend/openapi.json` (no database or secrets needed), the second
+`frontend/src/lib/api/schema.ts`. Screens import the named types in `frontend/src/lib/api/types.ts`,
+which alias the generated schemas. CI regenerates both and fails when either differs.
+
 ## Configuration
 
 All settings are environment variables read by `backend/app/core/config.py`; `.env.example` lists
@@ -136,8 +152,9 @@ staging load test in [tools/load/README.md](tools/load/README.md).
 ## Checks
 
 Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
-check, the Python lock against `pyproject.toml`, ruff, the migrations up and down against Postgres,
-pytest, and the frontend lint, type check, tests and build.
+check, the Python lock against `pyproject.toml`, ruff, the OpenAPI document and the generated
+frontend types against the code, the migrations up and down against Postgres, pytest, and the
+frontend lint, type check, tests and build.
 
 ## Data sources
 

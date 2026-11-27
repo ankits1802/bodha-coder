@@ -7,13 +7,15 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from app.api.bodies import PreviewBody
+from app.api.responses.base import ExactRoute
+from app.api.responses.uploads import BatchPage, FilePreview, UploadResult
 from app.api.wiring import Store
 from app.core.deps import Actor, Db, require
 from app.core.errors import Invalid
 from app.core.roles import UPLOADERS
 from app.services import uploads
 
-router = APIRouter(tags=["uploads"])
+router = APIRouter(tags=["uploads"], route_class=ExactRoute)
 Uploader = Annotated[Actor, Depends(require(*UPLOADERS))]
 
 
@@ -25,7 +27,7 @@ class FileDetail(BaseModel):
 DETAILS = TypeAdapter(list[FileDetail])
 
 
-@router.post("/uploads/preview")
+@router.post("/uploads/preview", response_model=list[FilePreview])
 async def preview(body: PreviewBody, actor: Uploader) -> list[dict[str, Any]]:
     return [
         {
@@ -38,7 +40,7 @@ async def preview(body: PreviewBody, actor: Uploader) -> list[dict[str, Any]]:
     ]
 
 
-@router.post("/uploads")
+@router.post("/uploads", response_model=UploadResult)
 async def upload(
     *,
     db: Db,
@@ -66,6 +68,6 @@ async def upload(
     return {"batch_id": result.batch_id, "accepted": result.accepted, "duplicates": result.duplicates}
 
 
-@router.get("/batches")
+@router.get("/batches", response_model=BatchPage)
 async def batches(db: Db, actor: Uploader, offset: Annotated[int, Query(ge=0)] = 0) -> dict[str, Any]:
     return await uploads.batch_history(db, actor.practice_id, offset=offset)

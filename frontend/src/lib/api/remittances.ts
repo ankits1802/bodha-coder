@@ -1,8 +1,8 @@
 import { request, requestFile, type DownloadedFile } from "./client";
-import type { AppealDays, AppealDraft, Page, RemittanceDetail, RemittanceFilter, RemittanceListItem, RemittanceUpload } from "./types";
+import type { AppealDays, AppealDraft, RemittanceDetail, RemittanceFilter, RemittancePage, RemittanceUpload } from "./types";
 
-export function getRemittances(offset: number): Promise<Page<RemittanceListItem>> {
-  return request<Page<RemittanceListItem>>("/api/remittances", { query: { offset } });
+export function getRemittances(offset: number): Promise<RemittancePage> {
+  return request<RemittancePage>("/api/remittances", { query: { offset } });
 }
 
 export function getRemittance(remittanceId: string, status: RemittanceFilter): Promise<RemittanceDetail> {

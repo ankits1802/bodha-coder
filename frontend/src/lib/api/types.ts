@@ -1,290 +1,236 @@
-export type PracticeRole = "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
-export type Role = "hq" | PracticeRole;
+import type { components } from "./schema";
 
-export type CheckKey = "em" | "icd" | "cdi" | "audit" | "mips" | "hcc";
-export type Checks = Record<Exclude<CheckKey, "hcc">, boolean> & Partial<Record<"hcc", boolean>>;
+type Schemas = components["schemas"];
 
-export interface PracticeSummary {
-  id: string;
-  name: string;
-  checks: Checks;
-  idle_minutes: number;
-  time_zone: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  practice: PracticeSummary | null;
-}
-
-export interface SignedIn {
-  access_token: string;
-  user: User;
-}
-
-export type MfaStep = "setup" | "verify";
-
-export interface MfaChallenge {
-  mfa: MfaStep;
-  mfa_token: string;
-}
-
+export type Checks = Schemas["Checks"];
+export type CheckKey = keyof Checks;
+export type PracticeSummary = Schemas["PracticeSummary"];
+export type User = Schemas["User"];
+export type Role = User["role"];
+export type SignedIn = Schemas["SignedIn"];
+export type MfaVerified = SignedIn;
+export type MfaChallenge = Schemas["MfaChallenge"];
+export type MfaStep = MfaChallenge["mfa"];
 export type LoginResult = SignedIn | MfaChallenge;
+export type MfaEnrolment = Schemas["MfaEnrolment"];
+export type SignInProviders = Schemas["SignInProviders"];
+export type SignedInDevice = Schemas["SignedInDevice"];
+export type RecoveryCodeStatus = Schemas["RecoveryCodeStatus"];
+export type RecoveryCodes = Schemas["RecoveryCodes"];
+export type Preferences = Schemas["Preferences"];
 
-export interface MfaEnrolment {
-  secret: string;
-  uri: string;
-  qr_image: string;
-}
+export type Created = Schemas["Created"];
+export type DocumentLink = Schemas["DocumentLink"];
 
-export interface MfaVerified extends SignedIn {
-  recovery_codes?: string[];
-}
+export type NoteSummary = Schemas["NoteSummary"];
+export type NoteStatus = NoteSummary["status"];
+export type Lane = NonNullable<NoteSummary["lane"]>;
+export type LaneReason = NonNullable<NoteSummary["lane_reason"]>;
+export type LaneCount = Schemas["LaneCount"];
+export type LaneCounts = Schemas["LaneCounts"];
+export type QueueRow = Schemas["QueueRow"];
+export type EmAction = NonNullable<QueueRow["em_action"]>;
+export type BatchProgress = Schemas["BatchProgress"];
+export type TodaySummary = Schemas["TodaySummary"];
+export type QueuePage = Schemas["QueuePage"];
+export type SearchResults = Schemas["SearchResults"];
+export type CompliancePattern = Schemas["CompliancePattern"];
+export type ComplianceRow = Schemas["ComplianceRow"];
+export type ComplianceList = Schemas["ComplianceList"];
 
-export interface SignInProviders {
-  google: boolean;
-}
+export type ProviderRef = Schemas["ProviderRef"];
+export type Channel = ProviderRef["channel"];
+export type NoteHeader = Schemas["NoteHeader"];
+export type NoteText = Schemas["NoteText"];
+export type TextSource = NoteText["source"];
+export type AnalysisView = Schemas["AnalysisView"];
+export type AnalysisStatus = AnalysisView["status"];
+export type RequiredElement = Schemas["RequiredElement"];
+export type CodingComplianceCheck = Schemas["CodingComplianceCheck"];
+export type CmsCdiCompliance = Schemas["CmsCdiCompliance"];
+export type CodeLinkingOpportunity = Schemas["CodeLinkingOpportunity"];
+export type Finding = Schemas["Finding"];
+export type FindingKind = Finding["kind"];
+export type FindingAction = Finding["action"];
+export type Choice = Finding["choice"];
+export type CodeJson = Schemas["CodeJson"];
+export type CodeType = CodeJson["type"];
+export type AnalysisRevision = Schemas["AnalysisRevision"];
+export type CodeSetRevision = Schemas["CodeSetRevision"];
+export type PointerChoice = Schemas["PointerChoice"];
+export type DecisionRecord = Schemas["DecisionRecord"];
+export type NoteHistory = Schemas["NoteHistory"];
+export type AddendumQuestion = Schemas["AddendumQuestion"];
+export type AddendumAnswer = Schemas["AddendumAnswer"];
+export type AddendumRequestView = Schemas["AddendumRequestView"];
+export type RequestStatus = AddendumRequestView["status"];
+export type NoteDetail = Schemas["NoteDetail"];
+export type EstimateLine = Schemas["EstimateLine"];
+export type ClaimEstimate = Schemas["ClaimEstimate"];
+export type ClaimEstimates = Schemas["ClaimEstimates"];
+export type RateSetting = ClaimEstimates["setting"];
 
-export interface SignedInDevice {
-  id: string;
-  created_at: string;
-  last_used_at: string;
-  ip: string | null;
-  user_agent: string | null;
-  current: boolean;
-}
+export type NoteState = Schemas["NoteState"];
+export type NoteLane = Schemas["NoteLane"];
+export type ComplianceOutcome = Schemas["ComplianceOutcome"];
+export type RequestCancelled = Schemas["RequestCancelled"];
+export type NotePayer = Schemas["NotePayer"];
+export type ApprovedNotes = Schemas["ApprovedNotes"];
+export type AssignedNotes = Schemas["AssignedNotes"];
+export type DeletedNotes = Schemas["DeletedNotes"];
+export type QueuedNotes = Schemas["QueuedNotes"];
+export type RequestCreated = Schemas["RequestCreated"];
+export type PointerLine = Schemas["PointerLine"];
+export type ClaimDiagnosis = Schemas["ClaimDiagnosis"];
+export type ClaimPointers = Schemas["ClaimPointers"];
 
-export interface RecoveryCodeStatus {
-  enabled: boolean;
-  remaining: number;
-}
+export type ClaimChecks = Schemas["ClaimChecks"];
+export type ClaimEdit = ClaimChecks["edits"][number];
+export type PayerFlag = Schemas["PayerFlag"];
+export type PayerFlagRule = PayerFlag["rule"];
+export type PayerFlagSeverity = PayerFlag["severity"];
 
-export interface RecoveryCodes {
-  codes: string[];
-}
+export type FilePreview = Schemas["FilePreview"];
+export type UploadResult = Schemas["UploadResult"];
+export type UploadedBatch = Schemas["UploadedBatch"];
+export type BatchPage = Schemas["BatchPage"];
 
-export interface Preferences {
-  notify_digest: boolean;
-}
+export type ProviderDetails = Schemas["ProviderDetails"];
+export type BillsUnder = NonNullable<ProviderDetails["bills_under"]>;
+export type Provider = Schemas["Provider"];
+export type Place = Schemas["Place"];
+export type ImportedProviders = Schemas["ImportedProviders"];
 
-export type Lane = "approve" | "coder" | "provider" | "compliance";
-export type NoteStatus = "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
-export type LaneReason =
-  | "flagged"
-  | "levels_too_high"
-  | "audit_risk"
-  | "waiting_on_provider"
-  | "code_changes"
-  | "questions"
-  | "matches";
+export type BillingRow = Schemas["BillingRow"];
+export type BillingSummary = Schemas["BillingSummary"];
+export type BillingList = Schemas["BillingList"];
 
-export interface LaneCount {
-  total: number;
-  due_soon: number;
-}
+export type Outcomes = Schemas["Outcomes"];
+export type Insights = Schemas["Insights"];
+export type InsightEstimates = Schemas["InsightEstimates"];
+export type PersonProductivity = Schemas["PersonProductivity"];
 
-export type LaneCounts = Record<Lane, LaneCount>;
+export type SetupSection = Schemas["SetupSection"];
+export type SetupSectionKey = Exclude<keyof Schemas["SetupSections"], "providers">;
+export type SecuritySettings = Schemas["SecuritySettings"];
+export type PracticeRole = SecuritySettings["mfa_roles"][number];
+export type IdleMinutes = SecuritySettings["idle_minutes"];
+export type AccessLogYears = SecuritySettings["access_log_years"];
+export type Payer = Schemas["Payer"];
+export type PlanType = Payer["plan_type"];
+export type PayerOption = Schemas["PayerOption"];
+export type PracticeSetup = Schemas["PracticeSetup"];
+export type MipsMeasure = Schemas["MipsMeasure"];
+export type MipsOverview = Schemas["MipsOverview"];
+export type MipsChoice = Schemas["MipsChoice"];
+export type AccessLogEntry = Schemas["AccessLogEntry"];
+export type AccessLogPage = Schemas["AccessLogPage"];
+export type IntakeView = Schemas["IntakeView"];
 
-export type EmAction = "keep" | "lower" | "raise" | "replace" | "add" | "not_applicable";
+export type TeamMember = Schemas["TeamMember"];
+export type MemberStatus = TeamMember["status"];
+export type TeamList = Schemas["TeamList"];
 
-export interface NoteSummary {
-  id: string;
-  patient_name: string | null;
-  provider_name: string;
-  service_date: string;
-  status: NoteStatus;
-  lane: Lane | null;
-  lane_reason: LaneReason | null;
-  headline: string | null;
-  place_code: string;
-  visit_type: string;
-  flag_reason: string | null;
-  flagged_by: string | null;
-  due_at: string;
-  file_name: string;
-  assigned_to: string | null;
-}
+export type ProviderRequest = Schemas["ProviderRequest"];
+export type RespondResult = Schemas["RespondResult"];
+export type OtherRequest = Schemas["OtherRequest"];
+export type CodeSent = Schemas["CodeSent"];
+export type ProviderToken = Schemas["ProviderToken"];
 
-export interface QueueRow extends NoteSummary {
-  assignee_name: string | null;
-  billed: string[];
-  suggested: string[];
-  em_action: EmAction | null;
-}
+export type HqOverview = Schemas["HqOverview"];
+export type HqPractice = Schemas["HqPractice"];
+export type PracticeStatus = HqPractice["status"];
+export type Plan = HqPractice["plan"];
+export type AdminLinkSent = Schemas["AdminLinkSent"];
+export type AdminLink = AdminLinkSent["sent"];
+export type Renewal = Schemas["Renewal"];
+export type DemoRequestRow = Schemas["DemoRequestRow"];
+export type HqPlace = Schemas["HqPlace"];
+export type HqActivityEntry = Schemas["HqActivityEntry"];
+export type HqActivityPage = Schemas["HqActivityPage"];
 
-export interface BatchProgress {
-  id: string;
-  provider_name: string;
-  service_date: string;
-  place_code: string;
-  counts: Partial<Record<NoteStatus, number>>;
-}
+export type DayNote = Schemas["DayNote"];
+export type DayDuplicate = Schemas["DayDuplicate"];
+export type DayLevelCount = Schemas["DayLevelCount"];
+export type ProviderDay = Schemas["ProviderDay"];
+export type DayFlag = ProviderDay["flags"][number];
+export type NoteDay = Schemas["NoteDay"];
+export type FlaggedDays = Schemas["FlaggedDays"];
 
-export interface TodaySummary {
-  waiting: number;
-  due_soon: number;
-  lanes: LaneCounts;
-  next_up: QueueRow[];
-  batches: BatchProgress[];
-}
+export type EmMixLevel = Schemas["EmMixLevel"];
+export type EmMixDirection = NonNullable<EmMixLevel["direction"]>;
+export type EmMixFamily = Schemas["EmMixFamily"];
+export type EmMixLean = NonNullable<EmMixFamily["lean"]>;
+export type EmMixProvider = Schemas["EmMixProvider"];
+export type EmMix = Schemas["EmMix"];
 
-export interface QueuePage {
-  items: QueueRow[];
-  lanes: LaneCounts;
-  total: number;
-  all_total: number;
-  failed: number;
-  page_size: number;
-}
+export type RemittanceSummary = Schemas["RemittanceSummary"];
+export type RemittanceCounts = RemittanceSummary["counts"];
+export type RemittanceListItem = Schemas["RemittanceListItem"];
+export type RemittancePage = Schemas["RemittancePage"];
+export type RemittanceAdjustment = Schemas["RemittanceAdjustment"];
+export type RemittanceLine = Schemas["RemittanceLine"];
+export type RemittanceLineStatus = RemittanceLine["status"];
+export type RemittanceDetail = Schemas["RemittanceDetail"];
+export type RemittanceUpload = Schemas["RemittanceUpload"];
+export type AppealDraft = Schemas["AppealDraft"];
+export type AppealDays = Schemas["AppealDays"];
 
-export interface QueueQuery {
-  lane?: Lane;
-  search?: string;
-  provider_id?: string;
-  batch_id?: string;
-  assigned?: string;
-  offset?: number;
-}
+export type QueryMetrics = Schemas["QueryMetrics"];
+export type ProviderQueryMetrics = Schemas["ProviderQueryMetrics"];
+export type QueryMetricsReport = Schemas["QueryMetricsReport"];
 
-export interface SearchResults {
-  items: NoteSummary[];
-  limit: number;
-}
+export type Rate = Schemas["Rate"];
+export type AgreementSummary = Schemas["AgreementSummary"];
+export type AgreementSide = keyof Schemas["AgreementSides"];
+export type ElementComparison = Schemas["ElementComparison"];
+export type EmDirection = ElementComparison["em"]["direction"];
+export type ClaimElements = Schemas["ClaimElements"];
+export type SampleOverview = Schemas["SampleOverview"];
+export type SampleScope = SampleOverview["scope"];
+export type SamplePurpose = SampleOverview["purpose"];
+export type SampleList = Schemas["SampleList"];
+export type SampleItemRow = Schemas["SampleItemRow"];
+export type ProviderAgreement = Schemas["ProviderAgreement"];
+export type SampleResults = Schemas["SampleResults"];
+export type QualityOptions = Schemas["QualityOptions"];
+export type BlindText = Schemas["TextRevision"];
+export type BlindItem = Schemas["BlindItem"];
+export type BlindStep = Schemas["BlindStep"];
+export type BlindAnswer = ClaimElements;
+export type BlindSubmitted = Schemas["BlindSubmitted"];
+export type AutonomyEligibility = Schemas["AutonomyEligibility"];
+export type EligibilityReason = AutonomyEligibility["reason"];
+export type ProviderAutonomy = Schemas["ProviderAutonomy"];
+export type ProviderAutonomyList = Schemas["ProviderAutonomyList"];
+export type LevelMixWindow = Schemas["LevelMixWindow"];
+export type LevelMix = Schemas["LevelMix"];
+export type LevelMixStatus = LevelMix["status"];
+export type EvalSummary = Schemas["EvalSummary"];
+export type EvalRunChange = Schemas["EvalRunChange"];
+export type EvalMetric = EvalRunChange["dropped"][number];
+export type EvalRunView = Schemas["EvalRunView"];
+export type EvalRunStatus = EvalRunView["status"];
+export type EvalRuns = Schemas["EvalRuns"];
+export type EvalCaseRow = Schemas["EvalCaseRow"];
+export type EvalCaseList = Schemas["EvalCaseList"];
+export type EvalCandidate = Schemas["EvalCandidate"];
+export type EvalCandidateList = Schemas["EvalCandidateList"];
+export type EvalCaseAdded = Schemas["EvalCaseAdded"];
+export type AssignedSample = Schemas["AssignedSample"];
+export type TrainingOverview = Schemas["TrainingOverview"];
+export type TrainingSuggestion = Schemas["TrainingSuggestion"];
+export type TrainingFeedback = Schemas["TrainingFeedback"];
 
-export interface CompliancePattern {
-  provider_name: string;
-  count: number;
-}
-
-export interface ComplianceRow extends QueueRow {
-  flagged_by_name: string | null;
-}
-
-export interface ComplianceList {
-  items: ComplianceRow[];
-  patterns: CompliancePattern[];
-}
-
-export type Channel = "email" | "sms";
-
-export interface ProviderRef {
-  id: string;
-  name: string;
-  credential: string;
-  specialty: string | null;
-  channel: Channel;
-}
-
-export interface NoteHeader extends NoteSummary {
-  assignee_name: string | null;
-  payer: string | null;
-  patient_age: number | null;
-  patient_sex: string | null;
-  provider: ProviderRef;
-}
-
-export type TextSource = "document" | "addendum";
-
-export interface NoteText {
-  revision: number;
-  source: TextSource;
-  text: string;
-  created_at: string;
-}
-
-export type AnalysisStatus = "queued" | "running" | "succeeded" | "failed" | "superseded";
-
-export interface RequiredElement {
-  element: string;
-  present: boolean;
-  location: string | null;
-  deficiency: string | null;
-}
-
-export interface CodingComplianceCheck {
-  check: string;
-  status: "Pass" | "Fail" | "Warning";
-  finding: string;
-}
-
-export interface CmsCdiCompliance {
-  standard: string;
-  compliant: boolean;
-  note: string;
-}
-
-export interface CodeLinkingOpportunity {
-  diagnosis: string;
-  relatedFindings: string;
-  suggestion: string;
-}
-
-export interface AnalysisView {
-  id: string;
-  revision: number;
-  status: AnalysisStatus;
-  model: string | null;
-  prompt_version: string | null;
-  finished_at: string | null;
-  failed_sections: string[];
-  cdi: {
-    overallCDIScore: number | null;
-    summaryGuidance: string | null;
-    codeLinkingOpportunities: CodeLinkingOpportunity[] | null;
-  };
-  audit: {
-    overallComplianceScore: number | null;
-    auditSummary: string | null;
-    requiredElements: RequiredElement[] | null;
-    codingCompliance: CodingComplianceCheck[] | null;
-    cmsCDICompliance: CmsCdiCompliance[] | null;
-  };
-  mips_scope: unknown;
-}
-
-export type FindingKind =
-  | "em"
-  | "diagnosis"
-  | "modifier"
-  | "code_review"
-  | "cdi_gap"
-  | "cdi_query"
-  | "audit_risk"
-  | "audit_finding"
-  | "mips";
-
-export type FindingAction =
-  | "keep"
-  | "lower"
-  | "raise"
-  | "replace"
-  | "add"
-  | "remove"
-  | "review"
-  | "ask"
-  | "info"
-  | "not_applicable";
-
-export type Choice = "accept" | "keep" | "ask" | "add" | "skip";
-
-export interface Finding {
-  kind: FindingKind;
-  key: string;
-  action: FindingAction;
-  title: string;
-  reasoning: string;
-  code_before: string | null;
-  code_after: string | null;
-  evidence: string[];
-  severity: string | null;
-  detail: Record<string, unknown>;
-  default_choice: Choice;
-  choice: Choice;
-  allowed: Choice[];
-}
+export type ComplianceDecision = Schemas["ComplianceBody"]["decision"];
+export type QuestionEdit = Schemas["QuestionBody"];
+export type AskBody = Schemas["AskBody"];
+export type DemoRequest = Schemas["DemoBody"];
+export type SampleInput = Schemas["SampleBody"];
+export type TrainingInput = Schemas["TrainingBody"];
+export type PayerInput = Omit<Payer, "id">;
+export type IntakeSettings = Omit<IntakeView, "watched_prefix">;
+export type ProviderInput = Omit<Provider, "id" | "channel"> & { channel: Channel | null };
 
 export type MdmLevel = "Straightforward" | "Low" | "Moderate" | "High";
 
@@ -299,147 +245,13 @@ export interface MdmElements {
   risk: MdmElement;
 }
 
-export type CodeType = "CPT" | "ICD-10";
-
-export interface CodeJson {
-  code: string;
-  type: CodeType;
-  modifiers: string[];
-  units?: number;
-}
-
-export interface AnalysisRevision {
-  revision: number;
-  reason: string;
-  status: AnalysisStatus;
-  model: string | null;
-  finished_at: string | null;
-  error: string | null;
-}
-
-export interface CodeSetRevision {
-  kind: "billed" | "final";
-  revision: number;
-  codes: CodeJson[];
-  reason: string;
-  by: string | null;
-  at: string;
-}
-
-export interface PointerChoice {
-  code: string;
-  diagnoses: string[];
-}
-
-export interface DecisionRecord {
-  key: string;
-  choice: Choice;
-  by: string | null;
-  at: string;
-  pointers: PointerChoice | null;
-}
-
-export interface NoteHistory {
-  analyses: AnalysisRevision[];
-  code_sets: CodeSetRevision[];
-  decisions: DecisionRecord[];
-}
-
-export interface AddendumQuestion {
-  key: string;
-  text: string;
-  context: string[];
-  options: string[];
-}
-
-export interface AddendumAnswer {
-  key: string;
-  choice: string;
-  comment: string | null;
-}
-
-export type RequestStatus = "sent" | "answered" | "expired" | "cancelled";
-
-export interface AddendumRequestView {
-  id: string;
-  status: RequestStatus;
-  channel: Channel;
-  questions: AddendumQuestion[];
-  answers: AddendumAnswer[] | null;
-  addendum_text: string | null;
-  hold_claim: boolean;
-  sent_at: string;
-  answered_at: string | null;
-}
-
-export interface NoteDetail {
-  note: NoteHeader;
-  texts: NoteText[];
-  failure: string | null;
-  analysis: AnalysisView | null;
-  findings: Finding[];
-  claim: string[];
-  estimate: ClaimEstimates | null;
-  history: NoteHistory;
-  requests: AddendumRequestView[];
-}
-
-export type RateSetting = "facility" | "non_facility";
-
-export interface EstimateLine {
-  code: string;
-  amount: number | null;
-}
-
-export interface ClaimEstimate {
-  total: number;
-  lines: EstimateLine[];
-  unpriced: string[];
-}
-
-export interface ClaimEstimates {
-  release: string;
-  setting: RateSetting;
-  billed: ClaimEstimate;
-  claim: ClaimEstimate;
-  difference: number;
-}
-
-export interface PointerLine {
-  code: string;
-  label: string;
-  pointers: string[];
-  stored: boolean;
-}
-
-export interface ClaimDiagnosis {
-  code: string;
-  letter: string | null;
-}
-
-export interface ClaimPointers {
-  diagnoses: ClaimDiagnosis[];
-  lines: PointerLine[];
-}
-
-export type ComplianceDecision = "confirm" | "return" | "keep";
-
-export interface QuestionEdit {
-  key: string;
-  text: string;
-}
-
-export interface AskBody {
-  questions: QuestionEdit[];
-  channel: Channel;
-  hold: boolean;
-}
-
-export interface FilePreview {
-  file_name: string;
-  service_date: string | null;
-  patient_name: string | null;
-  cpt: string | null;
+export interface QueueQuery {
+  lane?: Lane;
+  search?: string;
+  provider_id?: string;
+  batch_id?: string;
+  assigned?: string;
+  offset?: number;
 }
 
 export interface FileDetail {
@@ -454,230 +266,9 @@ export interface UploadPlan {
   visit_type: string;
 }
 
-export interface UploadResult {
-  batch_id: string;
-  accepted: string[];
-  duplicates: string[];
-}
-
-export interface Page<T> {
-  items: T[];
-  total: number;
-  offset: number;
-  page_size: number;
-}
-
-export interface UploadedBatch {
-  id: string;
-  provider_name: string;
-  service_date: string;
-  place_code: string;
-  visit_type: string;
-  uploaded_by: string;
-  created_at: string;
-  counts: Partial<Record<NoteStatus, number>>;
-}
-
-export type BillsUnder = "individual" | "group";
-
-export interface ProviderDetails {
-  taxonomy_code: string | null;
-  license_number: string | null;
-  license_state: string | null;
-  dea_number: string | null;
-  bills_under: BillsUnder | null;
-  group_npi: string | null;
-  supervising_physician: string | null;
-  signature_on_file: boolean;
-}
-
-export interface Provider {
-  id: string;
-  name: string;
-  credential: string;
-  specialty: string | null;
-  npi: string | null;
-  place_code: string | null;
-  email: string | null;
-  phone: string | null;
-  channel: Channel;
-  active: boolean;
-  details: ProviderDetails;
-}
-
-export interface ProviderInput {
-  name: string;
-  credential: string;
-  specialty: string | null;
-  npi: string | null;
-  place_code: string | null;
-  email: string | null;
-  phone: string | null;
-  channel: Channel | null;
-  active: boolean;
-  details: ProviderDetails;
-}
-
-export interface Place {
-  code: string;
-  name: string;
-}
-
 export type BillingShow = "ready" | "exported" | "all";
-
-export interface BillingRow {
-  id: string;
-  patient_name: string | null;
-  service_date: string;
-  provider_name: string;
-  npi: string | null;
-  place_code: string;
-  codes: string[];
-  changed: number;
-  estimate: number | null;
-  approved_by: string;
-  approved_at: string | null;
-  exported_at: string | null;
-  cpt: string[];
-  icd10: string[];
-}
-
-export interface BillingSummary {
-  ready: number;
-  exported_today: number;
-  held_for_provider: number;
-}
-
-export interface BillingList extends Page<BillingRow> {
-  summary: BillingSummary;
-  limit: number;
-}
-
 export type InsightDays = 7 | 14 | 30 | 90;
-
-export interface Outcomes {
-  matched: number;
-  billed_too_low: number;
-  billed_too_high: number;
-  diagnosis_changes: number;
-}
-
-export interface Insights {
-  days: InsightDays;
-  per_day: { date: string; notes: number }[];
-  approved: number;
-  approved_on_time: number;
-  outcomes: Outcomes;
-  providers: { provider_name: string; notes: number; matched: number }[];
-  estimates: InsightEstimates;
-  people: PersonProductivity[];
-}
-
-export interface InsightEstimates {
-  notes: number;
-  difference: number;
-  providers: { provider_name: string; notes: number; difference: number }[];
-}
-
-export interface PersonProductivity {
-  id: string;
-  name: string;
-  approved: number;
-  median_minutes: number | null;
-  changed: number;
-}
-
-export type SetupSectionKey =
-  | "practice_details"
-  | "payers"
-  | "payments"
-  | "coding_rules"
-  | "charge_capture"
-  | "documentation_rules"
-  | "compliance"
-  | "reports"
-  | "contacts"
-  | "patient_registration"
-  | "software";
-
-export interface SetupSection {
-  fields: string[];
-  values: Record<string, string>;
-  complete: boolean;
-}
-
-export type IdleMinutes = 5 | 10 | 15 | 30;
-
-export type AccessLogYears = 6 | 7 | 8 | 9 | 10;
-
-export interface SecuritySettings {
-  mfa_roles: PracticeRole[];
-  idle_minutes: IdleMinutes;
-  access_log_years: AccessLogYears;
-}
-
-export type PlanType = "commercial" | "medicare" | "medicare_advantage" | "medicaid" | "other";
-
-export interface PayerInput {
-  name: string;
-  payer_id: string | null;
-  plan_type: PlanType;
-  active: boolean;
-}
-
-export interface Payer extends PayerInput {
-  id: string;
-}
-
-export interface PracticeSetup {
-  sections: Record<SetupSectionKey | "providers", SetupSection>;
-  complete: number;
-  total: number;
-  checks: Checks;
-  missing_npi: number;
-  payers: Payer[];
-  security: SecuritySettings | null;
-}
-
-export interface MipsMeasure {
-  id: string;
-  title: string;
-}
-
-export interface MipsOverview {
-  standard: MipsMeasure[];
-  addable: MipsMeasure[];
-  measure_ids: string[];
-  uses_standard: boolean;
-}
-
-export interface AccessLogEntry {
-  at: string;
-  actor: string;
-  actor_kind: "user" | "provider" | "system";
-  action: string;
-  note_id: string | null;
-  detail: string | null;
-  ip: string | null;
-  user_agent: string | null;
-}
-
-export type MemberStatus = "invited" | "active" | "blocked";
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  status: MemberStatus;
-  mfa_enabled: boolean;
-  last_active_at: string | null;
-}
-
-export interface TeamList {
-  seats: number;
-  members: TeamMember[];
-}
+export type RemittanceFilter = "all" | "downcoded" | "denied" | "unmatched";
 
 export interface InviteBody {
   name: string;
@@ -689,70 +280,6 @@ export interface MemberUpdate {
   role?: PracticeRole;
   blocked?: boolean;
 }
-
-export interface ProviderRequest {
-  practice_name: string;
-  provider_name: string;
-  status: RequestStatus;
-  patient: { name: string | null; age: number | null; sex: string | null };
-  service_date: string;
-  visit_type: string;
-  place_code: string;
-  place_name: string | null;
-  requested_by: string | null;
-  requested_at: string;
-  answered_at: string | null;
-  expires_at: string;
-  questions: AddendumQuestion[];
-  texts: { revision: number; source: TextSource; text: string }[];
-  addendum_text: string | null;
-}
-
-export interface RespondResult {
-  status: RequestStatus;
-  addendum_text: string;
-}
-
-export interface OtherRequest {
-  id: string;
-  patient_name: string | null;
-  service_date: string;
-  sent_at: string;
-  questions: number;
-}
-
-export interface HqOverview {
-  practices: number;
-  people: number;
-  read_last_24h: number;
-  tokens_last_24h: number;
-  failed_last_24h: number;
-  waiting: number;
-  running: number;
-}
-
-export type PracticeStatus = "trial" | "active" | "ended" | "blocked";
-export type Plan = "trial" | "basic" | "professional" | "enterprise";
-
-export interface HqPractice {
-  id: string;
-  name: string;
-  status: PracticeStatus;
-  plan: Plan;
-  seats: number;
-  users: number;
-  providers: number;
-  waiting: number;
-  renews_on: string | null;
-  time_zone: string;
-  failed_24h: number;
-  last_failure: string | null;
-  admin_name: string | null;
-  admin_email: string | null;
-  admin_status: MemberStatus | null;
-}
-
-export type AdminLink = "invite" | "reset";
 
 export interface NewPractice {
   name: string;
@@ -772,523 +299,8 @@ export interface PracticeUpdate {
   time_zone?: string;
 }
 
-export interface DemoRequestRow {
-  id: string;
-  name: string;
-  email: string;
-  organization: string;
-  message: string | null;
-  received_at: string;
-}
-
-export interface HqPlace {
-  code: string;
-  name: string;
-  active: boolean;
-}
-
-export interface HqActivityEntry {
-  at: string;
-  actor: string;
-  action: string;
-  practice_id: string | null;
-  detail: string | null;
-}
-
-export interface HqActivityPage extends Page<HqActivityEntry> {
-  actions: string[];
-}
-
 export interface HqActivityQuery {
   practice_id: string | null;
   action: string | null;
   offset: number;
-}
-
-export interface DemoRequest {
-  name: string;
-  email: string;
-  organization: string;
-  message: string | null;
-}
-
-export type DayFlag = "time_over_day" | "cloned_text" | "high_level_share";
-
-export interface DayNote {
-  id: string;
-  patient_name: string | null;
-  status: NoteStatus;
-  lane: Lane | null;
-  em_code: string | null;
-  minutes: number | null;
-}
-
-export interface DayDuplicate {
-  first: string;
-  second: string;
-  similarity: number;
-}
-
-export interface DayLevelCount {
-  code: string;
-  count: number;
-}
-
-export interface ProviderDay {
-  provider: { id: string; name: string };
-  service_date: string;
-  notes: DayNote[];
-  total_minutes: number;
-  timed_notes: number;
-  visits: number;
-  levels: DayLevelCount[];
-  high_level_visits: number;
-  high_level_share: number | null;
-  compared: number;
-  duplicates: DayDuplicate[];
-  flags: DayFlag[];
-}
-
-export interface NoteDay extends ProviderDay {
-  note_id: string;
-}
-
-export interface FlaggedDays {
-  from: string;
-  to: string;
-  days: ProviderDay[];
-}
-
-export type EmMixDirection = "above" | "below";
-export type EmMixLean = "higher" | "lower";
-
-export interface EmMixLevel {
-  code: string;
-  count: number;
-  share: number;
-  benchmark: number | null;
-  points: number | null;
-  direction: EmMixDirection | null;
-}
-
-export interface EmMixFamily {
-  family: string;
-  label: string;
-  visits: number;
-  has_benchmark: boolean;
-  levels: EmMixLevel[];
-  chi_square: number | null;
-  degrees_of_freedom: number | null;
-  p_value: number | null;
-  outlier: boolean;
-  reasons: ("points" | "chi_square")[];
-  lean: EmMixLean | null;
-}
-
-export interface EmMixProvider {
-  id: string;
-  name: string;
-  specialty: string | null;
-  cms_specialty: string | null;
-  visits: number;
-  families: EmMixFamily[];
-}
-
-export interface EmMix {
-  start: string;
-  end: string;
-  benchmark: { dataset: string; year: string; source_url: string };
-  providers: EmMixProvider[];
-}
-
-export type RemittanceLineStatus = "paid_as_billed" | "downcoded" | "denied" | "matched" | "unmatched";
-export type RemittanceFilter = "all" | "downcoded" | "denied" | "unmatched";
-export type RemittanceCounts = Partial<Record<RemittanceLineStatus, number>>;
-
-export interface RemittanceSummary {
-  id: string;
-  file_name: string;
-  payer: string | null;
-  paid_on: string | null;
-  uploaded_by: string;
-  uploaded_at: string;
-  counts: RemittanceCounts;
-}
-
-export interface RemittanceListItem extends RemittanceSummary {
-  next_appeal_by: string | null;
-}
-
-export interface RemittanceAdjustment {
-  group: string;
-  reason: string;
-  cents: number;
-}
-
-export interface RemittanceLine {
-  id: string;
-  note_id: string | null;
-  claim_ref: string | null;
-  patient_name: string | null;
-  service_date: string | null;
-  billed_code: string | null;
-  paid_code: string | null;
-  billed_amount: number | null;
-  paid_amount: number | null;
-  adjustments: RemittanceAdjustment[];
-  status: RemittanceLineStatus;
-  appeal_by: string | null;
-}
-
-export interface RemittanceDetail {
-  remittance: RemittanceSummary;
-  lines: RemittanceLine[];
-}
-
-export interface RemittanceUpload {
-  ids: string[];
-  counts: RemittanceCounts;
-}
-
-export interface AppealDraft {
-  line_id: string;
-  note_id: string | null;
-  appeal_by: string;
-  text: string;
-  file_name: string;
-  defense_packet: string | null;
-}
-
-export type AppealDays = Record<PlanType, number>;
-
-export interface IntakeSettings {
-  enabled: boolean;
-  prefix: string;
-  provider_by_folder: Record<string, string>;
-  place_code: string | null;
-  visit_type: string;
-}
-
-export interface IntakeView extends IntakeSettings {
-  watched_prefix: string;
-}
-
-export interface QueryMetrics {
-  notes: number;
-  queries: number;
-  per_100_notes: number | null;
-  response_rate: number | null;
-  median_hours: number | null;
-  agree_rate: number | null;
-  repeat_rate: number | null;
-}
-
-export interface ProviderQueryMetrics extends QueryMetrics {
-  provider_id: string;
-  provider_name: string;
-}
-
-export interface QueryMetricsReport {
-  days: number;
-  total: QueryMetrics;
-  providers: ProviderQueryMetrics[];
-}
-
-export interface Rate {
-  successes: number;
-  trials: number;
-  value: number | null;
-  low: number | null;
-  high: number | null;
-}
-
-export interface AgreementSummary {
-  notes: number;
-  em: Rate;
-  em_higher: Rate;
-  em_lower: Rate;
-  em_other: number;
-  icd_precision: Rate;
-  icd_recall: Rate;
-  icd_f1: number | null;
-  icd_exact: Rate;
-  modifiers: Rate;
-}
-
-export type EmDirection = "match" | "higher" | "lower" | "family" | "absent";
-
-export interface ElementComparison {
-  em: { reference: string | null; compared: string | null; match: boolean; direction: EmDirection };
-  icd: { matched: number; compared: number; reference: number; missing: string[]; extra: string[]; match: boolean };
-  modifiers: { reference: string[]; compared: string[]; match: boolean };
-}
-
-export interface ClaimElements {
-  em: string | null;
-  icd: string[];
-  modifiers: string[];
-}
-
-export type AgreementSide = "bodha" | "claim";
-export type SampleScope = "practice" | "provider" | "specialty";
-export type SamplePurpose = "audit" | "training";
-
-export interface SampleOverview {
-  id: string;
-  purpose: SamplePurpose;
-  scope: SampleScope;
-  provider_name: string | null;
-  specialty: string | null;
-  start: string;
-  end: string;
-  requested: number;
-  notes: number;
-  done: number;
-  status: "open" | "done";
-  reviewers: string[];
-  started_by: string | null;
-  started_at: string;
-  completed_at: string | null;
-  em: Rate;
-  em_claim: Rate;
-}
-
-export interface SampleItemRow {
-  id: string;
-  position: number;
-  provider_name: string;
-  service_date: string;
-  reviewer_name: string;
-  status: "open" | "done";
-  answer: ClaimElements | null;
-  bodha: ClaimElements | null;
-  claim: ClaimElements | null;
-  agreement: Record<AgreementSide, ElementComparison> | null;
-}
-
-export interface ProviderAgreement extends Record<AgreementSide, AgreementSummary> {
-  provider_id: string;
-  provider_name: string;
-}
-
-export interface SampleResults {
-  sample: SampleOverview;
-  summary: Record<AgreementSide, AgreementSummary>;
-  providers: ProviderAgreement[];
-  items: SampleItemRow[];
-}
-
-export interface QualityOptions {
-  providers: { id: string; name: string; specialty: string | null }[];
-  reviewers: { id: string; name: string; role: Role }[];
-  specialties: string[];
-  default_size: number;
-  specialty_size: number;
-}
-
-export interface SampleInput {
-  scope: SampleScope;
-  start: string;
-  end: string;
-  reviewer_ids: string[];
-  size: number | null;
-  provider_id: string | null;
-  specialty: string | null;
-}
-
-export interface BlindText {
-  revision: number;
-  source: "document" | "addendum";
-  text: string;
-}
-
-export interface BlindItem {
-  id: string;
-  position: number;
-  texts: BlindText[];
-}
-
-export interface BlindStep {
-  sample: { id: string; purpose: SamplePurpose; total: number; done: number };
-  item: BlindItem | null;
-}
-
-export interface BlindAnswer {
-  em: string | null;
-  icd: string[];
-  modifiers: string[];
-}
-
-export interface BlindSubmitted {
-  id: string;
-  status: "open" | "done";
-  purpose: SamplePurpose;
-}
-
-export type EligibilityReason = "eligible" | "no_audit" | "too_few_notes" | "agreement_low" | "too_many_higher";
-
-export interface AutonomyEligibility {
-  eligible: boolean;
-  reason: EligibilityReason;
-  sample_id: string | null;
-  notes: number;
-  em_low: number | null;
-  higher_share: number | null;
-}
-
-export interface ProviderAutonomy {
-  id: string;
-  name: string;
-  credential: string;
-  specialty: string | null;
-  auto_approve: boolean;
-  eligibility: AutonomyEligibility;
-}
-
-export type LevelMixStatus = "steady" | "shifted" | "not_enough";
-
-export interface LevelMixWindow {
-  start: string;
-  end: string;
-  notes: number;
-}
-
-export interface LevelMix {
-  recent: LevelMixWindow;
-  prior: LevelMixWindow;
-  levels: { level: string; recent: number; prior: number }[];
-  test: { statistic: number; degrees_of_freedom: number; p_value: number } | null;
-  status: LevelMixStatus;
-}
-
-export type EvalMetric = "em" | "icd_f1" | "modifiers";
-export type EvalRunStatus = "queued" | "running" | "done" | "failed";
-
-export interface EvalSummary {
-  cases: number;
-  scored: number;
-  failed: number;
-  em: Rate;
-  em_higher: Rate;
-  em_lower: Rate;
-  icd_precision: Rate;
-  icd_recall: Rate;
-  icd_f1: number | null;
-  modifiers: Rate;
-  consistency: Record<"em" | "icd" | "modifiers" | "all", Rate>;
-  error?: string;
-}
-
-export interface EvalRunChange {
-  deltas: Partial<Record<EvalMetric, number>>;
-  dropped: EvalMetric[];
-  status: "dropped" | "holding";
-}
-
-export interface EvalRunView {
-  id: string;
-  status: EvalRunStatus;
-  model: string;
-  prompt_version: string;
-  requested_at: string | null;
-  finished_at: string | null;
-  summary: Partial<EvalSummary>;
-  change: EvalRunChange | null;
-}
-
-export interface EvalRuns {
-  cases: number;
-  runs: EvalRunView[];
-}
-
-export interface EvalCaseRow {
-  note_id: string;
-  provider_name: string;
-  service_date: string;
-  em: string | null;
-  level: string | null;
-  icd: string[];
-  modifiers: string[];
-  added_at: string;
-}
-
-export interface EvalCandidate {
-  note_id: string;
-  provider_name: string;
-  service_date: string;
-  codes: string[];
-}
-
-export interface AssignedSample {
-  id: string;
-  purpose: SamplePurpose;
-  total: number;
-  done: number;
-  started_at: string;
-}
-
-export interface TrainingOverview {
-  sets: AssignedSample[];
-  scores: Record<AgreementSide, AgreementSummary>;
-}
-
-export interface TrainingSuggestion {
-  key: string;
-  kind: string;
-  action: string;
-  title: string;
-  reasoning: string;
-  code_before: string | null;
-  code_after: string | null;
-  evidence: string[];
-}
-
-export interface TrainingFeedback {
-  item_id: string;
-  sample_id: string;
-  answer: ClaimElements;
-  bodha: ClaimElements;
-  claim: ClaimElements;
-  agreement: Record<AgreementSide, ElementComparison>;
-  suggestions: TrainingSuggestion[];
-}
-
-export interface TrainingInput {
-  trainee_id: string;
-  start: string;
-  end: string;
-  size: number;
-  provider_id: string | null;
-}
-
-export type ClaimEdit =
-  | { kind: "ptp"; column1: string; column2: string; modifier_allowed: boolean; bypassed_by: string | null }
-  | { kind: "mue"; code: string; units: number; limit: number; mai: number }
-  | { kind: "aoc"; code: string; primaries: string[] };
-
-export type PayerFlagRule =
-  | "telehealth_place"
-  | "audio_only_place"
-  | "home_telehealth_ended"
-  | "complexity_with_25"
-  | "g2211_replaced"
-  | "level_downcode_risk"
-  | "audio_only_risk_adjustment"
-  | "nursing_incident_to"
-  | "initial_visit_repeated";
-
-export type PayerFlagSeverity = "denial" | "risk" | "reminder";
-
-export interface PayerFlag {
-  rule: PayerFlagRule;
-  severity: PayerFlagSeverity;
-  codes: string[];
-  earlier?: string;
-}
-
-export interface ClaimChecks {
-  ncci: { quarter: string; covers: boolean };
-  edits: ClaimEdit[];
-  payer: { name: string; plan_type: string | null } | null;
-  payer_flags: PayerFlag[];
 }

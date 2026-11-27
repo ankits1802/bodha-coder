@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Page, UploadedBatch } from "@/lib/api/types";
+import type { BatchPage, UploadedBatch } from "@/lib/api/types";
 import { getPlaces, getUploadHistory } from "@/lib/api/uploads";
 import { RecentUploads } from "../components/RecentUploads";
 import { uploadStatus } from "../uploadHistory";
@@ -35,7 +35,7 @@ const BATCH: UploadedBatch = {
   counts: { ready: 10, failed: 2 },
 };
 
-function page(items: UploadedBatch[], total: number, offset = 0): Page<UploadedBatch> {
+function page(items: UploadedBatch[], total: number, offset = 0): BatchPage {
   return { items, total, offset, page_size: 50 };
 }
 

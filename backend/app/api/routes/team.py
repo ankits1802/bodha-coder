@@ -5,16 +5,18 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends
 
 from app.api.bodies import InviteBody, MemberBody
+from app.api.responses.base import Created, ExactRoute
+from app.api.responses.team import TeamList
 from app.api.wiring import Mail
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS
 from app.services import team
 
-router = APIRouter(prefix="/team", tags=["team"])
+router = APIRouter(prefix="/team", tags=["team"], route_class=ExactRoute)
 Admin = Annotated[Actor, Depends(require(*ADMINS))]
 
 
-@router.get("")
+@router.get("", response_model=TeamList)
 async def members(db: Db, actor: Admin) -> dict[str, Any]:
     rows = await team.team(db, actor)
     seats = actor.practice.seats if actor.practice else 0
@@ -35,7 +37,7 @@ async def members(db: Db, actor: Admin) -> dict[str, Any]:
     }
 
 
-@router.post("")
+@router.post("", response_model=Created)
 async def invite(body: InviteBody, db: Db, mail: Mail, actor: Admin) -> dict[str, str]:
     user = await team.invite(db, mail, actor, name=body.name, email=body.email, role=body.role)
     return {"id": user.id}

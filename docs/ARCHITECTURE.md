@@ -14,6 +14,24 @@ minutes: provider requests past their link expiry become `expired` (the note ret
 held claim is released), and unanswered requests get at most two reminders, at 12 and 36 hours, each
 with a fresh link. Once a day it deletes stored files that no record holds (the orphan sweep, below).
 
+## API types
+
+Request bodies are pydantic models (`api/bodies.py`, `api/quality_bodies.py`). Services build each
+response as a dictionary; the route declares its pydantic response model with `response_model=`,
+from `api/responses/<area>.py`. The types flow one way:
+
+| Step | Where | Rule |
+|---|---|---|
+| Route | `api/routes/<area>.py` | every JSON route names a response model. File downloads (claims CSV, defense packet PDF, addendum text) declare their media type with `responses.base.file_download`; the Google redirects declare `RedirectResponse`; 204 routes have no body |
+| Validation | `responses.base.View` | `extra="forbid"`: a key the service builds but the model does not declare fails the request (500) and the test that reaches it, so the model and the service cannot drift silently |
+| Exact keys | `responses.base.ExactRoute` | every router uses it; it serialises with `exclude_unset`, so a response carries exactly the keys the service built. A key a service may leave out is declared `Omittable[...] = None` (optional in the schema, never `null`) |
+| Document | `tools/export_openapi.py` | writes `frontend/openapi.json` (sorted keys, LF) from `app.main.app.openapi()` with placeholder settings, no database |
+| Frontend | `npm run api:types` | `scripts/api-types.mjs` runs openapi-typescript on `openapi.json` and prints `src/lib/api/schema.ts` without comments |
+| Screens | `src/lib/api/types.ts` | named aliases over `components["schemas"]` (`NoteDetail`, `QueueRow`, …) and the literal unions derived from them (`NoteStatus = NoteSummary["status"]`). Hand-written there: query and form types the client composes (`QueueQuery`, `UploadPlan`, `InviteBody`, …) and `MdmElements`, the reading of a finding's free-form `detail` |
+
+CI regenerates both files (backend job: `openapi.json`; frontend job: `schema.ts`) and fails on any
+difference. Decision: [0022](decisions/0022-typed-responses.md).
+
 ## Data model and revisions
 
 Nothing a person or the model produced is overwritten.
