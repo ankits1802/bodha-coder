@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { endSession, refreshSession } from "@/lib/api/client";
 import { messageOf } from "@/lib/api/errors";
-import { homeFor } from "@/lib/roles";
+import { canOpenPath, homeFor } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { SHARED_TEXT } from "../strings";
 import { useIdleSignOut } from "./useIdleSignOut";
@@ -21,9 +21,10 @@ interface SessionGateProps {
 export function SessionGate({ scope, children }: SessionGateProps) {
   const { user } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [failure, setFailure] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const inScope = user !== null && (user.role === "hq") === (scope === "hq");
+  const admitted = user !== null && (user.role === "hq") === (scope === "hq") && canOpenPath(user, pathname);
 
   useEffect(() => {
     if (user) return;
@@ -42,8 +43,8 @@ export function SessionGate({ scope, children }: SessionGateProps) {
   }, [user, attempt]);
 
   useEffect(() => {
-    if (user && !inScope) router.replace(homeFor(user.role));
-  }, [user, inScope, router]);
+    if (user && !admitted) router.replace(homeFor(user));
+  }, [user, admitted, router]);
 
   useIdleSignOut(user);
 
@@ -54,6 +55,6 @@ export function SessionGate({ scope, children }: SessionGateProps) {
     };
     return <ErrorState message={failure} retryLabel={SHARED_TEXT.retry} onRetry={retry} />;
   }
-  if (!inScope) return <LoadingState label={SHARED_TEXT.loading} />;
+  if (!admitted) return <LoadingState label={SHARED_TEXT.loading} />;
   return <>{children}</>;
 }

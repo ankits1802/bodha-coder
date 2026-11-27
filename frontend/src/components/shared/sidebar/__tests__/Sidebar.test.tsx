@@ -21,6 +21,18 @@ describe("Sidebar", () => {
     expect(screen.getByRole("button", { name: SHARED_TEXT.expandSidebar })).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("shows a billing-only admin the plan screen, the account and sign out, and nothing else", () => {
+    const admin = { ...CODER, role: "admin" as const, billing_only: true };
+    render(<Sidebar user={admin} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual([SHARED_TEXT.brand, "Plan and billing"]);
+    expect(screen.getByRole("link", { name: "Plan and billing" })).toHaveAttribute("href", "/plan");
+    expect(screen.getByRole("link", { name: SHARED_TEXT.brand })).toHaveAttribute("href", "/plan");
+    expect(screen.queryByRole("button", { name: "Search" })).not.toBeInTheDocument();
+    expect(screen.getByText(CODER.name)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: SHARED_TEXT.signOut })).toBeInTheDocument();
+  });
+
   it("offers to collapse when expanded and reports the toggle", async () => {
     const onToggle = vi.fn();
     render(<Sidebar user={CODER} collapsed={false} onToggle={onToggle} onNavigate={() => undefined} />);

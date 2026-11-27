@@ -11,6 +11,7 @@ from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
 from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
+from app.core.deps import billing_only_since
 from app.core.errors import NotFound
 from app.models import Practice, User
 from app.services.auth import MfaChallenge, Tokens
@@ -121,12 +122,13 @@ def challenge_body(challenge: MfaChallenge) -> dict[str, str]:
     return {"mfa": challenge.step, "mfa_token": challenge.token}
 
 
-def user_view(user: User, practice: Any | None) -> dict[str, Any]:
+def user_view(user: User, practice: Practice | None) -> dict[str, Any]:
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "role": user.role,
+        "billing_only": billing_only_since(user, practice) is not None,
         "practice": None
         if practice is None
         else {

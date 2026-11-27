@@ -5,6 +5,7 @@ export const CODER: User = {
   name: "Priya Nair",
   email: "priya.nair@example.com",
   role: "coder",
+  billing_only: false,
   practice: {
     id: "practice-1",
     name: "Lakeside Primary Care",

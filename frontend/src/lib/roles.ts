@@ -1,4 +1,8 @@
-import type { PracticeRole, Role } from "@/lib/api/types";
+import type { PracticeRole, Role, User } from "@/lib/api/types";
+
+export type SessionUser = Pick<User, "role" | "billing_only">;
+
+export const PLAN_PATH = "/plan";
 
 export const PRACTICE_ROLES: readonly PracticeRole[] = ["admin", "coder", "cdi", "compliance", "biller", "viewer"];
 const HQ: readonly Role[] = ["hq"];
@@ -77,10 +81,26 @@ export function canDo(role: Role | null | undefined, action: Action): boolean {
   return role != null && ACTION_ROLES[action].includes(role);
 }
 
+const BILLING_ONLY_AREAS: readonly Area[] = ["plan"];
+
+export function canReach(user: SessionUser | null | undefined, area: Area): boolean {
+  if (user == null || !canUse(user.role, area)) return false;
+  return !user.billing_only || BILLING_ONLY_AREAS.includes(area);
+}
+
+export function canSearch(user: SessionUser | null | undefined): boolean {
+  return user != null && !user.billing_only && canDo(user.role, "search");
+}
+
+export function canOpenPath(user: SessionUser, pathname: string): boolean {
+  return !user.billing_only || pathname === PLAN_PATH;
+}
+
 const HOMES: Partial<Record<Role, string>> = { hq: "/hq", biller: "/billing", compliance: "/compliance" };
 
-export function homeFor(role: Role): string {
-  return HOMES[role] ?? "/today";
+export function homeFor(user: SessionUser): string {
+  if (user.billing_only) return PLAN_PATH;
+  return HOMES[user.role] ?? "/today";
 }
 
 export const HQ_IDLE_MINUTES = 15;

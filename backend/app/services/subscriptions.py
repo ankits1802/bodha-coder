@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.billing_contract import BillingProvider, CheckoutRequest, SubscriptionRef
 from app.core.calendar import today_in, zone_named
 from app.core.config import Settings, get_settings
-from app.core.deps import Actor
+from app.core.deps import Actor, plan_ended_on
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import Practice, Subscription
 from app.services.audit_log import record_activity
@@ -47,7 +47,7 @@ CANCEL_REQUESTED = "subscription cancel requested"
 PROVIDER_LABELS = {"stripe": "Stripe", "paypal": "PayPal"}
 MANAGED_BY = {"stripe": "portal", "paypal": "cancel"}
 ENDED_STATUSES = ("canceled", "expired")
-STANDINGS = ("trial", "active", "past_due", "canceling", "canceled", "managed")
+STANDINGS = ("trial", "active", "past_due", "canceling", "canceled", "ended", "managed")
 MANAGE_ACTIONS = ("portal", "cancel")
 
 
@@ -77,6 +77,8 @@ def standing(practice: Practice, subscription: Subscription | None) -> str:
         return "canceling" if subscription.cancel_at_period_end else "active"
     if subscription is not None and subscription.status in ENDED_STATUSES:
         return "canceled"
+    if plan_ended_on(practice) is not None:
+        return "ended"
     return "trial" if practice.status == "trial" else "managed"
 
 

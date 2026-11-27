@@ -42,17 +42,18 @@ async def test_an_admin_cannot_reset_a_password_in_another_practice(harness):
     assert refused.status_code == 404
 
 
-async def test_a_practice_past_its_renewal_date_is_refused_but_hq_is_not(harness):
-    practice = await practice_with_provider(harness)
+async def test_a_practice_past_its_renewal_date_is_refused_outside_billing_but_hq_is_not(harness):
+    practice = await practice_with_member(harness, name="Sam Patel", email=CODER, role="coder")
     hq = await sign_in(harness.client, f"hq-{ADMIN}", secret_box=practice.secrets)
     patch = {"renews_on": "2025-12-31"}
     assert (await harness.client.patch(f"/api/hq/practices/{practice.id}", headers=hq, json=patch)).status_code == 204
     refused = await harness.client.get("/api/today", headers=practice.admin)
     assert refused.status_code == 403
     assert refused.json() == {"error": "forbidden", "message": ENDED}
-    login = await harness.client.post("/api/auth/login", json={"email": ADMIN, "password": PASSWORD})
+    assert (await harness.client.get("/api/plan", headers=practice.admin)).status_code == 200
+    login = await harness.client.post("/api/auth/login", json={"email": CODER, "password": PASSWORD})
     assert login.status_code == 403 and login.json()["message"] == ENDED
-    harness.google.returns("code-1", subject="google-admin", email=ADMIN)
+    harness.google.returns("code-1", subject="google-sam", email=CODER)
     assert (await back_from_google(harness, "code-1")).headers["location"] == sign_in_page(
         "error=plan_ended&provider=google"
     )

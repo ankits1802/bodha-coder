@@ -10,6 +10,7 @@ const coder: User = {
   name: "Priya Nair",
   email: "priya@example.com",
   role: "coder",
+  billing_only: false,
   practice: { id: "p1", name: "Lakeside", checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false }, idle_minutes: 15, time_zone: "America/Chicago" },
 };
 

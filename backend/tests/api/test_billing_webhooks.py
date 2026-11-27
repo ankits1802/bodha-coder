@@ -132,11 +132,13 @@ async def test_a_cancelled_subscription_keeps_access_to_the_period_end_then_the_
     found, _ = await stored(practice.id)
     last_day = period_end.astimezone(CHICAGO).date()
     assert found.renews_on == last_day
-    response = await harness.client.get("/api/plan", headers=practice.admin)
+    response = await harness.client.get("/api/today", headers=practice.admin)
     assert (response.status_code, response.json()["message"]) == (
         403,
         f"This practice's plan ended on {last_day.isoformat()}",
     )
+    view = (await harness.client.get("/api/plan", headers=practice.admin)).json()
+    assert (view["standing"], view["renews_on"]) == ("canceled", last_day.isoformat())
 
 
 async def test_a_checkout_that_never_paid_leaves_the_trial_alone(harness, monkeypatch):

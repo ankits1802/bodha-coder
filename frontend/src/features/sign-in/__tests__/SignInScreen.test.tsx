@@ -6,8 +6,9 @@ import type { User } from "@/lib/api/types";
 import { clearSession, getSession } from "@/lib/session/store";
 import { SignInScreen } from "../SignInScreen";
 
+const router = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => router,
   useSearchParams: () => new URLSearchParams(""),
 }));
 
@@ -39,6 +40,7 @@ const ADMIN: User = {
   name: "Practice Admin",
   email: "admin@lakeside.example.com",
   role: "admin",
+  billing_only: false,
   practice: {
     id: "practice-1",
     name: "Lakeside Primary Care",
@@ -76,6 +78,15 @@ describe("SignInScreen recovery codes", () => {
     await waitFor(() => expect(recoverMfa).toHaveBeenCalledWith("mfa-token-1", "abcd-efgh-jkmn-pqrs"));
     await waitFor(() => expect(getSession().user?.email).toBe(ADMIN.email));
     expect(verifyMfa).not.toHaveBeenCalled();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/today"));
+  });
+
+  it("sends an admin whose plan has ended straight to the plan screen", async () => {
+    vi.mocked(recoverMfa).mockResolvedValue({ access_token: "access-1", user: { ...ADMIN, billing_only: true } });
+    await reachVerifyStep();
+    fireEvent.change(screen.getByLabelText("Recovery code"), { target: { value: "abcd-efgh-jkmn-pqrs" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/plan"));
   });
 
   it("asks for all sixteen characters before sending a recovery code", async () => {

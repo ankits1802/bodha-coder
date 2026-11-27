@@ -14,6 +14,7 @@ const STANDING_TONES: Record<PlanStanding, StatusTone> = {
   past_due: "warn",
   canceling: "warn",
   canceled: "bad",
+  ended: "bad",
   managed: "ok",
 };
 
@@ -30,6 +31,7 @@ export function dateFact(status: PlanStatus): DateFact | null {
   if (status.standing === "trial") return { label: words.facts.trialEnds, value };
   if (status.standing === "past_due") return { label: words.facts.accessUntil, value };
   if (status.standing === "canceling" || status.standing === "canceled") return { label: words.facts.ends, value };
+  if (status.standing === "ended") return { label: words.facts.ended, value };
   return { label: words.facts.renews, value };
 }
 

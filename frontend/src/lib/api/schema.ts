@@ -2991,7 +2991,7 @@ export interface components {
             provider_limit: number | null;
             providers: number;
             renews_on: string | null;
-            standing: "trial" | "active" | "past_due" | "canceling" | "canceled" | "managed";
+            standing: "trial" | "active" | "past_due" | "canceling" | "canceled" | "ended" | "managed";
             subscription: components["schemas"]["PlanSubscription"] | null;
             trial_days_left: number | null;
             user_limit: number | null;
@@ -3579,6 +3579,7 @@ export interface components {
             visit_type: string;
         };
         User: {
+            billing_only: boolean;
             email: string;
             id: string;
             name: string;

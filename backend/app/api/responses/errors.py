@@ -5,14 +5,14 @@ from fastapi.dependencies.models import Dependant
 from fastapi.dependencies.utils import get_dependant
 from fastapi.params import Depends
 
-from app.core.deps import ROLE_GUARDS, current_actor, current_provider
+from app.core.deps import ROLE_GUARDS, current_provider, session_actor
 from app.core.errors import ERROR_CODES
 
 from .view import View
 
 __all__ = ["ErrorResponse", "error_responses"]
 
-SESSION_DEPENDENCIES = (current_actor, current_provider)
+SESSION_DEPENDENCIES = (session_actor, current_provider)
 
 
 class ErrorResponse(View):

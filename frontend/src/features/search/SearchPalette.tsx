@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { RemoteView } from "@/components/ui/RemoteView";
 import type { NoteSummary } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
-import { canDo } from "@/lib/roles";
+import { canSearch } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { optionId, SearchResultList } from "./SearchResultList";
 import { SEARCH_TEXT } from "./strings";
@@ -82,7 +82,7 @@ function SearchBox({ onOpen }: { onOpen: (note: NoteSummary) => void }) {
 export function SearchPalette() {
   const { user } = useSession();
   const router = useRouter();
-  const allowed = canDo(user?.role, "search");
+  const allowed = canSearch(user);
   const open = useOpenOverlay() === "search";
   useShortcuts("global", { search: allowed ? () => openOverlay("search") : undefined });
   const openNote = (note: NoteSummary) => {

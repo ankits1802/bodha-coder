@@ -58,7 +58,7 @@ move the state backwards. One `subscriptions` row per practice holds the current
 |---|---|---|
 | Stripe `active`, `trialing`; PayPal `ACTIVE` | `active` | status `active`, plan from the price, `renews_on` = the period's last day in the practice's time zone |
 | Stripe `past_due`, `unpaid`, `paused`; PayPal `SUSPENDED`; a failed payment on an active subscription | `past_due` | access until `past_due_since` + `BILLING_GRACE_DAYS` (7); admins see a banner |
-| Stripe `canceled`; PayPal `CANCELLED` | `canceled` | after a live subscription: access to the period end (or the grace end if it was past due), then the existing `PlanEnded` refusal |
+| Stripe `canceled`; PayPal `CANCELLED` | `canceled` | after a live subscription: access to the period end (or the grace end if it was past due), then the plan has ended (billing-only access, below) |
 | Stripe `incomplete_expired`; PayPal `EXPIRED` | `expired` | as canceled |
 | Stripe `incomplete`; PayPal `APPROVAL_PENDING`, `APPROVED` | `pending` | unchanged; a checkout that never paid leaves a trial alone |
 
@@ -84,6 +84,34 @@ worker also sweeps every live subscription every 15 minutes. Stripe updates the 
 and left for the next sweep; it never blocks the admin. A PayPal revision that needs the payer's
 approval is treated as a failure.
 
+## Billing-only access after the plan ends
+
+A practice's plan has ended when `renews_on` is before today in its time zone: a trial that ran out, a
+paid period that passed, or a subscription that ended after its period. Its admins could otherwise
+never reach `/plan` to pay, so they get a billing-only session instead of the `PlanEnded` refusal.
+
+- **Derived on every request, never stored.** `core.deps.ensure_session_allowed(user, practice)` is the
+  one rule for sign-in (password, Google, Microsoft, Yahoo, two-step, refresh) and every authenticated
+  request: HQ passes; a practice that is not `trial` or `active` (HQ blocked or ended it) answers 401
+  "your practice is not active", so an HQ block always wins; a plan that has ended answers 403
+  `PlanEnded` to every role except `PLAN_MANAGERS` (`core.roles`, the admins). Nothing marks the token,
+  so the next request after a webhook moves `renews_on` forward is a full session again, and an admin
+  already signed in when the plan ends drops to billing-only on the next request.
+- **One guard.** `session_actor` resolves the signed-in user and records `billing_only_since` (the day
+  the plan ended) on the `Actor`; `current_actor`, which every `require(*roles)` guard and every other
+  route depends on, refuses that actor with `PlanEnded`, so a new route is closed to billing-only
+  sessions unless it opts in. Only these opt in, through `session_actor` or `require_for_billing(*roles)`:
+  `GET /api/auth/me`, the signed-in devices and recovery codes routes, `GET /api/plan`,
+  `POST /api/plan/checkout`, `/portal` and `/cancel`. Routes with no session (`GET /api/plans`, sign-in,
+  refresh, sign-out, two-step, password and webhooks) are unchanged. A test lists every route that
+  accepts a billing-only session.
+- **The client follows the session.** `User.billing_only` comes with every sign-in, refresh and
+  `GET /api/auth/me`. While it is true the practice layout sends every page to `/plan`, the sidebar shows
+  only Plan and billing with the account and sign out, search is off, and `/plan` says the plan has
+  ended above the choose-plan flow; the plan standing is `ended` when no subscription explains it. After
+  `/plan?checkout=done` the screen reloads the plan and renews the session every four seconds, up to
+  five times, until the webhook has made the session full again.
+
 ## No PHI to processors
 
 Only the admin's email, the practice id (Stripe `client_reference_id` and metadata, PayPal `custom_id`),
@@ -92,8 +120,7 @@ only; secrets are `SecretStr` and never logged.
 
 ## Follows
 
-- An admin whose plan has already ended still cannot sign in, so cannot reach `/plan` (the existing
-  `PlanEnded` behaviour); the trial banner is the way in. Letting such an admin reach billing alone
-  would need a restricted session and is left for a later decision.
+- Other roles of a practice whose plan has ended still cannot sign in (`plan_ended`), and see the
+  existing message until an admin pays.
 - Production needs the settings and processor setup in [DEPLOY.md](../DEPLOY.md#set-up-stripe-and-paypal);
   infra is changed separately.

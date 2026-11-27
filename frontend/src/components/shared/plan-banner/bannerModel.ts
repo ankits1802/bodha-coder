@@ -8,7 +8,6 @@ export interface BannerView {
   action: string;
 }
 
-export const PLAN_PATH = "/plan";
 export const DISMISS_STORAGE_KEY = "bodha.planBanner.dismissedOn";
 const TRIAL_WARNING_DAYS = 3;
 

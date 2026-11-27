@@ -42,6 +42,7 @@ class User(View):
     name: str
     email: str
     role: Role
+    billing_only: bool
     practice: PracticeSummary | None
 
 

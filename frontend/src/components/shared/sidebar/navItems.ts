@@ -1,5 +1,4 @@
-import type { Role } from "@/lib/api/types";
-import { canUse, type Area } from "@/lib/roles";
+import { PLAN_PATH, canReach, type Area, type SessionUser } from "@/lib/roles";
 import { SHARED_TEXT } from "../strings";
 import type { NavIconName } from "./NavIcon";
 
@@ -30,7 +29,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "quality", area: "compliance", href: "/quality", label: words.quality, icon: "gauge", group: "practice" },
   { key: "setup", area: "setup", href: "/setup", label: words.setup, icon: "house", group: "practice" },
   { key: "team", area: "team", href: "/team", label: words.team, icon: "people", group: "practice" },
-  { key: "plan", area: "plan", href: "/plan", label: words.plan, icon: "receipt", group: "practice" },
+  { key: "plan", area: "plan", href: PLAN_PATH, label: words.plan, icon: "receipt", group: "practice" },
   { key: "security", area: "security", href: "/security", label: words.security, icon: "lock", group: "practice" },
   { key: "hqOverview", area: "hq", href: "/hq", label: words.hqOverview, icon: "gauge", group: "platform" },
   { key: "hqPractices", area: "hq", href: "/hq/practices", label: words.hqPractices, icon: "house", group: "platform" },
@@ -41,8 +40,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 export const NAV_GROUP_ORDER: readonly NavGroup[] = ["work", "practice", "platform"];
 
-export function navFor(role: Role): NavItem[] {
-  return NAV_ITEMS.filter((item) => canUse(role, item.area));
+export function navFor(user: SessionUser): NavItem[] {
+  return NAV_ITEMS.filter((item) => canReach(user, item.area));
 }
 
 export function isActive(item: NavItem, pathname: string): boolean {

@@ -11,12 +11,13 @@ const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("@/lib/api/search", () => ({ searchNotes: vi.fn() }));
 
-function signIn(role: Role): void {
+function signIn(role: Role, { billingOnly = false }: { billingOnly?: boolean } = {}): void {
   const user: User = {
     id: "user-1",
     name: "Priya Nair",
     email: "priya.nair@example.com",
     role,
+    billing_only: billingOnly,
     practice: {
       id: "practice-1",
       name: "Lakeside Primary Care",
@@ -108,5 +109,13 @@ describe("SearchPalette", () => {
     render(<SearchPalette />);
     fireEvent.keyDown(window, { key: "k", metaKey: true });
     expect(screen.queryByRole("combobox", { name: "Search" })).not.toBeInTheDocument();
+  });
+
+  it("is not offered to an admin whose plan has ended", () => {
+    signIn("admin", { billingOnly: true });
+    render(<SearchPalette />);
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    expect(screen.queryByRole("combobox", { name: "Search" })).not.toBeInTheDocument();
+    expect(searchNotes).not.toHaveBeenCalled();
   });
 });

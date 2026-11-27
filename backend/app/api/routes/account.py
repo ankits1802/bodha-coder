@@ -8,12 +8,12 @@ from app.api.bodies import MfaCodeBody, PreferencesBody
 from app.api.responses.auth import Preferences, RecoveryCodes, RecoveryCodeStatus, SignedInDevice
 from app.api.responses.base import ExactRoute
 from app.api.wiring import RefreshCookie
-from app.core.deps import Actor, Db, current_actor, require
+from app.core.deps import Actor, Db, require, session_actor
 from app.core.roles import NOTE_READERS
 from app.services import digests, recovery_codes, user_sessions
 
 router = APIRouter(prefix="/auth", tags=["account"], route_class=ExactRoute)
-Me = Annotated[Actor, Depends(current_actor)]
+Me = Annotated[Actor, Depends(session_actor)]
 Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 
 

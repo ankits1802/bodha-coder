@@ -36,6 +36,10 @@ describe("bannerFor", () => {
     expect(bannerFor(planStatus({ standing: "active", trial_days_left: null }))).toBeNull();
     expect(bannerFor(planStatus({ standing: "managed", trial_days_left: null }))).toBeNull();
   });
+
+  it("leaves an ended plan to the plan screen", () => {
+    expect(bannerFor(planStatus({ standing: "ended", trial_days_left: 0 }))).toBeNull();
+  });
 });
 
 describe("PlanBanner", () => {

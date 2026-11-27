@@ -7,7 +7,8 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
 import { localIsoDate } from "@/lib/dates";
 import type { Role } from "@/lib/api/types";
-import { PLAN_PATH, bannerFor, readDismissal, saveDismissal } from "./bannerModel";
+import { PLAN_PATH } from "@/lib/roles";
+import { bannerFor, readDismissal, saveDismissal } from "./bannerModel";
 import { PLAN_BANNER_TEXT } from "./strings";
 
 export function PlanBanner({ role }: { role: Role }) {

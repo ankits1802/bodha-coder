@@ -10,7 +10,7 @@ vi.mock("@/lib/api/notes", () => ({ assignNotes: vi.fn() }));
 vi.mock("@/lib/api/team", () => ({ getTeam: vi.fn() }));
 
 function signIn(role: Role): void {
-  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, practice: null } });
+  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, billing_only: false, practice: null } });
 }
 
 function note(assignedTo: string | null, assigneeName: string | null): NoteHeader {

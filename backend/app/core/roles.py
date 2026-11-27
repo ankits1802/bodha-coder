@@ -1,6 +1,7 @@
 PRACTICE_ROLES = ("admin", "coder", "cdi", "compliance", "biller", "viewer")
 HQ = ("hq",)
 ADMINS = ("admin",)
+PLAN_MANAGERS = ADMINS
 UPLOADERS = ("admin", "coder")
 NOTE_READERS = ("admin", "coder", "cdi", "compliance", "biller")
 DECIDERS = ("admin", "coder", "cdi", "compliance")

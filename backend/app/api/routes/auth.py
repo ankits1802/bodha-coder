@@ -18,7 +18,7 @@ from app.api.wiring import (
     user_view,
 )
 from app.core.db import SessionFactory
-from app.core.deps import Actor, Db, current_actor
+from app.core.deps import Actor, Db, session_actor
 from app.core.errors import Unauthorized
 from app.services import auth, password_reset
 
@@ -83,5 +83,5 @@ async def _send_reset(mail: Messenger, email: str) -> None:
 
 
 @router.get("/me", response_model=User)
-async def me(actor: Annotated[Actor, Depends(current_actor)]) -> dict[str, Any]:
+async def me(actor: Annotated[Actor, Depends(session_actor)]) -> dict[str, Any]:
     return user_view(actor.user, actor.practice)

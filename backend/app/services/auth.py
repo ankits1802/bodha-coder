@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.deps import ensure_practice_open
+from app.core.deps import ensure_session_allowed
 from app.core.errors import Invalid, Unauthorized
 from app.core.security import (
     PASSWORD_MIN_LENGTH,
@@ -89,7 +89,7 @@ async def _practice_for(db: AsyncSession, user: User) -> Practice | None:
     if user.practice_id is None:
         return None
     practice = await db.get_one(Practice, user.practice_id)
-    ensure_practice_open(practice)
+    ensure_session_allowed(user, practice)
     return practice
 
 

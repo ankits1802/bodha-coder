@@ -23,7 +23,7 @@ export function SignInScreen() {
   const { step } = flow;
 
   useEffect(() => {
-    if (user) router.replace(homeFor(user.role));
+    if (user) router.replace(homeFor(user));
   }, [user, router]);
 
   return (

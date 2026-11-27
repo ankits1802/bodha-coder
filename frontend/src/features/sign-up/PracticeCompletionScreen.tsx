@@ -34,7 +34,7 @@ export function PracticeCompletionScreen() {
   const config = options.state;
 
   function created(result: LoginResult): void {
-    if (isSignedIn(result)) router.replace(homeFor(result.user.role));
+    if (isSignedIn(result)) router.replace(homeFor(result.user));
     else openPage(mfaReturnPath(result));
   }
 

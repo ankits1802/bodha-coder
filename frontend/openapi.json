@@ -6828,6 +6828,7 @@
               "past_due",
               "canceling",
               "canceled",
+              "ended",
               "managed"
             ],
             "title": "Standing",
@@ -10830,6 +10831,10 @@
       "User": {
         "additionalProperties": false,
         "properties": {
+          "billing_only": {
+            "title": "Billing Only",
+            "type": "boolean"
+          },
           "email": {
             "title": "Email",
             "type": "string"
@@ -10871,6 +10876,7 @@
           "name",
           "email",
           "role",
+          "billing_only",
           "practice"
         ],
         "title": "User",

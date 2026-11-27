@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { User } from "@/lib/api/types";
-import { canDo, canUse, homeFor } from "@/lib/roles";
+import { canReach, canSearch, homeFor } from "@/lib/roles";
 import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
 import { ActionEntry, NavEntry } from "./NavEntry";
@@ -40,7 +40,7 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
   if (collapsed) {
     return (
       <div className="flex flex-col items-center gap-2">
-        <Link href={homeFor(user.role)} onClick={onNavigate} title={SHARED_TEXT.brand} className="text-body-lg font-bold text-label">
+        <Link href={homeFor(user)} onClick={onNavigate} title={SHARED_TEXT.brand} className="text-body-lg font-bold text-label">
           <span aria-hidden="true">B</span>
           <span className="sr-only">{SHARED_TEXT.brand}</span>
         </Link>
@@ -51,7 +51,7 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
   return (
     <div className="flex items-start justify-between gap-2 pl-2.5">
       <div className="flex min-w-0 flex-col gap-0.5">
-        <Link href={homeFor(user.role)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
+        <Link href={homeFor(user)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
           {SHARED_TEXT.brand}
         </Link>
         <span className="truncate text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
@@ -64,8 +64,8 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
 export function Sidebar(props: SidebarProps) {
   const { user, collapsed, onNavigate } = props;
   const pathname = usePathname();
-  const items = navFor(user.role);
-  const counts = useNavCounts(canUse(user.role, "queue"), pathname);
+  const items = navFor(user);
+  const counts = useNavCounts(canReach(user, "queue"), pathname);
   const words = SHARED_TEXT.nav;
   const groups = NAV_GROUP_ORDER.map((group) => ({ group, entries: items.filter((item) => item.group === group) })).filter(
     (entry) => entry.entries.length > 0,
@@ -78,7 +78,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <div className={`flex h-full flex-col border-r border-separator bg-sidebar pt-5.5 pb-4 ${collapsed ? "px-2" : "px-3"}`}>
       <Header {...props} />
-      {canDo(user.role, "search") ? (
+      {canSearch(user) ? (
         <div className="mt-3">
           <ActionEntry icon="search" label={words.search} collapsed={collapsed} onClick={search} />
         </div>
@@ -108,7 +108,7 @@ export function Sidebar(props: SidebarProps) {
         ))}
       </nav>
       <div className="mt-auto flex flex-col gap-2 pt-6">
-        {canUse(user.role, "help") ? (
+        {canReach(user, "help") ? (
           <ul className="m-0 list-none p-0">
             <NavEntry href="/help" icon="help" label={words.help} active={pathname === "/help"} collapsed={collapsed} onNavigate={onNavigate} />
           </ul>

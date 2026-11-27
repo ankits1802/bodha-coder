@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.oidc import IdentityProvider, ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, ProviderUnreachable, UnverifiedEmail
 from app.core.config import get_settings
-from app.core.deps import ACTIVE_PRACTICE_STATUSES, ensure_practice_open
+from app.core.deps import ACTIVE_PRACTICE_STATUSES, ensure_session_allowed
 from app.core.errors import NotFound, Unauthorized
 from app.core.security import TokenError, issue_token, random_token, read_token
 from app.models import Practice, User, UserIdentity
@@ -110,7 +110,7 @@ async def _account_for(db: AsyncSession, identity: ProviderIdentity) -> User | N
     if user.status == "blocked" or (practice is not None and practice.status not in ACTIVE_PRACTICE_STATUSES):
         raise SignInRefused("blocked")
     if practice is not None:
-        ensure_practice_open(practice)
+        ensure_session_allowed(user, practice)
     await bind_identity(db, user, identity.provider, identity.subject)
     if user.status == "invited":
         user.status = "active"
