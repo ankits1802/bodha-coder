@@ -39,7 +39,7 @@ async def test_hq_appoints_a_new_person_as_admin_and_tells_the_existing_admins(h
     token = harness.messenger.sent[sent][1].split("#")[-1]
     assert (
         await harness.client.post("/api/auth/password", json={"token": token, "password": PASSWORD})
-    ).status_code == 204
+    ).status_code == 200
     lee = await harness.client.post("/api/auth/login", json={"email": "lee@lakeside.example.com", "password": PASSWORD})
     assert lee.json()["mfa"] == "setup"
 
