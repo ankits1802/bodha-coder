@@ -10,19 +10,19 @@ import { AuditsView } from "./components/AuditsView";
 import { AutonomyView } from "./components/AutonomyView";
 import { EvaluationView } from "./components/EvaluationView";
 import { SampleResultsView } from "./components/SampleResultsView";
-import { QUALITY_VIEWS, isQualityAdmin, parseView, type QualityView } from "./qualityModel";
+import { TrainingView } from "./components/TrainingView";
+import { isQualityAdmin, parseView, viewsFor, type QualityView } from "./qualityModel";
 import { QUALITY_TEXT } from "./strings";
-
-const SEGMENTS = QUALITY_VIEWS.map((value) => ({ value, label: QUALITY_TEXT.views[value] }));
 
 function QualityContent() {
   const { user } = useSession();
   const params = useQueryParams();
-  const view = parseView(params.get("view"));
+  const view = parseView(params.get("view"), user?.role);
   const sample = params.get("sample");
   const admin = isQualityAdmin(user?.role);
   const views: Record<QualityView, ReactNode> = {
     audits: sample ? <SampleResultsView key={sample} sampleId={sample} /> : <AuditsView />,
+    training: <TrainingView />,
     evaluation: <EvaluationView canRun={admin} />,
     autonomy: <AutonomyView canSwitch={admin} />,
   };
@@ -30,7 +30,7 @@ function QualityContent() {
     <SegmentedControl
       label={QUALITY_TEXT.viewLabel}
       value={view}
-      segments={SEGMENTS}
+      segments={viewsFor(user?.role).map((value) => ({ value, label: QUALITY_TEXT.views[value] }))}
       onChange={(next) => params.update({ view: next === "audits" ? null : next, sample: null, against: null, display: null })}
     />
   );

@@ -14,11 +14,12 @@ import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { useRemote } from "@/hooks/useRemote";
 import { assignTraining, getQualityOptions } from "@/lib/api/quality";
 import type { QualityOptions } from "@/lib/api/types";
+import { QUALITY_TEXT } from "../strings";
 import { firstTrainingDraft, trainingInput, type TrainingDraft } from "../trainingDraft";
-import { TRAINING_TEXT } from "../strings";
 
 const FORM_ID = "assign-training-form";
-const REMOTE_TEXT = { loading: TRAINING_TEXT.loading, empty: TRAINING_TEXT.noAssigned, retry: TRAINING_TEXT.retry };
+const WORDS = QUALITY_TEXT.training.dialog;
+const REMOTE_TEXT = { loading: QUALITY_TEXT.loading, empty: WORDS.noTrainees, retry: QUALITY_TEXT.retry };
 
 interface FieldsProps {
   draft: TrainingDraft;
@@ -27,26 +28,25 @@ interface FieldsProps {
 }
 
 function TrainingFields({ draft, options, onChange }: FieldsProps) {
-  const words = TRAINING_TEXT.dialog;
   const set = (changes: Partial<TrainingDraft>) => onChange({ ...draft, ...changes });
   return (
     <>
-      <Field label={words.trainee}>
+      <Field label={WORDS.trainee}>
         {(control) => (
           <Select
             {...control}
             value={draft.traineeId}
-            options={[{ value: "", label: words.choose }, ...options.reviewers.map((person) => ({ value: person.id, label: person.name }))]}
+            options={[{ value: "", label: WORDS.choose }, ...options.reviewers.map((person) => ({ value: person.id, label: person.name }))]}
             onChange={(traineeId) => set({ traineeId })}
           />
         )}
       </Field>
-      <Field label={words.provider}>
+      <Field label={WORDS.provider}>
         {(control) => (
           <Select
             {...control}
             value={draft.providerId}
-            options={[{ value: "", label: words.anyProvider }, ...options.providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
+            options={[{ value: "", label: WORDS.anyProvider }, ...options.providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
             onChange={(providerId) => set({ providerId })}
           />
         )}
@@ -55,10 +55,10 @@ function TrainingFields({ draft, options, onChange }: FieldsProps) {
         <DateRange
           start={draft.start || null}
           end={draft.end || null}
-          labels={{ start: words.start, end: words.end }}
+          labels={{ start: WORDS.start, end: WORDS.end }}
           onChange={(range) => set({ start: range.start ?? "", end: range.end ?? "" })}
         />
-        <Field label={words.size}>
+        <Field label={WORDS.size}>
           {(control) => <Input {...control} inputMode="numeric" value={draft.size} onChange={(event) => set({ size: event.target.value.trim() })} />}
         </Field>
       </div>
@@ -72,7 +72,6 @@ export function AssignTrainingDialog({ onClose, onAssigned }: { onClose: () => v
   const [draft, setDraft] = useState<TrainingDraft>(() => firstTrainingDraft(today));
   const assign = useAction(assignTraining);
   const input = trainingInput(draft);
-  const words = TRAINING_TEXT.dialog;
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -82,15 +81,15 @@ export function AssignTrainingDialog({ onClose, onAssigned }: { onClose: () => v
   const footer = (
     <>
       <Button onClick={onClose} disabled={assign.pending}>
-        {words.cancel}
+        {WORDS.cancel}
       </Button>
       <Button type="submit" form={FORM_ID} variant="primary" pending={assign.pending} disabled={!input}>
-        {words.submit}
+        {WORDS.submit}
       </Button>
     </>
   );
   return (
-    <Dialog open onClose={onClose} title={words.title} footer={footer}>
+    <Dialog open onClose={onClose} title={WORDS.title} footer={footer}>
       <RemoteView state={options.state} text={REMOTE_TEXT} isEmpty={(data) => data.reviewers.length === 0} onRetry={options.reload}>
         {(data) => (
           <form id={FORM_ID} onSubmit={(event) => void submit(event)} className="flex flex-col gap-5">

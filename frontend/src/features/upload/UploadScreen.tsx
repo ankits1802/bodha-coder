@@ -8,6 +8,7 @@ import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
 import type { Place, Provider } from "@/lib/api/types";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
+import { setupSectionPath } from "@/lib/paths";
 import { canUse } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { RecentUploads } from "./components/RecentUploads";
@@ -31,7 +32,7 @@ function UploadContent() {
   const references = useRemote("upload:references", loadReferences);
   const [uploads, setUploads] = useState(0);
   const setupLink = canUse(user?.role, "setup") ? (
-    <ButtonLink href="/setup" size="sm">
+    <ButtonLink href={setupSectionPath("providers")} size="sm">
       {UPLOAD_TEXT.openSetup}
     </ButtonLink>
   ) : null;

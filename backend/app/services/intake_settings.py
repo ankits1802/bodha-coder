@@ -74,8 +74,7 @@ def inbox_prefix(practice_id: str, config: IntakeConfig) -> str:
 
 
 def intake_view(practice: Practice) -> dict[str, Any]:
-    config = intake_config(practice)
-    return {**config.as_json(), "watched_prefix": inbox_prefix(practice.id, config)}
+    return intake_config(practice).as_json()
 
 
 async def save_intake(db: AsyncSession, actor: Actor, values: Mapping[str, Any]) -> dict[str, Any]:

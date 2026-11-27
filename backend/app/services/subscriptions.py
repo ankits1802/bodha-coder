@@ -41,7 +41,7 @@ __all__ = [
     "subscription_ref",
 ]
 
-PLAN_PATH = "/plan"
+PLAN_PATH = "/settings/plan"
 CHECKOUT_STARTED = "checkout started"
 CANCEL_REQUESTED = "subscription cancel requested"
 PROVIDER_LABELS = {"stripe": "Stripe", "paypal": "PayPal"}

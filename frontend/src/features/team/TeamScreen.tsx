@@ -1,7 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { InviteRowsDialog } from "@/components/shared/team-invite/InviteRowsDialog";
+import { INVITE_ROWS_TEXT } from "@/components/shared/team-invite/strings";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,18 +12,19 @@ import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { useRemote } from "@/hooks/useRemote";
-import { getTeam } from "@/lib/api/team";
+import { useTeam } from "@/hooks/useTeam";
+import { accessLogPath } from "@/lib/paths";
 import { useSession } from "@/lib/session/useSession";
-import { InviteDialog } from "./InviteDialog";
 import { TEAM_TEXT } from "./strings";
 import { TeamTable } from "./TeamTable";
 import { ROLE_FILTERS, countIn, inFilter, isRoleFilter, seatsUsed, type RoleFilter } from "./teamModel";
 import { useTeamActions } from "./useTeamActions";
 
 export function TeamScreen() {
-  const remote = useRemote("team", getTeam);
+  const remote = useTeam();
+  const router = useRouter();
   const { user } = useSession();
+  const [sent, setSent] = useState<string | null>(null);
   const query = useQueryParams();
   const requested = query.get("role");
   const filter: RoleFilter = isRoleFilter(requested) ? requested : "all";
@@ -53,6 +57,7 @@ export function TeamScreen() {
           }))}
         />
       ) : null}
+      {sent ? <InlineAlert tone="ok">{sent}</InlineAlert> : null}
       {actions.notice ? <InlineAlert tone="ok">{actions.notice}</InlineAlert> : null}
       {actions.error ? <InlineAlert tone="bad">{actions.error}</InlineAlert> : null}
       <Panel aria-label={TEAM_TEXT.tableLabel}>
@@ -69,15 +74,16 @@ export function TeamScreen() {
               onRole={(member, role) => void actions.changeRole(member, role)}
               onConfirm={actions.openConfirm}
               onSend={(kind, member) => void actions.send(kind, member)}
+              onActivity={(member) => router.push(accessLogPath(member.id))}
             />
           )}
         </RemoteView>
       </Panel>
       {inviting ? (
-        <InviteDialog
+        <InviteRowsDialog
           onClose={() => setInviting(false)}
-          onInvited={() => {
-            setInviting(false);
+          onSent={(count) => {
+            setSent(INVITE_ROWS_TEXT.sent(count));
             remote.reload();
           }}
         />

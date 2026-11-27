@@ -1,54 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { AreaGuard } from "@/components/shared/AreaGuard";
-import { Button } from "@/components/ui/Button";
+import { AssignedTable } from "@/components/shared/training/AssignedTable";
+import { ASSIGNED_TEXT } from "@/components/shared/training/strings";
+import { useTraining } from "@/components/shared/training/useTraining";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
-import { useRemote } from "@/hooks/useRemote";
-import { getTraining, getTrainingSets } from "@/lib/api/quality";
-import { useSession } from "@/lib/session/useSession";
-import { AssignedTable } from "./components/AssignedTable";
-import { AssignTrainingDialog } from "./components/AssignTrainingDialog";
 import { ScoreStats } from "./components/ScoreStats";
-import { TrainingSetsTable } from "./components/TrainingSetsTable";
 import { TRAINING_TEXT } from "./strings";
 
-const ASSIGNED_TEXT = { loading: TRAINING_TEXT.loading, empty: TRAINING_TEXT.noAssigned, retry: TRAINING_TEXT.retry };
-const SETS_TEXT = { loading: TRAINING_TEXT.loading, empty: TRAINING_TEXT.noSets, retry: TRAINING_TEXT.retry };
+const ASSIGNED_REMOTE = { loading: TRAINING_TEXT.loading, empty: ASSIGNED_TEXT.empty, retry: TRAINING_TEXT.retry };
 
-function TrainingAdmin() {
-  const sets = useRemote("training-sets", getTrainingSets);
-  const [assigning, setAssigning] = useState(false);
-  return (
-    <Panel>
-      <PanelHeader
-        title={TRAINING_TEXT.setsTitle}
-        actions={
-          <Button size="sm" variant="primary" onClick={() => setAssigning(true)}>
-            {TRAINING_TEXT.assign}
-          </Button>
-        }
-      />
-      <RemoteView state={sets.state} text={SETS_TEXT} isEmpty={(data) => data.length === 0} onRetry={sets.reload}>
-        {(data) => <TrainingSetsTable sets={data} />}
-      </RemoteView>
-      {assigning ? (
-        <AssignTrainingDialog
-          onClose={() => setAssigning(false)}
-          onAssigned={() => {
-            setAssigning(false);
-            sets.reload();
-          }}
-        />
-      ) : null}
-    </Panel>
-  );
-}
-
-function TrainingContent({ admin }: { admin: boolean }) {
-  const training = useRemote("training", getTraining);
+function TrainingContent() {
+  const training = useTraining();
   return (
     <>
       <PageHeader title={TRAINING_TEXT.title} />
@@ -56,17 +21,19 @@ function TrainingContent({ admin }: { admin: boolean }) {
         <ScoreStats scores={training.state.data.scores} />
       ) : null}
       <Panel>
-        <PanelHeader title={TRAINING_TEXT.assignedTitle} />
-        <RemoteView state={training.state} text={ASSIGNED_TEXT} isEmpty={(data) => data.sets.length === 0} onRetry={training.reload}>
+        <PanelHeader title={ASSIGNED_TEXT.title} />
+        <RemoteView state={training.state} text={ASSIGNED_REMOTE} isEmpty={(data) => data.sets.length === 0} onRetry={training.reload}>
           {(data) => <AssignedTable samples={data.sets} />}
         </RemoteView>
       </Panel>
-      {admin ? <TrainingAdmin /> : null}
     </>
   );
 }
 
 export function TrainingScreen() {
-  const { user } = useSession();
-  return <AreaGuard area="queue">{user ? <TrainingContent admin={user.role === "admin"} /> : null}</AreaGuard>;
+  return (
+    <AreaGuard area="queue">
+      <TrainingContent />
+    </AreaGuard>
+  );
 }

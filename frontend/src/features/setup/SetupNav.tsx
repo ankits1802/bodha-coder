@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Panel } from "@/components/ui/Panel";
+import { setupSectionPath } from "@/lib/paths";
 import type { PracticeSetup } from "@/lib/api/types";
 import { NAV_ORDER, markerFor, type SectionMarker } from "./setupModel";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
@@ -46,7 +47,7 @@ export function SetupNav({ setup, selected }: SetupNavProps) {
           return (
             <li key={key} className={index === 0 ? "" : "border-t border-hairline"}>
               <Link
-                href={`/setup?section=${key}`}
+                href={setupSectionPath(key)}
                 scroll={false}
                 aria-current={active ? "page" : undefined}
                 className={`flex h-10 items-center gap-2.5 px-3.5 text-body ${active ? "bg-nav-hover font-medium" : "hover:bg-muted-panel"}`}

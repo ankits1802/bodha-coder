@@ -11,7 +11,7 @@ import { PlanScreen } from "../PlanScreen";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
-  usePathname: () => "/plan",
+  usePathname: () => "/settings/plan",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 vi.mock("@/lib/api/plan", () => ({

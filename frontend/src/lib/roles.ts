@@ -2,7 +2,7 @@ import type { PracticeRole, Role, User } from "@/lib/api/types";
 
 export type SessionUser = Pick<User, "role" | "billing_only">;
 
-export const PLAN_PATH = "/plan";
+export const PLAN_PATH = "/settings/plan";
 
 export const PRACTICE_ROLES: readonly PracticeRole[] = ["admin", "coder", "cdi", "compliance", "biller", "viewer"];
 const HQ: readonly Role[] = ["hq"];
@@ -24,10 +24,12 @@ export type Area =
   | "compliance"
   | "billing"
   | "insights"
+  | "settings"
   | "setup"
   | "team"
   | "plan"
   | "security"
+  | "account"
   | "help"
   | "hq";
 
@@ -51,10 +53,12 @@ const AREA_ROLES: Record<Area, readonly Role[]> = {
   compliance: COMPLIANCE,
   billing: BILLERS,
   insights: INSIGHT_READERS,
+  settings: ADMINS,
   setup: ADMINS,
   team: ADMINS,
   plan: ADMINS,
-  security: PRACTICE_ROLES,
+  security: ADMINS,
+  account: PRACTICE_ROLES,
   help: PRACTICE_ROLES,
   hq: HQ,
 };
@@ -81,7 +85,7 @@ export function canDo(role: Role | null | undefined, action: Action): boolean {
   return role != null && ACTION_ROLES[action].includes(role);
 }
 
-const BILLING_ONLY_AREAS: readonly Area[] = ["plan"];
+const BILLING_ONLY_AREAS: readonly Area[] = ["settings", "plan"];
 
 export function canReach(user: SessionUser | null | undefined, area: Area): boolean {
   if (user == null || !canUse(user.role, area)) return false;

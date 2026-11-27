@@ -8,17 +8,22 @@ import { MEMBER_STATUS_LABELS, ROLE_LABELS } from "@/lib/labels";
 import { PRACTICE_ROLES } from "@/lib/roles";
 import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
 
-interface MemberRowProps {
-  member: TeamMember;
-  isSelf: boolean;
+export interface MemberActions {
   onRole: (member: TeamMember, role: PracticeRole) => void;
   onConfirm: (kind: ConfirmKind, member: TeamMember) => void;
   onSend: (kind: SendKind, member: TeamMember) => void;
+  onActivity: (member: TeamMember) => void;
 }
 
-function menuFor(member: TeamMember, props: Pick<MemberRowProps, "onConfirm" | "onSend">): MenuItem[] {
+interface MemberRowProps extends MemberActions {
+  member: TeamMember;
+  isSelf: boolean;
+}
+
+function menuFor(member: TeamMember, isSelf: boolean, props: Omit<MemberActions, "onRole">): MenuItem[] {
   const words = TEAM_TEXT.menu;
-  const items: MenuItem[] = [];
+  const items: MenuItem[] = [{ key: "activity", label: words.activity, onSelect: () => props.onActivity(member) }];
+  if (isSelf) return items;
   if (member.mfa_enabled) items.push({ key: "reset", label: words.reset, onSelect: () => props.onConfirm("reset", member) });
   if (member.status === "invited") items.push({ key: "resend", label: words.resend, onSelect: () => props.onSend("invite", member) });
   if (member.status === "active") items.push({ key: "password", label: words.passwordReset, onSelect: () => props.onSend("password", member) });
@@ -34,7 +39,7 @@ function LastActive({ member }: { member: TeamMember }) {
   return <MemberLastSeen member={member} />;
 }
 
-export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberRowProps) {
+export function MemberRow({ member, isSelf, onRole, onConfirm, onSend, onActivity }: MemberRowProps) {
   const blocked = member.status === "blocked";
   const editable = !isSelf && !blocked && member.role !== "hq";
   return (
@@ -62,7 +67,7 @@ export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberR
         <LastActive member={member} />
       </Td>
       <Td className="w-10">
-        <MenuButton label={TEAM_TEXT.moreFor(member.name)} items={menuFor(member, { onConfirm, onSend })} disabled={isSelf} />
+        <MenuButton label={TEAM_TEXT.moreFor(member.name)} items={menuFor(member, isSelf, { onConfirm, onSend, onActivity })} />
       </Td>
     </Tr>
   );

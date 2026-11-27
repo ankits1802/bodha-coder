@@ -1,16 +1,16 @@
 import type { TourKey, TourRecord } from "@/lib/api/types";
+import { SECURITY_SETTINGS_PATH } from "@/lib/paths";
 import { canDo, canReach, canSearch, type SessionUser } from "@/lib/roles";
 import type { NavIconName } from "../sidebar/NavIcon";
 import { navFor, type NavItem } from "../sidebar/navItems";
 import { SHARED_TEXT } from "../strings";
 import { TOUR_TEXT, type TourExtra } from "./strings";
 
-export const TOUR_VERSION = 1;
+export const TOUR_VERSION = 2;
 export const REPLAY_TARGET = "tour";
 export const SEARCH_TARGET: NavIconName = "search";
 const HELP_PATH = "/help";
 const QUEUE_PATH = "/queue";
-const SECURITY_PATH = "/security";
 
 export interface TourStep {
   key: string;
@@ -44,17 +44,18 @@ function reviewSteps(user: SessionUser): TourStep[] {
   return steps;
 }
 
-function securitySteps(user: SessionUser): TourStep[] {
-  return canDo(user.role, "manageSecurity") ? [extraStep("accessLog", SECURITY_PATH, SECURITY_PATH)] : [];
+function accessLogSteps(user: SessionUser, item: NavItem): TourStep[] {
+  const reachable = item.tabs?.some((tab) => tab.href === SECURITY_SETTINGS_PATH) ?? false;
+  return reachable && canDo(user.role, "manageSecurity") ? [extraStep("accessLog", item.href, SECURITY_SETTINGS_PATH)] : [];
 }
 
-const FOLLOW_UPS: Readonly<Record<string, (user: SessionUser) => TourStep[]>> = {
+const FOLLOW_UPS: Readonly<Record<string, (user: SessionUser, item: NavItem) => TourStep[]>> = {
   queue: reviewSteps,
-  security: securitySteps,
+  settings: accessLogSteps,
 };
 
 function stepsForArea(item: NavItem, user: SessionUser): TourStep[] {
-  return [areaStep(item.key, item.label, item.href), ...(FOLLOW_UPS[item.key]?.(user) ?? [])];
+  return [areaStep(item.key, item.label, item.href), ...(FOLLOW_UPS[item.key]?.(user, item) ?? [])];
 }
 
 export function tourStepsFor(user: SessionUser): [TourStep, ...TourStep[]] {
@@ -63,6 +64,6 @@ export function tourStepsFor(user: SessionUser): [TourStep, ...TourStep[]] {
     ? [{ key: "search", title: SHARED_TEXT.nav.search, line: TOUR_TEXT.areas.search ?? "", target: SEARCH_TARGET, path: null }]
     : [];
   const help = canReach(user, "help") ? [areaStep("help", SHARED_TEXT.nav.help, HELP_PATH)] : [];
-  const replay: TourStep = { key: "replay", ...TOUR_TEXT.replay, target: REPLAY_TARGET, path: null };
+  const replay: TourStep = { key: "replay", ...TOUR_TEXT.replay[tourKeyFor(user)], target: REPLAY_TARGET, path: null };
   return [welcome, ...search, ...navFor(user).flatMap((item) => stepsForArea(item, user)), ...help, replay];
 }

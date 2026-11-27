@@ -36,7 +36,7 @@ from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, PRACTICE_ROLES
 from app.models import PlaceOfService, Provider
-from app.services import payers, practice_setup, quantity_sync, records
+from app.services import first_run, payers, practice_setup, quantity_sync, records
 from app.services.provider_details import details_view
 
 router = APIRouter(tags=["practice"], route_class=ExactRoute)
@@ -72,6 +72,11 @@ async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
     await practice_setup.save_security(
         db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes, access_log_years=body.access_log_years
     )
+
+
+@router.put("/practice/first-run/dismissed", status_code=204)
+async def dismiss_first_run(db: Db, actor: Admin) -> None:
+    await first_run.dismiss_first_run(db, actor)
 
 
 @router.put("/practice/review-settings", response_model=ReviewSettings)

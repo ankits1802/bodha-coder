@@ -1,5 +1,6 @@
 export const SECURITY_TEXT = {
   title: "Security",
+  accountTitle: "Account",
   loading: "Loading security settings",
   empty: "No practice settings",
   retry: "Try again",

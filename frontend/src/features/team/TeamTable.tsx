@@ -1,17 +1,14 @@
 import { Table, Th } from "@/components/ui/Table";
-import type { PracticeRole, TeamMember } from "@/lib/api/types";
-import { MemberRow } from "./MemberRow";
-import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
+import type { TeamMember } from "@/lib/api/types";
+import { MemberRow, type MemberActions } from "./MemberRow";
+import { TEAM_TEXT } from "./strings";
 
-interface TeamTableProps {
+interface TeamTableProps extends MemberActions {
   members: TeamMember[];
   selfId: string | null;
-  onRole: (member: TeamMember, role: PracticeRole) => void;
-  onConfirm: (kind: ConfirmKind, member: TeamMember) => void;
-  onSend: (kind: SendKind, member: TeamMember) => void;
 }
 
-export function TeamTable({ members, selfId, onRole, onConfirm, onSend }: TeamTableProps) {
+export function TeamTable({ members, selfId, ...actions }: TeamTableProps) {
   const columns = TEAM_TEXT.columns;
   return (
     <Table label={TEAM_TEXT.tableLabel} minWidth="lg">
@@ -28,14 +25,7 @@ export function TeamTable({ members, selfId, onRole, onConfirm, onSend }: TeamTa
       </thead>
       <tbody>
         {members.map((member) => (
-          <MemberRow
-            key={member.id}
-            member={member}
-            isSelf={member.id === selfId}
-            onRole={onRole}
-            onConfirm={onConfirm}
-            onSend={onSend}
-          />
+          <MemberRow key={member.id} member={member} isSelf={member.id === selfId} {...actions} />
         ))}
       </tbody>
     </Table>

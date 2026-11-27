@@ -2,7 +2,9 @@ import type { PracticeSetup, SetupSectionKey } from "@/lib/api/types";
 import { isNpiShaped } from "@/lib/validation";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
 
-export const SECTION_ORDER: readonly (SetupSectionKey | "providers")[] = [
+type ScoredKey = SetupSectionKey | "providers";
+
+export const SECTION_ORDER: readonly ScoredKey[] = [
   "practice_details",
   "providers",
   "payers",
@@ -17,7 +19,13 @@ export const SECTION_ORDER: readonly (SetupSectionKey | "providers")[] = [
   "software",
 ];
 
-export const NAV_ORDER: readonly SetupNavKey[] = [...SECTION_ORDER, "mips"];
+const UNSCORED: readonly SetupNavKey[] = ["checks", "intake", "mips"];
+
+function isScored(key: SetupNavKey): key is ScoredKey {
+  return (SECTION_ORDER as readonly string[]).includes(key);
+}
+
+export const NAV_ORDER: readonly SetupNavKey[] = [...SECTION_ORDER, ...UNSCORED];
 
 export type SectionMarker = "complete" | "incomplete" | "attention" | "none";
 
@@ -26,7 +34,7 @@ export function isNavKey(value: string | null): value is SetupNavKey {
 }
 
 export function markerFor(key: SetupNavKey, setup: PracticeSetup): SectionMarker {
-  if (key === "mips") return "none";
+  if (!isScored(key)) return "none";
   if (key === "providers" && setup.missing_npi > 0) return "attention";
   return setup.sections[key]?.complete ? "complete" : "incomplete";
 }
@@ -61,7 +69,7 @@ export function fieldError(field: string, value: string): string | null {
 }
 
 export function nextIncomplete(setup: PracticeSetup, after: SetupNavKey): SetupNavKey | null {
-  const start = SECTION_ORDER.indexOf(after as (typeof SECTION_ORDER)[number]);
-  const later = SECTION_ORDER.slice(start + 1);
-  return later.find((key) => markerFor(key, setup) !== "complete") ?? null;
+  if (!isScored(after) || markerFor(after, setup) !== "complete") return null;
+  const start = SECTION_ORDER.indexOf(after);
+  return SECTION_ORDER.slice(start + 1).find((key) => markerFor(key, setup) !== "complete") ?? null;
 }

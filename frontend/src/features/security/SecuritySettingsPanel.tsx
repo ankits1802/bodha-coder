@@ -2,13 +2,12 @@
 
 import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
-import { useRemote } from "@/hooks/useRemote";
-import { getSetup } from "@/lib/api/practice";
+import { usePracticeSetup } from "@/hooks/usePracticeSetup";
 import { SecurityForm } from "./SecurityForm";
 import { SECURITY_TEXT } from "./strings";
 
 export function SecuritySettingsPanel() {
-  const remote = useRemote("security-settings", getSetup);
+  const remote = usePracticeSetup();
   return (
     <Panel aria-label={SECURITY_TEXT.settingsLabel} className="max-w-180">
       <RemoteView

@@ -11,14 +11,18 @@ import type { Payer } from "@/lib/api/types";
 import { PayerDialog } from "./PayerDialog";
 import { PayersTable } from "./PayersTable";
 import { PAYER_TEXT } from "./strings";
+import { useArrival } from "./useArrival";
 
 interface PayersPanelProps {
   payers: Payer[];
+  addOnArrival: boolean;
+  onArrived: () => void;
   onChanged: () => void;
 }
 
-export function PayersPanel({ payers, onChanged }: PayersPanelProps) {
-  const [editing, setEditing] = useState<Payer | "new" | null>(null);
+export function PayersPanel({ payers, addOnArrival, onArrived, onChanged }: PayersPanelProps) {
+  const [editing, setEditing] = useState<Payer | "new" | null>(() => (addOnArrival ? "new" : null));
+  useArrival(addOnArrival, onArrived);
   const [removing, setRemoving] = useState<Payer | null>(null);
   const remove = useAction(removePayer);
 

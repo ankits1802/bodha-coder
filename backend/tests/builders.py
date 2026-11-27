@@ -85,7 +85,7 @@ async def create_hq_user(email: str = "hq@bodha.example.com") -> None:
 async def accept_invite(harness: Harness, *, site: str = "") -> None:
     token = harness.messenger.last_fragment()
     response = await harness.client.post(f"{site}/api/auth/password", json={"token": token, "password": PASSWORD})
-    assert response.status_code == 204, response.text
+    assert response.status_code == 200, response.text
 
 
 async def new_practice(

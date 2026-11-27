@@ -15,10 +15,8 @@ export type NavIconName =
   | "inbox"
   | "search"
   | "help"
-  | "book"
-  | "receipt"
-  | "sidebar"
-  | "signOut";
+  | "gear"
+  | "sidebar";
 
 const STROKE = { fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
@@ -29,7 +27,6 @@ const PATHS: Record<NavIconName, ReactNode> = {
       <path d="M6.2 2.5v11" {...STROKE} />
     </>
   ),
-  signOut: <path d="M9.5 3.5V3c0-.6-.5-1-1-1h-5c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h5c.5 0 1-.4 1-1v-.5M7 8h7M11.5 5.5L14 8l-2.5 2.5" {...STROKE} />,
   calendar: (
     <>
       <rect x="2" y="3" width="12" height="11" rx="2.5" {...STROKE} />
@@ -46,7 +43,6 @@ const PATHS: Record<NavIconName, ReactNode> = {
     </>
   ),
   shield: <path d="M8 1.8l5 2v4c0 3-2.1 5.3-5 6.4-2.9-1.1-5-3.4-5-6.4v-4z" {...STROKE} />,
-  receipt: <path d="M3.5 1.8h9v12.4l-1.8-1.2-1.8 1.2L7.1 13l-1.8 1.2-1.8-1.2zM6 5.5h4M6 8h4M6 10.5h2.5" {...STROKE} />,
   card: (
     <>
       <rect x="1.8" y="3.5" width="12.4" height="9" rx="2" {...STROKE} />
@@ -103,10 +99,14 @@ const PATHS: Record<NavIconName, ReactNode> = {
       <circle cx="8" cy="11.6" r=".8" fill="currentColor" />
     </>
   ),
-  book: (
+  gear: (
     <>
-      <path d="M8 4.2C6.6 3.2 4.6 2.8 2.5 3v9.6c2.1-.2 4.1.2 5.5 1.2 1.4-1 3.4-1.4 5.5-1.2V3c-2.1-.2-4.1.2-5.5 1.2z" {...STROKE} />
-      <path d="M8 4.2v9.6" {...STROKE} />
+      <circle cx="8" cy="8" r="2.2" {...STROKE} />
+      <path
+        d="M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"
+        {...STROKE}
+      />
+      <circle cx="8" cy="8" r="4.6" {...STROKE} />
     </>
   ),
 };

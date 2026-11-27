@@ -6,11 +6,11 @@ import type { User } from "@/lib/api/types";
 import { canReach, canSearch, homeFor } from "@/lib/roles";
 import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
+import { AccountMenu } from "./AccountMenu";
 import { ActionEntry, NavEntry } from "./NavEntry";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
 import { PracticeSwitcher, hasPracticeChoice } from "./PracticeSwitcher";
-import { SidebarFooter } from "./SidebarFooter";
 import { useNavCounts, type NavCounts } from "./useNavCounts";
 
 interface SidebarProps {
@@ -119,7 +119,7 @@ export function Sidebar(props: SidebarProps) {
             <NavEntry href="/help" icon="help" label={words.help} active={pathname === "/help"} collapsed={collapsed} onNavigate={onNavigate} />
           </ul>
         ) : null}
-        <SidebarFooter user={user} collapsed={collapsed} />
+        <AccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
       </div>
     </div>
   );

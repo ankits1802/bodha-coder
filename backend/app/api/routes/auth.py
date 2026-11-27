@@ -66,9 +66,12 @@ async def logout(request: Request, response: Response, db: Db, refresh_token: Re
     clear_refresh_cookie(response)
 
 
-@router.post("/password", status_code=204)
-async def set_password(body: PasswordBody, request: Request, db: Db, site: CurrentSite) -> None:
-    await auth.set_password(db, body.token, body.password, site.realms, client_of(request))
+@router.post("/password", response_model=SignedIn | MfaChallenge)
+async def set_password(
+    body: PasswordBody, request: Request, response: Response, db: Db, site: CurrentSite
+) -> dict[str, Any]:
+    result = await auth.set_password(db, body.token, body.password, site.realms, client_of(request))
+    return await sign_in_body(db, response, result)
 
 
 @router.post("/forgot", status_code=204)

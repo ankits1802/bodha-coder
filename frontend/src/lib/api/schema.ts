@@ -1503,6 +1503,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/practice/first-run/dismissed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["dismiss_first_run_api_practice_first_run_dismissed_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/practice/intake": {
         parameters: {
             query?: never;
@@ -2967,6 +2983,11 @@ export interface components {
             severity: string | null;
             title: string;
         };
+        FirstRun: {
+            checks: boolean;
+            dismissed: boolean;
+            security: boolean;
+        };
         FlagBody: {
             reason: string;
         };
@@ -3105,7 +3126,6 @@ export interface components {
                 [key: string]: string;
             };
             visit_type: string;
-            watched_prefix: string;
         };
         InviteBody: {
             email: string;
@@ -3497,6 +3517,7 @@ export interface components {
         PracticeSetup: {
             checks: components["schemas"]["Checks"];
             complete: number;
+            first_run: components["schemas"]["FirstRun"];
             missing_npi: number;
             payers: components["schemas"]["Payer"][];
             review: components["schemas"]["ReviewSettings"];
@@ -4547,11 +4568,13 @@ export interface operations {
             };
         };
         responses: {
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SignedIn"] | components["schemas"]["MfaChallenge"];
+                };
             };
             422: {
                 headers: {
@@ -9281,6 +9304,49 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    dismiss_first_run_api_practice_first_run_dismissed_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

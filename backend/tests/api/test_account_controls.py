@@ -30,7 +30,7 @@ async def test_an_admin_reset_email_ends_sessions_only_once_the_password_is_set(
     assert (await harness.client.get("/api/auth/me", headers=coder)).status_code == 200
     token = harness.messenger.last_fragment()
     chosen = await harness.client.post("/api/auth/password", json={"token": token, "password": "fresh-password-9"})
-    assert chosen.status_code == 204
+    assert chosen.status_code == 200
     assert (await harness.client.get("/api/auth/me", headers=coder)).status_code == 401
 
 

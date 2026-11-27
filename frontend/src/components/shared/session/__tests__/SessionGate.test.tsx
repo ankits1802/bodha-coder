@@ -38,7 +38,7 @@ describe("SessionGate", () => {
     signInAdmin(true);
     renderGate("Today screen");
     expect(screen.queryByText("Today screen")).not.toBeInTheDocument();
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/plan"));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/settings/plan"));
   });
 
   it("keeps a billing-only admin away from a note", async () => {
@@ -46,11 +46,11 @@ describe("SessionGate", () => {
     signInAdmin(true);
     renderGate("Note review");
     expect(screen.queryByText("Note review")).not.toBeInTheDocument();
-    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/plan"));
+    await waitFor(() => expect(navigation.replace).toHaveBeenCalledWith("/settings/plan"));
   });
 
   it("opens the plan screen to a billing-only admin", () => {
-    navigation.pathname = "/plan";
+    navigation.pathname = "/settings/plan";
     signInAdmin(true);
     renderGate("Plan screen");
     expect(screen.getByText("Plan screen")).toBeInTheDocument();

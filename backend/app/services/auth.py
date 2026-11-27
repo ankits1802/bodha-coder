@@ -241,7 +241,14 @@ async def issue_user_token(db: AsyncSession, user: User, purpose: str) -> str:
     return token
 
 
-async def set_password(db: AsyncSession, token: str, password: str, realms: tuple[str, ...], client: Client) -> None:
+async def set_password(
+    db: AsyncSession, token: str, password: str, realms: tuple[str, ...], client: Client
+) -> Tokens | MfaChallenge:
+    user = await _store_password(db, token, password, realms, client)
+    return await sign_in_user(db, user, method=PASSWORD_METHOD, client=client)
+
+
+async def _store_password(db: AsyncSession, token: str, password: str, realms: tuple[str, ...], client: Client) -> User:
     if len(password) < PASSWORD_MIN_LENGTH:
         raise Invalid(f"use at least {PASSWORD_MIN_LENGTH} characters")
     row = await db.scalar(select(UserToken).where(UserToken.token_hash == digest(token)))
@@ -257,3 +264,4 @@ async def set_password(db: AsyncSession, token: str, password: str, realms: tupl
     await record_auth_event(db, PASSWORD_EVENTS[row.purpose], user, AuthEventFacts(client))
     await end_all_sessions(db, user, reason=PASSWORD_CHANGED, client=client)
     await db.commit()
+    return user

@@ -76,7 +76,7 @@ async def test_checkout_bills_each_active_provider_and_returns_to_the_plan_scree
         "stripe-professional-annual",
         3,
     )
-    plan_url = f"{get_settings().app_url}/plan"
+    plan_url = f"{get_settings().app_url}/settings/plan"
     assert (sent.email, sent.customer_id, sent.success_url, sent.cancel_url) == (
         "admin@lakeside.example.com",
         None,

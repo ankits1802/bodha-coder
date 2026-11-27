@@ -1,43 +1,19 @@
 import { Field } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Toggle } from "@/components/ui/Toggle";
-import type { Channel, Place } from "@/lib/api/types";
-import { CHANNEL_LABELS } from "@/lib/labels";
-import type { ProviderDraft, ProviderErrors, ProviderTextField } from "./providerForm";
+import type { Place } from "@/lib/api/types";
+import { ProviderTextInput, type ProviderInputHandlers } from "./ProviderTextInput";
 import { CREDENTIALS, PROVIDER_TEXT } from "./strings";
 
-interface ProviderFieldsProps {
-  draft: ProviderDraft;
-  errors: ProviderErrors;
+interface ProviderFieldsProps extends ProviderInputHandlers {
   places: Place[];
-  canSendTexts: boolean;
-  onChange: (field: ProviderTextField, value: string) => void;
-  onActive: (active: boolean) => void;
-  onTouched: (field: ProviderTextField) => void;
 }
 
-const CHANNELS: readonly Channel[] = ["email", "sms"];
-
-export function ProviderFields({ draft, errors, places, canSendTexts, onChange, onActive, onTouched }: ProviderFieldsProps) {
+export function ProviderFields({ places, ...handlers }: ProviderFieldsProps) {
   const words = PROVIDER_TEXT.dialog;
-  const text = (field: ProviderTextField, label: string, type = "text", optional = true) => (
-    <Field label={label} error={errors[field]} optional={optional ? words.optional : undefined}>
-      {(control) => (
-        <Input
-          {...control}
-          type={type}
-          value={draft[field]}
-          onChange={(event) => onChange(field, event.target.value)}
-          onBlur={() => onTouched(field)}
-        />
-      )}
-    </Field>
-  );
-
+  const { draft, onChange } = handlers;
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {text("name", words.name, "text", false)}
+      <ProviderTextInput {...handlers} field="name" label={words.name} optional={false} />
       <Field label={words.credential}>
         {(control) => (
           <Select
@@ -48,8 +24,7 @@ export function ProviderFields({ draft, errors, places, canSendTexts, onChange, 
           />
         )}
       </Field>
-      {text("specialty", words.specialty)}
-      {text("npi", words.npi)}
+      <ProviderTextInput {...handlers} field="npi" label={words.npi} optional />
       <Field label={words.place} optional={words.optional}>
         {(control) => (
           <Select
@@ -60,26 +35,7 @@ export function ProviderFields({ draft, errors, places, canSendTexts, onChange, 
           />
         )}
       </Field>
-      {canSendTexts ? (
-        <Field label={words.channel}>
-          {(control) => (
-            <Select
-              {...control}
-              value={draft.channel}
-              options={CHANNELS.map((channel) => ({ value: channel, label: CHANNEL_LABELS[channel] }))}
-              onChange={(value) => onChange("channel", value)}
-            />
-          )}
-        </Field>
-      ) : null}
-      {text("email", words.email, "email", draft.channel !== "email")}
-      {canSendTexts ? text("phone", words.phone, "tel", draft.channel !== "sms") : null}
-      <div className="flex items-center justify-between gap-3 sm:col-span-2">
-        <span aria-hidden="true" className="text-subhead font-medium">
-          {words.active}
-        </span>
-        <Toggle label={words.active} checked={draft.active} onChange={onActive} />
-      </div>
+      <ProviderTextInput {...handlers} field="email" label={words.email} type="email" optional={draft.channel !== "email"} />
     </div>
   );
 }

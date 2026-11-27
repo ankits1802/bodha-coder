@@ -133,6 +133,7 @@ export type Payer = Schemas["Payer"];
 export type PlanType = Payer["plan_type"];
 export type PayerOption = Schemas["PayerOption"];
 export type PracticeSetup = Schemas["PracticeSetup"];
+export type FirstRun = Schemas["FirstRun"];
 export type MipsMeasure = Schemas["MipsMeasure"];
 export type MipsOverview = Schemas["MipsOverview"];
 export type MipsChoice = Schemas["MipsChoice"];
@@ -283,7 +284,6 @@ export type DemoRequest = Schemas["DemoBody"];
 export type SampleInput = Schemas["SampleBody"];
 export type TrainingInput = Schemas["TrainingBody"];
 export type PayerInput = Omit<Payer, "id">;
-export type IntakeSettings = Omit<IntakeView, "watched_prefix">;
 export type ProviderInput = Omit<Provider, "id" | "channel"> & { channel: Channel | null };
 
 export type MdmLevel = "Straightforward" | "Low" | "Moderate" | "High";
