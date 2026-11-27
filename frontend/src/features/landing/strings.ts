@@ -17,8 +17,12 @@ export const LANDING_TEXT = {
       { quote: "CKD, stable", tone: "warn" as HighlightTone },
       { quote: "rule out neuropathy", tone: "bad" as HighlightTone },
     ],
+    window: "Visit review",
+    evidence: "Evidence",
     verdict: "Billed one level too high",
-    advice: "Bill 99214, not ",
+    adviceLead: "Bill ",
+    adviceCode: "99214",
+    adviceTail: ", not ",
     struck: "99215",
     changedLabel: "changes to",
     addedLabel: "add",
@@ -29,13 +33,29 @@ export const LANDING_TEXT = {
       { before: "R20.2", after: null, status: "Add", tone: "ok" as StatusTone },
     ],
   },
-  how: {
-    title: "Upload. Review. Defend.",
-    features: [
-      { title: "Shows its evidence.", body: "Every level and code points to the sentence that supports it, checked against the code set for the date of service." },
-      { title: "Asks the provider.", body: "Non-leading questions go out as a secure link. The answer comes back as a signed addendum." },
-      { title: "Keeps the record.", body: "Every read, decision and addendum is kept, ready for a payer or an auditor." },
+  floating: ["99214", "E11.65", "I12.9", "G2211", "R20.2", "99417", "Z79.84", "N18.30", "96127", "E78.5"],
+  story: {
+    label: "How it works",
+    acts: [
+      { step: "Upload.", title: "Every note, read.", body: "Drop the day's PDFs. Each visit is read against the codes you billed." },
+      {
+        step: "Review.",
+        title: "Every code, shown.",
+        body: "Each level and code points to the sentence that supports it, checked against the code set for the date of service.",
+      },
+      {
+        step: "Defend.",
+        title: "Every answer, kept.",
+        body: "Questions reach the provider as a secure link. The signed answer, every decision and a defense packet stay on record.",
+      },
     ],
+    upload: { file: "PDF" },
+    review: [
+      { phrase: "A1c up to 8.4", code: "E11.65", tone: "ok" },
+      { phrase: "add amlodipine", code: "I12.9", tone: "ok" },
+      { phrase: "rule out neuropathy", code: "R20.2", tone: "warn" },
+    ],
+    defend: { packet: "Defense packet", addendum: "Addendum", signed: "Signed" },
   },
   numbers: {
     label: "At a glance",
@@ -44,6 +64,8 @@ export const LANDING_TEXT = {
       { value: "Both ways", label: "billed too high and billed too low" },
       { value: "1 click", label: "to approve" },
     ],
+    approve: "Approve",
+    approved: "Approved",
   },
   security: {
     title: "Private by design.",

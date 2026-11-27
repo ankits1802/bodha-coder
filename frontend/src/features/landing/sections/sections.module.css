@@ -1,0 +1,263 @@
+.arrow {
+  display: inline-block;
+  font-size: 0.5em;
+  line-height: 1;
+  animation: bob-up 2.4s ease-in-out infinite;
+}
+
+.arrowUp {
+  color: #ff3b30;
+}
+
+.arrowDown {
+  color: #0a84ff;
+  animation-name: bob-down;
+}
+
+.toy {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #ebebef;
+  color: #1d1d1f;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    background-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.toy:hover {
+  background: #e1e1e6;
+}
+
+.toy:active {
+  transform: scale(0.95);
+}
+
+.toyCheck {
+  width: 0;
+  height: 16px;
+  overflow: visible;
+  fill: none;
+  stroke: #248a3d;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.toyCheck path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.45s cubic-bezier(0.65, 0, 0.35, 1) 0.12s;
+}
+
+.toyDone {
+  background: rgba(52, 199, 89, 0.16);
+  box-shadow: 0 0 0 6px rgba(52, 199, 89, 0.07);
+}
+
+.toyDone:hover {
+  background: rgba(52, 199, 89, 0.22);
+}
+
+.toyDone .toyCheck {
+  width: 16px;
+}
+
+.toyDone .toyCheck path {
+  stroke-dashoffset: 0;
+}
+
+.toyDone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: burst 0.75s ease-out;
+  pointer-events: none;
+}
+
+.check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+[data-state="waiting"] .check path {
+  stroke-dashoffset: 1;
+}
+
+[data-state="shown"] .check path {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--delay, 0ms) + 280ms);
+}
+
+.vault {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(78vw, 320px);
+  aspect-ratio: 1;
+}
+
+.ring {
+  position: absolute;
+  border: 1px solid rgba(29, 29, 31, 0.1);
+  border-radius: 50%;
+  animation: spin var(--t) linear infinite;
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    0 0 0 4px #fff,
+    0 0 18px var(--c);
+}
+
+.ringOuter {
+  --t: 46s;
+  --c: #34c759;
+  inset: 0;
+}
+
+.ringMiddle {
+  --t: 30s;
+  --c: #0a84ff;
+  inset: 16%;
+  border-style: dashed;
+  animation-direction: reverse;
+}
+
+.ringInner {
+  --t: 20s;
+  --c: #ff9f0a;
+  inset: 32%;
+}
+
+.core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 24px 50px -20px rgba(0, 0, 0, 0.3);
+  animation: breathe 4.8s ease-in-out infinite;
+}
+
+.core::after {
+  content: "";
+  position: absolute;
+  inset: -18px;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(52, 199, 89, 0.2), transparent);
+  animation: glow 4.8s ease-in-out infinite;
+}
+
+.vault[data-onscreen="false"] .ring,
+.vault[data-onscreen="false"] .core,
+.vault[data-onscreen="false"] .core::after {
+  animation-play-state: paused;
+}
+
+.closing {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  overflow: hidden;
+  padding: 9rem 1.5rem;
+  border-top: 1px solid #e5e5ea;
+  text-align: center;
+}
+
+.closing::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(560px circle at var(--px, 50%) var(--py, 40%), rgba(255, 255, 255, 0.95), transparent 70%) fixed,
+    radial-gradient(42% 55% at 25% 100%, rgba(52, 199, 89, 0.12), transparent 70%),
+    radial-gradient(42% 55% at 78% 0%, rgba(10, 132, 255, 0.1), transparent 70%),
+    #f5f5f7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow,
+  .ring,
+  .core,
+  .core::after,
+  .toyDone::after {
+    animation: none;
+  }
+
+  .toy,
+  .toyCheck,
+  .toyCheck path,
+  [data-state="shown"] .check path {
+    transition: none;
+  }
+}
+
+@keyframes bob-up {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes bob-down {
+  50% {
+    transform: translateY(7px);
+  }
+}
+
+@keyframes burst {
+  from {
+    box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.45);
+  }
+  to {
+    box-shadow: 0 0 0 18px rgba(52, 199, 89, 0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+@keyframes glow {
+  50% {
+    opacity: 0.35;
+  }
+}

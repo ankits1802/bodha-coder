@@ -45,3 +45,20 @@ per screen. No helper sentences: labels, layout and state carry the meaning.
 Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.
+
+## Motion and haptics
+
+Motion explains what Bodha does: a reading beam, evidence inked like a marker, a struck code replaced by
+the supported one, pages that land, wires that connect a sentence to its code. It never decorates a
+control. Rules:
+
+| Rule | How |
+|---|---|
+| Cheap to draw | only `transform`, `opacity`, `background-size` and `stroke-dashoffset` animate; no animation libraries |
+| Scroll without React | `ScrollStage` writes one `--p` (0 to 1) per section in a `requestAnimationFrame`; CSS derives every act from it |
+| Paused off screen | `MotionRoot` marks `[data-live]` elements with `data-onscreen`; infinite animations pause when false |
+| Reveals | elements with `data-reveal` below the fold wait (`data-state="waiting"`) and ease in once seen; without JavaScript everything is visible |
+| Reduced motion | `prefers-reduced-motion: reduce` shows every final state, unpins the story and lays its acts out as rows |
+| Pointer | parallax and the magnetic button follow fine pointers only |
+| Haptics | `lib/haptics.ts`: `tap` (primary press), `select` (switch, in-page jump), `success` (approve). The Vibration API where it exists (Android); on touch devices without it, a hidden native switch is ticked, which iOS 18 answers with a system haptic. Only from a user gesture, never on scroll |
+
