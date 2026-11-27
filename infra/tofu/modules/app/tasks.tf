@@ -62,7 +62,7 @@ locals {
       role        = aws_iam_role.plain.arn
       port        = null
       stop        = 30
-      environment = [{ name = "APP_ENVIRONMENT", value = var.environment }]
+      environment = local.shared_environment
       secrets     = local.shared_secrets
     }
     bootstrap = {
@@ -73,7 +73,7 @@ locals {
       role        = aws_iam_role.plain.arn
       port        = null
       stop        = 30
-      environment = [{ name = "APP_ENVIRONMENT", value = var.environment }]
+      environment = local.shared_environment
       secrets = concat(local.shared_secrets, [
         { name = "BOOTSTRAP_HQ_EMAIL", valueFrom = "${var.secret_arns["bootstrap-hq"]}:email::" },
         { name = "BOOTSTRAP_HQ_PASSWORD", valueFrom = "${var.secret_arns["bootstrap-hq"]}:password::" },
