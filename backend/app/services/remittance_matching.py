@@ -6,7 +6,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CodeSet, Note
+from app.models import VOIDED, CodeSet, Note
 from app.services.remittance_835 import ClaimPayment, ServicePayment
 
 __all__ = ["matching_note", "name_tokens", "same_person"]
@@ -32,7 +32,13 @@ async def _note_by_reference(db: AsyncSession, practice_id: str, claim_ref: str)
         return None
     found = (
         await db.scalars(
-            select(Note).where(Note.practice_id == practice_id, Note.id.startswith(reference, autoescape=True)).limit(2)
+            select(Note)
+            .where(
+                Note.practice_id == practice_id,
+                Note.status != VOIDED,
+                Note.id.startswith(reference, autoescape=True),
+            )
+            .limit(2)
         )
     ).all()
     return found[0] if len(found) == 1 else None
@@ -42,7 +48,10 @@ async def _note_by_visit(db: AsyncSession, practice_id: str, patient: str, day: 
     notes = (
         await db.scalars(
             select(Note).where(
-                Note.practice_id == practice_id, Note.service_date == day, Note.patient_name.is_not(None)
+                Note.practice_id == practice_id,
+                Note.status != VOIDED,
+                Note.service_date == day,
+                Note.patient_name.is_not(None),
             )
         )
     ).all()

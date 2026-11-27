@@ -19,16 +19,17 @@ export const BAA_DUTIES = [
     "safeguards",
     BAA_HEADINGS,
     paragraph(
-      "Business Associate will use appropriate administrative, physical and technical safeguards, and comply with Subpart C of 45 CFR Part 164 with respect to Electronic Protected Health Information, to prevent use or disclosure of PHI other than as provided by this BAA, including the requirements of 45 CFR 164.308, 164.310, 164.312 and 164.316. It will keep the policies, procedures and documentation required by 45 CFR 164.316 for six years from the date of their creation or the date when they were last in effect, whichever is later.",
+      `Business Associate will use appropriate administrative, physical and technical safeguards, and comply with Subpart C of 45 CFR Part 164 with respect to Electronic Protected Health Information, to prevent use or disclosure of PHI other than as provided by this BAA, including the requirements of 45 CFR 164.308, 164.310, 164.312 and 164.316. It will keep the policies, procedures and documentation required by 45 CFR 164.316 for at least ${SERVICE_FACTS.recordRetentionYears} years from the date of their creation or the date when they were last in effect, whichever is later.`,
     ),
     paragraph("The safeguards built into the Service currently include:"),
     bullets(
       "encryption of PHI at rest with keys managed in AWS Key Management Service, and encryption in transit with TLS over public networks and on every connection to the database and document storage;",
       "separation of each customer’s data and role-based access within each account;",
       "two-step verification and automatic sign-out after a period of inactivity chosen by Covered Entity;",
-      `a log of every view, change and export of PHI, kept for the period Covered Entity chooses, at least ${SERVICE_FACTS.accessLogYears} years;`,
+      `a log of every view, change and export of PHI, including views and exports of the log itself, kept for the period Covered Entity chooses, from ${SERVICE_FACTS.accessLogYears} to ${SERVICE_FACTS.accessLogMaxYears} years;`,
+      "records of every model run, suggestion, decision, code-set change, note revision, provider answer and before-and-after change that the database keeps append-only, so that the application cannot change or delete them, and a hash chain over the access log that lets Business Associate detect an altered entry or a gap in the chain;",
       `document links that expire after ${SERVICE_FACTS.documentLinkSeconds} seconds, and no PHI in email or text messages, storage keys, web addresses or application logs;`,
-      "backups and versioned document storage.",
+      `monthly database backups kept for ${SERVICE_FACTS.backupYears} years, and document storage that keeps every version of every stored file under a ${SERVICE_FACTS.documentLockYears}-year retention lock.`,
     ),
   ),
   section(

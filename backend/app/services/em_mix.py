@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.codes.em import em_position
 from app.codes.em_benchmarks import BENCHMARK_FAMILIES, EmBenchmarks, benchmark_family
 from app.core.chi_square import goodness_of_fit
-from app.models import Note, Provider
+from app.models import VOIDED, Note, Provider
 from app.services.visit_levels import visit_codes
 
 __all__ = ["CHI_SQUARE_MIN_VISITS", "MIN_FAMILY_VISITS", "POINTS_LIMIT", "P_LIMIT", "em_mix", "family_mix"]
@@ -31,7 +31,10 @@ async def em_mix(
     rows = (
         await db.execute(
             select(Note.id, Note.provider_id).where(
-                Note.practice_id == practice_id, Note.service_date >= start, Note.service_date <= end
+                Note.practice_id == practice_id,
+                Note.status != VOIDED,
+                Note.service_date >= start,
+                Note.service_date <= end,
             )
         )
     ).all()

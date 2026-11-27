@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code
 from app.core.calendar import today_in
-from app.models import LANES, Batch, CodeSet, Note, Provider, Suggestion, User, utcnow
+from app.models import LANES, VOIDED, Batch, CodeSet, Note, Provider, Suggestion, User, utcnow
 
 PAGE_SIZE = 50
 DUE_SOON = timedelta(hours=24)
@@ -167,7 +167,7 @@ async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str,
         select(Batch.id, Provider.name, Batch.service_date, Batch.place_code, Note.status, func.count())
         .join(Provider, Provider.id == Batch.provider_id)
         .join(Note, Note.batch_id == Batch.id)
-        .where(Batch.practice_id == practice_id, Batch.service_date >= since)
+        .where(Batch.practice_id == practice_id, Batch.service_date >= since, Note.status != VOIDED)
         .group_by(Batch.id, Provider.name, Batch.service_date, Batch.place_code, Note.status)
     )
     batches: dict[str, dict[str, Any]] = {}

@@ -8,11 +8,17 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Input } from "@/components/ui/Input";
 import type { HqPractice } from "@/lib/api/types";
 import { HQ_TEXT } from "../strings";
-import { confirmsDeletion } from "./practiceActions";
+import { confirmsName, type TypedActionKind } from "./practiceActions";
 
-const FORM_ID = "delete-practice";
+const FORM_ID = "typed-practice-action";
+const words = HQ_TEXT.practices.confirm;
+const KIND_WORDS: Record<TypedActionKind, { title: (name: string) => string; description: string; action: string }> = {
+  close: { title: words.close, description: words.closeDescription, action: words.closeAction },
+  purge: { title: words.purge, description: words.purgeDescription, action: words.purgeAction },
+};
 
-interface DeletePracticeDialogProps {
+interface TypedNameDialogProps {
+  kind: TypedActionKind;
   practice: HqPractice;
   pending: boolean;
   error: string | null;
@@ -20,10 +26,10 @@ interface DeletePracticeDialogProps {
   onClose: () => void;
 }
 
-export function DeletePracticeDialog({ practice, pending, error, onConfirm, onClose }: DeletePracticeDialogProps) {
+export function TypedNameDialog({ kind, practice, pending, error, onConfirm, onClose }: TypedNameDialogProps) {
   const [typed, setTyped] = useState("");
-  const words = HQ_TEXT.practices.confirm;
-  const matches = confirmsDeletion(practice, typed);
+  const text = KIND_WORDS[kind];
+  const matches = confirmsName(practice, typed);
 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -34,13 +40,13 @@ export function DeletePracticeDialog({ practice, pending, error, onConfirm, onCl
     <Dialog
       open
       onClose={onClose}
-      title={words.delete(practice.name)}
-      description={words.deleteDescription}
+      title={text.title(practice.name)}
+      description={text.description}
       footer={
         <>
           <Button onClick={onClose}>{words.cancel}</Button>
           <Button variant="danger" disabled={!matches} pending={pending} onClick={() => onConfirm(typed.trim())}>
-            {words.deleteAction}
+            {text.action}
           </Button>
         </>
       }

@@ -52,7 +52,7 @@ export const TERMS_DUTIES = [
       "Do not upload PHI during a trial, or at any other time, unless the BAA is in effect for your organization. The BAA takes effect when you accept it while signing up, or when you and we sign a business associate agreement. Until then, use only test data or data that has been de-identified under HIPAA.",
     ),
     paragraph(
-      `When the trial ends, access stops unless you choose a paid plan. We keep a trial’s Customer Data for ${LEGAL_PERIODS.trialRetentionDays} days after the trial ends so that you can continue on a paid plan, and may then delete it as described in “${TERMS_HEADINGS["export-deletion"]}”.`,
+      `When the trial ends, access stops unless you choose a paid plan. A trial’s Customer Data is kept, so that you can continue on a paid plan; if you do not, we close the account and keep its records as described in “${TERMS_HEADINGS["export-deletion"]}”.`,
     ),
     paragraph(
       `During a free trial the Service is provided “as is”, without any warranty, service commitment or indemnity from us, and to the extent the law allows our total liability for the trial is limited to US$${LEGAL_PERIODS.trialLiabilityDollars}. This paragraph does not reduce our obligations to safeguard PHI under the BAA.`,

@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.calendar import today_in
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
-from app.models import Analysis, Note, NoteText, Provider
+from app.models import VOIDED, Analysis, Note, NoteText, Provider
 from app.services.audit_log import record_access
 from app.services.review_actions import note_for
 from app.services.visit_levels import is_leveled, is_top_level, visit_codes
@@ -183,7 +183,7 @@ async def _day_rows(db: AsyncSession, practice_id: str, *conditions: ColumnEleme
             Analysis.report["em"].label("em"),
         )
         .outerjoin(Analysis, Analysis.id == Note.current_analysis_id)
-        .where(Note.practice_id == practice_id, *conditions)
+        .where(Note.practice_id == practice_id, Note.status != VOIDED, *conditions)
         .order_by(Note.service_date, Note.created_at, Note.id)
     )
     return list((await db.execute(query)).all())

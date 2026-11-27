@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAction } from "@/hooks/useAction";
 import { showToast } from "@/components/shared/toast/toastStore";
-import { approveNotes, assignNotes, deleteNotes, remindProvider, reopenNotes, retryFailedNotes } from "@/lib/api/notes";
+import { approveNotes, assignNotes, remindProvider, reopenNotes, retryFailedNotes, voidNotes } from "@/lib/api/notes";
 import { formatCount } from "@/lib/format";
 import { QUEUE_TEXT } from "./strings";
 
@@ -13,9 +13,7 @@ export interface QueueActions {
   assignSelected: (noteIds: string[], userId: string | null) => Promise<boolean>;
   assigning: boolean;
   assignError: string | null;
-  deleteSelected: (noteIds: string[]) => Promise<boolean>;
-  deleting: boolean;
-  deleteError: string | null;
+  voidSelected: (noteIds: string[], reason: string) => Promise<void>;
   clearDialogErrors: () => void;
   remindOne: (noteId: string) => Promise<void>;
   remindingId: string | null;
@@ -28,7 +26,6 @@ export interface QueueActions {
 export function useQueueActions(onChanged: () => void): QueueActions {
   const approve = useAction(approveNotes);
   const assign = useAction(assignNotes);
-  const remove = useAction(deleteNotes);
   const remind = useAction(remindProvider);
   const retry = useAction(retryFailedNotes);
   const reopen = useAction(reopenNotes);
@@ -61,13 +58,11 @@ export function useQueueActions(onChanged: () => void): QueueActions {
     return true;
   }
 
-  async function deleteSelected(noteIds: string[]): Promise<boolean> {
+  async function voidSelected(noteIds: string[], reason: string): Promise<void> {
     setNotice(null);
-    const outcome = await remove.run(noteIds);
-    if (!outcome.ok) return false;
-    setNotice(QUEUE_TEXT.deletedNotice(formatCount(outcome.value.deleted.length)));
+    const { voided } = await voidNotes(noteIds, reason);
+    setNotice(QUEUE_TEXT.voidedNotice(formatCount(voided.length)));
     onChanged();
-    return true;
   }
 
   async function remindOne(noteId: string): Promise<void> {
@@ -93,13 +88,8 @@ export function useQueueActions(onChanged: () => void): QueueActions {
     assignSelected,
     assigning: assign.pending,
     assignError: assign.error,
-    deleteSelected,
-    deleting: remove.pending,
-    deleteError: remove.error,
-    clearDialogErrors: () => {
-      assign.clearError();
-      remove.clearError();
-    },
+    voidSelected,
+    clearDialogErrors: assign.clearError,
     remindOne,
     remindingId,
     retryFailed,

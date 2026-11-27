@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, MetaData, String
+from sqlalchemy import CheckConstraint, DateTime, MetaData, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NAMING = {
@@ -29,6 +29,12 @@ class Base(DeclarativeBase):
 class IdMixin:
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LedgerMixin:
+    __mapper_args__ = {"eager_defaults": True}
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.clock_timestamp())
 
 
 def one_of(column: str, values: tuple[str, ...]) -> CheckConstraint:

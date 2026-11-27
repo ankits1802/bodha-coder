@@ -4,9 +4,9 @@ import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { HqPractice } from "@/lib/api/types";
 import { FORMAT_WORDS, formatCalendarDay, formatCount } from "@/lib/format";
 import { MEMBER_STATUS_LABELS, PLAN_LABELS } from "@/lib/labels";
-import { practiceStatusView, renewalLine } from "../practiceStatus";
+import { isClosed, practiceStatusView, renewalLine } from "../practiceStatus";
 import { HQ_TEXT } from "../strings";
-import { adminLinkLabel, canDeletePractice, canSendAdminLink, type PracticeActionKind } from "./practiceActions";
+import { adminLinkLabel, canClosePractice, canPurgePractice, canSendAdminLink, type PracticeActionKind } from "./practiceActions";
 import { billingView } from "./practiceBilling";
 
 interface PracticesTableProps {
@@ -20,7 +20,14 @@ type RowActions = Omit<PracticesTableProps, "practices">;
 
 const words = HQ_TEXT.practices;
 
-function menuFor(practice: HqPractice, { onEdit, onAction, onAppoint }: RowActions): MenuItem[] {
+function closedMenu(practice: HqPractice, { onAction }: RowActions): MenuItem[] {
+  if (!canPurgePractice(practice)) return [];
+  return [{ key: "purge", label: words.menu.purge, tone: "danger", onSelect: () => onAction("purge", practice) }];
+}
+
+function menuFor(practice: HqPractice, actions: RowActions): MenuItem[] {
+  const { onEdit, onAction, onAppoint } = actions;
+  if (isClosed(practice)) return closedMenu(practice, actions);
   const blocked = practice.status === "blocked";
   const items: MenuItem[] = [
     { key: "edit", label: words.menu.edit, onSelect: () => onEdit(practice) },
@@ -36,10 +43,14 @@ function menuFor(practice: HqPractice, { onEdit, onAction, onAppoint }: RowActio
       ? { key: "unblock", label: words.menu.unblock, onSelect: () => onAction("unblock", practice) }
       : { key: "block", label: words.menu.block, tone: "danger", onSelect: () => onAction("block", practice) },
   ];
-  if (canDeletePractice(practice)) {
-    items.push({ key: "delete", label: words.menu.delete, tone: "danger", onSelect: () => onAction("delete", practice) });
+  if (canClosePractice(practice)) {
+    items.push({ key: "close", label: words.menu.close, tone: "danger", onSelect: () => onAction("close", practice) });
   }
   return items;
+}
+
+function RowMenu({ practice, items }: { practice: HqPractice; items: MenuItem[] }) {
+  return items.length > 0 ? <MenuButton label={words.moreFor(practice.name)} items={items} /> : null;
 }
 
 function AdminCell({ practice }: { practice: HqPractice }) {
@@ -102,7 +113,7 @@ function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowAct
         <StatusDot tone={status.tone}>{status.label}</StatusDot>
       </Td>
       <Td className="w-10">
-        <MenuButton label={words.moreFor(practice.name)} items={menuFor(practice, actions)} />
+        <RowMenu practice={practice} items={menuFor(practice, actions)} />
       </Td>
     </Tr>
   );

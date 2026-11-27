@@ -42,6 +42,8 @@ export const PRACTICE_STATUS_LABELS: Record<PracticeStatus, string> = {
   active: "Active",
   ended: "Ended",
   blocked: "Blocked",
+  closed: "Closed",
+  purged: "Purged",
 };
 
 export const VISIT_TYPES = ["Established patient", "New patient"] as const;

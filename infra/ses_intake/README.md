@@ -5,14 +5,17 @@ provides; nothing is vendored). SES stores each message sent to a practice's int
 documents bucket under `ses-inbound/<recipient>/`; the bucket notifies the function, which:
 
 1. reads the raw message and takes the recipient from its key (`ses-inbound/<recipient>/<message id>`);
-2. looks the recipient up in `INTAKE_ADDRESSES`;
-3. refuses the message unless SES marked it `PASS` for spam and viruses and its single `From` address
+2. keeps the raw message at `ses-retained/<recipient>/<message id>` (content type `message/rfc822`) before
+   anything else, so every message received is kept for the seven-year record retention;
+3. looks the recipient up in `INTAKE_ADDRESSES`;
+4. refuses the message unless SES marked it `PASS` for spam and viruses and its single `From` address
    is one of that inbox's `senders`;
-4. takes the date of service from the subject (`YYYY-MM-DD`); without one nothing is written;
-5. writes every PDF attachment (content type `application/pdf` or a `.pdf` name, and the `%PDF`
+5. takes the date of service from the subject (`YYYY-MM-DD`); without one nothing is written;
+6. writes every PDF attachment (content type `application/pdf` or a `.pdf` name, and the `%PDF`
    signature) to `practices/<practice id>/<inbox>/<provider folder>/<YYYY-MM-DD>/<sha256>.pdf`, where
    the intake poller picks it up; other attachments are ignored;
-6. deletes the raw message, whether or not anything was written.
+7. removes the message from `ses-inbound/` once it is kept and handled, whether or not anything was
+   written. A message the function fails on stays in `ses-inbound/` (and is already kept) for the retry.
 
 It logs one line per message with the outcome (`delivered`, `no_pdf`, `no_date`, `sender_refused`,
 `verdict_failed`, `unknown_recipient`), the practice id and the number of files written. It never logs
@@ -94,8 +97,8 @@ and to the bucket key's policy:
 }
 ```
 
-Add a lifecycle rule that expires current objects under `ses-inbound/` after 1 day, so a message the
-function could not handle does not stay.
+Do not expire objects under `ses-inbound/` or `ses-retained/` before the seven-year retention (2557 days)
+has passed; `ses-retained/` falls under the bucket's Object Lock retention like every stored document.
 
 ## Function role
 
@@ -110,7 +113,8 @@ id.
     { "Effect": "Allow", "Action": ["s3:GetObject", "s3:DeleteObject"],
       "Resource": "arn:aws:s3:::<bucket>/ses-inbound/*" },
     { "Effect": "Allow", "Action": "s3:PutObject",
-      "Resource": ["arn:aws:s3:::<bucket>/practices/<practice id>/inbox/*"] },
+      "Resource": ["arn:aws:s3:::<bucket>/practices/<practice id>/inbox/*",
+                   "arn:aws:s3:::<bucket>/ses-retained/*"] },
     { "Effect": "Allow", "Action": ["kms:Decrypt", "kms:GenerateDataKey"],
       "Resource": "<bucket KMS key ARN>" }
   ]
@@ -123,7 +127,7 @@ id.
 cd infra/ses_intake
 python -c "import zipfile; zipfile.ZipFile('function.zip', 'w').write('handler.py')"
 aws logs create-log-group --log-group-name /aws/lambda/bodha-ses-intake --kms-key-id <logs key ARN>
-aws logs put-retention-policy --log-group-name /aws/lambda/bodha-ses-intake --retention-in-days 400
+aws logs put-retention-policy --log-group-name /aws/lambda/bodha-ses-intake --retention-in-days 2557
 aws lambda create-function --function-name bodha-ses-intake --runtime python3.14 --architectures arm64 \
   --handler handler.handler --zip-file fileb://function.zip --role <execution role ARN> \
   --timeout 60 --memory-size 512 --kms-key-arn <key ARN> \

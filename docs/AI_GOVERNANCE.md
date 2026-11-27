@@ -47,7 +47,10 @@ in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 Patient information is sent to the model only to review the note it came from. Documents are stored
 encrypted in the practice's object storage under keys without names. Messages to providers and staff
 contain no patient details. Access tokens are short lived, two-step verification is required for the
-roles the practice chooses, and the access log is kept for at least six years.
+roles the practice chooses, and the access log is kept for seven to ten years, never under 2557 days.
+Each run keeps the rendered prompt, its SHA-256, the code version, the generation settings and the
+document sent, and every failed attempt keeps its error
+([0038](decisions/0038-seven-year-retention-and-tamper-evidence.md)).
 
 ## Owners and reviews
 

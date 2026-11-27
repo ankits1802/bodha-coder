@@ -191,19 +191,19 @@ async def test_hq_cannot_change_the_plan_or_renewal_of_a_paying_practice(harness
     assert (await harness.client.patch(path, headers=hq, json={"renews_on": "2030-01-01"})).status_code == 204
 
 
-async def test_a_paying_practice_cannot_be_deleted_until_its_subscription_ends(harness, monkeypatch):
+async def test_a_paying_practice_cannot_be_closed_until_its_subscription_ends(harness, monkeypatch):
     configure_prices(monkeypatch, "stripe")
     practice = await practice_on_plan(harness, "trial")
     hq = await hq_headers(harness, practice)
     path = f"/api/hq/practices/{practice.id}"
     await send_event(harness, "evt_1", stripe_state(practice.id))
     assert (await harness.client.patch(path, headers=hq, json={"status": "blocked"})).status_code == 204
-    refused = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
+    refused = await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
     assert (refused.status_code, refused.json()["message"]) == (
         409,
-        "cancel the practice's subscription before deleting it",
+        "cancel the practice's subscription before closing it",
     )
     await send_event(harness, "evt_2", stripe_state(practice.id, status="canceled"))
-    deleted = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
-    assert deleted.status_code == 204
-    assert await count(Subscription) == 0
+    closed = await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
+    assert closed.status_code == 204
+    assert await count(Subscription) == 1

@@ -3,9 +3,9 @@
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useAction } from "@/hooks/useAction";
 import { HQ_TEXT } from "../strings";
-import { DeletePracticeDialog } from "./DeletePracticeDialog";
-import { confirmWords, runPracticeAction, type PracticeAction } from "./practiceActions";
+import { confirmWords, isTypedAction, runPracticeAction, type PracticeAction } from "./practiceActions";
 import { RenewDialog } from "./RenewDialog";
+import { TypedNameDialog } from "./TypedNameDialog";
 
 interface PracticeActionDialogProps {
   action: PracticeAction;
@@ -24,9 +24,10 @@ export function PracticeActionDialog({ action, onDone, onClose }: PracticeAction
   if (action.kind === "renew") {
     return <RenewDialog practice={action.practice} onDone={onDone} onClose={onClose} />;
   }
-  if (action.kind === "delete") {
+  if (isTypedAction(action.kind)) {
     return (
-      <DeletePracticeDialog
+      <TypedNameDialog
+        kind={action.kind}
         practice={action.practice}
         pending={run.pending}
         error={run.error}

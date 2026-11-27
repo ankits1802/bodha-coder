@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import Select, false, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import HQ_ACCESS, Client, PracticeAccess, ensure_session_allowed
@@ -105,13 +105,15 @@ async def practices_of(db: AsyncSession, user: User) -> list[PracticeChoice]:
 async def landing_access(db: AsyncSession, user: User) -> PracticeAccess:
     if user.realm == HQ_REALM:
         return HQ_ACCESS
-    last = PracticeMembership.practice_id == user.last_practice_id if user.last_practice_id else false()
+    order: list[Any] = [PracticeMembership.created_at, PracticeMembership.id]
+    if user.last_practice_id:
+        order.insert(0, (PracticeMembership.practice_id == user.last_practice_id).desc())
     rows = (
         await db.execute(
             select(PracticeMembership, Practice)
             .join(Practice, Practice.id == PracticeMembership.practice_id)
             .where(PracticeMembership.user_id == user.id, *ACTIVE_MEMBER)
-            .order_by(last.desc(), PracticeMembership.created_at, PracticeMembership.id)
+            .order_by(*order)
         )
     ).all()
     if not rows:

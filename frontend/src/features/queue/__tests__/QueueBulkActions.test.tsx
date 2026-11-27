@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { currentToast, runToastAction } from "@/components/shared/toast/toastStore";
-import { approveNotes, assignNotes, deleteNotes, reopenNotes } from "@/lib/api/notes";
+import { approveNotes, assignNotes, reopenNotes, voidNotes } from "@/lib/api/notes";
 import { getProviders } from "@/lib/api/uploads";
 import { getQueue } from "@/lib/api/work";
 import { clearSession, setSession } from "@/lib/session/store";
@@ -31,10 +31,10 @@ vi.mock("@/lib/api/uploads", () => ({ getProviders: vi.fn() }));
 vi.mock("@/lib/api/notes", () => ({
   approveNotes: vi.fn(),
   assignNotes: vi.fn(),
-  deleteNotes: vi.fn(),
   remindProvider: vi.fn(),
   reopenNotes: vi.fn(),
   retryFailedNotes: vi.fn(),
+  voidNotes: vi.fn(),
 }));
 
 describe("queue assignment and bulk actions", () => {
@@ -74,16 +74,26 @@ describe("queue assignment and bulk actions", () => {
     expect(await screen.findByText("1 assigned")).toBeInTheDocument();
   });
 
-  it("deletes the selected notes after a confirmation that names the count", async () => {
-    vi.mocked(deleteNotes).mockResolvedValue({ deleted: ["note-1"] });
+  it("voids an unread note only once a reason is given", async () => {
+    vi.mocked(getQueue).mockResolvedValue(page([{ ...ROW, status: "queued", lane: null, lane_reason: null }]));
+    vi.mocked(voidNotes).mockResolvedValue({ voided: ["note-1"] });
     render(<QueueScreen />);
     fireEvent.click(await screen.findByRole("checkbox", { name: "Select Marisol Reyes" }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete 1" }));
-    expect(screen.getByRole("heading", { name: "Delete 1 note?" })).toBeInTheDocument();
-    expect(deleteNotes).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Delete 1 note" }));
-    await waitFor(() => expect(deleteNotes).toHaveBeenCalledWith(["note-1"]));
-    expect(await screen.findByText("1 deleted")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Void 1" }));
+    expect(screen.getByRole("heading", { name: "Void 1 note?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Void 1 note" }));
+    expect(await screen.findByText("Give the reason")).toBeInTheDocument();
+    expect(voidNotes).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Reason" }), { target: { value: "Uploaded to the wrong provider" } });
+    fireEvent.click(screen.getByRole("button", { name: "Void 1 note" }));
+    await waitFor(() => expect(voidNotes).toHaveBeenCalledWith(["note-1"], "Uploaded to the wrong provider"));
+    expect(await screen.findByText("1 voided")).toBeInTheDocument();
+  });
+
+  it("does not offer a coder to void a note Bodha has read", async () => {
+    render(<QueueScreen />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Select Marisol Reyes" }));
+    expect(screen.queryByRole("button", { name: "Void 1" })).not.toBeInTheDocument();
   });
 });
 

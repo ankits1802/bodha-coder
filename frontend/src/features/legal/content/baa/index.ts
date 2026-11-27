@@ -10,8 +10,8 @@ export const BAA: LegalDocumentData = {
   slug: "baa",
   title: LEGAL_TITLES.baa,
   summary: `The HIPAA terms that govern protected health information you upload to ${LEGAL_PARTY.product}.`,
-  version: "1.0",
-  updated: "2026-11-27",
+  version: "1.1",
+  updated: "2026-11-28",
   numbered: true,
   sections: [...BAA_OPENING, ...BAA_DUTIES, ...BAA_SUPPORT, ...BAA_CLOSING],
 };

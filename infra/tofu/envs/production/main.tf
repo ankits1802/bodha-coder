@@ -80,6 +80,7 @@ module "app" {
   bucket_arn             = module.data.bucket_arn
   kms_key_arn            = module.data.kms_key_arn
   signing_key_arn        = module.data.signing_key_arn
+  runtime_database       = var.runtime_database
   secret_arns            = module.data.secret_arns
   ses_identity_arns      = module.data.ses_identity_arns
   ses_configuration_set  = module.data.ses_configuration_set

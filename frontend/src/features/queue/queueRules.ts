@@ -1,4 +1,4 @@
-import { ASSIGNABLE_STATUSES, DELETABLE_STATUSES } from "@/components/shared/noteStatus";
+import { ASSIGNABLE_STATUSES, canVoidNote } from "@/components/shared/noteStatus";
 import type { Lane, QueueRow, User } from "@/lib/api/types";
 import { LANE_ORDER } from "@/lib/labels";
 import { canDo } from "@/lib/roles";
@@ -8,7 +8,7 @@ export type Member = Pick<User, "id" | "role">;
 export interface BulkAbilities {
   approve: boolean;
   assign: boolean;
-  remove: boolean;
+  void: boolean;
 }
 
 export function isLane(value: string | null): value is Lane {
@@ -45,19 +45,19 @@ export function rowAbilities(row: QueueRow, member: Member): BulkAbilities {
   return {
     approve: canDo(member.role, "approve") && isApprovable(row),
     assign: canAssign(row, member),
-    remove: canDo(member.role, "manageNotes") && DELETABLE_STATUSES.includes(row.status),
+    void: canVoidNote(member.role, row.status, row.status === "ready"),
   };
 }
 
 export function isSelectable(row: QueueRow, member: Member): boolean {
   const abilities = rowAbilities(row, member);
-  return abilities.approve || abilities.assign || abilities.remove;
+  return abilities.approve || abilities.assign || abilities.void;
 }
 
 export function bulkAbilities(rows: QueueRow[], member: Member): BulkAbilities {
   const each = rows.map((row) => rowAbilities(row, member));
   const every = (key: keyof BulkAbilities) => each.length > 0 && each.every((abilities) => abilities[key]);
-  return { approve: every("approve"), assign: every("assign"), remove: every("remove") };
+  return { approve: every("approve"), assign: every("assign"), void: every("void") };
 }
 
 export function selectsRows(member: Member): boolean {
