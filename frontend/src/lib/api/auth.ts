@@ -6,6 +6,7 @@ import type {
   MfaChallenge,
   MfaEnrolment,
   MfaVerified,
+  NewPracticeRequest,
   SignedIn,
   SignInProviders,
   User,
@@ -13,9 +14,13 @@ import type {
 
 export const FORGOT_PASSWORD_PATH = "/forgot-password";
 export const SIGN_UP_PATH = "/sign-up";
+export const NEW_PRACTICE_PATH = "/practices/new";
 
-export function providerStartPath(provider: IdentityProviderName): string {
-  return `/api/auth/${provider}/start`;
+export type ProviderIntent = "sign_in" | "signup";
+
+export function providerStartPath(provider: IdentityProviderName, intent: ProviderIntent = "sign_in"): string {
+  const path = `/api/auth/${provider}/start`;
+  return intent === "signup" ? `${path}?intent=signup` : path;
 }
 
 export function mfaReturnPath(challenge: MfaChallenge): string {
@@ -70,4 +75,16 @@ export function setPassword(token: string, password: string): Promise<void> {
 
 export function currentUser(): Promise<User> {
   return request<User>("/api/auth/me");
+}
+
+export function switchPractice(practiceId: string): Promise<LoginResult> {
+  return request<LoginResult>("/api/auth/practice", { body: { practice_id: practiceId } });
+}
+
+export function startPractice(body: NewPracticeRequest): Promise<LoginResult> {
+  return request<LoginResult>("/api/auth/practices", { body });
+}
+
+export function leavePractice(practiceId: string): Promise<void> {
+  return requestNothing(`/api/auth/practices/${encodeURIComponent(practiceId)}/leave`, { method: "POST" });
 }

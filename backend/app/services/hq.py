@@ -13,6 +13,7 @@ from app.codes.places import UnknownPlaceOfService, setting_for
 from app.core.calendar import today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
+from app.core.roles import ADMIN_ROLE
 from app.models import (
     PRACTICE_REALM,
     Activity,
@@ -21,29 +22,43 @@ from app.models import (
     Note,
     PlaceOfService,
     Practice,
+    PracticeMembership,
     Provider,
     Subscription,
     User,
     utcnow,
 )
-from app.services.account_lookup import email_in_use
+from app.services.account_lookup import account_by_email, email_in_use
 from app.services.audit_log import record_activity
-from app.services.auth import end_all_sessions
 from app.services.expenditure import spend_since
+from app.services.memberships import ACTIVE_MEMBER, BLOCKED, LIVE, SEAT_HOLDING
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import subscription_for
 from app.services.plans import PLAN_KEYS
-from app.services.practice_accounts import AdminDraft, PracticeDraft, add_practice_with_admin, signup_source
+from app.services.practice_accounts import (
+    AdminDraft,
+    NewPractice,
+    PracticeDraft,
+    add_practice_for_person,
+    add_practice_with_admin,
+    signup_source,
+)
 from app.services.subscriptions import refuse_manual_change
-from app.services.team import EMAIL_TAKEN, send_invite
+from app.services.team import EMAIL_TAKEN, send_added, send_invite
+from app.services.user_sessions import end_practice_sessions
 from app.services.worklists import count_of
 
 STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
-ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
+ADMIN_ORDER = (
+    (PracticeMembership.status == BLOCKED).asc(),
+    PracticeMembership.created_at,
+    PracticeMembership.id,
+)
 HQ_SOURCE = "hq"
 RENEWAL_IN_PAST = "choose a renewal date after today"
 NO_END_DATE = "no end date"
+PRACTICE_CLOSED = "practice closed by HQ"
 
 
 async def overview(db: AsyncSession) -> dict[str, Any]:
@@ -62,7 +77,9 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
         select(func.count()).select_from(Practice).where(Practice.status.in_(("trial", "active")))
     )
     people = await db.scalar(
-        select(func.count()).select_from(User).where(User.status == "active", User.practice_id.is_not(None))
+        select(func.count(func.distinct(PracticeMembership.user_id)))
+        .join(User, User.id == PracticeMembership.user_id)
+        .where(*ACTIVE_MEMBER, User.status == "active")
     )
     return {
         "practices": practices or 0,
@@ -79,7 +96,7 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
 
 async def practices(db: AsyncSession) -> list[dict[str, Any]]:
     counts = {
-        "users": await _count_by_practice(db, User.practice_id, User.status != "blocked"),
+        "users": await _count_by_practice(db, PracticeMembership.practice_id, *SEAT_HOLDING),
         "providers": await _count_by_practice(db, Provider.practice_id),
         "waiting": await _count_by_practice(db, Note.practice_id, Note.status.in_(("queued", "reading", "ready"))),
     }
@@ -135,10 +152,11 @@ async def _count_by_practice(db: AsyncSession, column: Any, *conditions: Any) ->
 
 async def _first_admins(db: AsyncSession) -> dict[str, Any]:
     rows = await db.execute(
-        select(User.practice_id, User.name, User.email, User.status)
-        .where(User.role == "admin", User.practice_id.is_not(None))
-        .order_by(User.practice_id, *ADMIN_ORDER)
-        .ext(distinct_on(User.practice_id))
+        select(PracticeMembership.practice_id, User.name, User.email, PracticeMembership.status)
+        .join(User, User.id == PracticeMembership.user_id)
+        .where(PracticeMembership.role == ADMIN_ROLE, LIVE)
+        .order_by(PracticeMembership.practice_id, *ADMIN_ORDER)
+        .ext(distinct_on(PracticeMembership.practice_id))
     )
     return {row.practice_id: row for row in rows}
 
@@ -179,18 +197,28 @@ async def create_practice(
     if plan not in PLAN_KEYS or seats < 1:
         raise Invalid("choose a plan and at least one seat")
     zone_named(time_zone)
-    if await email_in_use(db, admin_email, PRACTICE_REALM):
-        raise Conflict(EMAIL_TAKEN)
     status = "trial" if plan == "trial" else "active"
     draft = PracticeDraft(name, plan, status, seats, time_zone, signup={"source": HQ_SOURCE})
-    created = await add_practice_with_admin(db, draft, AdminDraft(admin_name, admin_email, "invited"))
+    created = await _practice_with_admin(db, draft, AdminDraft(admin_name, admin_email, "invited"))
     practice = created.practice
-    await send_invite(db, messenger, created.admin, team_name=practice.name)
+    if created.admin.status == "invited":
+        await send_invite(db, messenger, created.admin, team_name=practice.name)
+    else:
+        await send_added(messenger, created.admin, practice_name=practice.name)
     record_activity(
         db, actor, "practice added", practice_id=practice.id, detail=f"{practice.name}, {plan}, {seats} seats"
     )
     await db.commit()
     return practice
+
+
+async def _practice_with_admin(db: AsyncSession, draft: PracticeDraft, admin: AdminDraft) -> NewPractice:
+    person = await account_by_email(db, admin.email, (PRACTICE_REALM,))
+    if person is not None:
+        return await add_practice_for_person(db, draft, person)
+    if await email_in_use(db, admin.email, PRACTICE_REALM):
+        raise Conflict(EMAIL_TAKEN)
+    return await add_practice_with_admin(db, draft, admin)
 
 
 async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, changes: dict[str, Any]) -> Practice:
@@ -208,8 +236,7 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     if changes.get("name"):
         practice.name = changes["name"].strip()
     if status and status != practice.status and status in ("ended", "blocked"):
-        for user in (await db.scalars(select(User).where(User.practice_id == practice.id))).all():
-            await end_all_sessions(db, user)
+        await _close_sessions(db, actor, practice.id)
     practice.status = status or practice.status
     practice.plan = plan or practice.plan
     practice.seats = seats if seats is not None else practice.seats
@@ -224,6 +251,12 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     )
     await db.commit()
     return practice
+
+
+async def _close_sessions(db: AsyncSession, actor: Actor, practice_id: str) -> None:
+    members = select(User).join(PracticeMembership, PracticeMembership.user_id == User.id)
+    for user in (await db.scalars(members.where(PracticeMembership.practice_id == practice_id))).all():
+        await end_practice_sessions(db, user, practice_id, reason=PRACTICE_CLOSED, client=actor.client)
 
 
 async def places(db: AsyncSession) -> list[PlaceOfService]:
@@ -278,11 +311,19 @@ async def activity(db: AsyncSession, *, practice_id: str | None, action: str | N
 
 async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, practice_id: str) -> str:
     practice = await _practice(db, practice_id)
-    admin = await db.scalar(
-        select(User).where(User.practice_id == practice.id, User.role == "admin").order_by(*ADMIN_ORDER).limit(1)
+    first = (
+        select(User, PracticeMembership.status)
+        .join(PracticeMembership, PracticeMembership.user_id == User.id)
+        .where(PracticeMembership.practice_id == practice.id, PracticeMembership.role == ADMIN_ROLE, LIVE)
+        .order_by(*ADMIN_ORDER)
+        .limit(1)
     )
-    if admin is None:
+    found = (await db.execute(first)).tuples().first()
+    if found is None:
         raise NotFound("this practice has no admin")
+    admin, standing = found
+    if standing == BLOCKED:
+        raise Conflict("the practice admin is blocked")
     if admin.status == "invited":
         record_activity(db, actor, "admin invite resent", practice_id=practice.id, detail=admin.name)
         await send_invite(db, messenger, admin, team_name=practice.name)

@@ -86,6 +86,7 @@ export const HQ_TEXT = {
       edit: "Edit",
       adminInvite: "Resend admin invite",
       adminReset: "Send admin password reset",
+      appointAdmin: "Add admin",
       renew: "Renew",
       block: "Block",
       unblock: "Unblock",
@@ -107,7 +108,14 @@ export const HQ_TEXT = {
       typeName: (name: string) => `Type ${name} to confirm`,
       deleteAction: "Delete practice",
     },
+    appoint: {
+      title: (name: string) => `Add an admin to ${name}`,
+      reason: "Reason",
+      reasonError: "Enter a reason",
+      submit: "Add admin",
+    },
     notices: {
+      adminAppointed: (name: string) => `Admin added to ${name}`,
       inviteSent: (email: string) => `Invite sent to ${email}`,
       resetSent: (email: string) => `Password reset sent to ${email}`,
       deleted: (name: string) => `${name} deleted`,

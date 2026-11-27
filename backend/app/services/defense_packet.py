@@ -23,7 +23,6 @@ from app.models import (
     Note,
     PlaceOfService,
     Provider,
-    User,
     utcnow,
 )
 from app.services.analysis import latest_codes
@@ -40,6 +39,7 @@ from app.services.defense_layout import (
 from app.services.defense_records import packet_records
 from app.services.estimates import claim_estimate
 from app.services.finding import Finding
+from app.services.memberships import member_names
 from app.services.override_reasons import reason_text
 from app.services.placement import SETTLED_STATUSES, current_findings
 from app.services.pointer_decisions import read_pointer_key
@@ -99,7 +99,7 @@ async def build_packet(db: AsyncSession, actor: Actor, note: Note) -> DefensePac
 
 async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
     provider = await db.get_one(Provider, note.provider_id)
-    names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == note.practice_id))).all())
+    names = await member_names(db, note.practice_id)
     findings = await current_findings(db, note)
     decisions = list(
         (await db.scalars(select(Decision).where(Decision.note_id == note.id).order_by(Decision.created_at))).all()

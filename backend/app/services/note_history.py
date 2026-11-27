@@ -6,17 +6,18 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Analysis, CodeSet, Decision, Provider, User
+from app.models import Analysis, CodeSet, Decision, Provider
 from app.services.attestations import attestation_view, note_attestations
 from app.services.claim_exports import export_view, note_exports
 from app.services.claim_snapshots import note_snapshots, snapshot_view
+from app.services.memberships import member_names
 from app.services.pointer_decisions import read_pointer_key
 
 __all__ = ["note_history"]
 
 
 async def note_history(db: AsyncSession, note_id: str, practice_id: str) -> dict[str, list[dict[str, Any]]]:
-    names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == practice_id))).all())
+    names = await member_names(db, practice_id)
     analyses = await db.scalars(select(Analysis).where(Analysis.note_id == note_id).order_by(Analysis.revision))
     code_sets = await db.scalars(select(CodeSet).where(CodeSet.note_id == note_id).order_by(CodeSet.created_at))
     decisions = await db.scalars(select(Decision).where(Decision.note_id == note_id).order_by(Decision.created_at))

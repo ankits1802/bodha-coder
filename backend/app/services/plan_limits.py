@@ -4,7 +4,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Conflict
-from app.models import Practice, Provider, Subscription, User
+from app.models import Practice, PracticeMembership, Provider, Subscription
+from app.services.memberships import SEAT_HOLDING
 from app.services.plans import plan_terms
 
 __all__ = [
@@ -40,7 +41,9 @@ async def active_provider_count(db: AsyncSession, practice_id: str) -> int:
 
 async def user_count(db: AsyncSession, practice_id: str) -> int:
     found = await db.scalar(
-        select(func.count()).select_from(User).where(User.practice_id == practice_id, User.status != "blocked")
+        select(func.count())
+        .select_from(PracticeMembership)
+        .where(PracticeMembership.practice_id == practice_id, *SEAT_HOLDING)
     )
     return found or 0
 

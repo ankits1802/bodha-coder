@@ -15,6 +15,10 @@ export function updateMember(userId: string, update: MemberUpdate): Promise<void
   return requestNothing(memberPath(userId), { method: "PATCH", body: update });
 }
 
+export function removeMember(userId: string): Promise<void> {
+  return requestNothing(memberPath(userId), { method: "DELETE" });
+}
+
 export function resetMemberMfa(userId: string): Promise<void> {
   return requestNothing(memberPath(userId, "/reset-mfa"), { method: "POST" });
 }

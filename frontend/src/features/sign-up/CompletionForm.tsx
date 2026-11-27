@@ -13,7 +13,8 @@ import { blankDraft, identitySignupRequest, type SignUpField } from "./signUpDra
 import { SIGN_UP_TEXT } from "./strings";
 import { useSignUpDraft } from "./useSignUpDraft";
 
-const FIELDS: readonly SignUpField[] = ["name", "practice_name", "agreed"];
+const NEW_ACCOUNT_FIELDS: readonly SignUpField[] = ["name", "practice_name", "agreed"];
+const ACCOUNT_FIELDS: readonly SignUpField[] = ["practice_name", "agreed"];
 
 interface CompletionFormProps {
   identity: PendingIdentity;
@@ -22,8 +23,9 @@ interface CompletionFormProps {
 }
 
 export function CompletionForm({ identity, options, onCreated }: CompletionFormProps) {
-  const initial = blankDraft(preferredTimeZone(), { name: identity.name, email: identity.email });
-  const form = useSignUpDraft(initial, FIELDS);
+  const name = identity.has_account ? identity.name || identity.email : identity.name;
+  const initial = blankDraft(preferredTimeZone(), { name, email: identity.email });
+  const form = useSignUpDraft(initial, identity.has_account ? ACCOUNT_FIELDS : NEW_ACCOUNT_FIELDS);
   const create = useAction(completeIdentitySignup);
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -39,7 +41,9 @@ export function CompletionForm({ identity, options, onCreated }: CompletionFormP
         <span className="text-subhead font-medium text-label">{SIGN_UP_TEXT.signedInAs}</span>
         <span className="text-body text-secondary">{identity.email}</span>
       </div>
-      <DraftTextField form={form} field="name" label={SIGN_UP_TEXT.name} autoComplete="name" />
+      {identity.has_account ? null : (
+        <DraftTextField form={form} field="name" label={SIGN_UP_TEXT.name} autoComplete="name" />
+      )}
       <DraftTextField form={form} field="practice_name" label={SIGN_UP_TEXT.practiceName} autoComplete="organization" />
       <TimeZoneField form={form} />
       <AgreementField form={form} options={options} />

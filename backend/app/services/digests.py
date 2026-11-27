@@ -15,6 +15,7 @@ from app.core.errors import Unavailable
 from app.core.roles import NOTE_READERS
 from app.models import LANES, Activity, Note, Practice, User
 from app.services.audit_log import record_activity
+from app.services.memberships import active_members
 from app.services.worklists import QUEUE_STATUSES, lane_counts
 
 logger = logging.getLogger("bodha.digests")
@@ -133,13 +134,8 @@ async def _assigned_counts(db: AsyncSession, practice_id: str) -> dict[str, int]
 
 async def _recipients(db: AsyncSession, practice_id: str) -> list[Recipient]:
     rows = await db.execute(
-        select(User.id, User.email)
-        .where(
-            User.practice_id == practice_id,
-            User.status == "active",
-            User.notify_digest.is_(True),
-            User.role.in_(NOTE_READERS),
-        )
+        active_members(practice_id, User.id, User.email, roles=NOTE_READERS)
+        .where(User.notify_digest.is_(True))
         .order_by(User.email)
     )
     return [Recipient(user_id, email) for user_id, email in rows.all()]

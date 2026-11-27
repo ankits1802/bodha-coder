@@ -4,10 +4,12 @@ from app.api.responses.base import View
 from app.api.responses.team import MemberStatus
 from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, SUBSCRIPTION_STATUSES
 from app.services.hq import STATUSES
+from app.services.hq_admins import OUTCOMES
 from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import SIGNUP_SOURCES
 
 __all__ = [
+    "AdminAppointed",
     "AdminLinkSent",
     "DemoRequestRow",
     "HqActivityEntry",
@@ -62,6 +64,10 @@ class HqTeamMember(View):
     status: MemberStatus
     mfa_enabled: bool
     last_active_at: str | None
+
+
+class AdminAppointed(View):
+    outcome: Literal[OUTCOMES]
 
 
 class AdminLinkSent(View):

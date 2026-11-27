@@ -23,15 +23,15 @@ async def members(db: Db, actor: Admin) -> dict[str, Any]:
         "seats": actor.own_practice.seats,
         "members": [
             {
-                "id": u.id,
-                "name": u.name,
-                "email": u.email,
-                "role": u.role,
-                "status": u.status,
-                "mfa_enabled": u.mfa_enabled,
-                "last_active_at": u.last_active_at.isoformat() if u.last_active_at else None,
+                "id": row.person.id,
+                "name": row.person.name,
+                "email": row.person.email,
+                "role": row.membership.role,
+                "status": row.membership.status,
+                "mfa_enabled": row.person.mfa_enabled,
+                "last_active_at": row.person.last_active_at.isoformat() if row.person.last_active_at else None,
             }
-            for u in rows
+            for row in rows
         ],
     }
 
@@ -45,6 +45,11 @@ async def invite(body: InviteBody, db: Db, mail: Mail, actor: Admin) -> dict[str
 @router.patch("/{user_id}", status_code=204)
 async def update(user_id: str, body: MemberBody, db: Db, actor: Admin) -> None:
     await team.update_member(db, actor, user_id, role=body.role, blocked=body.blocked)
+
+
+@router.delete("/{user_id}", status_code=204)
+async def remove(user_id: str, db: Db, actor: Admin) -> None:
+    await team.remove_member(db, actor, user_id)
 
 
 @router.post("/{user_id}/reset-mfa", status_code=204)

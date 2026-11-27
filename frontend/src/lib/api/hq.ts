@@ -1,5 +1,7 @@
 import { request, requestNothing } from "./client";
 import type {
+  AdminAppointed,
+  AdminAppointment,
   AdminLinkSent,
   Created,
   DemoRequest,
@@ -39,6 +41,10 @@ export function updatePractice(practiceId: string, update: PracticeUpdate): Prom
 
 export function sendAdminLink(practiceId: string): Promise<AdminLinkSent> {
   return request<AdminLinkSent>(practicePath(practiceId, "/admin-link"), { method: "POST" });
+}
+
+export function appointAdmin(practiceId: string, body: AdminAppointment): Promise<AdminAppointed> {
+  return request<AdminAppointed>(practicePath(practiceId, "/admins"), { body });
 }
 
 export function renewPractice(practiceId: string, until: string | null): Promise<Renewal> {

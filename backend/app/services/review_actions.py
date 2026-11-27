@@ -50,7 +50,7 @@ def new_decision(note: Note, actor: Actor, key: str, choice: str, reason: Overri
         suggestion_key=key,
         choice=choice,
         actor_id=actor.user.id,
-        actor_role=actor.user.role,
+        actor_role=actor.role,
         override_reason=reason.reason if reason else None,
         override_note=reason.note if reason else None,
     )
@@ -150,7 +150,7 @@ async def update_billed(
             codes=[code.as_json() for code in parsed.codes],
             reason="edited",
             actor_id=actor.user.id,
-            actor_role=actor.user.role,
+            actor_role=actor.role,
             override_reason=reason.reason,
             override_note=reason.note,
         )

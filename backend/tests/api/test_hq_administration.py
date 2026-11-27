@@ -19,6 +19,7 @@ from app.models import (
     Note,
     NoteText,
     Practice,
+    PracticeMembership,
     Provider,
     RecoveryCode,
     ReviewComment,
@@ -41,7 +42,7 @@ from tests.builders import (
 
 PRACTICE_ROWS = (
     Practice,
-    User,
+    PracticeMembership,
     Provider,
     Batch,
     Note,
@@ -66,7 +67,8 @@ async def _hq(harness) -> dict[str, str]:
 async def _owned_ids(practice_id: str) -> tuple[list[str], list[str]]:
     async with SessionFactory() as db:
         note_ids = list((await db.scalars(select(Note.id).where(Note.practice_id == practice_id))).all())
-        user_ids = list((await db.scalars(select(User.id).where(User.practice_id == practice_id))).all())
+        members = select(PracticeMembership.user_id).where(PracticeMembership.practice_id == practice_id)
+        user_ids = list((await db.scalars(members)).all())
         return note_ids, user_ids
 
 
@@ -77,6 +79,7 @@ async def _row_counts(practice_id: str, owned: tuple[list[str], list[str]]) -> d
             **{table: (table.id if table is Practice else table.practice_id) == practice_id for table in PRACTICE_ROWS},
             **{table: table.note_id.in_(note_ids) for table in NOTE_ROWS},
             **{table: table.user_id.in_(user_ids) for table in USER_ROWS},
+            User: User.id.in_(user_ids),
         }
         counts = {}
         for table, condition in conditions.items():

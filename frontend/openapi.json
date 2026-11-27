@@ -281,6 +281,25 @@
         "title": "AddendumRequestView",
         "type": "object"
       },
+      "AdminAppointed": {
+        "additionalProperties": false,
+        "properties": {
+          "outcome": {
+            "enum": [
+              "invited",
+              "added",
+              "promoted"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome"
+        ],
+        "title": "AdminAppointed",
+        "type": "object"
+      },
       "AdminLinkSent": {
         "additionalProperties": false,
         "properties": {
@@ -4977,6 +4996,35 @@
         "title": "HqActivityPage",
         "type": "object"
       },
+      "HqAdminBody": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "reason"
+        ],
+        "title": "HqAdminBody",
+        "type": "object"
+      },
       "HqInviteBody": {
         "additionalProperties": false,
         "properties": {
@@ -6303,6 +6351,35 @@
         "title": "NcciCoverage",
         "type": "object"
       },
+      "NewPracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "agreed": {
+            "const": true,
+            "title": "Agreed",
+            "type": "boolean"
+          },
+          "practice_name": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "time_zone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "practice_name",
+          "time_zone",
+          "agreed"
+        ],
+        "title": "NewPracticeBody",
+        "type": "object"
+      },
       "NoteComment": {
         "additionalProperties": false,
         "properties": {
@@ -7602,6 +7679,10 @@
             "title": "Email",
             "type": "string"
           },
+          "has_account": {
+            "title": "Has Account",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -7619,7 +7700,8 @@
         "required": [
           "email",
           "name",
-          "provider"
+          "provider",
+          "has_account"
         ],
         "title": "PendingIdentity",
         "type": "object"
@@ -8156,6 +8238,38 @@
           "seats"
         ],
         "title": "PracticeBody",
+        "type": "object"
+      },
+      "PracticeChoice": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "PracticeChoice",
         "type": "object"
       },
       "PracticeSetup": {
@@ -11766,6 +11880,22 @@
         "title": "SwitchBody",
         "type": "object"
       },
+      "SwitchPracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "practice_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Practice Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "practice_id"
+        ],
+        "title": "SwitchPracticeBody",
+        "type": "object"
+      },
       "TeamList": {
         "additionalProperties": false,
         "properties": {
@@ -12313,6 +12443,13 @@
               }
             ]
           },
+          "practices": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeChoice"
+            },
+            "title": "Practices",
+            "type": "array"
+          },
           "role": {
             "enum": [
               "hq",
@@ -12333,7 +12470,8 @@
           "email",
           "role",
           "billing_only",
-          "practice"
+          "practice",
+          "practices"
         ],
         "title": "User",
         "type": "object"
@@ -13041,6 +13179,283 @@
         ]
       }
     },
+    "/api/auth/practice": {
+      "post": {
+        "operationId": "switch_api_auth_practice_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "bodha_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Refresh"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Switch Api Auth Practice Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Switch",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/auth/practices": {
+      "post": {
+        "operationId": "add_practice_api_auth_practices_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "bodha_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Refresh"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Add Practice Api Auth Practices Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Add Practice",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/auth/practices/{practice_id}/leave": {
+      "post": {
+        "operationId": "leave_api_auth_practices__practice_id__leave_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Leave",
+        "tags": [
+          "account"
+        ]
+      }
+    },
     "/api/auth/preferences": {
       "get": {
         "operationId": "preferences_api_auth_preferences_get",
@@ -13734,6 +14149,20 @@
             "required": true,
             "schema": {
               "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "intent",
+            "required": false,
+            "schema": {
+              "default": "sign_in",
+              "enum": [
+                "sign_in",
+                "signup"
+              ],
+              "title": "Intent",
               "type": "string"
             }
           }
@@ -16159,6 +16588,104 @@
           }
         },
         "summary": "Admin Link",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/practices/{practice_id}/admins": {
+      "post": {
+        "operationId": "appoint_admin_api_hq_practices__practice_id__admins_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HqAdminBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAppointed"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Appoint Admin",
         "tags": [
           "hq"
         ]
@@ -24035,6 +24562,85 @@
       }
     },
     "/api/team/{user_id}": {
+      "delete": {
+        "operationId": "remove_api_team__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Remove",
+        "tags": [
+          "team"
+        ]
+      },
       "patch": {
         "operationId": "update_api_team__user_id__patch",
         "parameters": [

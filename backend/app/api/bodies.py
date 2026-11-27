@@ -314,6 +314,22 @@ class SignupBody(IdentitySignupBody):
     email: EmailStr
 
 
+class NewPracticeBody(Body):
+    practice_name: str = Field(min_length=2, max_length=200)
+    time_zone: str = Field(min_length=1, max_length=64)
+    agreed: Literal[True]
+
+
+class SwitchPracticeBody(Body):
+    practice_id: str = Field(min_length=1, max_length=36)
+
+
+class HqAdminBody(Body):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    reason: str = Field(min_length=3, max_length=200)
+
+
 class CheckoutBody(Body):
     plan: Literal[CHECKOUT_PLANS]
     interval: Literal[BILLING_INTERVALS]

@@ -7,7 +7,7 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, note_document_revision_key, practice_prefix
@@ -16,6 +16,7 @@ from app.core.calendar import day_bounds, shift_years, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import (
+    DEFAULT_TIME_ZONE,
     AccessLog,
     Activity,
     AddendumRequest,
@@ -23,6 +24,7 @@ from app.models import (
     ApprovedClaim,
     AuditPackage,
     AuditSample,
+    AuthEvent,
     Batch,
     ClaimExport,
     ClaimExportItem,
@@ -34,6 +36,7 @@ from app.models import (
     Note,
     NoteText,
     Practice,
+    PracticeMembership,
     Provider,
     ProviderAttestation,
     RecoveryCode,
@@ -51,6 +54,7 @@ from app.models import (
 from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_activity
 from app.services.plan_limits import is_live, subscription_for
+from app.services.practice_setup import ACCESS_LOG_YEARS
 from app.services.uploads import check_pdf
 from app.services.worklists import count_of
 
@@ -70,6 +74,7 @@ ACCESS_LOG_PAGE = 200
 PRACTICE_DELETED = "practice deleted"
 FIXED_DOCUMENT_STATUSES = ("exported", "reading")
 DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
+MIN_RETENTION_YEARS = min(ACCESS_LOG_YEARS)
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
 REVIEW_RECORD_TABLES = (
     ReviewCommentRemoval,
@@ -197,8 +202,14 @@ async def purge_access_logs(db: AsyncSession, now: datetime) -> int:
             delete(AccessLog).where(AccessLog.practice_id == practice_id, AccessLog.created_at < cutoff)
         )
         removed += result.rowcount or 0
+        await db.execute(delete(AuthEvent).where(AuthEvent.practice_id == practice_id, AuthEvent.created_at < cutoff))
+    await db.execute(delete(AuthEvent).where(AuthEvent.practice_id.is_(None), AuthEvent.created_at < _oldest_kept(now)))
     await db.commit()
     return removed
+
+
+def _oldest_kept(now: datetime) -> datetime:
+    return retention_cutoff(now, zone_named(DEFAULT_TIME_ZONE), MIN_RETENTION_YEARS)
 
 
 async def delete_practice(
@@ -222,7 +233,7 @@ async def delete_practice(
 
 async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
     notes = select(Note.id).where(Note.practice_id == practice_id)
-    users = select(User.id).where(User.practice_id == practice_id)
+    users = await _people_only_here(db, practice_id)
     remittances = select(Remittance.id).where(Remittance.practice_id == practice_id)
     await db.execute(delete(RemittanceLine).where(RemittanceLine.remittance_id.in_(remittances)))
     for table in QUALITY_AND_REMITTANCE_TABLES:
@@ -237,10 +248,27 @@ async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
         await db.execute(delete(table).where(table.note_id.in_(notes)))
     for table in PRACTICE_TABLES:
         await db.execute(delete(table).where(table.practice_id == practice_id))
+    await _forget_practice_people(db, practice_id, users)
+    await db.execute(delete(Practice).where(Practice.id == practice_id))
+
+
+async def _people_only_here(db: AsyncSession, practice_id: str) -> list[str]:
+    elsewhere = select(PracticeMembership.user_id).where(PracticeMembership.practice_id != practice_id)
+    members = select(PracticeMembership.user_id).where(
+        PracticeMembership.practice_id == practice_id, PracticeMembership.user_id.not_in(elsewhere)
+    )
+    return list((await db.scalars(members)).all())
+
+
+async def _forget_practice_people(db: AsyncSession, practice_id: str, users: list[str]) -> None:
+    await db.execute(delete(Session).where(Session.practice_id == practice_id))
+    await db.execute(delete(AuthEvent).where(or_(AuthEvent.practice_id == practice_id, AuthEvent.user_id.in_(users))))
+    await db.execute(delete(PracticeMembership).where(PracticeMembership.practice_id == practice_id))
     for table in USER_CHILDREN:
         await db.execute(delete(table).where(table.user_id.in_(users)))
-    await db.execute(delete(User).where(User.practice_id == practice_id))
-    await db.execute(delete(Practice).where(Practice.id == practice_id))
+    await db.execute(delete(User).where(User.id.in_(users)))
+    await db.execute(update(User).where(User.last_practice_id == practice_id).values(last_practice_id=None))
+    await db.execute(update(User).where(User.legacy_practice_id == practice_id).values(legacy_practice_id=None))
 
 
 async def _remove_practice_files(store: ObjectStore, practice_id: str) -> None:

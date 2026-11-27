@@ -26,6 +26,7 @@ function signIn(role: Role, { billingOnly = false }: { billingOnly?: boolean } =
       idle_minutes: 15,
       time_zone: "America/Chicago",
     },
+    practices: [],
   };
   setSession({ access_token: "token", user });
 }

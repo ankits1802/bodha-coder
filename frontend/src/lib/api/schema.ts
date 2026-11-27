@@ -175,6 +175,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/practice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["switch_api_auth_practice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/practices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add_practice_api_auth_practices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/practices/{practice_id}/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_api_auth_practices__practice_id__leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/preferences": {
         parameters: {
             query?: never;
@@ -745,6 +793,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["admin_link_api_hq_practices__practice_id__admin_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hq/practices/{practice_id}/admins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["appoint_admin_api_hq_practices__practice_id__admins_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2025,7 +2089,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["remove_api_team__user_id__delete"];
         options?: never;
         head?: never;
         patch: operations["update_api_team__user_id__patch"];
@@ -2201,6 +2265,9 @@ export interface components {
             questions: components["schemas"]["AddendumQuestion"][];
             sent_at: string;
             status: "sent" | "answered" | "expired" | "cancelled";
+        };
+        AdminAppointed: {
+            outcome: "invited" | "added" | "promoted";
         };
         AdminLinkSent: {
             sent: "invite" | "reset";
@@ -2928,6 +2995,11 @@ export interface components {
             page_size: number;
             total: number;
         };
+        HqAdminBody: {
+            email: string;
+            name: string;
+            reason: string;
+        };
         HqInviteBody: {
             email: string;
             name: string;
@@ -3153,6 +3225,11 @@ export interface components {
             covers: boolean;
             quarter: string;
         };
+        NewPracticeBody: {
+            agreed: true;
+            practice_name: string;
+            time_zone: string;
+        };
         NoteComment: {
             at: string;
             author_name: string;
@@ -3333,6 +3410,7 @@ export interface components {
         };
         PendingIdentity: {
             email: string;
+            has_account: boolean;
             name: string;
             provider: "google" | "microsoft" | "yahoo";
         };
@@ -3410,6 +3488,11 @@ export interface components {
             plan: string;
             seats: number;
             time_zone?: string;
+        };
+        PracticeChoice: {
+            id: string;
+            name: string;
+            role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
         };
         PracticeSetup: {
             checks: components["schemas"]["Checks"];
@@ -3943,6 +4026,9 @@ export interface components {
         SwitchBody: {
             request_id: string;
         };
+        SwitchPracticeBody: {
+            practice_id: string;
+        };
         TeamList: {
             members: components["schemas"]["TeamMember"][];
             seats: number;
@@ -4031,6 +4117,7 @@ export interface components {
             id: string;
             name: string;
             practice: components["schemas"]["PracticeSummary"] | null;
+            practices: components["schemas"]["PracticeChoice"][];
             role: "hq" | "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
         };
         VisitTypeBody: {
@@ -4484,6 +4571,153 @@ export interface operations {
             };
         };
     };
+    switch_api_auth_practice_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                bodha_refresh?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchPracticeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedIn"] | components["schemas"]["MfaChallenge"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_practice_api_auth_practices_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: {
+                bodha_refresh?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPracticeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedIn"] | components["schemas"]["MfaChallenge"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    leave_api_auth_practices__practice_id__leave_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     preferences_api_auth_preferences_get: {
         parameters: {
             query?: never;
@@ -4891,7 +5125,9 @@ export interface operations {
     };
     provider_start_api_auth__provider__start_get: {
         parameters: {
-            query?: never;
+            query?: {
+                intent?: "sign_in" | "signup";
+            };
             header?: never;
             path: {
                 provider: string;
@@ -6360,6 +6596,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminLinkSent"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    appoint_admin_api_hq_practices__practice_id__admins_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HqAdminBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAppointed"];
                 };
             };
             401: {
@@ -11289,6 +11584,59 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Created"];
                 };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_api_team__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: {
                 headers: {

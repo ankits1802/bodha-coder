@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session/useSession";
 import { AccessLogPanel } from "./AccessLogPanel";
 import { DevicesPanel } from "./DevicesPanel";
 import { DigestPreferencePanel } from "./DigestPreferencePanel";
+import { PracticesPanel } from "./PracticesPanel";
 import { RecoveryCodesPanel } from "./RecoveryCodesPanel";
 import { SecuritySettingsPanel } from "./SecuritySettingsPanel";
 import { SECURITY_TEXT } from "./strings";
@@ -17,6 +18,7 @@ export function SecurityScreen() {
     <>
       <PageHeader title={SECURITY_TEXT.title} />
       {managesPractice ? <SecuritySettingsPanel /> : null}
+      {user ? <PracticesPanel user={user} /> : null}
       <DevicesPanel />
       <RecoveryCodesPanel />
       <DigestPreferencePanel />

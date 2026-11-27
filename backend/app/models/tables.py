@@ -19,12 +19,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.models.accounts import PRACTICE_MEMBER_ROLES
 from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
 from app.models.review_audit import OVERRIDE_NOTE_LENGTH, REQUEST_PURPOSES, override_checks
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
-ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
 HQ_REALM = "hq"
+ROLES = (HQ_REALM, *PRACTICE_MEMBER_ROLES)
 PRACTICE_REALM = "practice"
 REALMS = (HQ_REALM, PRACTICE_REALM)
 REALM_OF_ROLE = f"CASE WHEN role = '{HQ_REALM}' THEN '{HQ_REALM}' ELSE '{PRACTICE_REALM}' END"
@@ -90,7 +91,8 @@ class User(IdMixin, Base):
         UniqueConstraint("id", "realm"),
     )
     __mapper_args__ = {"eager_defaults": True}
-    practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
+    legacy_practice_id: Mapped[str | None] = mapped_column("practice_id", ForeignKey("practices.id"), index=True)
+    last_practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"))
     email: Mapped[str] = mapped_column(String(254))
     name: Mapped[str] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(16))
@@ -131,6 +133,7 @@ class UserToken(IdMixin, Base):
 class Session(IdMixin, Base):
     __tablename__ = "sessions"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
     refresh_hash: Mapped[str] = mapped_column(String(64), unique=True)
     expires_at: Mapped[datetime] = timestamp(nullable=False)
     last_used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -388,11 +391,3 @@ class Activity(IdMixin, Base):
     action: Mapped[str] = mapped_column(String(40))
     practice_id: Mapped[str | None] = mapped_column(String(36), index=True)
     detail: Mapped[str | None] = mapped_column(String(300))
-
-
-class DemoRequest(IdMixin, Base):
-    __tablename__ = "demo_requests"
-    name: Mapped[str] = mapped_column(String(120))
-    email: Mapped[str] = mapped_column(String(254))
-    organization: Mapped[str] = mapped_column(String(200))
-    message: Mapped[str | None] = mapped_column(Text)

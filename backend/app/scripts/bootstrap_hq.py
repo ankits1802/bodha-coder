@@ -20,7 +20,7 @@ async def bootstrap() -> str:
         raise SystemExit("set BOOTSTRAP_HQ_EMAIL and a BOOTSTRAP_HQ_PASSWORD of at least 10 characters")
     address = email.strip().lower()
     async with SessionFactory() as db:
-        if await db.scalar(select(User.id).where(User.role == HQ_ROLE)):
+        if await db.scalar(select(User.id).where(User.realm == HQ_REALM)):
             return "an HQ account already exists; nothing changed"
         if await db.scalar(select(User.id).where(User.email == address, User.realm.in_(account_space(HQ_REALM)))):
             raise SystemExit("BOOTSTRAP_HQ_EMAIL already belongs to a practice account; choose another email")

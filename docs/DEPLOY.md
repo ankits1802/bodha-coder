@@ -519,6 +519,10 @@ account is created once with the same image and `python -m app.scripts.bootstrap
 task reading `bootstrap-hq`; further HQ owners are invited with `python -m app.scripts.invite_hq` or on
 `/hq/team`. Migration 0010 gives `user_identities.realm` the default `practice` so the release before it
 can still link practice accounts while both run; an HQ link from that release is refused until it ends.
+Migration 0014 keeps `users.practice_id` and `users.role` for the release before it and mirrors that
+release's user writes into `practice_memberships` with the `users_legacy_membership` trigger; the release
+after it drops the trigger and both columns
+([0037](decisions/0037-multi-practice-membership.md#rolling-deploy)).
 
 ### Backups and the restore drill
 

@@ -12,10 +12,11 @@ from app.codes.billing_codes import Code, with_pointers
 from app.codes.em import is_em_code
 from app.codes.ncci import ncci_tables
 from app.core.deps import Actor
-from app.models import SNAPSHOT_SCHEMA_VERSION, Analysis, ApprovedClaim, CodeSet, Decision, Note, User, utcnow
+from app.models import SNAPSHOT_SCHEMA_VERSION, Analysis, ApprovedClaim, CodeSet, Decision, Note, utcnow
 from app.services.claim_pointers import POINTER_LETTERS, resolved_pointers
 from app.services.code_sets import next_revision
 from app.services.finding import Finding
+from app.services.memberships import member_names
 from app.services.note_texts import current_texts, note_texts
 from app.services.override_reasons import departs_from_bodha
 
@@ -46,7 +47,7 @@ class BilledHistory:
 
 
 def approver_of(actor: Actor) -> Approver:
-    return Approver(actor.user.id, actor.user.name, actor.user.role)
+    return Approver(actor.user.id, actor.user.name, actor.role)
 
 
 async def write_snapshot(
@@ -166,7 +167,7 @@ async def _billed_history(db: AsyncSession, note_id: str) -> BilledHistory:
 
 
 async def _decision_records(db: AsyncSession, note: Note, findings: Mapping[str, Finding]) -> list[dict[str, Any]]:
-    names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == note.practice_id))).all())
+    names = await member_names(db, note.practice_id)
     rows = await db.scalars(select(Decision).where(Decision.note_id == note.id).order_by(Decision.created_at))
     return [_decision_record(row, findings.get(row.suggestion_key), names) for row in rows]
 

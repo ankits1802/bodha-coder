@@ -34,12 +34,12 @@ async def sessions(db: Db, actor: Me, refresh_token: RefreshCookie = None) -> li
 
 @router.delete("/sessions/{session_id}", status_code=204)
 async def end_session(session_id: str, db: Db, actor: Me) -> None:
-    await user_sessions.end_device_session(db, actor.user, session_id)
+    await user_sessions.end_device_session(db, actor.user, session_id, client=actor.client)
 
 
 @router.post("/sessions/end-others", status_code=204)
 async def end_others(db: Db, actor: Me, refresh_token: RefreshCookie = None) -> None:
-    await user_sessions.end_other_sessions(db, actor.user, refresh_token)
+    await user_sessions.end_other_sessions(db, actor.user, refresh_token, client=actor.client)
 
 
 @router.get("/recovery-codes", response_model=RecoveryCodeStatus)
@@ -50,7 +50,8 @@ async def recovery_status(db: Db, actor: Me) -> dict[str, Any]:
 
 @router.post("/recovery-codes", response_model=RecoveryCodes)
 async def new_recovery_codes(body: MfaCodeBody, db: Db, actor: Me) -> dict[str, list[str]]:
-    return {"codes": list(await recovery_codes.regenerate_recovery_codes(db, actor.user, body.code))}
+    codes = await recovery_codes.regenerate_recovery_codes(db, actor.user, body.code, client=actor.client)
+    return {"codes": list(codes)}
 
 
 @router.get("/preferences", response_model=Preferences)

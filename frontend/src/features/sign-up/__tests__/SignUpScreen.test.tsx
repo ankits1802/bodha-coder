@@ -17,7 +17,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/lib/api/auth", () => ({
   getSignInProviders: vi.fn(),
-  providerStartPath: (provider: string) => `/api/auth/${provider}/start`,
+  providerStartPath: (provider: string, intent = "sign_in") => `/api/auth/${provider}/start?intent=${intent}`,
 }));
 
 vi.mock("@/lib/api/signup", () => ({ requestSignup: vi.fn() }));
@@ -80,7 +80,7 @@ describe("SignUpScreen", () => {
     expect(await screen.findByRole("checkbox", { name })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "BAA" })).toHaveAttribute("href", "https://bodha.example.com/baa");
     expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("target", "_blank");
-    expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", "/api/auth/google/start");
+    expect(screen.getByRole("link", { name: "Continue with Google" })).toHaveAttribute("href", "/api/auth/google/start?intent=signup");
     expect(screen.getByRole("link", { name: "Continue with Microsoft" })).toBeInTheDocument();
   });
 

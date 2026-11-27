@@ -12,8 +12,8 @@ from app.core.roles import HQ_ROLE
 from app.models import HQ_REALM, User
 from app.services.account_lookup import account_by_email, email_in_use, normal_email
 from app.services.audit_log import record_activity
-from app.services.auth import end_all_sessions
 from app.services.team import EMAIL_TAKEN, send_invite
+from app.services.user_sessions import end_all_sessions
 
 __all__ = [
     "HQ_TEAM_NAME",
@@ -83,7 +83,7 @@ async def deactivate_hq_member(db: AsyncSession, actor: Actor, user_id: str) -> 
     if user.status == "active" and not any(other.status == "active" for other in team if other.id != user.id):
         raise Conflict(LAST_ACTIVE)
     user.status = "blocked"
-    await end_all_sessions(db, user)
+    await end_all_sessions(db, user, reason=DEACTIVATED, client=actor.client)
     record_activity(db, actor, DEACTIVATED, practice_id=None, detail=user.name)
     await db.commit()
 

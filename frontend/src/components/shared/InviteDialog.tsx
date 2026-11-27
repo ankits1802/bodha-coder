@@ -22,9 +22,12 @@ interface InviteDialogProps {
   onClose: () => void;
   onInvited: () => void;
   children?: ReactNode;
+  submitLabel?: string;
+  ready?: () => boolean;
 }
 
-export function InviteDialog({ title, formId, invite, onClose, onInvited, children }: InviteDialogProps) {
+export function InviteDialog(props: InviteDialogProps) {
+  const { title, formId, invite, onClose, onInvited, children, submitLabel, ready = () => true } = props;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState<string[]>([]);
@@ -37,7 +40,8 @@ export function InviteDialog({ title, formId, invite, onClose, onInvited, childr
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setTouched(["name", "email"]);
-    if (!name.trim() || !isEmail(email)) return;
+    const extrasReady = ready();
+    if (!name.trim() || !isEmail(email) || !extrasReady) return;
     const outcome = await sending.run({ name: name.trim(), email: email.trim() });
     if (outcome.ok) onInvited();
   }
@@ -51,7 +55,7 @@ export function InviteDialog({ title, formId, invite, onClose, onInvited, childr
         <>
           <Button onClick={onClose}>{words.cancel}</Button>
           <Button type="submit" form={formId} variant="primary" pending={sending.pending}>
-            {words.send}
+            {submitLabel ?? words.send}
           </Button>
         </>
       }

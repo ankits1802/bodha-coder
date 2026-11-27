@@ -113,7 +113,7 @@ async def _final_set(db: AsyncSession, actor: Actor, note: Note, codes: tuple[Co
         codes=[code.as_json() for code in codes],
         reason=reason,
         actor_id=actor.user.id,
-        actor_role=actor.user.role,
+        actor_role=actor.role,
     )
     db.add(final_set)
     await db.flush()

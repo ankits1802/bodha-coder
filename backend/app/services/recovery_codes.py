@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import secrets
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import Client
 from app.core.errors import Invalid
 from app.core.security import digest
 from app.models import RecoveryCode, User, utcnow
+from app.services.auth_events import AuthEventFacts, record_auth_event
 from app.services.rate_limits import MFA_PER_USER, hit
 from app.services.two_step import accept_code
 
@@ -25,7 +27,12 @@ async def replace_recovery_codes(db: AsyncSession, user: User) -> tuple[str, ...
 
 
 async def clear_recovery_codes(db: AsyncSession, user: User) -> None:
-    await db.execute(delete(RecoveryCode).where(RecoveryCode.user_id == user.id))
+    await db.execute(
+        update(RecoveryCode)
+        .where(RecoveryCode.user_id == user.id, RecoveryCode.used_at.is_(None))
+        .values(used_at=utcnow())
+        .execution_options(synchronize_session=False)
+    )
 
 
 async def use_recovery_code(db: AsyncSession, user: User, code: str) -> bool:
@@ -52,11 +59,12 @@ async def remaining_recovery_codes(db: AsyncSession, user: User) -> int:
     return count or 0
 
 
-async def regenerate_recovery_codes(db: AsyncSession, user: User, code: str) -> tuple[str, ...]:
+async def regenerate_recovery_codes(db: AsyncSession, user: User, code: str, *, client: Client) -> tuple[str, ...]:
     await hit(db, MFA_PER_USER, user.id)
     if not user.mfa_enabled or not accept_code(user, code):
         raise Invalid("that code is not correct")
     codes = await replace_recovery_codes(db, user)
+    await record_auth_event(db, "recovery_codes_replaced", user, AuthEventFacts(client))
     await db.commit()
     return codes
 

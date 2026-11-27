@@ -12,6 +12,7 @@ const coder: User = {
   role: "coder",
   billing_only: false,
   practice: { id: "p1", name: "Lakeside", checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false }, can_send_texts: true, idle_minutes: 15, time_zone: "America/Chicago" },
+  practices: [],
 };
 
 function json(status: number, body: unknown): Response {

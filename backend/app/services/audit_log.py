@@ -4,10 +4,10 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import Actor, ProviderActor
-from app.models import AccessLog, Activity, User
+from app.core.deps import Actor, Client, ProviderActor
+from app.models import ACCESS_DETAIL_LENGTH, AccessLog, Activity, User
 
-SIGNED_IN = "signed in"
+AGENT_LENGTH = 300
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,24 @@ def record_access(
             note_id=note_id,
             detail=detail,
             ip=actor.ip,
-            user_agent=(actor.user_agent or "")[:300] or None,
+            user_agent=(actor.user_agent or "")[:AGENT_LENGTH] or None,
+        )
+    )
+
+
+def record_practice_access(
+    db: AsyncSession, practice_id: str, user: User, action: str, *, detail: str | None, client: Client
+) -> None:
+    db.add(
+        AccessLog(
+            practice_id=practice_id,
+            actor_kind="user",
+            actor_id=user.id,
+            actor_name=user.name,
+            action=action,
+            detail=detail[:ACCESS_DETAIL_LENGTH] if detail else None,
+            ip=client.ip,
+            user_agent=(client.agent or "")[:AGENT_LENGTH] or None,
         )
     )
 
@@ -46,7 +63,7 @@ def record_provider_access(
             action=action,
             note_id=note_id,
             ip=actor.ip,
-            user_agent=(actor.user_agent or "")[:300] or None,
+            user_agent=(actor.user_agent or "")[:AGENT_LENGTH] or None,
         )
     )
 
@@ -83,24 +100,5 @@ def record_activity(
             action=action,
             practice_id=practice_id,
             detail=detail[:300],
-        )
-    )
-
-
-def record_sign_in(db: AsyncSession, user: User, *, method: str, ip: str | None, agent: str | None) -> None:
-    detail = f"with {method}"
-    if user.practice_id is None:
-        db.add(Activity(actor_id=user.id, actor_name=user.name, action=SIGNED_IN, practice_id=None, detail=detail))
-        return
-    db.add(
-        AccessLog(
-            practice_id=user.practice_id,
-            actor_kind="user",
-            actor_id=user.id,
-            actor_name=user.name,
-            action=SIGNED_IN,
-            detail=detail,
-            ip=ip,
-            user_agent=(agent or "")[:300] or None,
         )
     )
