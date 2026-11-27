@@ -46,7 +46,9 @@ describe("RenewDialog", () => {
   });
 
   it("shows why the server refused", async () => {
-    vi.mocked(renewPractice).mockRejectedValue(new ApiError(409, "conflict", "this practice pays through Stripe; change the plan there"));
+    vi.mocked(renewPractice).mockImplementationOnce(async () => {
+      throw new ApiError(409, "conflict", "this practice pays through Stripe; change the plan there");
+    });
     render(<RenewDialog practice={PRACTICE} onDone={vi.fn()} onClose={vi.fn()} />);
     const dialog = screen.getByRole("dialog", { name: "Renew Lakeside Primary Care" });
 
