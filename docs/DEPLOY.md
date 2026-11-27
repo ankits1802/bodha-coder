@@ -112,7 +112,7 @@ in front of `127.0.0.1:3000` and set `APP_URL` to its `https://` address.
 
 ## AWS reference deployment
 
-Staging is provisioned from `infra/tofu` with OpenTofu and released by `deploy-staging.yml` from the
+Production is provisioned from `infra/tofu` with OpenTofu and released by `deploy.yml` from the
 CHARTMATE-APP repository ([0025](decisions/0025-staging-on-aws.md), runbook in `infra/tofu/README.md`).
 
 ```

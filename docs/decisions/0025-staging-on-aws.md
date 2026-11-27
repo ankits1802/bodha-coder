@@ -47,3 +47,29 @@ Staging only: a browser request reaches the API through Vercel, CloudFront and t
 so the API sees Vercel's addresses rather than each user's, which loosens per-address sign-in rate
 limits; and real patient data through Vercel would need Vercel's HIPAA agreement.
 
+## Amendment (2026-11-27): one environment, production
+
+At the owner's direction there is no staging: this stack is production, under the owner's
+agreements.
+
+- `APP_ENVIRONMENT=production`. `TERMS_URL`, `PRIVACY_URL` and `BAA_URL` point to `/legal/*` on the
+  public address, which production self sign-up requires.
+- Database backups are kept 35 days; all three services run on demand Fargate.
+- The root stack is `envs/production` with state at `production/terraform.tfstate`. The deploy role
+  trusts the CHARTMATE-APP `production` environment and the workflow is `deploy.yml`.
+- AWS names keep the `bodha-staging` prefix and secrets stay under `bodha/staging/`: renaming would
+  rebuild the database, load balancer, image repositories and secrets for no functional gain.
+- `bodhaai.co` stays on GoDaddy DNS. `www.bodhaai.co` is a CNAME to CloudFront with a DNS-validated
+  ACM certificate, and GoDaddy forwards the apex to it. Mail goes out as `no-reply@bodhaai.co`
+  through an SES domain identity with 2048-bit Easy DKIM and MAIL FROM `mail.bodhaai.co`, so both
+  DKIM and SPF align with the domain's existing `p=reject` DMARC policy; the Microsoft 365 records
+  stay as they are. Setting `domain_name` creates the certificate and identity and lists the records
+  to add (`tofu output dns_records`); `domain_live = true`, once they validate, attaches the
+  certificate and moves `APP_URL` and the sender to the domain, which retires Vercel.
+- A Route 53 HTTPS health check from three regions on `/api/health/ready` alarms to the alerts
+  topic after two failed minutes.
+- The `Project` cost allocation tag is active, so the budget filter now counts.
+
+Cost rises to about $80 a month: on demand `worker` and `web` add about $13 and the health check
+about $2. Still open before real patient documents: Gemini on Vertex AI under the Google BAA (the
+developer API key is not covered), a Multi-AZ database, and tasks in private subnets behind NAT.

@@ -32,17 +32,32 @@ variable "mail_from_address" {
 
 variable "gemini_backend" {
   type    = string
-  default = "demo"
+  default = "developer"
 
   validation {
-    condition     = contains(["demo", "developer"], var.gemini_backend)
-    error_message = "Staging holds synthetic notes only: use demo or developer."
+    condition     = contains(["developer"], var.gemini_backend)
+    error_message = "Only the developer backend is wired on AWS; vertex needs Google Cloud workload identity first."
   }
 }
 
 variable "public_url" {
   type    = string
   default = "https://bodha-coder.vercel.app"
+}
+
+variable "domain_name" {
+  type    = string
+  default = ""
+}
+
+variable "domain_live" {
+  type    = bool
+  default = false
+
+  validation {
+    condition     = !var.domain_live || var.domain_name != ""
+    error_message = "domain_live needs domain_name."
+  }
 }
 
 variable "google_client_id" {
@@ -81,6 +96,10 @@ output "app_url" {
 
 output "backend_url" {
   value = module.app.backend_url
+}
+
+output "dns_records" {
+  value = concat(module.app.site_records, module.data.mail_records)
 }
 
 output "deploy" {

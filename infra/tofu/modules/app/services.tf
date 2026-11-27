@@ -1,8 +1,8 @@
 locals {
   services = {
-    api    = { capacity = "FARGATE", group = var.security_groups.api, target = aws_lb_target_group.api.arn, port = 8000 }
-    worker = { capacity = "FARGATE_SPOT", group = var.security_groups.worker, target = null, port = null }
-    web    = { capacity = "FARGATE_SPOT", group = var.security_groups.web, target = aws_lb_target_group.web.arn, port = 3000 }
+    api    = { group = var.security_groups.api, target = aws_lb_target_group.api.arn, port = 8000 }
+    worker = { group = var.security_groups.worker, target = null, port = null }
+    web    = { group = var.security_groups.web, target = aws_lb_target_group.web.arn, port = 3000 }
   }
 }
 
@@ -29,9 +29,10 @@ resource "aws_ecs_service" "this" {
   health_check_grace_period_seconds = each.value.target == null ? null : 60
   enable_execute_command            = false
   propagate_tags                    = "SERVICE"
+  force_new_deployment              = true
 
   capacity_provider_strategy {
-    capacity_provider = each.value.capacity
+    capacity_provider = "FARGATE"
     weight            = 1
   }
 

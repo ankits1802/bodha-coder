@@ -6,7 +6,7 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
 | Stack | Holds | State |
 |---|---|---|
 | `bootstrap` | the state bucket and the operator's `bodha-staging-edge` policy | `bootstrap/terraform.tfstate` in the state bucket |
-| `envs/staging` | network, data, app, alarms and the GitHub deploy role | `staging/terraform.tfstate` |
+| `envs/production` | network, data, app, alarms, uptime check and the GitHub deploy role | `production/terraform.tfstate` |
 
 ## First run
 
@@ -14,15 +14,26 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
    `backend_override.tf` (`terraform { backend "local" {} }`): `tofu init`, `tofu apply`. Then delete
    the override, write `backend.hcl` (`bucket = "bodha-tofu-state-<account>"`) and run
    `tofu init -migrate-state -backend-config=backend.hcl`.
-2. `envs/staging/staging.auto.tfvars`: `account_id`, `alert_email`, `hq_email`, optionally
-   `mail_from_address`. `tofu init -backend-config=../../bootstrap/backend.hcl`, `tofu plan -out=review.tfplan`,
-   review, `tofu apply review.tfplan`.
+2. `envs/production/production.auto.tfvars`: `account_id`, `alert_email`, `hq_email`, optionally
+   `mail_from_address` and `domain_name`. `tofu init -backend-config=../../bootstrap/backend.hcl`,
+   `tofu plan -out=review.tfplan`, review, `tofu apply review.tfplan`.
 3. Copy the `deploy` output into the CHARTMATE-APP repository variables
-   (`gh variable set NAME --body VALUE --repo CHARTMATE-APP/bodha-coder`); the next push to `main`
-   releases.
+   (`gh variable set NAME --body VALUE --repo CHARTMATE-APP/bodha-coder`) and create its `production`
+   environment; the next push to `main` releases.
 4. Create the first HQ user once: run the `bodha-staging-bootstrap` task with the deploy subnets and
    security group; read the password with
    `aws secretsmanager get-secret-value --secret-id bodha/staging/bootstrap-hq`.
+
+## Domain
+
+1. Set `domain_name` (for example `bodhaai.co`) and apply. `tofu output dns_records` lists the
+   certificate validation CNAME, the `www` CNAME to CloudFront, three DKIM CNAMEs and the MAIL FROM
+   MX and TXT records. Add them at the DNS host, leaving existing mail records alone, and forward the
+   apex to `https://www.<domain>`.
+2. When `aws acm describe-certificate` reports `ISSUED` and `aws sesv2 get-email-identity` reports
+   DKIM `SUCCESS`, set `domain_live = true` and apply, then add
+   `https://www.<domain>/api/auth/<provider>/callback` to each sign-in provider and force a new
+   deployment.
 
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.

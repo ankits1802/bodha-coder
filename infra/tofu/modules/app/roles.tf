@@ -85,12 +85,12 @@ data "aws_iam_policy_document" "app" {
   }
 
   dynamic "statement" {
-    for_each = var.ses_identity_arn == "" ? [] : [1]
+    for_each = length(var.ses_identity_arns) == 0 ? [] : [1]
 
     content {
       sid       = "Mail"
       actions   = ["ses:SendEmail", "ses:SendRawEmail"]
-      resources = [var.ses_identity_arn, "arn:aws:ses:${var.region}:${var.account_id}:configuration-set/${var.ses_configuration_set}"]
+      resources = concat(var.ses_identity_arns, ["arn:aws:ses:${var.region}:${var.account_id}:configuration-set/${var.ses_configuration_set}"])
     }
   }
 }

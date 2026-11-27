@@ -1,4 +1,4 @@
-name: deploy-staging
+name: deploy
 
 on:
   push:
@@ -10,14 +10,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-staging
+  group: deploy
   cancel-in-progress: false
 
 jobs:
   deploy:
     if: github.repository == 'CHARTMATE-APP/bodha-coder' && vars.AWS_DEPLOY_ROLE_ARN != ''
     runs-on: ubuntu-24.04
-    environment: staging
+    environment: production
     timeout-minutes: 45
     env:
       TAG: ${{ github.sha }}

@@ -15,12 +15,13 @@ ephemeral "random_password" "hq_password" {
 }
 
 locals {
-  secret_names = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret"]
+  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key"]
+  mail_from_domain = "mail.${var.mail_domain}"
 }
 
 resource "aws_secretsmanager_secret" "this" {
   for_each                = toset(local.secret_names)
-  name                    = "bodha/${var.environment}/${each.key}"
+  name                    = "${var.secret_prefix}/${each.key}"
   kms_key_id              = aws_kms_key.this.arn
   recovery_window_in_days = 7
 }
@@ -53,8 +54,10 @@ resource "aws_secretsmanager_secret_version" "bootstrap_hq" {
   secret_string_wo_version = 1
 }
 
+data "aws_region" "current" {}
+
 resource "aws_sesv2_configuration_set" "this" {
-  count                  = var.mail_from_address == "" ? 0 : 1
+  count                  = var.mail_from_address == "" && var.mail_domain == "" ? 0 : 1
   configuration_set_name = var.name
 
   delivery_options {
@@ -70,4 +73,21 @@ resource "aws_sesv2_email_identity" "sender" {
   count                  = var.mail_from_address == "" ? 0 : 1
   email_identity         = var.mail_from_address
   configuration_set_name = aws_sesv2_configuration_set.this[0].configuration_set_name
+}
+
+resource "aws_sesv2_email_identity" "domain" {
+  count                  = var.mail_domain == "" ? 0 : 1
+  email_identity         = var.mail_domain
+  configuration_set_name = aws_sesv2_configuration_set.this[0].configuration_set_name
+
+  dkim_signing_attributes {
+    next_signing_key_length = "RSA_2048_BIT"
+  }
+}
+
+resource "aws_sesv2_email_identity_mail_from_attributes" "domain" {
+  count                  = var.mail_domain == "" ? 0 : 1
+  email_identity         = aws_sesv2_email_identity.domain[0].email_identity
+  mail_from_domain       = local.mail_from_domain
+  behavior_on_mx_failure = "USE_DEFAULT_VALUE"
 }

@@ -50,8 +50,8 @@ variable "secret_arns" {
   type = map(string)
 }
 
-variable "ses_identity_arn" {
-  type = string
+variable "ses_identity_arns" {
+  type = list(string)
 }
 
 variable "ses_configuration_set" {
@@ -78,6 +78,14 @@ variable "public_url" {
   type = string
 }
 
+variable "site_host" {
+  type = string
+}
+
+variable "site_ready" {
+  type = bool
+}
+
 variable "google_client_id" {
   type = string
 }
@@ -96,6 +104,17 @@ output "app_url" {
 
 output "backend_url" {
   value = "https://${aws_cloudfront_distribution.this.domain_name}"
+}
+
+output "edge_host" {
+  value = aws_cloudfront_distribution.this.domain_name
+}
+
+output "site_records" {
+  value = var.site_host == "" ? [] : concat(
+    [for option in aws_acm_certificate.site[0].domain_validation_options : { name = trimsuffix(option.resource_record_name, "."), type = option.resource_record_type, value = trimsuffix(option.resource_record_value, ".") }],
+    [{ name = var.site_host, type = "CNAME", value = aws_cloudfront_distribution.this.domain_name }],
+  )
 }
 
 output "cluster" {

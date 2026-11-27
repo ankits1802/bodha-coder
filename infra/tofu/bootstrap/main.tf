@@ -164,10 +164,53 @@ data "aws_iam_policy_document" "edge" {
       "ses:PutConfigurationSetDeliveryOptions",
       "ses:PutConfigurationSetReputationOptions",
       "ses:PutConfigurationSetSendingOptions",
+      "ses:PutEmailIdentityMailFromAttributes",
+      "ses:PutEmailIdentityDkimAttributes",
+      "ses:PutEmailIdentityDkimSigningAttributes",
+      "ses:PutEmailIdentityFeedbackAttributes",
       "ses:GetAccount",
+      "ses:PutAccountDetails",
       "ses:TagResource",
       "ses:UntagResource",
       "ses:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "Certificates"
+    actions = [
+      "acm:RequestCertificate",
+      "acm:DescribeCertificate",
+      "acm:DeleteCertificate",
+      "acm:ListCertificates",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
+      "acm:ListTagsForCertificate",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "HealthChecks"
+    actions = [
+      "route53:CreateHealthCheck",
+      "route53:UpdateHealthCheck",
+      "route53:DeleteHealthCheck",
+      "route53:GetHealthCheck",
+      "route53:GetHealthCheckStatus",
+      "route53:ListHealthChecks",
+      "route53:ChangeTagsForResource",
+      "route53:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "CostTags"
+    actions = [
+      "ce:ListCostAllocationTags",
+      "ce:UpdateCostAllocationTagsStatus",
     ]
     resources = ["*"]
   }

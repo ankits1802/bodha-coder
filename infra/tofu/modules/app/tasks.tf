@@ -1,8 +1,9 @@
 locals {
-  app_url   = var.public_url == "" ? "https://${aws_cloudfront_distribution.this.domain_name}" : var.public_url
-  api_image = "${aws_ecr_repository.this["api"].repository_url}:${var.image_tag}"
-  web_image = "${aws_ecr_repository.this["web"].repository_url}:${var.image_tag}"
-  mail = var.ses_identity_arn == "" ? [
+  app_url     = var.public_url == "" ? "https://${aws_cloudfront_distribution.this.domain_name}" : var.public_url
+  api_image   = "${aws_ecr_repository.this["api"].repository_url}:${var.image_tag}"
+  web_image   = "${aws_ecr_repository.this["web"].repository_url}:${var.image_tag}"
+  legal_links = [for name, slug in { TERMS_URL = "terms", PRIVACY_URL = "privacy", BAA_URL = "baa" } : { name = name, value = "${local.app_url}/legal/${slug}" }]
+  mail = length(var.ses_identity_arns) == 0 ? [
     { name = "EMAIL_TRANSPORT", value = "outbox" },
     { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
     ] : [
@@ -21,7 +22,7 @@ locals {
     { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
-  ], [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  ], local.legal_links, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
   identity_providers = {
     GOOGLE    = { id = var.google_client_id, secret = "google-client-secret" }
     MICROSOFT = { id = var.microsoft_client_id, secret = "microsoft-client-secret" }
@@ -29,10 +30,10 @@ locals {
   }
   identity_environment = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_ID", value = provider.id } if provider.id != ""]
   identity_secrets     = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_SECRET", valueFrom = var.secret_arns[provider.secret] } if provider.id != ""]
-  shared_secrets = [
+  shared_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
     { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
-  ]
+  ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [])
   tasks = {
     api = {
       image   = local.api_image

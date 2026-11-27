@@ -112,9 +112,25 @@ resource "aws_vpc_security_group_ingress_rule" "alb_from_cloudfront" {
   referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
 }
 
+resource "aws_acm_certificate" "site" {
+  count             = var.site_host == "" ? 0 : 1
+  domain_name       = var.site_host
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "site" {
+  count           = var.site_ready ? 1 : 0
+  certificate_arn = aws_acm_certificate.site[0].arn
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   comment         = var.name
+  aliases         = var.site_ready ? [var.site_host] : []
   price_class     = "PriceClass_100"
   http_version    = "http2and3"
   is_ipv6_enabled = true
@@ -157,6 +173,9 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = var.site_ready ? null : true
+    acm_certificate_arn            = var.site_ready ? aws_acm_certificate_validation.site[0].certificate_arn : null
+    ssl_support_method             = var.site_ready ? "sni-only" : null
+    minimum_protocol_version       = var.site_ready ? "TLSv1.2_2021" : null
   }
 }
