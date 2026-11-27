@@ -155,6 +155,9 @@ export type DemoRequestRow = Schemas["DemoRequestRow"];
 export type HqPlace = Schemas["HqPlace"];
 export type HqActivityEntry = Schemas["HqActivityEntry"];
 export type HqActivityPage = Schemas["HqActivityPage"];
+export type HqTeamMember = Schemas["HqTeamMember"];
+export type HqInvite = Schemas["HqInviteBody"];
+export type HqMemberUpdate = Schemas["HqMemberBody"];
 
 export type PlanCatalog = Schemas["PlanCatalog"];
 export type PlanTerms = Schemas["PlanTerms"];

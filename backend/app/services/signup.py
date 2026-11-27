@@ -13,19 +13,14 @@ from app.core.calendar import today_in, zone_named
 from app.core.config import Settings, get_settings
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound, Unauthorized
+from app.core.realms import Site
 from app.core.security import TokenError, issue_token, read_token
-from app.models import utcnow
+from app.models import PRACTICE_REALM, utcnow
+from app.services.account_lookup import email_in_use, normal_email
 from app.services.audit_log import record_activity
 from app.services.auth import MfaChallenge, Tokens, sign_in_user
 from app.services.identity_sign_in import bind_identity
-from app.services.practice_accounts import (
-    AdminDraft,
-    NewPractice,
-    PracticeDraft,
-    add_practice_with_admin,
-    email_in_use,
-    normal_email,
-)
+from app.services.practice_accounts import AdminDraft, NewPractice, PracticeDraft, add_practice_with_admin
 from app.services.rate_limits import SIGNUP_PER_EMAIL, SIGNUP_PER_IP, hit
 from app.services.team import send_invite
 
@@ -62,9 +57,9 @@ class Visitor:
     agent: str | None
 
 
-def signup_options(settings: Settings) -> dict[str, Any]:
+def signup_options(settings: Settings, site: Site) -> dict[str, Any]:
     return {
-        "enabled": settings.self_signup_enabled,
+        "enabled": settings.self_signup_enabled and site.takes_signups,
         "terms_url": settings.terms_url,
         "baa_url": settings.baa_url,
         "privacy_url": settings.privacy_url,
@@ -74,6 +69,11 @@ def signup_options(settings: Settings) -> dict[str, Any]:
 
 def ensure_signup_open() -> None:
     if not get_settings().self_signup_enabled:
+        raise NotFound(NOT_AVAILABLE)
+
+
+def ensure_signup_here(site: Site) -> None:
+    if not site.takes_signups:
         raise NotFound(NOT_AVAILABLE)
 
 
@@ -88,14 +88,14 @@ async def check_email_signup(db: AsyncSession, form: EmailSignup, *, ip: str | N
 async def request_email_signup(
     db: AsyncSession, messenger: Messenger, form: EmailSignup, *, ip: str | None, agent: str | None
 ) -> None:
-    if await email_in_use(db, form.email):
+    if await email_in_use(db, form.email, PRACTICE_REALM):
         await _send_existing_account(messenger, normal_email(form.email))
         return
     created = await _trial_practice(
         db, form.practice_name, form.time_zone, AdminDraft(form.name, form.email, "invited")
     )
     created.practice.signup = _signup_record(created, EMAIL_METHOD, ip)
-    await send_invite(db, messenger, created.admin, practice_name=created.practice.name)
+    await send_invite(db, messenger, created.admin, team_name=created.practice.name)
     _record_signup(db, created, EMAIL_METHOD, Visitor(ip, agent))
     await db.commit()
 
@@ -126,7 +126,7 @@ async def complete_identity_signup(
     _require_agreement(form.agreed)
     zone_named(form.time_zone)
     await hit(db, SIGNUP_PER_IP, visitor.ip)
-    if await email_in_use(db, identity.email):
+    if await email_in_use(db, identity.email, PRACTICE_REALM):
         raise Conflict("this email already has an account; sign in instead")
     admin = AdminDraft(form.name, identity.email, "active")
     created = await _trial_practice(db, form.practice_name, form.time_zone, admin)

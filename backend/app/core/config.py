@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,6 +38,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://bodha:bodha@localhost:5432/bodha"
     secret_key: str = Field(min_length=32)
     app_url: str = "http://localhost:3000"
+    admin_url: str = ""
+    forwarded_allow_ips: str = "127.0.0.1"
     cookie_secure: bool = True
 
     access_token_minutes: int = 15
@@ -137,6 +140,25 @@ class Settings(BaseSettings):
             raise ValueError("TERMS_URL, BAA_URL and PRIVACY_URL must be web addresses")
         return value.strip()
 
+    @field_validator("admin_url", mode="before")
+    @classmethod
+    def _site_address_or_empty(cls, value: object) -> object:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return ""
+        if not isinstance(value, str):
+            return value
+        address = value.strip().rstrip("/")
+        parts = urlsplit(address)
+        if not address.startswith(WEB_SCHEMES) or not parts.netloc or parts.path or parts.query:
+            raise ValueError("ADMIN_URL must be a web address with no path, such as https://admin.example.com")
+        return address
+
+    @model_validator(mode="after")
+    def _admin_on_its_own_host(self) -> Self:
+        if self.admin_url and site_host(self.admin_url) == site_host(self.app_url):
+            raise ValueError("ADMIN_URL must name a different host from APP_URL")
+        return self
+
     @model_validator(mode="after")
     def _no_demo_model_in_production(self) -> Self:
         if self.gemini_backend == "demo" and self.app_environment == "production":
@@ -153,6 +175,10 @@ class Settings(BaseSettings):
     def refuse_unready_signup(self) -> None:
         if self.app_environment == "production" and self.self_signup_enabled and not (self.baa_url and self.terms_url):
             raise SignupNotReady("SELF_SIGNUP_ENABLED needs BAA_URL and TERMS_URL when APP_ENVIRONMENT is production")
+
+
+def site_host(address: str) -> str:
+    return urlsplit(address).netloc.lower()
 
 
 @lru_cache

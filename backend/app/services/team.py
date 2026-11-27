@@ -4,17 +4,20 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
-from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Conflict, Forbidden, NotFound
+from app.core.realms import realm_url
 from app.core.roles import INVITABLE_ROLES
-from app.models import User
+from app.models import PRACTICE_REALM, User
+from app.services.account_lookup import email_in_use, normal_email
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions, issue_user_token
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import ensure_user_room
 from app.services.recovery_codes import clear_recovery_codes
 from app.services.two_step import forget_two_step
+
+EMAIL_TAKEN = "someone already uses that email"
 
 
 async def team(db: AsyncSession, actor: Actor) -> list[User]:
@@ -26,24 +29,24 @@ async def invite(db: AsyncSession, messenger: Messenger, actor: Actor, *, name: 
         raise Forbidden("that role cannot be invited")
     practice = actor.own_practice
     await ensure_user_room(db, practice)
-    address = email.strip().lower()
-    if await db.scalar(select(User.id).where(User.email == address)):
-        raise Conflict("someone already uses that email")
+    address = normal_email(email)
+    if await email_in_use(db, address, PRACTICE_REALM):
+        raise Conflict(EMAIL_TAKEN)
     user = User(practice_id=actor.practice_id, email=address, name=name.strip(), role=role, status="invited")
     db.add(user)
     await db.flush()
-    await send_invite(db, messenger, user, practice_name=practice.name)
+    await send_invite(db, messenger, user, team_name=practice.name)
     record_activity(db, actor, "member invited", practice_id=actor.practice_id, detail=f"{user.name} as {role}")
     await db.commit()
     return user
 
 
-async def send_invite(db: AsyncSession, messenger: Messenger, user: User, *, practice_name: str) -> None:
+async def send_invite(db: AsyncSession, messenger: Messenger, user: User, *, team_name: str) -> None:
     token = await issue_user_token(db, user, "invite")
-    link = f"{get_settings().app_url}/set-password#{token}"
+    link = f"{realm_url(user.realm)}/set-password#{token}"
     await messenger.email(
         user.email,
-        subject=f"Join {practice_name} on Bodha Assure",
+        subject=f"Join {team_name} on Bodha Assure",
         body=f"{user.name}, you have been invited to Bodha Assure. Set your password: {link}",
     )
 
@@ -104,5 +107,5 @@ async def resend_invite(db: AsyncSession, messenger: Messenger, actor: Actor, us
     user = await member(db, actor, user_id)
     if user.status != "invited" or actor.practice is None:
         raise Conflict("only pending invitations can be resent")
-    await send_invite(db, messenger, user, practice_name=actor.practice.name)
+    await send_invite(db, messenger, user, team_name=actor.practice.name)
     await db.commit()

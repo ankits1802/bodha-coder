@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 
 from app.adapters.messenger import Messenger
 from app.api.bodies import IdentitySignupBody, SignupBody
@@ -12,9 +12,15 @@ from app.api.responses.signup import PendingIdentity
 from app.api.wiring import Mail, SignupCookie, challenge_body, clear_signup_cookie, client_of, signed_in_body
 from app.core.db import SessionFactory
 from app.core.deps import Db
+from app.core.realms import CurrentSite
 from app.services import auth, signup
 
-router = APIRouter(prefix="/signup", tags=["signup"], route_class=ExactRoute)
+
+def _signups_here(site: CurrentSite) -> None:
+    signup.ensure_signup_here(site)
+
+
+router = APIRouter(prefix="/signup", tags=["signup"], route_class=ExactRoute, dependencies=[Depends(_signups_here)])
 
 
 @router.post("", status_code=204)

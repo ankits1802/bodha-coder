@@ -108,6 +108,7 @@ Every email is sent as plain text with an HTML version; no message contains pati
 | Setting | Values |
 |---|---|
 | `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
+| `ADMIN_URL` | the HQ console's own host, for example `https://admin.bodhaai.co`; empty keeps HQ on `APP_URL`. With it set, HQ accounts sign in only there and practice accounts only on `APP_URL`, so one email can hold both; locally use `http://admin.localhost:3000`, and give the web server the same `ADMIN_URL` and `SITE_URL`. More HQ owners are invited on `/hq/team` or with `python -m app.scripts.invite_hq "Full Name <email>"` ([0033](docs/decisions/0033-hq-on-its-own-host.md)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
 | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT` | an Entra ID app registration (tenant `common` by default). Sign in with Microsoft stays off until the id and secret are set |
 | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | a Yahoo app with OpenID Connect. Sign in with Yahoo stays off until both are set |
@@ -115,7 +116,8 @@ Every email is sent as plain text with an HTML version; no message contains pati
 | `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | the documents a new practice agrees to and the version stored with its acceptance. Production refuses to start self sign-up without the terms and the BAA |
 
 Register `{APP_URL}/api/auth/{provider}/callback` (for example
-`https://www.bodhaai.co/api/auth/microsoft/callback`) as each service's redirect URI; requests reach
+`https://www.bodhaai.co/api/auth/microsoft/callback`) as each service's redirect URI, and
+`{ADMIN_URL}/api/auth/{provider}/callback` as well when `ADMIN_URL` is set; requests reach
 the API through the web server's `/api` proxy. The addresses for every environment are in
 [docs/DEPLOY.md](docs/DEPLOY.md#self-sign-up-and-sign-in-services).
 

@@ -28,6 +28,7 @@ from tests.fakes import (
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
 PASSWORD = "correct-horse-staple"
+ADMIN_SITE = "https://admin.test"
 
 
 @dataclass
@@ -43,23 +44,25 @@ class Harness:
         return self.providers["google"]
 
 
-async def sign_in(client: AsyncClient, email: str, *, secret_box: dict[str, str] | None = None) -> dict[str, str]:
-    response = await client.post("/api/auth/login", json={"email": email, "password": PASSWORD})
+async def sign_in(
+    client: AsyncClient, email: str, *, secret_box: dict[str, str] | None = None, site: str = ""
+) -> dict[str, str]:
+    response = await client.post(f"{site}/api/auth/login", json={"email": email, "password": PASSWORD})
     assert response.status_code == 200, response.text
     body = response.json()
     if "mfa" in body:
         box = secret_box if secret_box is not None else {}
         if body["mfa"] == "setup":
-            setup = await client.post("/api/auth/mfa/setup", json={"mfa_token": body["mfa_token"]})
+            setup = await client.post(f"{site}/api/auth/mfa/setup", json={"mfa_token": body["mfa_token"]})
             box[email] = setup.json()["secret"]
-        body = await pass_two_step(client, email, body["mfa_token"], box[email])
+        body = await pass_two_step(client, email, body["mfa_token"], box[email], site=site)
     return {"Authorization": f"Bearer {body['access_token']}"}
 
 
-async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret: str) -> dict:
+async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret: str, *, site: str = "") -> dict:
     await forget_last_code(email)
     code = pyotp.TOTP(secret).now()
-    response = await client.post("/api/auth/mfa/verify", json={"mfa_token": mfa_token, "code": code})
+    response = await client.post(f"{site}/api/auth/mfa/verify", json={"mfa_token": mfa_token, "code": code})
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -76,15 +79,17 @@ async def create_hq_user(email: str = "hq@bodha.example.com") -> None:
         await db.commit()
 
 
-async def accept_invite(harness: Harness) -> None:
+async def accept_invite(harness: Harness, *, site: str = "") -> None:
     token = harness.messenger.last_fragment()
-    response = await harness.client.post("/api/auth/password", json={"token": token, "password": PASSWORD})
+    response = await harness.client.post(f"{site}/api/auth/password", json={"token": token, "password": PASSWORD})
     assert response.status_code == 204, response.text
 
 
-async def new_practice(harness: Harness, *, name: str, admin_email: str, hq_headers: dict[str, str]) -> str:
+async def new_practice(
+    harness: Harness, *, name: str, admin_email: str, hq_headers: dict[str, str], hq_site: str = ""
+) -> str:
     response = await harness.client.post(
-        "/api/hq/practices",
+        f"{hq_site}/api/hq/practices",
         headers=hq_headers,
         json={
             "name": name,
@@ -180,11 +185,11 @@ async def back_from_google(harness: Harness, code: str):
     return await back_from(harness, "google", code)
 
 
-async def back_from(harness: Harness, provider: str, code: str):
-    start = await harness.client.get(f"/api/auth/{provider}/start")
+async def back_from(harness: Harness, provider: str, code: str, *, site: str = ""):
+    start = await harness.client.get(f"{site}/api/auth/{provider}/start")
     assert start.status_code == 302, start.text
     state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
-    return await harness.client.get(f"/api/auth/{provider}/callback", params={"code": code, "state": state})
+    return await harness.client.get(f"{site}/api/auth/{provider}/callback", params={"code": code, "state": state})
 
 
 def sign_in_page(fragment: str) -> str:

@@ -106,6 +106,7 @@ class ProviderExchange:
     code: str
     verifier: str
     nonce: str
+    redirect_uri: str
 
 
 @dataclass
@@ -115,16 +116,18 @@ class FakeProvider:
     identities: dict[str, ProviderIdentity] = field(default_factory=dict)
     refusals: dict[str, IdentityRefused] = field(default_factory=dict)
     exchanges: list[ProviderExchange] = field(default_factory=list)
+    redirects: list[str] = field(default_factory=list)
 
     @property
     def label(self) -> str:
         return provider_label(self.name)
 
-    async def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str:
+    async def authorization_url(self, *, state: str, nonce: str, verifier: str, redirect_uri: str) -> str:
+        self.redirects.append(redirect_uri)
         return f"https://accounts.example.com/{self.name}/auth?state={state}"
 
-    async def identity(self, code: str, *, verifier: str, nonce: str) -> ProviderIdentity:
-        self.exchanges.append(ProviderExchange(code, verifier, nonce))
+    async def identity(self, code: str, *, verifier: str, nonce: str, redirect_uri: str) -> ProviderIdentity:
+        self.exchanges.append(ProviderExchange(code, verifier, nonce, redirect_uri))
         if code in self.refusals:
             raise self.refusals[code]
         if code not in self.identities:

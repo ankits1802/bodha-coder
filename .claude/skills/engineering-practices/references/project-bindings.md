@@ -4,7 +4,7 @@ The only project-specific file of the three practice skills (`engineering-practi
 `backend-practices`, `frontend-practices`). The rules live in the skills; the facts below change
 with the project. Review this file whenever the layout, tooling or commands change.
 
-Last reviewed: 2026-11-27.
+Last reviewed: 2026-11-28.
 
 ## What this repository is
 
@@ -18,7 +18,7 @@ platform. Web only. The previous application is kept outside version control in 
 
 ```
 backend/app/core/       shared layer: settings, database engine and sessions, security, errors,
-                        roles, request guards (current user, roles, provider sessions)
+                        roles, account realms and request sites, request guards (current user, roles, provider sessions)
 backend/app/models/     SQLAlchemy models: the declarative base and the tables
 backend/app/codes/      code sets and their pure logic: ICD-10-CM releases (CDC data with
                         checksummed manifests), E/M families, CPT and HCPCS code list (CMS PFS,
@@ -35,7 +35,7 @@ backend/app/services/   domain services: findings and routing (pure), analysis p
 backend/app/api/        entry points: request bodies, wiring, routes/<area>.py (thin handlers),
                         responses/<area>.py (the response model of every JSON route)
 backend/app/worker.py   the analysis worker process (python -m app.worker)
-backend/app/scripts/    entry points: bootstrap_hq
+backend/app/scripts/    entry points: bootstrap_hq, invite_hq
 backend/app/main.py     the ASGI app
 backend/alembic/        migrations; 0001 executes a frozen DDL file compiled from the models
 backend/tests/          tests; they run on GitHub Actions against Postgres
@@ -50,7 +50,7 @@ Imports in `backend/app` point one way, enforced by `LAYER_IMPORTS` in `tools/hy
 ```
 main     -> api, adapters, codes, core
 worker   -> services, adapters, ai, codes, core, models
-scripts  -> core, models
+scripts  -> services, adapters, core, models
 api      -> services, adapters, codes, core, models
 services -> ai, adapters, codes, core, models
 adapters -> ai, core

@@ -44,11 +44,17 @@ class Endpoints:
 
 
 @dataclass(frozen=True)
+class Exchange:
+    code: str
+    verifier: str
+    redirect_uri: str
+
+
+@dataclass(frozen=True)
 class ProviderConfig:
     spec: ProviderSpec
     client_id: str | None
     client_secret: str | None
-    redirect_uri: str
     tenant: str = ""
 
 
@@ -66,9 +72,9 @@ class IdentityProvider(Protocol):
     @property
     def enabled(self) -> bool: ...
 
-    async def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str: ...
+    async def authorization_url(self, *, state: str, nonce: str, verifier: str, redirect_uri: str) -> str: ...
 
-    async def identity(self, code: str, *, verifier: str, nonce: str) -> ProviderIdentity: ...
+    async def identity(self, code: str, *, verifier: str, nonce: str, redirect_uri: str) -> ProviderIdentity: ...
 
 
 class OidcProvider:
@@ -91,11 +97,11 @@ class OidcProvider:
     def enabled(self) -> bool:
         return bool(self._config.client_id and self._config.client_secret)
 
-    async def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str:
+    async def authorization_url(self, *, state: str, nonce: str, verifier: str, redirect_uri: str) -> str:
         endpoints = await self._discovered()
         query = {
             "client_id": self._config.client_id or "",
-            "redirect_uri": self._config.redirect_uri,
+            "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": SCOPES,
             "state": state,
@@ -107,11 +113,11 @@ class OidcProvider:
             query["prompt"] = self._config.spec.prompt
         return f"{endpoints.authorization}?{urlencode(query)}"
 
-    async def identity(self, code: str, *, verifier: str, nonce: str) -> ProviderIdentity:
+    async def identity(self, code: str, *, verifier: str, nonce: str, redirect_uri: str) -> ProviderIdentity:
         if not self.enabled:
             raise IdentityRefused(f"{self.label} sign-in is not set up")
         endpoints = await self._discovered()
-        id_token = await self._exchange(endpoints.token, code, verifier)
+        id_token = await self._exchange(endpoints.token, Exchange(code, verifier, redirect_uri))
         if self._keys is None:
             self._keys = jwt.PyJWKClient(endpoints.jwks, cache_keys=True, timeout=TIMEOUT_SECONDS)
         return await asyncio.to_thread(self.identity_from, id_token, nonce=nonce)
@@ -159,14 +165,14 @@ class OidcProvider:
         except (httpx.HTTPError, ValueError) as error:
             raise ProviderUnreachable(f"{self.label} could not be reached") from error
 
-    async def _exchange(self, token_url: str, code: str, verifier: str) -> str:
+    async def _exchange(self, token_url: str, exchange: Exchange) -> str:
         form = {
-            "code": code,
+            "code": exchange.code,
             "client_id": self._config.client_id or "",
             "client_secret": self._config.client_secret or "",
-            "redirect_uri": self._config.redirect_uri,
+            "redirect_uri": exchange.redirect_uri,
             "grant_type": "authorization_code",
-            "code_verifier": verifier,
+            "code_verifier": exchange.verifier,
         }
         try:
             async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
@@ -192,13 +198,16 @@ def pkce_challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
 
 
+def callback_url(site_url: str, provider: str) -> str:
+    return site_url.rstrip("/") + CALLBACK_PATH.format(provider=provider)
+
+
 def provider_config(settings: Settings, spec: ProviderSpec) -> ProviderConfig:
     secret: SecretStr | None = getattr(settings, spec.client_secret_setting)
     return ProviderConfig(
         spec=spec,
         client_id=getattr(settings, spec.client_id_setting),
         client_secret=secret.get_secret_value() if secret else None,
-        redirect_uri=settings.app_url.rstrip("/") + CALLBACK_PATH.format(provider=spec.name),
         tenant=getattr(settings, spec.tenant_setting) if spec.tenant_setting else "",
     )
 

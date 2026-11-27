@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.calendar import today_in, zone_named
 from app.core.db import get_session
 from app.core.errors import Forbidden, Unauthorized
+from app.core.realms import request_site
 from app.core.roles import HQ, PLAN_MANAGERS
 from app.core.security import TokenError, read_token
 from app.models import Practice, User, utcnow
@@ -97,6 +98,8 @@ async def session_actor(request: Request, db: Db, authorization: Annotated[str |
         raise Unauthorized("session expired") from error
     user = await db.get(User, claims["sub"])
     if user is None or user.status != "active" or user.token_version != claims.get("ver"):
+        raise Unauthorized("session ended")
+    if user.realm not in request_site(request).realms:
         raise Unauthorized("session ended")
     practice = await db.get(Practice, user.practice_id) if user.practice_id else None
     ensure_session_allowed(user, practice)

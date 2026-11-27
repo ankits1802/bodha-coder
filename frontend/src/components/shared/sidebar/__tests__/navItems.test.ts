@@ -48,7 +48,7 @@ describe("role-based navigation", () => {
     expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "training", "insights", "quality", "security"]);
     expect(keysFor("biller")).toEqual(["today", "queue", "billing", "remittances", "training", "security"]);
     expect(keysFor("viewer")).toEqual(["today", "insights", "security"]);
-    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqActivity", "hqDemos", "hqSecurity"]);
+    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
   });
 
   it("mirrors the note action guards", () => {

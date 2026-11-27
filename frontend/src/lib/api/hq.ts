@@ -6,9 +6,12 @@ import type {
   DemoRequestRow,
   HqActivityPage,
   HqActivityQuery,
+  HqInvite,
+  HqMemberUpdate,
   HqOverview,
   HqPlace,
   HqPractice,
+  HqTeamMember,
   NewPractice,
   PracticeUpdate,
   Renewal,
@@ -54,6 +57,24 @@ export function setHqPlace(code: string, name: string | null, active: boolean): 
 
 export function getHqActivity(query: HqActivityQuery): Promise<HqActivityPage> {
   return request<HqActivityPage>("/api/hq/activity", { query: { ...query } });
+}
+
+const teamPath = (userId: string, suffix = ""): string => `/api/hq/team/${encodeURIComponent(userId)}${suffix}`;
+
+export function getHqTeam(): Promise<HqTeamMember[]> {
+  return request<HqTeamMember[]>("/api/hq/team");
+}
+
+export function inviteHqMember(body: HqInvite): Promise<Created> {
+  return request<Created>("/api/hq/team", { body });
+}
+
+export function resendHqInvite(userId: string): Promise<void> {
+  return requestNothing(teamPath(userId, "/resend-invite"), { method: "POST" });
+}
+
+export function updateHqMember(userId: string, update: HqMemberUpdate): Promise<void> {
+  return requestNothing(teamPath(userId), { method: "PATCH", body: update });
 }
 
 export function getDemoRequests(): Promise<DemoRequestRow[]> {

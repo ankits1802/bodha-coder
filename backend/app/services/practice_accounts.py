@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.calendar import zone_named
 from app.models import Practice, User
+from app.services.account_lookup import normal_email
 
 SIGNUP_SOURCES = ("self", "hq")
 
@@ -35,14 +35,6 @@ class AdminDraft:
 class NewPractice:
     practice: Practice
     admin: User
-
-
-def normal_email(email: str) -> str:
-    return email.strip().lower()
-
-
-async def email_in_use(db: AsyncSession, email: str) -> bool:
-    return await db.scalar(select(User.id).where(User.email == normal_email(email))) is not None
 
 
 async def add_practice_with_admin(db: AsyncSession, draft: PracticeDraft, admin: AdminDraft) -> NewPractice:

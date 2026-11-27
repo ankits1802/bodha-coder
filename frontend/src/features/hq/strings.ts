@@ -1,5 +1,6 @@
-import type { BillingProvider, BillingStatus } from "@/lib/api/types";
+import type { BillingProvider, BillingStatus, MemberStatus } from "@/lib/api/types";
 import type { PracticeFilter } from "./practices/practiceFilters";
+import type { HqConfirmKind } from "./team/hqTeamModel";
 
 export const HQ_TEXT = {
   retry: "Try again",
@@ -144,6 +145,31 @@ export const HQ_TEXT = {
     cancel: "Cancel",
     save: "Add place",
     errors: { code: "Use the 2-digit CMS code", name: "Enter a name" },
+  },
+  team: {
+    title: "Team",
+    loading: "Loading team",
+    empty: "No HQ accounts",
+    invite: "Invite",
+    inviteTitle: "Invite to HQ",
+    tableLabel: "HQ team",
+    columns: { name: "Name", status: "Status", twoStep: "Two-step", lastActive: "Last active", more: "More" },
+    statuses: { invited: "Invited", active: "Active", blocked: "Deactivated" } satisfies Record<MemberStatus, string>,
+    moreFor: (name: string) => `More for ${name}`,
+    menu: { resend: "Resend invite", deactivate: "Deactivate", reactivate: "Reactivate" },
+    sent: (email: string) => `Invite sent to ${email}`,
+    confirm: {
+      cancel: "Cancel",
+      titles: {
+        deactivate: (name: string) => `Deactivate ${name}?`,
+        reactivate: (name: string) => `Reactivate ${name}?`,
+      } satisfies Record<HqConfirmKind, (name: string) => string>,
+      descriptions: {
+        deactivate: "They are signed out and can no longer sign in.",
+        reactivate: "They can sign in again.",
+      } satisfies Record<HqConfirmKind, string>,
+      actions: { deactivate: "Deactivate", reactivate: "Reactivate" } satisfies Record<HqConfirmKind, string>,
+    },
   },
   demos: {
     title: "Demo requests",

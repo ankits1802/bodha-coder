@@ -21,9 +21,6 @@ export const TEAM_TEXT = {
   } satisfies Record<RoleFilter, string>,
   tableLabel: "Team members",
   columns: { name: "Name", role: "Role", twoStep: "Two-step", lastActive: "Last active", more: "More" },
-  twoStepOn: "On",
-  twoStepOff: "Off",
-  you: "You",
   roleFor: (name: string) => `Role for ${name}`,
   moreFor: (name: string) => `More for ${name}`,
   menu: {
@@ -52,13 +49,5 @@ export const TEAM_TEXT = {
     } satisfies Record<ConfirmKind, string>,
     actions: { block: "Block", unblock: "Unblock", reset: "Reset" } satisfies Record<ConfirmKind, string>,
   },
-  inviteDialog: {
-    title: "Invite to the team",
-    name: "Name",
-    email: "Email",
-    role: "Role",
-    cancel: "Cancel",
-    send: "Send invite",
-    errors: { name: "Enter a name", email: "Enter a valid email" },
-  },
+  inviteDialog: { title: "Invite to the team", role: "Role" },
 } as const;

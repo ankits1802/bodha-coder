@@ -11,10 +11,11 @@ from sqlalchemy import text
 
 from app.adapters.billing_providers import PROVIDER_NAMES as BILLING_NAMES
 from app.adapters.oidc_providers import PROVIDER_NAMES
+from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.main import app
 from app.models import Base
-from tests.builders import Harness
+from tests.builders import ADMIN_SITE, Harness
 from tests.fakes import FakeBillingProvider, FakeMessenger, FakeProvider, FakeStore
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -32,6 +33,12 @@ async def clean_tables() -> None:
     async with SessionFactory() as db:
         await db.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))
         await db.commit()
+
+
+@pytest.fixture
+def two_hosts(monkeypatch) -> str:
+    monkeypatch.setattr(get_settings(), "admin_url", ADMIN_SITE)
+    return ADMIN_SITE
 
 
 @pytest.fixture

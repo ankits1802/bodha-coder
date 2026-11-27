@@ -15,6 +15,7 @@ __all__ = [
     "HqOverview",
     "HqPlace",
     "HqPractice",
+    "HqTeamMember",
     "Renewal",
 ]
 
@@ -50,6 +51,15 @@ class HqPractice(View):
     billing_provider: Literal[BILLING_PROVIDERS] | None
     billing_status: Literal[SUBSCRIPTION_STATUSES] | None
     billing_interval: Literal[BILLING_INTERVALS] | None
+
+
+class HqTeamMember(View):
+    id: str
+    name: str
+    email: str
+    status: MemberStatus
+    mfa_enabled: bool
+    last_active_at: str | None
 
 
 class AdminLinkSent(View):

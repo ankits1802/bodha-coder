@@ -14,6 +14,7 @@ from app.core.calendar import shift_years, today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import (
+    PRACTICE_REALM,
     Activity,
     Analysis,
     DemoRequest,
@@ -25,20 +26,15 @@ from app.models import (
     User,
     utcnow,
 )
+from app.services.account_lookup import email_in_use
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import subscription_for
 from app.services.plans import PLAN_KEYS
-from app.services.practice_accounts import (
-    AdminDraft,
-    PracticeDraft,
-    add_practice_with_admin,
-    email_in_use,
-    signup_source,
-)
+from app.services.practice_accounts import AdminDraft, PracticeDraft, add_practice_with_admin, signup_source
 from app.services.subscriptions import refuse_manual_change
-from app.services.team import send_invite
+from app.services.team import EMAIL_TAKEN, send_invite
 from app.services.worklists import count_of
 
 STATUSES = ("trial", "active", "ended", "blocked")
@@ -179,13 +175,13 @@ async def create_practice(
     if plan not in PLAN_KEYS or seats < 1:
         raise Invalid("choose a plan and at least one seat")
     zone_named(time_zone)
-    if await email_in_use(db, admin_email):
-        raise Conflict("someone already uses that email")
+    if await email_in_use(db, admin_email, PRACTICE_REALM):
+        raise Conflict(EMAIL_TAKEN)
     status = "trial" if plan == "trial" else "active"
     draft = PracticeDraft(name, plan, status, seats, time_zone, signup={"source": HQ_SOURCE})
     created = await add_practice_with_admin(db, draft, AdminDraft(admin_name, admin_email, "invited"))
     practice = created.practice
-    await send_invite(db, messenger, created.admin, practice_name=practice.name)
+    await send_invite(db, messenger, created.admin, team_name=practice.name)
     record_activity(
         db, actor, "practice added", practice_id=practice.id, detail=f"{practice.name}, {plan}, {seats} seats"
     )
@@ -285,7 +281,7 @@ async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, 
         raise NotFound("this practice has no admin")
     if admin.status == "invited":
         record_activity(db, actor, "admin invite resent", practice_id=practice.id, detail=admin.name)
-        await send_invite(db, messenger, admin, practice_name=practice.name)
+        await send_invite(db, messenger, admin, team_name=practice.name)
         await db.commit()
         return "invite"
     if admin.status == "active":

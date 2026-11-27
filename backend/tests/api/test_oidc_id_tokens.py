@@ -41,8 +41,7 @@ class StaticKeys:
 
 
 def provider(spec, *, tenant: str = "", key=RSA_KEY) -> OidcProvider:
-    redirect = f"https://app.test/api/auth/{spec.name}/callback"
-    config = ProviderConfig(spec, CLIENT_ID, "client-secret", redirect, tenant)
+    config = ProviderConfig(spec, CLIENT_ID, "client-secret", tenant)
     return OidcProvider(config, endpoints=ENDPOINTS, keys=StaticKeys(key.public_key()))
 
 

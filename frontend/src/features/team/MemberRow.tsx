@@ -1,10 +1,9 @@
-import { Avatar } from "@/components/ui/Avatar";
+import { MemberIdentity, MemberLastSeen, MemberTwoStep } from "@/components/shared/MemberCells";
 import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
 import { Select } from "@/components/ui/Select";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Td, Tr } from "@/components/ui/Table";
 import type { PracticeRole, TeamMember } from "@/lib/api/types";
-import { FORMAT_WORDS, formatSince } from "@/lib/format";
 import { MEMBER_STATUS_LABELS, ROLE_LABELS } from "@/lib/labels";
 import { PRACTICE_ROLES } from "@/lib/roles";
 import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
@@ -31,16 +30,7 @@ function menuFor(member: TeamMember, props: Pick<MemberRowProps, "onConfirm" | "
 function LastActive({ member }: { member: TeamMember }) {
   if (member.status === "invited") return <StatusDot tone="neutral">{MEMBER_STATUS_LABELS.invited}</StatusDot>;
   if (member.status === "blocked") return <StatusDot tone="bad">{MEMBER_STATUS_LABELS.blocked}</StatusDot>;
-  return <span className="text-secondary">{member.last_active_at ? formatSince(member.last_active_at) : FORMAT_WORDS.empty}</span>;
-}
-
-function TwoStep({ member }: { member: TeamMember }) {
-  if (member.status !== "active") return <span className="text-quaternary">{FORMAT_WORDS.empty}</span>;
-  return member.mfa_enabled ? (
-    <StatusDot tone="ok">{TEAM_TEXT.twoStepOn}</StatusDot>
-  ) : (
-    <StatusDot tone="warn">{TEAM_TEXT.twoStepOff}</StatusDot>
-  );
+  return <MemberLastSeen member={member} />;
 }
 
 export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberRowProps) {
@@ -49,14 +39,7 @@ export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberR
   return (
     <Tr>
       <Td>
-        <span className="flex items-center gap-3">
-          <Avatar name={member.name} size="md" muted={blocked} />
-          <span className={blocked ? "opacity-60" : ""}>
-            <span className="font-medium">{member.name}</span>
-            {isSelf ? <span className="ml-1.5 text-footnote text-tertiary">{TEAM_TEXT.you}</span> : null}
-            <span className="block text-footnote text-secondary">{member.email}</span>
-          </span>
-        </span>
+        <MemberIdentity member={member} isSelf={isSelf} />
       </Td>
       <Td>
         {editable ? (
@@ -72,7 +55,7 @@ export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberR
         )}
       </Td>
       <Td>
-        <TwoStep member={member} />
+        <MemberTwoStep member={member} />
       </Td>
       <Td>
         <LastActive member={member} />

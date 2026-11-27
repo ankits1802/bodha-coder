@@ -25,7 +25,9 @@ source tree. One image serves three roles:
 
 `FORWARDED_ALLOW_IPS` defaults to `127.0.0.1` and `WEB_CONCURRENCY` to `1`. Set
 `FORWARDED_ALLOW_IPS` to the addresses of the proxies in front of the API (on AWS, the VPC CIDR) so
-rate limits and the access log see the visitor's address. When `GOOGLE_CREDENTIALS_JSON` holds a
+rate limits and the access log see the visitor's address. The app reads the same setting to decide
+whether to believe `X-Forwarded-Host`, which the web server's `/api` rewrite sends with the browser's
+host ([0033](decisions/0033-hq-on-its-own-host.md)). When `GOOGLE_CREDENTIALS_JSON` holds a
 Google credential (a service account key or a workload identity federation configuration), the
 entrypoint writes it to a private temporary file, points `GOOGLE_APPLICATION_CREDENTIALS` at it and
 removes the variable, so Vertex AI credentials can come from Secrets Manager. The image's
@@ -90,6 +92,7 @@ on the loopback address.
    | `GEMINI_API_KEY` | a key for test data only |
    | `LOCALSTACK_AUTH_TOKEN` | from a free LocalStack account; LocalStack requires one since its 2026.03 release |
    | `APP_URL`, `COOKIE_SECURE` | leave empty for `http://localhost:3000` and `true` |
+   | `ADMIN_URL` | empty keeps HQ on `APP_URL`; `http://admin.localhost:3000` puts HQ on its own host (browsers send `*.localhost` to this machine) |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | empty unless testing Google sign-in |
    | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT` | empty unless testing Microsoft sign-in; the tenant defaults to `common` |
    | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | empty unless testing Yahoo sign-in |
@@ -97,7 +100,7 @@ on the loopback address.
 
 2. `docker compose --env-file .env.compose up --build`
 3. `docker compose --env-file .env.compose run --rm migrate python -m app.scripts.bootstrap_hq`
-4. Open `http://localhost:3000`.
+4. Open `http://localhost:3000` (HQ at `http://admin.localhost:3000` when `ADMIN_URL` is set).
 
 LocalStack's ready hook (`tools/localstack/init_aws.py`) creates the bucket (versioned, encrypted,
 public access blocked) and the SES identity for `MAIL_FROM`; LocalStack reports healthy only after
@@ -208,13 +211,16 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `STRIPE_PRICE_*` (four), `PAYPAL_CLIENT_ID`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_ENVIRONMENT`, `PAYPAL_PLAN_*` (four), `BILLING_GRACE_DAYS` | yes | yes | | plain |
 | `GOOGLE_CREDENTIALS_JSON` (the Vertex AI service account credential) | | yes | | secret |
 | `GEMINI_BACKEND=vertex`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` | | yes | | plain |
-| `APP_URL=https://www.bodhaai.co`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
+| `APP_URL=https://www.bodhaai.co`, `ADMIN_URL=https://admin.bodhaai.co`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
 | `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_TENANT`, `YAHOO_CLIENT_ID` | yes | | | plain |
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS` | | yes | | plain |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
+
+The `web` service needs `SITE_URL=https://www.bodhaai.co` and `ADMIN_URL=https://admin.bodhaai.co` as
+well (read at request time; see [HQ on its own host](#hq-on-its-own-host)).
 
 `S3_SERVER_SIDE_ENCRYPTION` must be empty on AWS: the app then sends no encryption header and the
 bucket's default SSE-KMS key applies. The default `AES256` would store objects under SSE-S3 instead,
@@ -242,13 +248,20 @@ With `APP_ENVIRONMENT=production` and self sign-up on, the API refuses to start 
 Links must be `https://` (or `http://`) addresses.
 
 A sign-in service is on only when both its client id and secret are set. Register
-`{APP_URL}/api/auth/{provider}/callback` as the redirect URI of each:
+`{APP_URL}/api/auth/{provider}/callback` as a redirect URI of each, and, when `ADMIN_URL` is set,
+`{ADMIN_URL}/api/auth/{provider}/callback` as a second one on the same client: a sign-in sends the
+callback of the host it started on.
 
 | Environment | Google | Microsoft | Yahoo |
 |---|---|---|---|
 | Local | `http://localhost:3000/api/auth/google/callback` | `http://localhost:3000/api/auth/microsoft/callback` | https only: a TLS tunnel's address + `/api/auth/yahoo/callback` |
+| Local, HQ host | `http://admin.localhost:3000/api/auth/google/callback` | `http://admin.localhost:3000/api/auth/microsoft/callback` | https only, as above |
 | Staging | `https://bodha-coder.vercel.app/api/auth/google/callback` | `https://bodha-coder.vercel.app/api/auth/microsoft/callback` | `https://bodha-coder.vercel.app/api/auth/yahoo/callback` |
 | Production | `https://www.bodhaai.co/api/auth/google/callback` | `https://www.bodhaai.co/api/auth/microsoft/callback` | `https://www.bodhaai.co/api/auth/yahoo/callback` |
+| Production, HQ host | `https://admin.bodhaai.co/api/auth/google/callback` | `https://admin.bodhaai.co/api/auth/microsoft/callback` | `https://admin.bodhaai.co/api/auth/yahoo/callback` |
+
+Google accepts `http://` redirect URIs only for `localhost`; if it refuses `http://admin.localhost:3000`,
+test Google on the HQ host through a TLS tunnel as for Yahoo.
 
 - Google: an OAuth client of type "Web application"; scopes `openid email profile`.
 - Microsoft: an Entra ID app registration for "accounts in any organizational directory and personal
@@ -256,6 +269,35 @@ A sign-in service is on only when both its client id and secret are set. Registe
   it), a client secret, and the optional ID token claims `email` and `xms_edov`. Without `xms_edov` only
   personal Microsoft accounts are trusted.
 - Yahoo: an app with OpenID Connect permissions `openid`, `email` and `profile`.
+
+### HQ on its own host
+
+The HQ console moves to `ADMIN_URL` while practices stay on `APP_URL`
+([0033](decisions/0033-hq-on-its-own-host.md)). One person may hold an HQ account and a practice account
+under the same email and the same Google, Microsoft or Yahoo account, and signs in to each on its own host.
+
+| Setting | Where | Default | Meaning |
+|---|---|---|---|
+| `ADMIN_URL` | `api`, `worker`, `web`, one-off tasks | empty | the HQ host, for example `https://admin.bodhaai.co` (no path). Empty keeps HQ on `APP_URL` as before. Must name a different host from `APP_URL` |
+| `SITE_URL` | `web` | `http://localhost:3000` | the main host; the web server sends practice pages opened on the HQ host there |
+| `FORWARDED_ALLOW_IPS` | `api` | `127.0.0.1` | also decides whether the API believes `X-Forwarded-Host` (above) |
+
+- The HQ host must reach the same `web` and `api` services as the main host, with `/api/*` to `api`, and
+  the API must see the browser's host: forward the viewer's `Host` header from the CDN and the load
+  balancer. The certificate must cover both hosts.
+- On the HQ host only HQ accounts sign in, and only `/hq`, `/sign-in`, `/forgot-password` and
+  `/set-password` are served (`/` goes to `/hq`; other pages go to `SITE_URL`). On the main host only
+  practice accounts sign in and `/hq` goes to `ADMIN_URL`. Self sign-up exists only on the main host.
+- Session cookies carry no `Domain`, so the two hosts never share a session. HQ users sign in again once
+  when `ADMIN_URL` is first set, because their session cookie belongs to the main host.
+- Every HQ account needs two-step verification and is signed out after 15 minutes idle, as before.
+- Invite, resend and deactivate HQ accounts on `/hq/team`, or from a one-off task with the API image:
+  `python -m app.scripts.invite_hq "Full Name <email>" ["Full Name <email>" ...]`. It reads its settings
+  from the environment (the `api` task's settings, with `ADMIN_URL`), invites new people, resends pending
+  invites, renames an existing HQ account whose name differs (the bootstrap account is "Bodha Admin")
+  and leaves active accounts alone, printing one line per person with no email, password or token.
+- An HQ invite or password reset sent before `ADMIN_URL` was set links to the main host, where it no
+  longer works; send it again.
 
 ### Plans and billing settings
 
@@ -465,7 +507,9 @@ Old tasks keep serving while new ones start, so every migration must work with t
 release back: add columns and tables first, remove them a release later. Roll back by redeploying
 the previous task definition revisions; the schema is never downgraded automatically. The first HQ
 account is created once with the same image and `python -m app.scripts.bootstrap_hq` as a one-off
-task reading `bootstrap-hq`.
+task reading `bootstrap-hq`; further HQ owners are invited with `python -m app.scripts.invite_hq` or on
+`/hq/team`. Migration 0010 gives `user_identities.realm` the default `practice` so the release before it
+can still link practice accounts while both run; an HQ link from that release is refused until it ends.
 
 ### Backups and the restore drill
 

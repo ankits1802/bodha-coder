@@ -4,9 +4,11 @@ from typing import Any
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Computed,
     Date,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -20,6 +22,10 @@ from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
 ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
+HQ_REALM = "hq"
+PRACTICE_REALM = "practice"
+REALMS = (HQ_REALM, PRACTICE_REALM)
+REALM_OF_ROLE = f"CASE WHEN role = '{HQ_REALM}' THEN '{HQ_REALM}' ELSE '{PRACTICE_REALM}' END"
 NOTE_STATUSES = ("queued", "reading", "ready", "failed", "approved", "exported")
 LANES = ("approve", "coder", "provider", "compliance")
 ANALYSIS_STATUSES = ("queued", "running", "succeeded", "failed", "superseded")
@@ -73,11 +79,18 @@ class Practice(IdMixin, Base):
 
 class User(IdMixin, Base):
     __tablename__ = "users"
-    __table_args__ = (one_of("role", ROLES), one_of("status", ("invited", "active", "blocked")))
+    __table_args__ = (
+        one_of("role", ROLES),
+        one_of("status", ("invited", "active", "blocked")),
+        UniqueConstraint("email", "realm"),
+        UniqueConstraint("id", "realm"),
+    )
+    __mapper_args__ = {"eager_defaults": True}
     practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
-    email: Mapped[str] = mapped_column(String(254), unique=True)
+    email: Mapped[str] = mapped_column(String(254))
     name: Mapped[str] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(16))
+    realm: Mapped[str] = mapped_column(String(16), Computed(REALM_OF_ROLE, persisted=True))
     status: Mapped[str] = mapped_column(String(16), default="invited")
     password_hash: Mapped[str | None] = mapped_column(String(100))
     mfa_secret: Mapped[str | None] = mapped_column(String(200))
@@ -91,10 +104,12 @@ class User(IdMixin, Base):
 class UserIdentity(IdMixin, Base):
     __tablename__ = "user_identities"
     __table_args__ = (
-        UniqueConstraint("provider", "subject"),
+        UniqueConstraint("provider", "subject", "realm"),
         UniqueConstraint("user_id", "provider"),
+        ForeignKeyConstraint(["user_id", "realm"], ["users.id", "users.realm"]),
     )
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[str] = mapped_column(String(36))
+    realm: Mapped[str] = mapped_column(String(16), server_default=PRACTICE_REALM)
     provider: Mapped[str] = mapped_column(String(16))
     subject: Mapped[str] = mapped_column(String(255))
 

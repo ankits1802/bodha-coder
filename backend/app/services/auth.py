@@ -24,6 +24,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models import Practice, Session, User, UserToken, utcnow
+from app.services.account_lookup import account_by_email, normal_email
 from app.services.audit_log import record_sign_in
 from app.services.rate_limits import LOGIN_PER_EMAIL, LOGIN_PER_IP, MFA_PER_USER, hit
 from app.services.recovery_codes import replace_recovery_codes, use_recovery_code
@@ -63,12 +64,12 @@ class PendingSignIn:
 
 
 async def login(
-    db: AsyncSession, email: str, password: str, *, ip: str | None, agent: str | None
+    db: AsyncSession, email: str, password: str, *, realms: tuple[str, ...], ip: str | None, agent: str | None
 ) -> Tokens | MfaChallenge:
-    address = email.strip().lower()
+    address = normal_email(email)
     await hit(db, LOGIN_PER_EMAIL, address)
     await hit(db, LOGIN_PER_IP, ip)
-    user = await db.scalar(select(User).where(User.email == address))
+    user = await account_by_email(db, address, realms)
     password_ok = verify_password(password, user.password_hash if user else None)
     if user is None or user.status != "active" or not password_ok:
         raise Unauthorized(SIGN_IN_FAILED)
@@ -93,20 +94,20 @@ async def _practice_for(db: AsyncSession, user: User) -> Practice | None:
     return practice
 
 
-async def _pending(db: AsyncSession, mfa_token: str) -> PendingSignIn:
+async def _pending(db: AsyncSession, mfa_token: str, realms: tuple[str, ...]) -> PendingSignIn:
     try:
         claims = read_token(mfa_token, "mfa")
     except TokenError as error:
         raise Unauthorized("sign in again") from error
     user = await db.get(User, claims["sub"])
-    if user is None or user.status != "active":
+    if user is None or user.status != "active" or user.realm not in realms:
         raise Unauthorized("sign in again")
     await _practice_for(db, user)
     return PendingSignIn(user, str(claims.get("via", PASSWORD_METHOD)))
 
 
-async def mfa_enrol(db: AsyncSession, mfa_token: str) -> MfaEnrolment:
-    user = (await _pending(db, mfa_token)).user
+async def mfa_enrol(db: AsyncSession, mfa_token: str, realms: tuple[str, ...]) -> MfaEnrolment:
+    user = (await _pending(db, mfa_token, realms)).user
     if user.mfa_enabled:
         raise Invalid("two-step verification is already set up")
     secret = enrol_secret(user)
@@ -116,8 +117,10 @@ async def mfa_enrol(db: AsyncSession, mfa_token: str) -> MfaEnrolment:
     return MfaEnrolment(secret, uri, "data:image/svg+xml;base64," + base64.b64encode(svg).decode())
 
 
-async def mfa_verify(db: AsyncSession, mfa_token: str, code: str, *, ip: str | None, agent: str | None) -> Tokens:
-    pending = await _pending(db, mfa_token)
+async def mfa_verify(
+    db: AsyncSession, mfa_token: str, code: str, *, realms: tuple[str, ...], ip: str | None, agent: str | None
+) -> Tokens:
+    pending = await _pending(db, mfa_token, realms)
     user = pending.user
     await hit(db, MFA_PER_USER, user.id)
     if not accept_code(user, code):
@@ -131,9 +134,9 @@ async def mfa_verify(db: AsyncSession, mfa_token: str, code: str, *, ip: str | N
 
 
 async def mfa_recover(
-    db: AsyncSession, mfa_token: str, recovery_code: str, *, ip: str | None, agent: str | None
+    db: AsyncSession, mfa_token: str, recovery_code: str, *, realms: tuple[str, ...], ip: str | None, agent: str | None
 ) -> Tokens:
-    pending = await _pending(db, mfa_token)
+    pending = await _pending(db, mfa_token, realms)
     user = pending.user
     await hit(db, MFA_PER_USER, user.id)
     if not user.mfa_enabled or not await use_recovery_code(db, user, recovery_code):
@@ -163,7 +166,7 @@ def _access_token(user: User) -> str:
     return issue_token("access", user.id, get_settings().access_token_minutes, ver=user.token_version)
 
 
-async def refresh_session(db: AsyncSession, refresh: str) -> Tokens:
+async def refresh_session(db: AsyncSession, refresh: str, realms: tuple[str, ...]) -> Tokens:
     session = await db.scalar(select(Session).where(Session.refresh_hash == digest(refresh)))
     now = utcnow()
     if session is None or session.revoked_at is not None or session.expires_at < now:
@@ -173,7 +176,7 @@ async def refresh_session(db: AsyncSession, refresh: str) -> Tokens:
         await db.commit()
         raise Unauthorized("signed out after inactivity")
     user = await db.get_one(User, session.user_id)
-    if user.status != "active":
+    if user.status != "active" or user.realm not in realms:
         raise Unauthorized("sign in again")
     await _practice_for(db, user)
     rotated = random_token()
@@ -208,13 +211,15 @@ async def issue_user_token(db: AsyncSession, user: User, purpose: str) -> str:
     return token
 
 
-async def set_password(db: AsyncSession, token: str, password: str) -> None:
+async def set_password(db: AsyncSession, token: str, password: str, realms: tuple[str, ...]) -> None:
     if len(password) < PASSWORD_MIN_LENGTH:
         raise Invalid(f"use at least {PASSWORD_MIN_LENGTH} characters")
     row = await db.scalar(select(UserToken).where(UserToken.token_hash == digest(token)))
     if row is None or row.used_at is not None or row.expires_at < utcnow():
         raise Unauthorized("this link has expired")
     user = await db.get_one(User, row.user_id)
+    if user.realm not in realms:
+        raise Unauthorized("this link has expired")
     if user.status == "blocked":
         raise Unauthorized("this account is blocked")
     user.password_hash, user.status, row.used_at = hash_password(password), "active", utcnow()

@@ -4,14 +4,31 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.bodies import DeletePracticeBody, DemoBody, PlaceBody, PracticeBody, PracticeUpdateBody
+from app.api.bodies import (
+    DeletePracticeBody,
+    DemoBody,
+    HqInviteBody,
+    HqMemberBody,
+    PlaceBody,
+    PracticeBody,
+    PracticeUpdateBody,
+)
 from app.api.responses.base import Created, ExactRoute
-from app.api.responses.hq import AdminLinkSent, DemoRequestRow, HqActivityPage, HqOverview, HqPlace, HqPractice, Renewal
+from app.api.responses.hq import (
+    AdminLinkSent,
+    DemoRequestRow,
+    HqActivityPage,
+    HqOverview,
+    HqPlace,
+    HqPractice,
+    HqTeamMember,
+    Renewal,
+)
 from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import hq, records
+from app.services import hq, hq_team, records
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"], route_class=ExactRoute)
@@ -99,6 +116,39 @@ async def activity(
         "page_size": hq.ACTIVITY_PAGE,
         "actions": page.actions,
     }
+
+
+@router.get("/hq/team", response_model=list[HqTeamMember])
+async def team(db: Db, actor: HqActor) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": member.id,
+            "name": member.name,
+            "email": member.email,
+            "status": member.status,
+            "mfa_enabled": member.mfa_enabled,
+            "last_active_at": member.last_active_at.isoformat() if member.last_active_at else None,
+        }
+        for member in await hq_team.hq_team(db)
+    ]
+
+
+@router.post("/hq/team", response_model=Created)
+async def invite(body: HqInviteBody, db: Db, mail: Mail, actor: HqActor) -> dict[str, str]:
+    return {"id": (await hq_team.invite_hq_member(db, mail, actor, name=body.name, email=str(body.email))).id}
+
+
+@router.post("/hq/team/{user_id}/resend-invite", status_code=204)
+async def resend_invite(user_id: str, db: Db, mail: Mail, actor: HqActor) -> None:
+    await hq_team.resend_hq_invite(db, mail, actor, user_id)
+
+
+@router.patch("/hq/team/{user_id}", status_code=204)
+async def update_member(user_id: str, body: HqMemberBody, db: Db, actor: HqActor) -> None:
+    if body.blocked:
+        await hq_team.deactivate_hq_member(db, actor, user_id)
+    else:
+        await hq_team.reactivate_hq_member(db, actor, user_id)
 
 
 @router.get("/hq/demo-requests", response_model=list[DemoRequestRow])

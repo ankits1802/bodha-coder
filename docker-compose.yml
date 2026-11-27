@@ -15,6 +15,7 @@ x-backend: &backend
     SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.compose}
     MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY in .env.compose}
     APP_URL: ${APP_URL:-http://localhost:3000}
+    ADMIN_URL: ${ADMIN_URL:-}
     COOKIE_SECURE: ${COOKIE_SECURE:-true}
     APP_ENVIRONMENT: development
     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -129,6 +130,8 @@ services:
     restart: unless-stopped
     environment:
       BACKEND_URL: http://api:8000
+      SITE_URL: ${APP_URL:-http://localhost:3000}
+      ADMIN_URL: ${ADMIN_URL:-}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

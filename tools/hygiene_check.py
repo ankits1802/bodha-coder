@@ -55,7 +55,7 @@ BUDGETS = {"python_file_lines": 400, "function_lines": 40, "positional_params": 
 LAYER_IMPORTS = {
     "main": {"api", "adapters", "codes", "core"},
     "worker": {"services", "adapters", "ai", "codes", "core", "models"},
-    "scripts": {"core", "models"},
+    "scripts": {"services", "adapters", "core", "models"},
     "api": {"services", "adapters", "codes", "core", "models"},
     "services": {"ai", "adapters", "codes", "core", "models"},
     "adapters": {"ai", "core"},

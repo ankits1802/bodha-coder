@@ -78,9 +78,18 @@ export const SHARED_TEXT = {
     hqPractices: "Practices",
     hqActivity: "Activity log",
     hqDemos: "Demo requests",
+    hqTeam: "Team",
     hqSecurity: "Security",
     search: "Search",
     help: "Help",
+  },
+  member: { twoStepOn: "On", twoStepOff: "Off", you: "You" },
+  invite: {
+    name: "Name",
+    email: "Email",
+    cancel: "Cancel",
+    send: "Send invite",
+    errors: { name: "Enter a name", email: "Enter a valid email" },
   },
   toast: { dismiss: "Dismiss" },
   shortcuts: {

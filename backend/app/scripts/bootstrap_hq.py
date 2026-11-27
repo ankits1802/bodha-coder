@@ -7,8 +7,10 @@ from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.core.db import SessionFactory
+from app.core.realms import account_space
+from app.core.roles import HQ_ROLE
 from app.core.security import PASSWORD_MIN_LENGTH, hash_password
-from app.models import User
+from app.models import HQ_REALM, User
 
 
 async def bootstrap() -> str:
@@ -16,14 +18,17 @@ async def bootstrap() -> str:
     email, password = settings.bootstrap_hq_email, settings.bootstrap_hq_password
     if not email or not password or len(password) < PASSWORD_MIN_LENGTH:
         raise SystemExit("set BOOTSTRAP_HQ_EMAIL and a BOOTSTRAP_HQ_PASSWORD of at least 10 characters")
+    address = email.strip().lower()
     async with SessionFactory() as db:
-        if await db.scalar(select(User.id).where(User.role == "hq")):
+        if await db.scalar(select(User.id).where(User.role == HQ_ROLE)):
             return "an HQ account already exists; nothing changed"
+        if await db.scalar(select(User.id).where(User.email == address, User.realm.in_(account_space(HQ_REALM)))):
+            raise SystemExit("BOOTSTRAP_HQ_EMAIL already belongs to a practice account; choose another email")
         db.add(
             User(
-                email=email.strip().lower(),
+                email=address,
                 name="Bodha Admin",
-                role="hq",
+                role=HQ_ROLE,
                 status="active",
                 password_hash=hash_password(password),
             )

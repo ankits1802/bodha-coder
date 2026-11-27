@@ -190,6 +190,15 @@ class MemberBody(Body):
     blocked: bool | None = None
 
 
+class HqInviteBody(Body):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+
+
+class HqMemberBody(Body):
+    blocked: bool
+
+
 class CodeRequestBody(Body):
     token: str
 
