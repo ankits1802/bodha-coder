@@ -9,6 +9,7 @@ import { useRemote } from "@/hooks/useRemote";
 import { getSetup } from "@/lib/api/practice";
 import type { PracticeSetup } from "@/lib/api/types";
 import { ChecksPanel } from "./ChecksPanel";
+import { ReviewSettingsPanel } from "./ReviewSettingsPanel";
 import { SectionContent } from "./SectionContent";
 import { SetupNav } from "./SetupNav";
 import { isNavKey, nextIncomplete } from "./setupModel";
@@ -60,6 +61,7 @@ export function SetupScreen() {
                 onSectionSaved={() => sectionSaved(data)}
               />
               <ChecksPanel checks={data.checks} onSaved={remote.reload} />
+              <ReviewSettingsPanel settings={data.review} onSaved={remote.reload} />
               <IntakeSettings />
             </div>
           </div>

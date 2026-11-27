@@ -58,7 +58,7 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `object_store.py` | `ObjectStore` protocol (`put`, `get`, `signed_url`, `delete`, `delete_prefix` refusing anything that is not a folder), `S3ObjectStore` (S3 and R2; `client=` for a stubbed client), key builders `note_document_key`, `note_document_revision_key`, `analysis_response_key`, `evaluation_response_key(practice_id, run_id, case_id, attempt)`, `practice_prefix`, `note_prefix` |
+| `object_store.py` | `ObjectStore` protocol (`put`, `get`, `exists`, `signed_url`, `delete`, `delete_prefix` refusing anything that is not a folder), `S3ObjectStore` (S3 and R2; `client=` for a stubbed client), key builders `note_document_key`, `note_document_revision_key`, `analysis_response_key`, `evaluation_response_key(practice_id, run_id, case_id, attempt)`, `claim_export_key(practice_id, export_id, suffix)`, `audit_package_key(practice_id, note_id, package_id)`, `practice_prefix`, `note_prefix` |
 | `object_listing.py` | `ListingStore` protocol (an `ObjectStore` with `list_keys(prefix)`, `object_pages(prefix)` yielding one list of `StoredObject` (key, `LastModified`) per S3 page, and `list_folders(prefix)` (the folders directly under it); folders only), `S3ListingStore` (an `S3ObjectStore` that also lists) |
 | `messenger.py` | `Messenger` protocol, `build_messenger` (email: SES, SMTP or outbox; texts: SNS, Twilio or outbox), `OutboxMessenger` |
 | `email_senders.py`, `sms_senders.py` | `SesEmail`, `SmtpEmail`, `SnsSms` (transactional, from `SNS_ORIGINATION_NUMBER` when set: `message_attributes`), `TwilioSms` |
@@ -87,6 +87,12 @@ Check here before writing a helper.
 | `placement.py` | `current_findings`, `current_decisions`, `refresh_placement` |
 | `analysis.py` | `request_analysis`, `claim_next`, `run_analysis`, `next_revision`, `latest_codes`, `AnalysisDeps` (review, client, store, ICD catalog, `PriceBook`) |
 | `expenditure.py` | `expenditure(db, start=, end=, practice_id=)` (HQ spend per practice and provider over whole UTC days by `finished_at`), `spend_since(db, since)` (the same figures as one total), `spend_report(rows)`, `spend_figures(rows)`, `SpendRow`, `SPEND_TIME_ZONE` |
+| `override_reasons.py` | `departs_from_bodha(finding, choice)` (the one rule for a choice that departs from Bodha), `departing_choices`, `checked_reason(reason, note) -> OverrideReason` (Other needs a note; 500 characters), `missing_reasons(findings, latest)`, `reason_text`, `REASON_LABELS` |
+| `claim_pointers.py` | `line_pointers(codes, primaries)`, `add_on_primaries(tables, codes, service_date)`, `resolved_pointers(tables, codes, service_date)`, `POINTER_LETTERS` (also importable from `claim_lines.py`) |
+| `claim_snapshots.py` | `write_snapshot(db, note, final_set, approver, findings)`, `Approver`, `approver_of(actor)`, `latest_snapshots(db, note_ids)`, `note_snapshots`, `snapshot_codes`, `snapshot_view` |
+| `claim_holds.py` | `held_for_confirmation(db, note_ids)` (notes whose latest snapshot waits for a held level confirmation) |
+| `attestations.py` | `record_attestation(db, provider_actor, request, Statement)`, `attestation_for(purpose)`, `checked_wording(expected, given)`, `ADDENDUM_ATTESTATION`, `LEVEL_ATTESTATION` |
+| `analysis.py` | `request_analysis`, `claim_next`, `run_analysis`, `next_revision`, `latest_codes` |
 | `audit_log.py` | `record_access`, `record_provider_access`, `record_system_access(db, actor, practice_id, action, note_id=, detail=)` for a `SystemActor` (id and name; written as kind `user`), `record_activity`, `record_sign_in` |
 | `auth.py` | `sign_in_user` (the one sign-in policy), `start_session`, `end_all_sessions`, `issue_user_token` |
 | `identity_sign_in.py` | `start(provider, site)`, `finish(db, provider, returned, site, ip=, agent=)` (tokens, a two-step challenge, or the `ProviderIdentity` to sign up), `bind_identity(db, user, provider, subject)` (one subject per user and provider, one user per subject in the user's realm), `SignInRefused` (`reason`) |

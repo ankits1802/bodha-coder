@@ -1,4 +1,4 @@
-from tests.builders import invite_member, practice_with_provider, reviewed_note, sign_in
+from tests.builders import DOCUMENTED, invite_member, practice_with_provider, reviewed_note, sign_in
 
 
 async def _found(harness, headers, text: str) -> list[str]:
@@ -19,7 +19,9 @@ async def test_search_reaches_approved_notes_and_their_final_codes(harness, icd_
     practice, note_id = await reviewed_note(harness, icd_catalog)
     assert await _found(harness, practice.admin, "99214") == []
     await harness.client.put(
-        f"/api/notes/{note_id}/decisions", headers=practice.admin, json={"choices": {"dx:I10": "keep"}}
+        f"/api/notes/{note_id}/decisions",
+        headers=practice.admin,
+        json={"choices": {"dx:I10": "keep"}, "reasons": {"dx:I10": DOCUMENTED}},
     )
     assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
 

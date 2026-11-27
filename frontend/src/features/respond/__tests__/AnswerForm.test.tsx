@@ -20,7 +20,16 @@ const questions: AddendumQuestion[] = [
 ];
 
 function renderForm(onSign = vi.fn()) {
-  render(<AnswerForm questions={questions} providerName="Elena Varga, MD" pending={false} error={null} onSign={onSign} />);
+  render(
+    <AnswerForm
+      questions={questions}
+      providerName="Elena Varga, MD"
+      attestation="This is clinically accurate"
+      pending={false}
+      error={null}
+      onSign={onSign}
+    />,
+  );
   return {
     onSign,
     stageGroup: () => screen.getByRole("group", { name: /What stage is the chronic kidney disease/ }),

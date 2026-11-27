@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { messageOf } from "@/lib/api/errors";
 import { saveDecisions } from "@/lib/api/notes";
-import type { Choice, Finding, NoteDetail } from "@/lib/api/types";
+import type { Choice, Finding, NoteDetail, OverrideChoice } from "@/lib/api/types";
 import { withChoice } from "./decisionFlow";
 
 export interface Decisions {
-  choose: (finding: Finding, choice: Choice) => void;
+  choose: (finding: Finding, choice: Choice, override?: OverrideChoice) => void;
   idle: () => Promise<void>;
   savingKey: string | null;
   error: string | null;
@@ -32,8 +32,8 @@ export function useDecisions(detail: NoteDetail, onReplace: (detail: NoteDetail)
     onReplace(next);
   }
 
-  function choose(finding: Finding, choice: Choice): void {
-    if (finding.choice === choice) return;
+  function choose(finding: Finding, choice: Choice, override?: OverrideChoice): void {
+    if (finding.choice === choice && !override) return;
     const optimistic = withChoice(shown.current, finding.key, choice);
     shown.current = optimistic;
     ticket.current += 1;
@@ -42,7 +42,7 @@ export function useDecisions(detail: NoteDetail, onReplace: (detail: NoteDetail)
     setSavingKey(finding.key);
     onReplace(optimistic);
     queue.current = queue.current.then(() =>
-      saveDecisions(detail.note.id, { [finding.key]: choice }).then(
+      saveDecisions(detail.note.id, { [finding.key]: choice }, override ? { [finding.key]: override } : {}).then(
         (saved) => settle(mine, saved),
         (caught: unknown) => {
           setError(messageOf(caught));

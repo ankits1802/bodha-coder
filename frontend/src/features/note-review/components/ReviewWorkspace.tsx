@@ -7,6 +7,8 @@ import type { ReviewPermissions } from "../permissions";
 import type { Neighbours } from "../useNoteData";
 import type { ReviewActions } from "../useReviewActions";
 import { useDecisions } from "../useDecisions";
+import { CommentsContext, useNoteComments } from "../useNoteComments";
+import { useOverridePrompt } from "../useOverridePrompt";
 import { useReviewShortcuts } from "../useReviewShortcuts";
 import { ClaimBar } from "./ClaimBar";
 import { NoteHeading } from "./NoteHeading";
@@ -34,6 +36,8 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
   const { detail, placeLabel, permissions, neighbours, onGo, onReplace, onReload, onApproved } = props;
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const decisions = useDecisions(detail, onReplace);
+  const prompt = useOverridePrompt(decisions);
+  const comments = useNoteComments(detail.note.id, permissions.seeRemovedComments);
   const actions: ReviewActions = {
     ...props.actions,
     approve: async () => {
@@ -48,12 +52,12 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
   useReviewShortcuts({
     nextNote: next ? () => onGo(next) : undefined,
     previousNote: previous ? () => onGo(previous) : undefined,
-    approve: permissions.approve ? () => void actions.approve() : undefined,
+    approve: permissions.approve && !prompt.pending ? () => void actions.approve() : undefined,
     askProvider: openAsk ?? undefined,
   });
 
   return (
-    <>
+    <CommentsContext value={comments}>
       <div className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
         <NoteHeading note={detail.note} placeLabel={placeLabel} />
         <NoteTools
@@ -78,6 +82,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
             permissions={permissions}
             actions={actions}
             decisions={decisions}
+            prompt={prompt}
             onReplace={onReplace}
             onAsk={openAsk}
           />
@@ -103,6 +108,6 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
         }}
         onApproved={onApproved}
       />
-    </>
+    </CommentsContext>
   );
 }

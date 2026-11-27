@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import AddendumRequest, Note, Provider
+from app.models import QUESTIONS_PURPOSE, AddendumRequest, Note, Provider
 from app.services.addenda import DEFAULT_OPTIONS, OTHER_ANSWER
 from app.services.query_governance import ASKED_STATUSES
 
@@ -100,6 +100,7 @@ async def _asked_requests(db: AsyncSession, practice_id: str, since: datetime) -
                 AddendumRequest.practice_id == practice_id,
                 AddendumRequest.created_at >= since,
                 AddendumRequest.status.in_(ASKED_STATUSES),
+                AddendumRequest.purpose == QUESTIONS_PURPOSE,
             )
         )
     ).all()
@@ -112,7 +113,9 @@ async def _asked_history(db: AsyncSession, note_ids: set[str]) -> dict[str, list
         return {}
     rows = await db.execute(
         select(AddendumRequest.note_id, AddendumRequest.created_at, AddendumRequest.questions).where(
-            AddendumRequest.note_id.in_(note_ids), AddendumRequest.status.in_(ASKED_STATUSES)
+            AddendumRequest.note_id.in_(note_ids),
+            AddendumRequest.status.in_(ASKED_STATUSES),
+            AddendumRequest.purpose == QUESTIONS_PURPOSE,
         )
     )
     found: dict[str, list[tuple[datetime, set[str]]]] = {}

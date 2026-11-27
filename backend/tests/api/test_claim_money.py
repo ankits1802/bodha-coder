@@ -1,4 +1,4 @@
-from tests.builders import reviewed_note
+from tests.builders import DOCUMENTED, reviewed_note
 
 WITH_SCREENINGS = "99215, 96127x2, I10, E11.9, N18.30"
 CLAIM = ["99214", "96127 ×2", "E11.65", "N18.30", "I12.9", "R20.2"]
@@ -22,7 +22,9 @@ async def test_units_flow_from_billed_codes_to_the_claim_billing_and_export(harn
     practice, note_id = await reviewed_note(harness, icd_catalog)
 
     edited = await harness.client.put(
-        f"/api/notes/{note_id}/billed-codes", headers=practice.admin, json={"codes": WITH_SCREENINGS}
+        f"/api/notes/{note_id}/billed-codes",
+        headers=practice.admin,
+        json={"codes": WITH_SCREENINGS, "reason": DOCUMENTED},
     )
     assert edited.status_code == 200, edited.text
     detail = edited.json()

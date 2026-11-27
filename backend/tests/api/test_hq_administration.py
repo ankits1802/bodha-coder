@@ -9,7 +9,11 @@ from app.models import (
     Activity,
     AddendumRequest,
     Analysis,
+    ApprovedClaim,
+    AuditPackage,
     Batch,
+    ClaimExport,
+    ClaimExportItem,
     CodeSet,
     Decision,
     Note,
@@ -17,12 +21,14 @@ from app.models import (
     Practice,
     Provider,
     RecoveryCode,
+    ReviewComment,
     Session,
     Suggestion,
     User,
     UserToken,
 )
 from tests.builders import (
+    DOCUMENTED,
     accept_invite,
     create_hq_user,
     new_practice,
@@ -33,7 +39,21 @@ from tests.builders import (
     upload_note,
 )
 
-PRACTICE_ROWS = (Practice, User, Provider, Batch, Note, AddendumRequest, AccessLog, Activity)
+PRACTICE_ROWS = (
+    Practice,
+    User,
+    Provider,
+    Batch,
+    Note,
+    AddendumRequest,
+    AccessLog,
+    Activity,
+    ApprovedClaim,
+    ClaimExport,
+    ClaimExportItem,
+    ReviewComment,
+    AuditPackage,
+)
 NOTE_ROWS = (NoteText, Analysis, Suggestion, Decision, CodeSet)
 USER_ROWS = (UserToken, Session, RecoveryCode)
 
@@ -131,7 +151,9 @@ async def test_renewing_sets_the_chosen_end_date_or_no_end_date_and_refuses_toda
 async def _practice_with_every_record(harness, icd_catalog):
     lakeside, note_id = await reviewed_note(harness, icd_catalog)
     decided = await harness.client.put(
-        f"/api/notes/{note_id}/decisions", headers=lakeside.admin, json={"choices": {"dx:I10": "keep"}}
+        f"/api/notes/{note_id}/decisions",
+        headers=lakeside.admin,
+        json={"choices": {"dx:I10": "keep"}, "reasons": {"dx:I10": DOCUMENTED}},
     )
     assert decided.status_code == 200, decided.text
     asked = await harness.client.post(
@@ -141,6 +163,13 @@ async def _practice_with_every_record(harness, icd_catalog):
     )
     assert asked.status_code == 200, asked.text
     assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=lakeside.admin)).status_code == 200
+    commented = await harness.client.post(
+        f"/api/notes/{note_id}/comments", headers=lakeside.admin, json={"body": "Level checked."}
+    )
+    assert commented.status_code == 200, commented.text
+    packaged = await harness.client.post(f"/api/notes/{note_id}/audit-package", headers=lakeside.admin)
+    assert packaged.status_code == 200, packaged.text
+    assert (await harness.client.post("/api/billing/export", headers=lakeside.admin, json={})).status_code == 200
     return lakeside
 
 

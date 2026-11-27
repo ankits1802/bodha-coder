@@ -29,6 +29,7 @@ from tests.fakes import (
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
 PASSWORD = "correct-horse-staple"
+DOCUMENTED = {"reason": "documentation", "note": None}
 ADMIN_SITE = "https://admin.test"
 
 

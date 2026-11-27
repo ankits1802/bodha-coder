@@ -38,6 +38,7 @@ from app.api.routes.intake import router as intake_router
 from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
+from app.api.routes.review_records import router as review_records_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError, Invalid
@@ -88,6 +89,7 @@ app.include_router(intake_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
 app.include_router(expenditure_router, prefix="/api")
+app.include_router(review_records_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

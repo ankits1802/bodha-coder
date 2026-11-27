@@ -20,6 +20,7 @@ import { BillingTable } from "./components/BillingTable";
 import { BILLING_TEXT } from "./strings";
 import { useExport, type ExportAction } from "./useExport";
 import { ClaimLinesButton } from "./components/ClaimLinesButton";
+import { ExportFiles } from "./components/ExportFiles";
 
 const REMOTE_TEXT = { loading: BILLING_TEXT.loading, empty: BILLING_TEXT.empty, retry: BILLING_TEXT.retry };
 const SEGMENTS = BILLING_SHOWS.map((value) => ({ value, label: BILLING_TEXT.show[value] }));
@@ -69,7 +70,7 @@ function BillingContent() {
         subtitle={page ? BILLING_TEXT.subtitle(formatCount(page.total)) : undefined}
         actions={
           <>
-            {show === "ready" && page && page.items.length > 0 ? <ClaimLinesButton /> : null}
+            {show === "ready" && page && page.items.length > 0 ? <ClaimLinesButton onExported={billing.reload} /> : null}
             <ExportButton show={show} page={page} exporter={exporter} />
           </>
         }
@@ -94,6 +95,7 @@ function BillingContent() {
           </>
         )}
       </RemoteView>
+      {show === "exported" ? <ExportFiles /> : null}
     </>
   );
 }

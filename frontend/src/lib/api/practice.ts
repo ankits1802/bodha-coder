@@ -9,6 +9,7 @@ import type {
   PayerInput,
   PracticeSetup,
   ProviderInput,
+  ReviewSettings,
   SecuritySettings,
   SetupSectionKey,
 } from "./types";
@@ -27,6 +28,10 @@ export function saveChecks(checks: Checks): Promise<void> {
 
 export function saveSecurity(settings: SecuritySettings): Promise<void> {
   return requestNothing("/api/practice/security", { method: "PUT", body: settings });
+}
+
+export function saveReviewSettings(settings: ReviewSettings): Promise<ReviewSettings> {
+  return request<ReviewSettings>("/api/practice/review-settings", { method: "PUT", body: settings });
 }
 
 export function addProvider(provider: ProviderInput): Promise<Created> {

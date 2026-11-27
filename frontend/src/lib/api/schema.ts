@@ -399,6 +399,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["exports_api_billing_exports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/exports/{export_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["export_file_api_billing_exports__export_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/blind-review/items/{item_id}/answer": {
         parameters: {
             query?: never;
@@ -457,6 +489,38 @@ export interface paths {
         get: operations["next_item_api_blind_review__sample_id__next_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comments/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["people_api_comments_people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/comments/{comment_id}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["remove_comment_api_comments__comment_id__remove_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -975,6 +1039,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/{note_id}/audit-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["package_api_notes__note_id__audit_package_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes/{note_id}/billed-codes": {
         parameters: {
             query?: never;
@@ -1017,6 +1097,22 @@ export interface paths {
         get: operations["checks_api_notes__note_id__claim_checks_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/{note_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["comments_api_notes__note_id__comments_get"];
+        put?: never;
+        post: operations["comment_api_notes__note_id__comments_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1386,6 +1482,22 @@ export interface paths {
         put: operations["change_payer_api_practice_payers__payer_key__put"];
         post?: never;
         delete: operations["remove_payer_api_practice_payers__payer_key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/review-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["save_review_settings_api_practice_review_settings_put"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1775,6 +1887,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/respond/level-change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["answer_level_change_api_respond_level_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/respond/others": {
         parameters: {
             query?: never;
@@ -2069,6 +2197,7 @@ export interface components {
             channel: "email" | "sms";
             hold_claim: boolean;
             id: string;
+            purpose: "questions" | "level_change";
             questions: components["schemas"]["AddendumQuestion"][];
             sent_at: string;
             status: "sent" | "answered" | "expired" | "cancelled";
@@ -2164,6 +2293,19 @@ export interface components {
             started_at: string;
             total: number;
         };
+        AttestationRecord: {
+            answer: "signed" | "confirm" | "disagree";
+            at: string;
+            comment: string | null;
+            id: string;
+            ip: string | null;
+            provider: string;
+            purpose: "questions" | "level_change";
+            shown: string;
+            text_revisions: number;
+            user_agent: string | null;
+            wording: string;
+        };
         AuditOverview: {
             auditSummary: string | null;
             cmsCDICompliance: components["schemas"]["CmsCdiCompliance"][] | null;
@@ -2199,6 +2341,7 @@ export interface components {
         };
         BilledBody: {
             codes: string;
+            reason: components["schemas"]["OverrideBody"];
         };
         BillingList: {
             items: components["schemas"]["BillingRow"][];
@@ -2216,6 +2359,7 @@ export interface components {
             cpt: string[];
             estimate: number | null;
             exported_at: string | null;
+            held: boolean;
             icd10: string[];
             id: string;
             npi: string | null;
@@ -2223,6 +2367,8 @@ export interface components {
             place_code: string;
             provider_name: string;
             service_date: string;
+            snapshot_id: string;
+            snapshot_revision: number;
         };
         BillingSummary: {
             exported_today: number;
@@ -2367,8 +2513,11 @@ export interface components {
             by: string | null;
             codes: components["schemas"]["CodeJson"][];
             kind: "billed" | "final";
+            override_note: string | null;
+            override_reason: ("documentation" | "payer_policy" | "provider_answer" | "coding_guideline" | "clinical_context" | "other") | null;
             reason: string;
             revision: number;
+            role: string | null;
         };
         CodeVerifyBody: {
             code: string;
@@ -2379,12 +2528,32 @@ export interface components {
             finding: string;
             status: "Pass" | "Fail" | "Warning";
         };
+        CommentBody: {
+            body: string;
+            finding_key?: string | null;
+            mentions?: string[];
+        };
+        CommentMention: {
+            id: string;
+            name: string;
+        };
+        CommentPerson: {
+            id: string;
+            name: string;
+            role: string;
+        };
+        CommentRemoval: {
+            at: string;
+            by: string;
+            role: string;
+        };
         ComparisonSides: {
             bodha: components["schemas"]["ElementComparison"];
             claim: components["schemas"]["ElementComparison"];
         };
         ComplianceBody: {
             decision: "confirm" | "return" | "keep";
+            override?: components["schemas"]["OverrideBody"] | null;
             reason?: string | null;
         };
         ComplianceList: {
@@ -2455,11 +2624,17 @@ export interface components {
             by: string | null;
             choice: "accept" | "keep" | "ask" | "add" | "skip";
             key: string;
+            override_note: string | null;
+            override_reason: ("documentation" | "payer_policy" | "provider_answer" | "coding_guideline" | "clinical_context" | "other") | null;
             pointers: components["schemas"]["PointerChoice"] | null;
+            role: string | null;
         };
         DecisionsBody: {
             choices: {
                 [key: string]: "accept" | "keep" | "ask" | "add" | "skip";
+            };
+            reasons?: {
+                [key: string]: components["schemas"]["OverrideBody"];
             };
         };
         DeleteNotesBody: {
@@ -2659,6 +2834,24 @@ export interface components {
             again?: boolean;
             note_ids?: string[] | null;
         };
+        ExportPage: {
+            items: components["schemas"]["ExportRecord"][];
+            offset: number;
+            page_size: number;
+            total: number;
+        };
+        ExportRecord: {
+            again: boolean;
+            at: string;
+            by: string;
+            bytes: number;
+            file_name: string;
+            format: "csv" | "claim_lines_csv" | "claim_lines_json";
+            id: string;
+            notes: number;
+            role: string;
+            sha256: string;
+        };
         ExportedClaim: {
             billing_npi: string | null;
             diagnoses: components["schemas"]["ExportedDiagnosis"][];
@@ -2694,12 +2887,15 @@ export interface components {
             code_after: string | null;
             code_before: string | null;
             default_choice: "accept" | "keep" | "ask" | "add" | "skip";
+            departing_choices: ("accept" | "keep" | "ask" | "add" | "skip")[];
             detail: {
                 [key: string]: unknown;
             };
             evidence: string[];
             key: string;
             kind: "em" | "diagnosis" | "modifier" | "code_review" | "cdi_gap" | "cdi_query" | "audit_risk" | "audit_finding" | "mips";
+            override: components["schemas"]["OverrideView"] | null;
+            override_needed: boolean;
             reasoning: string;
             severity: string | null;
             title: string;
@@ -2854,6 +3050,21 @@ export interface components {
             compliance: components["schemas"]["LaneCount"];
             provider: components["schemas"]["LaneCount"];
         };
+        LevelChangeBody: {
+            answer: "confirm" | "disagree";
+            attestation?: string | null;
+            comment?: string | null;
+            confirmed: boolean;
+        };
+        LevelChangeResult: {
+            answer: "confirm" | "disagree";
+            status: "sent" | "answered" | "expired" | "cancelled";
+        };
+        LevelChangeView: {
+            approved: string | null;
+            billed: string | null;
+            shown: string;
+        };
         LevelMix: {
             levels: components["schemas"]["LevelMixCount"][];
             prior: components["schemas"]["LevelMixWindow"];
@@ -2942,6 +3153,20 @@ export interface components {
             covers: boolean;
             quarter: string;
         };
+        NoteComment: {
+            at: string;
+            author_name: string;
+            author_role: string;
+            body: string;
+            can_remove: boolean;
+            finding_key: string | null;
+            id: string;
+            mentions: components["schemas"]["CommentMention"][];
+            removed: components["schemas"]["CommentRemoval"] | null;
+        };
+        NoteComments: {
+            items: components["schemas"]["NoteComment"][];
+        };
         NoteDay: {
             compared: number;
             duplicates: components["schemas"]["DayDuplicate"][];
@@ -2968,6 +3193,19 @@ export interface components {
             requests: components["schemas"]["AddendumRequestView"][];
             texts: components["schemas"]["NoteText"][];
         };
+        NoteExportRecord: {
+            again: boolean;
+            at: string;
+            by: string;
+            bytes: number;
+            file_name: string;
+            format: "csv" | "claim_lines_csv" | "claim_lines_json";
+            id: string;
+            notes: number;
+            role: string;
+            sha256: string;
+            snapshot_revision: number;
+        };
         NoteHeader: {
             assigned_to: string | null;
             assignee_name: string | null;
@@ -2992,8 +3230,11 @@ export interface components {
         };
         NoteHistory: {
             analyses: components["schemas"]["AnalysisRevision"][];
+            attestations: components["schemas"]["AttestationRecord"][];
             code_sets: components["schemas"]["CodeSetRevision"][];
             decisions: components["schemas"]["DecisionRecord"][];
+            exports: components["schemas"]["NoteExportRecord"][];
+            snapshots: components["schemas"]["SnapshotRecord"][];
         };
         NoteLane: {
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
@@ -3050,6 +3291,14 @@ export interface components {
             billed_too_low: number;
             diagnosis_changes: number;
             matched: number;
+        };
+        OverrideBody: {
+            note?: string | null;
+            reason: "documentation" | "payer_policy" | "provider_answer" | "coding_guideline" | "clinical_context" | "other";
+        };
+        OverrideView: {
+            note: string | null;
+            reason: "documentation" | "payer_policy" | "provider_answer" | "coding_guideline" | "clinical_context" | "other";
         };
         PasswordBody: {
             password: string;
@@ -3152,6 +3401,7 @@ export interface components {
         };
         PointersBody: {
             lines: components["schemas"]["PointerLineBody"][];
+            reason: components["schemas"]["OverrideBody"];
         };
         PracticeBody: {
             admin_email: string;
@@ -3166,6 +3416,7 @@ export interface components {
             complete: number;
             missing_npi: number;
             payers: components["schemas"]["Payer"][];
+            review: components["schemas"]["ReviewSettings"];
             sections: components["schemas"]["SetupSections"];
             security: components["schemas"]["SecuritySettings"];
             total: number;
@@ -3316,12 +3567,15 @@ export interface components {
         ProviderRequest: {
             addendum_text: string | null;
             answered_at: string | null;
+            attestation: string;
             expires_at: string;
+            level_change: components["schemas"]["LevelChangeView"] | null;
             patient: components["schemas"]["RequestPatient"];
             place_code: string;
             place_name: string | null;
             practice_name: string;
             provider_name: string;
+            purpose: "questions" | "level_change";
             questions: components["schemas"]["AddendumQuestion"][];
             requested_at: string;
             requested_by: string | null;
@@ -3524,6 +3778,7 @@ export interface components {
         };
         RespondBody: {
             answers: components["schemas"]["AnswerBody"][];
+            attestation?: string | null;
             confirmed: boolean;
         };
         RespondResult: {
@@ -3532,6 +3787,14 @@ export interface components {
         };
         RetryBody: {
             note_ids?: string[] | null;
+        };
+        ReviewSettings: {
+            confirm_level_changes: boolean;
+            hold_until_confirmed: boolean;
+        };
+        ReviewSettingsBody: {
+            confirm_level_changes: boolean;
+            hold_until_confirmed: boolean;
         };
         SampleBody: {
             end: string;
@@ -3652,6 +3915,21 @@ export interface components {
             name: string;
             practice_name: string;
             time_zone: string;
+        };
+        SnapshotRecord: {
+            analysis_id: string | null;
+            approved_at: string;
+            approver_name: string;
+            approver_role: string;
+            billed: string[];
+            codes: string[];
+            decisions: number;
+            document_sha256: string;
+            id: string;
+            model: string | null;
+            prompt_version: string | null;
+            revision: number;
+            text_revisions: number;
         };
         SpendFigures: {
             analyses: number;
@@ -4907,6 +5185,116 @@ export interface operations {
             };
         };
     };
+    exports_api_billing_exports_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportPage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_file_api_billing_exports__export_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                export_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     answer_api_blind_review_items__item_id__answer_post: {
         parameters: {
             query?: never;
@@ -5095,6 +5483,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BlindStep"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    people_api_comments_people_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPerson"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_comment_api_comments__comment_id__remove_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteComment"];
                 };
             };
             401: {
@@ -7017,6 +7505,61 @@ export interface operations {
             };
         };
     };
+    package_api_notes__note_id__audit_package_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     billed_codes_api_notes__note_id__billed_codes_put: {
         parameters: {
             query?: never;
@@ -7150,6 +7693,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClaimChecks"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    comments_api_notes__note_id__comments_get: {
+        parameters: {
+            query?: {
+                removed?: boolean;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteComments"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    comment_api_notes__note_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteComment"];
                 };
             };
             401: {
@@ -8578,6 +9237,63 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_review_settings_api_practice_review_settings_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSettingsBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSettings"];
+                };
             };
             401: {
                 headers: {
@@ -10153,6 +10869,55 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    answer_level_change_api_respond_level_change_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LevelChangeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelChangeResult"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

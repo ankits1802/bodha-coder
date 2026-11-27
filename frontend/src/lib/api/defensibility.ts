@@ -7,6 +7,10 @@ export function downloadDefensePacket(noteId: string): Promise<DownloadedFile> {
   return requestFile(notePath(noteId, "/defense-packet"));
 }
 
+export function downloadAuditPackage(noteId: string): Promise<DownloadedFile> {
+  return requestFile(notePath(noteId, "/audit-package"), { method: "POST" });
+}
+
 export function getNoteDay(noteId: string): Promise<NoteDay> {
   return request<NoteDay>(notePath(noteId, "/day"));
 }

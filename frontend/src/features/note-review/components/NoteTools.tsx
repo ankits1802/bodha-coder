@@ -13,6 +13,7 @@ import { VISIT_TYPES } from "@/lib/labels";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import { AssigneeControl } from "./AssigneeControl";
+import { AuditPackageButton } from "./AuditPackageButton";
 import { DefensePacketButton } from "@/components/shared/defense/DefensePacketButton";
 import { PayerSelect } from "./PayerSelect";
 
@@ -50,6 +51,7 @@ export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToo
       ) : null}
       {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
       <DefensePacketButton noteId={note.id} size="sm" />
+      {permissions.auditPackage ? <AuditPackageButton noteId={note.id} /> : null}
       {permissions.deleteNote ? (
         <Button size="sm" variant="plain" onClick={() => setConfirming(true)}>
           {words.delete}

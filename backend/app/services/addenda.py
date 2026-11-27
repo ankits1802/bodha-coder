@@ -13,8 +13,18 @@ from app.core.config import get_settings
 from app.core.deps import Actor, ProviderActor
 from app.core.errors import Conflict, Invalid, NotFound, Unauthorized
 from app.core.security import digest, issue_token, random_code, random_token, same_digest
-from app.models import AddendumRequest, Note, NoteText, Practice, Provider, utcnow
+from app.models import (
+    LEVEL_CHANGE_PURPOSE,
+    QUESTIONS_PURPOSE,
+    AddendumRequest,
+    Note,
+    NoteText,
+    Practice,
+    Provider,
+    utcnow,
+)
 from app.services.analysis import next_revision, request_analysis
+from app.services.attestations import ADDENDUM_ATTESTATION, Statement, checked_wording, record_attestation
 from app.services.audit_log import record_access, record_provider_access
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import current_decisions, current_findings, refresh_placement
@@ -28,6 +38,16 @@ CODE_MINUTES = 10
 MAX_CODE_ATTEMPTS = 5
 OTHER_ANSWER = "Other"
 DEFAULT_OPTIONS = ("Yes", "No", "Clinically undetermined")
+CODE_ACCEPTED = "verified code"
+CODE_REFUSED = "code not accepted"
+LINK_WORDING = {
+    QUESTIONS_PURPOSE: ("Questions from {practice}", "{practice} has questions about one of your visit notes."),
+    LEVEL_CHANGE_PURPOSE: (
+        "Visit level to confirm for {practice}",
+        "{practice} asks you to confirm the visit level of one of your notes.",
+    ),
+}
+Client = tuple[str | None, str | None]
 
 
 @dataclass(frozen=True)
@@ -111,12 +131,19 @@ def _question(finding: Any, text: str) -> dict[str, Any]:
 
 
 async def send_link(
-    messenger: Messenger, provider: Provider, channel: str, token: str, practice: Practice, *, reminder: bool = False
+    messenger: Messenger,
+    provider: Provider,
+    channel: str,
+    token: str,
+    practice: Practice,
+    *,
+    reminder: bool = False,
+    purpose: str = QUESTIONS_PURPOSE,
 ) -> None:
     link = f"{get_settings().app_url}/respond#{token}"
     lead = "Reminder: " if reminder else ""
-    body = f"{lead}{practice.name} has questions about one of your visit notes. Open securely: {link}"
-    await _deliver(messenger, provider, channel, subject=f"Questions from {practice.name}", body=body)
+    subject, sentence = (part.format(practice=practice.name) for part in LINK_WORDING[purpose])
+    await _deliver(messenger, provider, channel, subject=subject, body=f"{lead}{sentence} Open securely: {link}")
 
 
 async def _deliver(messenger: Messenger, provider: Provider, preferred: str, *, subject: str, body: str) -> str:
@@ -141,7 +168,8 @@ async def remind(db: AsyncSession, messenger: Messenger, actor: Actor, note_id: 
         utcnow() + timedelta(hours=get_settings().addendum_link_hours),
     )
     provider = await db.get_one(Provider, request.provider_id)
-    await send_link(messenger, provider, request.channel, token, await db.get_one(Practice, note.practice_id))
+    practice = await db.get_one(Practice, note.practice_id)
+    await send_link(messenger, provider, request.channel, token, practice, purpose=request.purpose)
     await db.commit()
 
 
@@ -173,21 +201,31 @@ def _masked(destination: str | None) -> str:
     return value[:2] + "•" * max(len(value) - 4, 3) + value[-2:]
 
 
-async def verify_code(db: AsyncSession, token: str, code: str) -> str:
+async def verify_code(db: AsyncSession, token: str, code: str, client: Client) -> str:
     request = await _open_request(db, token)
     if (
         request.code_attempts >= MAX_CODE_ATTEMPTS
         or request.code_expires_at is None
         or request.code_expires_at < utcnow()
     ):
+        await _record_code_check(db, request, client, CODE_REFUSED)
+        await db.commit()
         raise Unauthorized("ask for a new code")
     request.code_attempts += 1
     if not same_digest(code.strip(), request.code_hash):
+        await _record_code_check(db, request, client, CODE_REFUSED)
         await db.commit()
         raise Unauthorized("that code is not correct")
     request.code_hash = None
+    await _record_code_check(db, request, client, CODE_ACCEPTED)
     await db.commit()
     return _provider_token(request)
+
+
+async def _record_code_check(db: AsyncSession, request: AddendumRequest, client: Client, action: str) -> None:
+    provider = await db.get_one(Provider, request.provider_id)
+    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client[0], client[1])
+    record_provider_access(db, actor, provider.name, action, note_id=request.note_id)
 
 
 def _provider_token(request: AddendumRequest) -> str:
@@ -201,7 +239,7 @@ def _provider_token(request: AddendumRequest) -> str:
 
 
 async def other_requests(db: AsyncSession, actor: ProviderActor) -> list[OtherRequest]:
-    _, _, provider = await _load_for_provider(db, actor)
+    _, _, provider = await load_for_provider(db, actor)
     rows = (
         await db.execute(
             select(AddendumRequest, Note.patient_name, Note.service_date)
@@ -226,7 +264,7 @@ async def other_requests(db: AsyncSession, actor: ProviderActor) -> list[OtherRe
 
 
 async def switch_request(db: AsyncSession, actor: ProviderActor, request_id: str) -> str:
-    _, _, provider = await _load_for_provider(db, actor)
+    _, _, provider = await load_for_provider(db, actor)
     target = await db.get(AddendumRequest, request_id)
     if (
         target is None
@@ -244,7 +282,7 @@ async def switch_request(db: AsyncSession, actor: ProviderActor, request_id: str
 async def provider_request(
     db: AsyncSession, actor: ProviderActor
 ) -> tuple[AddendumRequest, Note, Provider, list[NoteText]]:
-    request, note, provider = await _load_for_provider(db, actor)
+    request, note, provider = await load_for_provider(db, actor)
     texts = current_texts(await note_texts(db, note.id))
     record_provider_access(db, actor, provider.name, "opened addendum request", note_id=note.id)
     await db.commit()
@@ -252,31 +290,37 @@ async def provider_request(
 
 
 async def provider_document_key(db: AsyncSession, actor: ProviderActor) -> str:
-    _, note, provider = await _load_for_provider(db, actor)
+    _, note, provider = await load_for_provider(db, actor)
     record_provider_access(db, actor, provider.name, "opened PDF", note_id=note.id)
     await db.commit()
     return note.file_key
 
 
-async def _load_for_provider(db: AsyncSession, actor: ProviderActor) -> tuple[AddendumRequest, Note, Provider]:
+async def load_for_provider(db: AsyncSession, actor: ProviderActor) -> tuple[AddendumRequest, Note, Provider]:
     request = await db.get(AddendumRequest, actor.request_id)
     if request is None or request.provider_id != actor.provider_id or request.practice_id != actor.practice_id:
         raise NotFound("request not found")
     return request, await db.get_one(Note, request.note_id), await db.get_one(Provider, request.provider_id)
 
 
-async def answer(db: AsyncSession, actor: ProviderActor, answers: list[Answer], *, confirmed: bool) -> AddendumRequest:
-    request, note, provider = await _load_for_provider(db, actor)
+async def answer(
+    db: AsyncSession, actor: ProviderActor, answers: list[Answer], *, confirmed: bool, attestation: str | None = None
+) -> AddendumRequest:
+    request, note, provider = await load_for_provider(db, actor)
+    if request.purpose != QUESTIONS_PURPOSE:
+        raise Conflict("confirm or disagree with the visit level instead")
     if request.status != "sent":
         raise Conflict("this request was already answered")
     if not confirmed:
         raise Invalid("confirm the answers are clinically accurate")
+    wording = checked_wording(ADDENDUM_ATTESTATION, attestation)
     chosen = _validated(request.questions, answers)
     practice = await db.get_one(Practice, note.practice_id)
     signed_on = datetime.now(zone_named(practice.time_zone)).date()
     text = addendum_text(f"{provider.name}, {provider.credential}", request.questions, chosen, signed_on=signed_on)
     request.answers = [{"key": item.key, "choice": item.choice, "comment": item.comment} for item in chosen]
     request.addendum_text, request.status, request.answered_at = text, "answered", utcnow()
+    await record_attestation(db, actor, request, Statement(wording, text, "signed", None))
     db.add(
         NoteText(
             note_id=note.id,

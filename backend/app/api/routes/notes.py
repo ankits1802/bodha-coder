@@ -15,6 +15,7 @@ from app.api.bodies import (
     DecisionsBody,
     DeleteNotesBody,
     FlagBody,
+    OverrideBody,
     PayerChoiceBody,
     PointersBody,
     RetryBody,
@@ -39,12 +40,17 @@ from app.api.responses.notes import NoteDetail
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
 from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
-from app.services import addenda, assignment, claim_lines, note_changes, note_view, review_actions
+from app.services import addenda, approval, assignment, claim_lines, note_changes, note_view, review_actions
+from app.services.override_reasons import OverrideReason, checked_reason
 from app.services.records import NewDocument, replace_document
 
 router = APIRouter(prefix="/notes", tags=["notes"], route_class=ExactRoute)
 Decider = Annotated[Actor, Depends(require(*DECIDERS))]
 Approver = Annotated[Actor, Depends(require(*APPROVERS))]
+
+
+def override(body: OverrideBody) -> OverrideReason:
+    return checked_reason(body.reason, body.note)
 
 
 @router.get("/{note_id}", response_model=NoteDetail)
@@ -72,13 +78,14 @@ async def replace_pdf(
 
 @router.put("/{note_id}/decisions", response_model=NoteDetail)
 async def decide(note_id: str, body: DecisionsBody, db: Db, actor: SightedDecider) -> dict[str, Any]:
-    await review_actions.decide(db, actor, note_id, body.choices)
+    reasons = {key: override(reason) for key, reason in body.reasons.items()}
+    await review_actions.decide(db, actor, note_id, body.choices, reasons)
     return await note_view.note_detail(db, actor, note_id)
 
 
 @router.put("/{note_id}/billed-codes", response_model=NoteDetail)
 async def billed_codes(note_id: str, body: BilledBody, db: Db, actor: SightedDecider, icd: Icd) -> dict[str, Any]:
-    await review_actions.update_billed(db, actor, note_id, body.codes, icd)
+    await review_actions.update_billed(db, actor, note_id, body.codes, icd, reason=override(body.reason))
     return await note_view.note_detail(db, actor, note_id)
 
 
@@ -89,19 +96,20 @@ async def pointers(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]
 
 @router.put("/{note_id}/pointers", response_model=ClaimPointers)
 async def link_diagnoses(note_id: str, body: PointersBody, db: Db, actor: SightedDecider) -> dict[str, Any]:
-    await review_actions.save_pointers(db, actor, note_id, [(line.code, line.pointers) for line in body.lines])
+    lines = [(line.code, line.pointers) for line in body.lines]
+    await review_actions.save_pointers(db, actor, note_id, lines, override(body.reason))
     return await claim_lines.note_pointers(db, actor, note_id)
 
 
 @router.post("/{note_id}/approve", response_model=NoteState)
-async def approve(note_id: str, db: Db, actor: Approver) -> dict[str, str]:
-    note = await review_actions.approve(db, actor, note_id)
+async def approve(note_id: str, db: Db, mail: Mail, actor: Approver) -> dict[str, str]:
+    note = await approval.approve(db, mail, actor, note_id)
     return {"status": note.status}
 
 
 @router.post("/approve", response_model=ApprovedNotes)
-async def approve_many(body: BulkApproveBody, db: Db, actor: Approver) -> dict[str, list[str]]:
-    return {"approved": await review_actions.approve_many(db, actor, body.note_ids)}
+async def approve_many(body: BulkApproveBody, db: Db, mail: Mail, actor: Approver) -> dict[str, list[str]]:
+    return {"approved": await approval.approve_many(db, mail, actor, body.note_ids)}
 
 
 @router.post("/assign", response_model=AssignedNotes)
@@ -119,9 +127,12 @@ async def flag(note_id: str, body: FlagBody, db: Db, actor: Decider) -> dict[str
 
 @router.post("/{note_id}/compliance", response_model=ComplianceOutcome)
 async def compliance(
-    note_id: str, body: ComplianceBody, db: Db, actor: Annotated[Actor, Depends(require(*COMPLIANCE))]
+    note_id: str, body: ComplianceBody, db: Db, mail: Mail, actor: Annotated[Actor, Depends(require(*COMPLIANCE))]
 ) -> dict[str, str | None]:
-    note = await review_actions.compliance_decision(db, actor, note_id, decision=body.decision, reason=body.reason)
+    kept = override(body.override) if body.override else None
+    note = await approval.compliance_decision(
+        db, mail, actor, note_id, decision=body.decision, reason=body.reason, override=kept
+    )
     return {"status": note.status, "lane": note.lane}
 
 

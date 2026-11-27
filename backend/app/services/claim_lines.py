@@ -8,16 +8,16 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.codes.billing_codes import MAX_MODIFIERS, MAX_POINTERS, Code
-from app.codes.ncci import NcciTables, ncci_tables
+from app.codes.billing_codes import MAX_MODIFIERS, Code
+from app.codes.ncci import ncci_tables
 from app.core.deps import Actor
 from app.core.errors import Invalid
 from app.models import Note, Provider
 from app.services.audit_log import record_access
-from app.services.billing import ROW_LIMIT, safe_cell
+from app.services.billing import safe_cell
+from app.services.claim_pointers import POINTER_LETTERS, add_on_primaries, line_pointers
 from app.services.code_sets import latest_codes
 from app.services.placement import SETTLED_STATUSES
 from app.services.review_actions import current_claim, note_for
@@ -32,7 +32,7 @@ __all__ = [
     "add_on_primaries",
     "billing_npi",
     "build_claim",
-    "claim_lines",
+    "claim_party",
     "claims_csv",
     "claims_json",
     "line_pointers",
@@ -40,7 +40,6 @@ __all__ = [
     "pointers_view",
 ]
 
-POINTER_LETTERS = "ABCDEFGHIJKL"
 MAX_DIAGNOSES = len(POINTER_LETTERS)
 INDIVIDUAL = "individual"
 CLAIM_LINE_COLUMNS = (
@@ -93,27 +92,6 @@ def billing_npi(npi: str | None, details: Mapping[str, Any]) -> str | None:
     return details.get("group_npi") or None
 
 
-def line_pointers(codes: Sequence[Code], primaries: Mapping[str, str]) -> dict[str, tuple[str, ...]]:
-    first = tuple(code.code for code in codes if code.type == "ICD-10")[:MAX_POINTERS]
-    chosen = {code.code: code.pointers for code in codes if code.type == "CPT" and code.pointers}
-    return {
-        code.code: chosen.get(code.code) or chosen.get(primaries.get(code.code, ""), first)
-        for code in codes
-        if code.type == "CPT"
-    }
-
-
-def add_on_primaries(tables: NcciTables, codes: Sequence[Code], service_date: date) -> dict[str, str]:
-    lines = [code.code for code in codes if code.type == "CPT"]
-    found: dict[str, str] = {}
-    for code in lines:
-        rule = tables.add_on_primaries(code, service_date)
-        primary = next((other for other in lines if rule is not None and other in rule.primaries), None)
-        if primary is not None:
-            found[code] = primary
-    return found
-
-
 def build_claim(party: ClaimParty, codes: tuple[Code, ...], *, primaries: Mapping[str, str] | None = None) -> Claim:
     diagnoses = tuple(code.code for code in codes if code.type == "ICD-10")
     if not diagnoses:
@@ -163,26 +141,6 @@ def pointers_view(codes: Sequence[Code], primaries: Mapping[str, str]) -> dict[s
     }
 
 
-async def claim_lines(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> list[Claim]:
-    query = (
-        select(Note, Provider)
-        .join(Provider, Provider.id == Note.provider_id)
-        .where(Note.practice_id == actor.practice_id, Note.status == "approved", Note.exported_at.is_(None))
-        .order_by(Note.service_date, Note.approved_at)
-        .limit(ROW_LIMIT)
-    )
-    if note_ids is not None:
-        query = query.where(Note.id.in_(note_ids))
-    rows = (await db.execute(query)).all()
-    if not rows:
-        raise Invalid("no approved visits are waiting for export")
-    tables = await asyncio.to_thread(ncci_tables)
-    claims = [await _final_claim(db, tables, note, provider) for note, provider in rows]
-    record_access(db, actor, "built claim lines", detail=f"{len(claims)} visits")
-    await db.commit()
-    return claims
-
-
 def claims_json(claims: list[Claim]) -> dict[str, Any]:
     return {"claims": [_claim_json(claim) for claim in claims]}
 
@@ -210,9 +168,17 @@ def claims_csv(claims: list[Claim]) -> str:
     return buffer.getvalue()
 
 
-async def _final_claim(db: AsyncSession, tables: NcciTables, note: Note, provider: Provider) -> Claim:
-    codes = await latest_codes(db, note.id, "final")
-    return build_claim(_party(note, provider), codes, primaries=add_on_primaries(tables, codes, note.service_date))
+def claim_party(note: Note, provider: Provider) -> ClaimParty:
+    details = provider.details or {}
+    return ClaimParty(
+        note.id,
+        note.patient_name,
+        note.service_date,
+        note.place_code,
+        provider.npi,
+        details.get("taxonomy_code"),
+        billing_npi(provider.npi, details),
+    )
 
 
 def _letters(party: ClaimParty, code: Code, pointers: tuple[str, ...], letters: Mapping[str, str]) -> tuple[str, ...]:
@@ -226,19 +192,6 @@ def _line(number: int, code: Code, pointers: tuple[str, ...]) -> ClaimLine:
     if len(code.modifiers) > MAX_MODIFIERS:
         raise Invalid(f"{code.label()} has more than {MAX_MODIFIERS} modifiers")
     return ClaimLine(number, code.code, code.modifiers, code.units, pointers)
-
-
-def _party(note: Note, provider: Provider) -> ClaimParty:
-    details = provider.details or {}
-    return ClaimParty(
-        note.id,
-        note.patient_name,
-        note.service_date,
-        note.place_code,
-        provider.npi,
-        details.get("taxonomy_code"),
-        billing_npi(provider.npi, details),
-    )
 
 
 def _claim_json(claim: Claim) -> dict[str, Any]:

@@ -8,12 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_store import ObjectStore
 from app.core.config import get_settings
 from app.core.deps import Actor
-from app.models import AddendumRequest, Analysis, CodeSet, Decision, NoteText, Provider, User
+from app.models import AddendumRequest, Analysis, Decision, NoteText, Provider
 from app.services.audit_log import record_access
 from app.services.estimates import note_estimate
+from app.services.finding import Finding
+from app.services.note_history import note_history
 from app.services.note_texts import current_texts
-from app.services.placement import current_decisions, current_findings
-from app.services.pointer_decisions import read_pointer_key
+from app.services.override_reasons import departing_choices, departs_from_bodha
+from app.services.placement import current_findings
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
 from app.services.worklists import assignee_name, summary
@@ -23,7 +25,8 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
     note = await note_for(db, actor, note_id)
     provider = await db.get_one(Provider, note.provider_id)
     findings = await current_findings(db, note)
-    choices = choices_for(findings, await current_decisions(db, note.id))
+    latest = await _latest_decisions(db, note.id)
+    choices = choices_for(findings, {key: row.choice for key, row in latest.items()})
     analysis = await db.get(Analysis, note.current_analysis_id) if note.current_analysis_id else None
     claim = await current_claim(db, note) if analysis else ()
     record_access(db, actor, "opened note", note_id=note.id)
@@ -45,19 +48,30 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
         "failure": await _latest_failure(db, note.id) if note.status == "failed" else None,
         "texts": await _texts(db, note.id),
         "analysis": _analysis(analysis),
-        "findings": [
-            {
-                **finding.__dict__,
-                "evidence": list(finding.evidence),
-                "choice": choices[finding.key],
-                "allowed": list(allowed_choices(finding)),
-            }
-            for finding in findings
-        ],
+        "findings": [_finding(finding, choices[finding.key], latest.get(finding.key)) for finding in findings],
         "claim": [code.label() for code in claim],
         "estimate": await note_estimate(db, note, claim) if analysis else None,
-        "history": await _history(db, note.id, note.practice_id),
+        "history": await note_history(db, note.id, note.practice_id),
         "requests": await _requests(db, note.id),
+    }
+
+
+async def _latest_decisions(db: AsyncSession, note_id: str) -> dict[str, Decision]:
+    rows = await db.scalars(select(Decision).where(Decision.note_id == note_id).order_by(Decision.created_at))
+    return {row.suggestion_key: row for row in rows}
+
+
+def _finding(finding: Finding, choice: str, decided: Decision | None) -> dict[str, Any]:
+    allowed = allowed_choices(finding)
+    reasoned = decided is not None and decided.override_reason is not None
+    return {
+        **finding.__dict__,
+        "evidence": list(finding.evidence),
+        "choice": choice,
+        "allowed": list(allowed),
+        "departing_choices": departing_choices(finding, allowed),
+        "override": {"reason": decided.override_reason, "note": decided.override_note} if reasoned else None,
+        "override_needed": decided is not None and not reasoned and departs_from_bodha(finding, decided.choice),
     }
 
 
@@ -109,52 +123,6 @@ def _analysis(analysis: Analysis | None) -> dict[str, Any] | None:
     }
 
 
-async def _history(db: AsyncSession, note_id: str, practice_id: str) -> dict[str, list[dict[str, Any]]]:
-    names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == practice_id))).all())
-    analyses = await db.scalars(select(Analysis).where(Analysis.note_id == note_id).order_by(Analysis.revision))
-    code_sets = await db.scalars(select(CodeSet).where(CodeSet.note_id == note_id).order_by(CodeSet.created_at))
-    decisions = await db.scalars(select(Decision).where(Decision.note_id == note_id).order_by(Decision.created_at))
-    return {
-        "analyses": [
-            {
-                "revision": a.revision,
-                "reason": a.reason,
-                "status": a.status,
-                "model": a.model,
-                "finished_at": a.finished_at.isoformat() if a.finished_at else None,
-                "error": a.error,
-            }
-            for a in analyses
-        ],
-        "code_sets": [
-            {
-                "kind": c.kind,
-                "revision": c.revision,
-                "codes": c.codes,
-                "reason": c.reason,
-                "by": names.get(c.actor_id or ""),
-                "at": c.created_at.isoformat(),
-            }
-            for c in code_sets
-        ],
-        "decisions": [
-            {
-                "key": d.suggestion_key,
-                "choice": d.choice,
-                "by": names.get(d.actor_id),
-                "at": d.created_at.isoformat(),
-                "pointers": _pointer_view(d.suggestion_key),
-            }
-            for d in decisions
-        ],
-    }
-
-
-def _pointer_view(key: str) -> dict[str, Any] | None:
-    parsed = read_pointer_key(key)
-    return {"code": parsed[0], "diagnoses": list(parsed[1])} if parsed else None
-
-
 async def _requests(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
     rows = await db.scalars(
         select(AddendumRequest).where(AddendumRequest.note_id == note_id).order_by(AddendumRequest.created_at)
@@ -168,6 +136,7 @@ async def _requests(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
             "answers": r.answers,
             "addendum_text": r.addendum_text,
             "hold_claim": r.hold_claim,
+            "purpose": r.purpose,
             "sent_at": r.created_at.isoformat(),
             "answered_at": r.answered_at.isoformat() if r.answered_at else None,
         }

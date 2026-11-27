@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
+from app.models.review_audit import OVERRIDE_NOTE_LENGTH, REQUEST_PURPOSES, override_checks
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
 ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
@@ -76,6 +77,8 @@ class Practice(IdMixin, Base):
     access_log_years: Mapped[int] = mapped_column(Integer, default=6)
     intake: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     signup: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    confirm_level_changes: Mapped[bool] = mapped_column(Boolean, default=False)
+    hold_until_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class User(IdMixin, Base):
@@ -293,23 +296,34 @@ class Decision(IdMixin, Base):
     __table_args__ = (
         Index("ix_decisions_note_key", "note_id", "suggestion_key", "created_at"),
         one_of("choice", CHOICES),
+        *override_checks(),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
     suggestion_key: Mapped[str] = mapped_column(String(80))
     choice: Mapped[str] = mapped_column(String(8))
     actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    override_reason: Mapped[str | None] = mapped_column(String(24))
+    override_note: Mapped[str | None] = mapped_column(String(OVERRIDE_NOTE_LENGTH))
 
 
 class CodeSet(IdMixin, Base):
     __tablename__ = "code_sets"
-    __table_args__ = (UniqueConstraint("note_id", "kind", "revision"), one_of("kind", CODE_SET_KINDS))
+    __table_args__ = (
+        UniqueConstraint("note_id", "kind", "revision"),
+        one_of("kind", CODE_SET_KINDS),
+        *override_checks(),
+    )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     kind: Mapped[str] = mapped_column(String(8))
     revision: Mapped[int] = mapped_column(Integer)
     codes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
     reason: Mapped[str] = mapped_column(String(40))
     actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    override_reason: Mapped[str | None] = mapped_column(String(24))
+    override_note: Mapped[str | None] = mapped_column(String(OVERRIDE_NOTE_LENGTH))
 
 
 class AddendumRequest(IdMixin, Base):
@@ -317,6 +331,7 @@ class AddendumRequest(IdMixin, Base):
     __table_args__ = (
         one_of("status", ("sent", "answered", "expired", "cancelled")),
         one_of("channel", ("email", "sms")),
+        one_of("purpose", REQUEST_PURPOSES),
     )
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), index=True)
@@ -337,6 +352,8 @@ class AddendumRequest(IdMixin, Base):
     status: Mapped[str] = mapped_column(String(12), default="sent")
     sent_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
     answered_at: Mapped[datetime | None] = timestamp()
+    purpose: Mapped[str] = mapped_column(String(12), default="questions")
+    approved_claim_id: Mapped[str | None] = mapped_column(ForeignKey("approved_claims.id"))
 
 
 class MipsList(IdMixin, Base):

@@ -12,10 +12,12 @@ interface AddendumPanelProps {
   pending: boolean;
   error: string | null;
   providerName: string;
+  attestation: string;
   onSign: () => void;
 }
 
-export function AddendumPanel({ header, lines, confirmed, onConfirm, signable, pending, error, providerName, onSign }: AddendumPanelProps) {
+export function AddendumPanel(props: AddendumPanelProps) {
+  const { header, lines, confirmed, onConfirm, signable, pending, error, providerName, attestation, onSign } = props;
   return (
     <Panel aria-label={RESPOND_TEXT.previewTitle} className="flex flex-col gap-3.5 px-5 py-4.5">
       <div>
@@ -39,7 +41,7 @@ export function AddendumPanel({ header, lines, confirmed, onConfirm, signable, p
           onChange={(event) => onConfirm(event.target.checked)}
           className="size-5 flex-none accent-label"
         />
-        {RESPOND_TEXT.confirm}
+        {attestation}
       </label>
       {error ? <InlineAlert tone="bad">{error}</InlineAlert> : null}
       <Button variant="primary" size="lg" className="w-full" disabled={!signable} pending={pending} onClick={onSign}>

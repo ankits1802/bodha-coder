@@ -2,6 +2,7 @@ from typing import Literal
 
 from app.api.responses.auth import Checks
 from app.api.responses.base import Channel, PlanType, PracticeRole, View
+from app.api.responses.review_records import ReviewSettings
 from app.services.practice_setup import ACCESS_LOG_YEARS, IDLE_MINUTES_CHOICES
 from app.services.provider_details import BILLS_UNDER
 
@@ -68,6 +69,7 @@ class PracticeSetup(View):
     missing_npi: int
     payers: list[Payer]
     security: SecuritySettings
+    review: ReviewSettings
 
 
 class PayerOption(View):

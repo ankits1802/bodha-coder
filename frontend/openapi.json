@@ -236,6 +236,14 @@
             "title": "Id",
             "type": "string"
           },
+          "purpose": {
+            "enum": [
+              "questions",
+              "level_change"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
           "questions": {
             "items": {
               "$ref": "#/components/schemas/AddendumQuestion"
@@ -266,6 +274,7 @@
           "answers",
           "addendum_text",
           "hold_claim",
+          "purpose",
           "sent_at",
           "answered_at"
         ],
@@ -840,6 +849,100 @@
         "title": "AssignedSample",
         "type": "object"
       },
+      "AttestationRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "enum": [
+              "signed",
+              "confirm",
+              "disagree"
+            ],
+            "title": "Answer",
+            "type": "string"
+          },
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "questions",
+              "level_change"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "shown": {
+            "title": "Shown",
+            "type": "string"
+          },
+          "text_revisions": {
+            "title": "Text Revisions",
+            "type": "integer"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "wording": {
+            "title": "Wording",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "provider",
+          "purpose",
+          "answer",
+          "comment",
+          "wording",
+          "shown",
+          "text_revisions",
+          "ip",
+          "user_agent"
+        ],
+        "title": "AttestationRecord",
+        "type": "object"
+      },
       "AuditOverview": {
         "additionalProperties": false,
         "properties": {
@@ -1088,10 +1191,14 @@
             "maxLength": 500,
             "title": "Codes",
             "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/OverrideBody"
           }
         },
         "required": [
-          "codes"
+          "codes",
+          "reason"
         ],
         "title": "BilledBody",
         "type": "object"
@@ -1195,6 +1302,10 @@
             ],
             "title": "Exported At"
           },
+          "held": {
+            "title": "Held",
+            "type": "boolean"
+          },
           "icd10": {
             "items": {
               "type": "string"
@@ -1239,6 +1350,14 @@
           "service_date": {
             "title": "Service Date",
             "type": "string"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "snapshot_revision": {
+            "title": "Snapshot Revision",
+            "type": "integer"
           }
         },
         "required": [
@@ -1255,7 +1374,10 @@
           "approved_at",
           "exported_at",
           "cpt",
-          "icd10"
+          "icd10",
+          "snapshot_id",
+          "snapshot_revision",
+          "held"
         ],
         "title": "BillingRow",
         "type": "object"
@@ -2133,6 +2255,36 @@
             "title": "Kind",
             "type": "string"
           },
+          "override_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Note"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "documentation",
+                  "payer_policy",
+                  "provider_answer",
+                  "coding_guideline",
+                  "clinical_context",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason"
+          },
           "reason": {
             "title": "Reason",
             "type": "string"
@@ -2140,6 +2292,17 @@
           "revision": {
             "title": "Revision",
             "type": "integer"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
           }
         },
         "required": [
@@ -2148,7 +2311,10 @@
           "codes",
           "reason",
           "by",
-          "at"
+          "role",
+          "at",
+          "override_reason",
+          "override_note"
         ],
         "title": "CodeSetRevision",
         "type": "object"
@@ -2202,6 +2368,109 @@
         "title": "CodingComplianceCheck",
         "type": "object"
       },
+      "CommentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "finding_key": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finding Key"
+          },
+          "mentions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Mentions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "CommentBody",
+        "type": "object"
+      },
+      "CommentMention": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CommentMention",
+        "type": "object"
+      },
+      "CommentPerson": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "CommentPerson",
+        "type": "object"
+      },
+      "CommentRemoval": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "title": "By",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "by",
+          "role",
+          "at"
+        ],
+        "title": "CommentRemoval",
+        "type": "object"
+      },
       "ComparisonSides": {
         "additionalProperties": false,
         "properties": {
@@ -2230,6 +2499,16 @@
             ],
             "title": "Decision",
             "type": "string"
+          },
+          "override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverrideBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "reason": {
             "anyOf": [
@@ -2772,6 +3051,36 @@
             "title": "Key",
             "type": "string"
           },
+          "override_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Note"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "documentation",
+                  "payer_policy",
+                  "provider_answer",
+                  "coding_guideline",
+                  "clinical_context",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason"
+          },
           "pointers": {
             "anyOf": [
               {
@@ -2781,14 +3090,28 @@
                 "type": "null"
               }
             ]
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
           }
         },
         "required": [
           "key",
           "choice",
           "by",
+          "role",
           "at",
-          "pointers"
+          "pointers",
+          "override_reason",
+          "override_note"
         ],
         "title": "DecisionRecord",
         "type": "object"
@@ -2809,6 +3132,13 @@
             },
             "minProperties": 1,
             "title": "Choices",
+            "type": "object"
+          },
+          "reasons": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/OverrideBody"
+            },
+            "title": "Reasons",
             "type": "object"
           }
         },
@@ -4016,6 +4346,102 @@
         "title": "ExportBody",
         "type": "object"
       },
+      "ExportPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExportRecord"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "page_size"
+        ],
+        "title": "ExportPage",
+        "type": "object"
+      },
+      "ExportRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "again": {
+            "title": "Again",
+            "type": "boolean"
+          },
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "title": "By",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "csv",
+              "claim_lines_csv",
+              "claim_lines_json"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "by",
+          "role",
+          "format",
+          "again",
+          "notes",
+          "file_name",
+          "sha256",
+          "bytes"
+        ],
+        "title": "ExportRecord",
+        "type": "object"
+      },
       "ExportedClaim": {
         "additionalProperties": false,
         "properties": {
@@ -4290,6 +4716,20 @@
             "title": "Default Choice",
             "type": "string"
           },
+          "departing_choices": {
+            "items": {
+              "enum": [
+                "accept",
+                "keep",
+                "ask",
+                "add",
+                "skip"
+              ],
+              "type": "string"
+            },
+            "title": "Departing Choices",
+            "type": "array"
+          },
           "detail": {
             "additionalProperties": true,
             "title": "Detail",
@@ -4320,6 +4760,20 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverrideView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "override_needed": {
+            "title": "Override Needed",
+            "type": "boolean"
           },
           "reasoning": {
             "title": "Reasoning",
@@ -4354,7 +4808,10 @@
           "detail",
           "default_choice",
           "choice",
-          "allowed"
+          "allowed",
+          "departing_choices",
+          "override",
+          "override_needed"
         ],
         "title": "Finding",
         "type": "object"
@@ -5252,6 +5709,120 @@
         "title": "LaneCounts",
         "type": "object"
       },
+      "LevelChangeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "enum": [
+              "confirm",
+              "disagree"
+            ],
+            "title": "Answer",
+            "type": "string"
+          },
+          "attestation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attestation"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "answer",
+          "confirmed"
+        ],
+        "title": "LevelChangeBody",
+        "type": "object"
+      },
+      "LevelChangeResult": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "enum": [
+              "confirm",
+              "disagree"
+            ],
+            "title": "Answer",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "sent",
+              "answered",
+              "expired",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "answer"
+        ],
+        "title": "LevelChangeResult",
+        "type": "object"
+      },
+      "LevelChangeView": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved"
+          },
+          "billed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billed"
+          },
+          "shown": {
+            "title": "Shown",
+            "type": "string"
+          }
+        },
+        "required": [
+          "billed",
+          "approved",
+          "shown"
+        ],
+        "title": "LevelChangeView",
+        "type": "object"
+      },
       "LevelMix": {
         "additionalProperties": false,
         "properties": {
@@ -5732,6 +6303,93 @@
         "title": "NcciCoverage",
         "type": "object"
       },
+      "NoteComment": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "author_name": {
+            "title": "Author Name",
+            "type": "string"
+          },
+          "author_role": {
+            "title": "Author Role",
+            "type": "string"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "can_remove": {
+            "title": "Can Remove",
+            "type": "boolean"
+          },
+          "finding_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finding Key"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "mentions": {
+            "items": {
+              "$ref": "#/components/schemas/CommentMention"
+            },
+            "title": "Mentions",
+            "type": "array"
+          },
+          "removed": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommentRemoval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "finding_key",
+          "body",
+          "author_name",
+          "author_role",
+          "at",
+          "mentions",
+          "removed",
+          "can_remove"
+        ],
+        "title": "NoteComment",
+        "type": "object"
+      },
+      "NoteComments": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NoteComment"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "NoteComments",
+        "type": "object"
+      },
       "NoteDay": {
         "additionalProperties": false,
         "properties": {
@@ -5910,6 +6568,75 @@
           "requests"
         ],
         "title": "NoteDetail",
+        "type": "object"
+      },
+      "NoteExportRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "again": {
+            "title": "Again",
+            "type": "boolean"
+          },
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "title": "By",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "format": {
+            "enum": [
+              "csv",
+              "claim_lines_csv",
+              "claim_lines_json"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "snapshot_revision": {
+            "title": "Snapshot Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "by",
+          "role",
+          "format",
+          "again",
+          "notes",
+          "file_name",
+          "sha256",
+          "bytes",
+          "snapshot_revision"
+        ],
+        "title": "NoteExportRecord",
         "type": "object"
       },
       "NoteHeader": {
@@ -6130,6 +6857,13 @@
             "title": "Analyses",
             "type": "array"
           },
+          "attestations": {
+            "items": {
+              "$ref": "#/components/schemas/AttestationRecord"
+            },
+            "title": "Attestations",
+            "type": "array"
+          },
           "code_sets": {
             "items": {
               "$ref": "#/components/schemas/CodeSetRevision"
@@ -6143,12 +6877,29 @@
             },
             "title": "Decisions",
             "type": "array"
+          },
+          "exports": {
+            "items": {
+              "$ref": "#/components/schemas/NoteExportRecord"
+            },
+            "title": "Exports",
+            "type": "array"
+          },
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/SnapshotRecord"
+            },
+            "title": "Snapshots",
+            "type": "array"
           }
         },
         "required": [
           "analyses",
           "code_sets",
-          "decisions"
+          "decisions",
+          "snapshots",
+          "exports",
+          "attestations"
         ],
         "title": "NoteHistory",
         "type": "object"
@@ -6556,6 +7307,74 @@
           "diagnosis_changes"
         ],
         "title": "Outcomes",
+        "type": "object"
+      },
+      "OverrideBody": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "enum": [
+              "documentation",
+              "payer_policy",
+              "provider_answer",
+              "coding_guideline",
+              "clinical_context",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "OverrideBody",
+        "type": "object"
+      },
+      "OverrideView": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "enum": [
+              "documentation",
+              "payer_policy",
+              "provider_answer",
+              "coding_guideline",
+              "clinical_context",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "note"
+        ],
+        "title": "OverrideView",
         "type": "object"
       },
       "PasswordBody": {
@@ -7280,10 +8099,14 @@
             "minItems": 1,
             "title": "Lines",
             "type": "array"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/OverrideBody"
           }
         },
         "required": [
-          "lines"
+          "lines",
+          "reason"
         ],
         "title": "PointersBody",
         "type": "object"
@@ -7356,6 +8179,9 @@
             "title": "Payers",
             "type": "array"
           },
+          "review": {
+            "$ref": "#/components/schemas/ReviewSettings"
+          },
           "sections": {
             "$ref": "#/components/schemas/SetupSections"
           },
@@ -7374,7 +8200,8 @@
           "checks",
           "missing_npi",
           "payers",
-          "security"
+          "security",
+          "review"
         ],
         "title": "PracticeSetup",
         "type": "object"
@@ -8436,9 +9263,23 @@
             ],
             "title": "Answered At"
           },
+          "attestation": {
+            "title": "Attestation",
+            "type": "string"
+          },
           "expires_at": {
             "title": "Expires At",
             "type": "string"
+          },
+          "level_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LevelChangeView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "patient": {
             "$ref": "#/components/schemas/RequestPatient"
@@ -8464,6 +9305,14 @@
           },
           "provider_name": {
             "title": "Provider Name",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "questions",
+              "level_change"
+            ],
+            "title": "Purpose",
             "type": "string"
           },
           "questions": {
@@ -8529,7 +9378,10 @@
           "expires_at",
           "questions",
           "texts",
-          "addendum_text"
+          "addendum_text",
+          "purpose",
+          "attestation",
+          "level_change"
         ],
         "title": "ProviderRequest",
         "type": "object"
@@ -9862,6 +10714,18 @@
             "title": "Answers",
             "type": "array"
           },
+          "attestation": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attestation"
+          },
           "confirmed": {
             "title": "Confirmed",
             "type": "boolean"
@@ -9919,6 +10783,44 @@
           }
         },
         "title": "RetryBody",
+        "type": "object"
+      },
+      "ReviewSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_level_changes": {
+            "title": "Confirm Level Changes",
+            "type": "boolean"
+          },
+          "hold_until_confirmed": {
+            "title": "Hold Until Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_level_changes",
+          "hold_until_confirmed"
+        ],
+        "title": "ReviewSettings",
+        "type": "object"
+      },
+      "ReviewSettingsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_level_changes": {
+            "title": "Confirm Level Changes",
+            "type": "boolean"
+          },
+          "hold_until_confirmed": {
+            "title": "Hold Until Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm_level_changes",
+          "hold_until_confirmed"
+        ],
+        "title": "ReviewSettingsBody",
         "type": "object"
       },
       "SampleBody": {
@@ -10694,6 +11596,107 @@
           "email"
         ],
         "title": "SignupBody",
+        "type": "object"
+      },
+      "SnapshotRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Id"
+          },
+          "approved_at": {
+            "title": "Approved At",
+            "type": "string"
+          },
+          "approver_name": {
+            "title": "Approver Name",
+            "type": "string"
+          },
+          "approver_role": {
+            "title": "Approver Role",
+            "type": "string"
+          },
+          "billed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Billed",
+            "type": "array"
+          },
+          "codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Codes",
+            "type": "array"
+          },
+          "decisions": {
+            "title": "Decisions",
+            "type": "integer"
+          },
+          "document_sha256": {
+            "title": "Document Sha256",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "text_revisions": {
+            "title": "Text Revisions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "approved_at",
+          "approver_name",
+          "approver_role",
+          "codes",
+          "billed",
+          "decisions",
+          "analysis_id",
+          "model",
+          "prompt_version",
+          "text_revisions",
+          "document_sha256"
+        ],
+        "title": "SnapshotRecord",
         "type": "object"
       },
       "SpendFigures": {
@@ -13190,6 +14193,185 @@
         ]
       }
     },
+    "/api/billing/exports": {
+      "get": {
+        "operationId": "exports_api_billing_exports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Exports",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/billing/exports/{export_id}/file": {
+      "get": {
+        "operationId": "export_file_api_billing_exports__export_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "title": "Export Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A file"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Export File",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/api/blind-review/items/{item_id}/answer": {
       "post": {
         "operationId": "answer_api_blind_review_items__item_id__answer_post",
@@ -13549,6 +14731,167 @@
         "summary": "Next Item",
         "tags": [
           "quality"
+        ]
+      }
+    },
+    "/api/comments/people": {
+      "get": {
+        "operationId": "people_api_comments_people_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CommentPerson"
+                  },
+                  "title": "Response People Api Comments People Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "People",
+        "tags": [
+          "review records"
+        ]
+      }
+    },
+    "/api/comments/{comment_id}/remove": {
+      "post": {
+        "operationId": "remove_comment_api_comments__comment_id__remove_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteComment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Remove Comment",
+        "tags": [
+          "review records"
         ]
       }
     },
@@ -16671,6 +18014,95 @@
         ]
       }
     },
+    "/api/notes/{note_id}/audit-package": {
+      "post": {
+        "operationId": "package_api_notes__note_id__audit_package_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A file"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Package",
+        "tags": [
+          "review records"
+        ]
+      }
+    },
     "/api/notes/{note_id}/billed-codes": {
       "put": {
         "operationId": "billed_codes_api_notes__note_id__billed_codes_put",
@@ -16942,6 +18374,200 @@
         "summary": "Checks",
         "tags": [
           "claims"
+        ]
+      }
+    },
+    "/api/notes/{note_id}/comments": {
+      "get": {
+        "operationId": "comments_api_notes__note_id__comments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "removed",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Removed",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteComments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Comments",
+        "tags": [
+          "review records"
+        ]
+      },
+      "post": {
+        "operationId": "comment_api_notes__note_id__comments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteComment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Comment",
+        "tags": [
+          "review records"
         ]
       }
     },
@@ -19195,6 +20821,95 @@
           }
         },
         "summary": "Change Payer",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/review-settings": {
+      "put": {
+        "operationId": "save_review_settings_api_practice_review_settings_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSettingsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Save Review Settings",
         "tags": [
           "practice"
         ]
@@ -21629,6 +23344,85 @@
           }
         },
         "summary": "Document",
+        "tags": [
+          "provider"
+        ]
+      }
+    },
+    "/api/respond/level-change": {
+      "post": {
+        "operationId": "answer_level_change_api_respond_level_change_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LevelChangeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LevelChangeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Answer Level Change",
         "tags": [
           "provider"
         ]

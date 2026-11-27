@@ -11,7 +11,7 @@ interface DecisionControlProps {
   editable: boolean;
   busy: boolean;
   onChoose: (finding: Finding, choice: Choice) => void;
-  onPicked?: (finding: Finding) => void;
+  onPicked?: (finding: Finding, choice: Choice) => void;
 }
 
 export function DecisionControl({ finding, editable, busy, onChoose, onPicked }: DecisionControlProps) {
@@ -36,7 +36,7 @@ export function DecisionControl({ finding, editable, busy, onChoose, onPicked }:
           const byClick = clicked.current;
           clicked.current = false;
           if (choice !== finding.choice) onChoose(finding, choice);
-          if (byClick) onPicked?.(finding);
+          if (byClick) onPicked?.(finding, choice);
         }}
       />
     </div>

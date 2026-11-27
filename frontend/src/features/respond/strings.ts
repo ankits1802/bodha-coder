@@ -31,7 +31,6 @@ export const RESPOND_TEXT = {
   otherRequired: "Write your answer for Other.",
   previewTitle: "Addendum preview",
   previewEmpty: "Answer the questions to see the addendum.",
-  confirm: "This is clinically accurate",
   sign: "Sign and add to note",
   signedAs: (name: string) => `Signed as ${name}`,
   signedTitle: "Addendum signed",
@@ -44,4 +43,12 @@ export const RESPOND_TEXT = {
   otherMeta: (day: string, count: number, sent: string) =>
     `Seen ${day} · ${count === 1 ? "1 question" : `${count} questions`} · Sent ${sent}`,
   nextRequest: "Next request",
+  levelLabel: "Visit level change",
+  levelAnswer: "Your answer",
+  levelAnswers: { confirm: "Confirm", disagree: "Disagree" },
+  levelComment: "Comment",
+  levelCommentRequired: "Say why you disagree.",
+  levelSend: "Send",
+  levelConfirmed: "Level confirmed",
+  levelDisagreed: "Disagreement sent",
 } as const;

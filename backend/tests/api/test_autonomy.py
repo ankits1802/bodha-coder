@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionFactory
 from app.core.errors import Conflict
-from app.models import AccessLog, CodeSet, Note, Provider
+from app.models import AccessLog, ApprovedClaim, CodeSet, Note, Provider
 from app.services import auto_approval
 from app.services.auto_approval import auto_approve, auto_approve_eligible, held_for_quality_check
 from app.services.autonomy import provider_eligibility
@@ -116,7 +116,11 @@ async def test_an_eligible_matching_note_is_approved_by_bodha_and_logged(harness
         None,
         ["99215", "I10", "E11.9", "N18.30"],
     )
-    assert (logged.actor_name, logged.detail) == ("Bodha (auto)", "99215, I10, E11.9, N18.30")
+    assert (logged.actor_name, logged.detail) == ("Bodha (auto)", "99215, I10, E11.9, N18.30 · snapshot 1")
+    async with SessionFactory() as db:
+        snapshot = await db.scalar(select(ApprovedClaim).where(ApprovedClaim.note_id == note_id))
+    assert (snapshot.approved_by, snapshot.approver_name, snapshot.approver_role) == (None, "Bodha (auto)", "system")
+    assert [code["code"] for code in snapshot.content["codes"]] == ["99215", "I10", "E11.9", "N18.30"]
 
 
 async def test_a_flagged_or_switched_off_note_waits_for_a_person(harness, icd_catalog, monkeypatch):

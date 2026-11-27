@@ -1,7 +1,16 @@
 from app.api.responses.base import RequestStatus, View
 from app.api.responses.notes import AddendumQuestion, TextRevision
+from app.api.responses.review_records import RequestPurpose
 
-__all__ = ["CodeSent", "OtherRequest", "ProviderRequest", "ProviderToken", "RequestPatient", "RespondResult"]
+__all__ = [
+    "CodeSent",
+    "LevelChangeView",
+    "OtherRequest",
+    "ProviderRequest",
+    "ProviderToken",
+    "RequestPatient",
+    "RespondResult",
+]
 
 
 class CodeSent(View):
@@ -16,6 +25,12 @@ class RequestPatient(View):
     name: str | None
     age: int | None
     sex: str | None
+
+
+class LevelChangeView(View):
+    billed: str | None
+    approved: str | None
+    shown: str
 
 
 class ProviderRequest(View):
@@ -34,6 +49,9 @@ class ProviderRequest(View):
     questions: list[AddendumQuestion]
     texts: list[TextRevision]
     addendum_text: str | None
+    purpose: RequestPurpose
+    attestation: str
+    level_change: LevelChangeView | None
 
 
 class RespondResult(View):

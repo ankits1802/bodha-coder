@@ -20,8 +20,12 @@ from app.models import (
     Activity,
     AddendumRequest,
     Analysis,
+    ApprovedClaim,
+    AuditPackage,
     AuditSample,
     Batch,
+    ClaimExport,
+    ClaimExportItem,
     CodeSet,
     Decision,
     EvalCase,
@@ -31,9 +35,12 @@ from app.models import (
     NoteText,
     Practice,
     Provider,
+    ProviderAttestation,
     RecoveryCode,
     Remittance,
     RemittanceLine,
+    ReviewComment,
+    ReviewCommentRemoval,
     Session,
     Subscription,
     Suggestion,
@@ -64,6 +71,14 @@ PRACTICE_DELETED = "practice deleted"
 FIXED_DOCUMENT_STATUSES = ("exported", "reading")
 DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
+REVIEW_RECORD_TABLES = (
+    ReviewCommentRemoval,
+    ReviewComment,
+    ProviderAttestation,
+    AuditPackage,
+    ClaimExportItem,
+    ClaimExport,
+)
 QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
 PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity, Subscription)
 USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity)
@@ -212,9 +227,12 @@ async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
     await db.execute(delete(RemittanceLine).where(RemittanceLine.remittance_id.in_(remittances)))
     for table in QUALITY_AND_REMITTANCE_TABLES:
         await db.execute(delete(table).where(table.practice_id == practice_id))
+    for table in REVIEW_RECORD_TABLES:
+        await db.execute(delete(table).where(table.practice_id == practice_id))
     for table in NOTE_CHILDREN:
         await db.execute(delete(table).where(table.note_id.in_(notes)))
     await db.execute(delete(AddendumRequest).where(AddendumRequest.practice_id == practice_id))
+    await db.execute(delete(ApprovedClaim).where(ApprovedClaim.practice_id == practice_id))
     for table in (Analysis, CodeSet):
         await db.execute(delete(table).where(table.note_id.in_(notes)))
     for table in PRACTICE_TABLES:

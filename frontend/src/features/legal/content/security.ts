@@ -10,8 +10,8 @@ export const SECURITY: LegalDocumentData = {
   slug: "security",
   title: LEGAL_TITLES.security,
   summary: `The safeguards built into ${product}.`,
-  version: "1.0",
-  updated: "2026-11-27",
+  version: "1.1",
+  updated: "2026-11-28",
   numbered: false,
   sections: [
     section(
@@ -52,6 +52,9 @@ export const SECURITY: LegalDocumentData = {
         "Every time someone opens, changes or exports a patient record, the access log records who, what, when, the IP address and the device.",
         `The access log is kept for ${facts.accessLogYears} years by default; a practice can choose up to ${facts.accessLogMaxYears}.`,
         "Every model run, suggestion with its reasoning and evidence, decision, code-set change and note revision is kept as its own record and never overwritten.",
+        "A decision that departs from Bodha’s suggestion, and every hand edit of the billed codes or diagnosis links, carries the reason the person chose, with who, their role and when.",
+        "Approving a claim freezes it as its own record: the codes, the decisions with their reasons, the approver and the model, prompt and document it came from. Claim exports use that record and keep the exact file with its SHA-256.",
+        "Provider confirmations, the wording the provider accepted and review comments are kept as written; the database refuses to change these records.",
       ),
     ),
     section(

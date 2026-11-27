@@ -15,6 +15,8 @@ export interface ReviewPermissions {
   cancelRequest: boolean;
   deleteNote: boolean;
   editVisitType: boolean;
+  seeRemovedComments: boolean;
+  auditPackage: boolean;
 }
 
 const EDITABLE: readonly string[] = ["queued", "ready", "failed"];
@@ -35,5 +37,7 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     cancelRequest: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
     deleteNote: DELETABLE_STATUSES.includes(status) && canDo(role, "manageNotes"),
     editVisitType: EDITABLE.includes(status) && canDo(role, "manageNotes"),
+    seeRemovedComments: canDo(role, "complianceDecision"),
+    auditPackage: canDo(role, "complianceDecision"),
   };
 }

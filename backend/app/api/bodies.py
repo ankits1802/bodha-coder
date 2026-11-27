@@ -6,7 +6,16 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
-from app.models import ACCESS_DETAIL_LENGTH, BILLING_INTERVALS, BILLING_PROVIDERS, TOUR_OUTCOMES, TOUR_VERSION_LIMIT
+from app.models import (
+    ACCESS_DETAIL_LENGTH,
+    BILLING_INTERVALS,
+    BILLING_PROVIDERS,
+    COMMENT_LENGTH,
+    OVERRIDE_NOTE_LENGTH,
+    OVERRIDE_REASONS,
+    TOUR_OUTCOMES,
+    TOUR_VERSION_LIMIT,
+)
 from app.services.plans import CHECKOUT_PLANS
 
 
@@ -59,12 +68,19 @@ class PreviewBody(Body):
     file_names: list[str] = Field(max_length=500)
 
 
+class OverrideBody(Body):
+    reason: Literal[OVERRIDE_REASONS]
+    note: str | None = Field(default=None, max_length=OVERRIDE_NOTE_LENGTH)
+
+
 class DecisionsBody(Body):
     choices: dict[str, Literal["accept", "keep", "ask", "add", "skip"]] = Field(min_length=1)
+    reasons: dict[str, OverrideBody] = Field(default_factory=dict)
 
 
 class BilledBody(Body):
     codes: str = Field(max_length=500)
+    reason: OverrideBody
 
 
 class PointerLineBody(Body):
@@ -74,6 +90,7 @@ class PointerLineBody(Body):
 
 class PointersBody(Body):
     lines: list[PointerLineBody] = Field(min_length=1, max_length=50)
+    reason: OverrideBody
 
 
 class FlagBody(Body):
@@ -83,6 +100,7 @@ class FlagBody(Body):
 class ComplianceBody(Body):
     decision: Literal["confirm", "return", "keep"]
     reason: str | None = Field(default=None, max_length=ACCESS_DETAIL_LENGTH)
+    override: OverrideBody | None = None
 
 
 class QuestionBody(Body):
@@ -222,6 +240,25 @@ class AnswerBody(Body):
 class RespondBody(Body):
     answers: list[AnswerBody] = Field(min_length=1, max_length=10)
     confirmed: bool
+    attestation: str | None = Field(default=None, max_length=300)
+
+
+class LevelChangeBody(Body):
+    answer: Literal["confirm", "disagree"]
+    comment: str | None = Field(default=None, max_length=COMMENT_LENGTH)
+    confirmed: bool
+    attestation: str | None = Field(default=None, max_length=300)
+
+
+class CommentBody(Body):
+    finding_key: str | None = Field(default=None, max_length=80)
+    body: str = Field(min_length=1, max_length=COMMENT_LENGTH)
+    mentions: list[str] = Field(default_factory=list, max_length=20)
+
+
+class ReviewSettingsBody(Body):
+    confirm_level_changes: bool
+    hold_until_confirmed: bool
 
 
 class SwitchBody(Body):

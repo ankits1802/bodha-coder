@@ -5,6 +5,7 @@ from typing import Any, Protocol
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 from app.core.config import Settings
 
@@ -19,6 +20,8 @@ class ObjectStore(Protocol):
     async def delete(self, keys: list[str]) -> None: ...
 
     async def delete_prefix(self, prefix: str) -> int: ...
+
+    async def exists(self, key: str) -> bool: ...
 
 
 def practice_prefix(practice_id: str) -> str:
@@ -49,7 +52,16 @@ def evaluation_response_key(practice_id: str, run_id: str, case_id: str, attempt
     return f"practices/{practice_id}/evaluations/{run_id}/{case_id}-{attempt}.json"
 
 
+def claim_export_key(practice_id: str, export_id: str, suffix: str) -> str:
+    return f"{practice_prefix(practice_id)}exports/{export_id}.{suffix}"
+
+
+def audit_package_key(practice_id: str, note_id: str, package_id: str) -> str:
+    return f"{note_prefix(practice_id, note_id)}audit-packages/{package_id}.zip"
+
+
 DELETE_BATCH = 1000
+MISSING_OBJECT_CODES = ("404", "NoSuchKey", "NotFound")
 
 
 class S3ObjectStore:
@@ -82,6 +94,15 @@ class S3ObjectStore:
             Params={"Bucket": self._bucket, "Key": key, "ResponseContentDisposition": "inline"},
             ExpiresIn=seconds,
         )
+
+    async def exists(self, key: str) -> bool:
+        try:
+            await asyncio.to_thread(self._client.head_object, Bucket=self._bucket, Key=key)
+        except ClientError as error:
+            if error.response.get("Error", {}).get("Code") in MISSING_OBJECT_CODES:
+                return False
+            raise
+        return True
 
     async def check_bucket(self) -> None:
         await asyncio.to_thread(self._client.head_bucket, Bucket=self._bucket)

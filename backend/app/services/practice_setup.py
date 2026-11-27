@@ -126,6 +126,25 @@ async def save_security(
     await db.commit()
 
 
+def review_settings(practice: Practice) -> dict[str, bool]:
+    return {
+        "confirm_level_changes": practice.confirm_level_changes,
+        "hold_until_confirmed": practice.confirm_level_changes and practice.hold_until_confirmed,
+    }
+
+
+async def save_review_settings(db: AsyncSession, actor: Actor, *, confirm: bool, hold: bool) -> dict[str, bool]:
+    practice = actor.own_practice
+    practice.confirm_level_changes, practice.hold_until_confirmed = confirm, confirm and hold
+    saved = review_settings(practice)
+    detail = (
+        f"confirm level changes {'on' if confirm else 'off'}; hold {'on' if saved['hold_until_confirmed'] else 'off'}"
+    )
+    record_activity(db, actor, "review settings changed", practice_id=practice.id, detail=detail)
+    await db.commit()
+    return saved
+
+
 async def validated_provider(db: AsyncSession, values: dict[str, Any]) -> dict[str, Any]:
     clean = {field: (str(values.get(field) or "").strip() or None) for field in PROVIDER_FIELDS}
     if not clean["name"] or clean["credential"] not in CREDENTIALS:

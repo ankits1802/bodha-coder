@@ -34,7 +34,7 @@ export function RequestHeader({ request, pdfPending, pdfError, onOpenPdf }: Requ
     <header className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="m-0 mb-1 text-subhead text-secondary">{RESPOND_TEXT.requestLabel(request.questions.length)}</p>
+          <p className="m-0 mb-1 text-subhead text-secondary">{request.purpose === "level_change" ? RESPOND_TEXT.levelLabel : RESPOND_TEXT.requestLabel(request.questions.length)}</p>
           <h1 className="m-0 text-large-title font-bold tracking-title">{request.patient.name ?? RESPOND_TEXT.patientUnknown}</h1>
           <p className="mt-1 mb-0 text-body-lg text-secondary">{patientLine(request)}</p>
           <p className="mt-2.5 mb-0 flex flex-wrap gap-x-4.5 gap-y-1.5 text-subhead text-secondary">

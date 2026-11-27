@@ -11,6 +11,8 @@ from app.core.errors import Conflict, NotFound
 from app.models import (
     AddendumRequest,
     Analysis,
+    ApprovedClaim,
+    AuditPackage,
     AuditSample,
     Batch,
     CodeSet,
@@ -18,7 +20,10 @@ from app.models import (
     EvalCase,
     Note,
     NoteText,
+    ProviderAttestation,
     RemittanceLine,
+    ReviewComment,
+    ReviewCommentRemoval,
     Suggestion,
 )
 from app.services.analysis import request_analysis
@@ -30,7 +35,21 @@ from app.services.review_actions import note_for
 logger = logging.getLogger("bodha.notes")
 DELETABLE = ("queued", "ready", "failed", "approved")
 EDITABLE = ("queued", "ready", "failed")
-CHILD_TABLES = (Decision, Suggestion, AuditSample, EvalCase, NoteText, AddendumRequest, Analysis, CodeSet)
+CHILD_TABLES = (
+    ReviewCommentRemoval,
+    ReviewComment,
+    ProviderAttestation,
+    AuditPackage,
+    Decision,
+    Suggestion,
+    AuditSample,
+    EvalCase,
+    NoteText,
+    AddendumRequest,
+    ApprovedClaim,
+    Analysis,
+    CodeSet,
+)
 
 
 async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_ids: list[str]) -> list[str]:
