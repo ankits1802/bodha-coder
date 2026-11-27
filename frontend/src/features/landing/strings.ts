@@ -18,6 +18,7 @@ export const LANDING_TEXT = {
     title: "Bill the level you can defend.",
     lead: "Bodha Coder checks every visit note against the codes you bill, too high or too low, and shows the sentence behind each change.",
     signIn: "Sign in ›",
+    facts: ["14-day trial, no card", "BAA available", "Evidence for every suggested code"],
   },
   product: {
     label: "Product preview",
@@ -41,6 +42,12 @@ export const LANDING_TEXT = {
       { before: "I10", after: "I12.9", status: "Supported", tone: "ok" as StatusTone },
       { before: "N18.30", after: null, status: "Ask provider", tone: "warn" as StatusTone },
       { before: "R20.2", after: null, status: "Add", tone: "ok" as StatusTone },
+    ],
+    accepted: "Accepted",
+    suggestions: [
+      { quote: "A1c up to 8.4", code: "E11.65", title: "Type 2 diabetes mellitus with hyperglycemia" },
+      { quote: "Increase metformin", code: "Z79.84", title: "Long term (current) use of oral hypoglycemic drugs" },
+      { quote: "Foot tingling", code: "R20.2", title: "Paresthesia of skin" },
     ],
   },
   floating: ["99214", "E11.65", "I12.9", "G2211", "R20.2", "99417", "Z79.84", "N18.30", "96127", "E78.5"],
