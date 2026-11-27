@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   hygiene:
+    if: github.repository == 'ankits1802/bodha-coder'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -23,6 +24,7 @@ jobs:
       - run: python tools/hygiene_check.py
 
   backend:
+    if: github.repository == 'ankits1802/bodha-coder'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -70,6 +72,7 @@ jobs:
       - run: pytest -q
 
   frontend:
+    if: github.repository == 'ankits1802/bodha-coder'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -90,6 +93,7 @@ jobs:
       - run: npm run build
 
   images:
+    if: github.repository == 'ankits1802/bodha-coder'
     runs-on: ubuntu-latest
     env:
       SECRET_KEY: ci-only-secret-key-not-used-anywhere-else-000
@@ -107,3 +111,20 @@ jobs:
       - run: sed 's/=.*/=ci-only/' .env.compose.example > .env.compose
       - run: docker compose --env-file .env.compose config --quiet
       - run: docker run --rm --volume "$PWD/tools/load:/scripts:ro" grafana/k6:2.4.0 inspect /scripts/coder_day.js
+
+  infra:
+    if: github.repository == 'ankits1802/bodha-coder'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: 1.13.10
+          tofu_wrapper: false
+      - run: tofu fmt -check -recursive infra/tofu
+      - run: |
+          for stack in infra/tofu/bootstrap infra/tofu/envs/staging; do
+            tofu -chdir="$stack" init -backend=false -input=false
+            tofu -chdir="$stack" validate
+          done
+      - run: bash -n infra/deploy/release.sh

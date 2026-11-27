@@ -28,6 +28,7 @@ TEXT_SUFFIXES = {
     ".ini",
     ".sql",
     ".html",
+    ".tf",
     ".svg",
     ".mako",
     ".txt",
@@ -35,7 +36,7 @@ TEXT_SUFFIXES = {
     ".sh",
     ".lock",
 }
-HASH_COMMENT_SUFFIXES = {".yml", ".yaml", ".toml", ".ini", ".example", ".sh", ".lock"}
+HASH_COMMENT_SUFFIXES = {".yml", ".yaml", ".toml", ".ini", ".example", ".sh", ".lock", ".tf"}
 HASH_COMMENT_NAMES = {".gitignore", ".dockerignore", "Dockerfile"}
 SLASH_COMMENT_SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".css"}
 PYTHON_DIRECTIVES = ("# noqa", "# type: ignore")

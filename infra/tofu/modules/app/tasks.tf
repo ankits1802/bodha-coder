@@ -1,0 +1,135 @@
+locals {
+  app_url   = "https://${aws_cloudfront_distribution.this.domain_name}"
+  api_image = "${aws_ecr_repository.this["api"].repository_url}:${var.image_tag}"
+  web_image = "${aws_ecr_repository.this["web"].repository_url}:${var.image_tag}"
+  mail = var.ses_identity_arn == "" ? [
+    { name = "EMAIL_TRANSPORT", value = "outbox" },
+    { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
+    ] : [
+    { name = "EMAIL_TRANSPORT", value = "ses" },
+    { name = "MAIL_FROM", value = var.mail_from },
+    { name = "SES_CONFIGURATION_SET", value = var.ses_configuration_set },
+  ]
+  shared_environment = concat([
+    { name = "APP_ENVIRONMENT", value = var.environment },
+    { name = "APP_URL", value = local.app_url },
+    { name = "COOKIE_SECURE", value = "true" },
+    { name = "S3_BUCKET", value = var.bucket_name },
+    { name = "S3_REGION", value = var.region },
+    { name = "S3_SERVER_SIDE_ENCRYPTION", value = "" },
+    { name = "SMS_TRANSPORT", value = "outbox" },
+    { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
+    { name = "AWS_MESSAGING_REGION", value = var.region },
+    { name = "GEMINI_BACKEND", value = var.gemini_backend },
+  ], [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  shared_secrets = [
+    { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
+    { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
+  ]
+  tasks = {
+    api = {
+      image   = local.api_image
+      command = ["api"]
+      cpu     = 256
+      memory  = 1024
+      role    = aws_iam_role.app.arn
+      port    = 8000
+      stop    = 30
+      environment = concat(local.shared_environment, [
+        { name = "FORWARDED_ALLOW_IPS", value = var.vpc_cidr },
+        { name = "WEB_CONCURRENCY", value = "1" },
+      ])
+      secrets = concat(local.shared_secrets, [
+        { name = "MFA_ENCRYPTION_KEY", valueFrom = var.secret_arns["mfa-encryption-key"] },
+      ])
+    }
+    worker = {
+      image       = local.api_image
+      command     = ["worker"]
+      cpu         = 256
+      memory      = 1024
+      role        = aws_iam_role.app.arn
+      port        = null
+      stop        = 120
+      environment = local.shared_environment
+      secrets     = local.shared_secrets
+    }
+    migrate = {
+      image       = local.api_image
+      command     = ["migrate"]
+      cpu         = 256
+      memory      = 512
+      role        = aws_iam_role.plain.arn
+      port        = null
+      stop        = 30
+      environment = [{ name = "APP_ENVIRONMENT", value = var.environment }]
+      secrets     = local.shared_secrets
+    }
+    bootstrap = {
+      image       = local.api_image
+      command     = ["python", "-m", "app.scripts.bootstrap_hq"]
+      cpu         = 256
+      memory      = 512
+      role        = aws_iam_role.plain.arn
+      port        = null
+      stop        = 30
+      environment = [{ name = "APP_ENVIRONMENT", value = var.environment }]
+      secrets = concat(local.shared_secrets, [
+        { name = "BOOTSTRAP_HQ_EMAIL", valueFrom = "${var.secret_arns["bootstrap-hq"]}:email::" },
+        { name = "BOOTSTRAP_HQ_PASSWORD", valueFrom = "${var.secret_arns["bootstrap-hq"]}:password::" },
+      ])
+    }
+    web = {
+      image       = local.web_image
+      command     = null
+      cpu         = 256
+      memory      = 512
+      role        = aws_iam_role.plain.arn
+      port        = 3000
+      stop        = 30
+      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }]
+      secrets     = []
+    }
+  }
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  for_each          = local.tasks
+  name              = "/${var.name}/${each.key}"
+  retention_in_days = 30
+}
+
+resource "aws_ecs_task_definition" "this" {
+  for_each                 = local.tasks
+  family                   = "${var.name}-${each.key}"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = each.value.role
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  container_definitions = jsonencode([{
+    name         = each.key
+    image        = each.value.image
+    essential    = true
+    command      = each.value.command
+    stopTimeout  = each.value.stop
+    environment  = each.value.environment
+    secrets      = each.value.secrets
+    portMappings = each.value.port == null ? [] : [{ containerPort = each.value.port, protocol = "tcp" }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.this[each.key].name
+        awslogs-region        = var.region
+        awslogs-stream-prefix = each.key
+      }
+    }
+  }])
+}

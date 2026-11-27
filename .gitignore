@@ -17,3 +17,12 @@ vitest-results/
 next-env.d.ts
 .claude/settings.local.json
 *.egg-info/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*_override.tf
+*.auto.tfvars
+backend.hcl
+crash.log
+plan.txt

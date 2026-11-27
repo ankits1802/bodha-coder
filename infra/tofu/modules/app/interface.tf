@@ -1,0 +1,107 @@
+variable "name" {
+  type = string
+}
+
+variable "environment" {
+  type = string
+}
+
+variable "account_id" {
+  type = string
+}
+
+variable "region" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "vpc_cidr" {
+  type = string
+}
+
+variable "public_subnet_ids" {
+  type = list(string)
+}
+
+variable "private_subnet_ids" {
+  type = list(string)
+}
+
+variable "security_groups" {
+  type = map(string)
+}
+
+variable "bucket_name" {
+  type = string
+}
+
+variable "bucket_arn" {
+  type = string
+}
+
+variable "kms_key_arn" {
+  type = string
+}
+
+variable "secret_arns" {
+  type = map(string)
+}
+
+variable "ses_identity_arn" {
+  type = string
+}
+
+variable "ses_configuration_set" {
+  type = string
+}
+
+variable "mail_from" {
+  type = string
+}
+
+variable "gemini_backend" {
+  type = string
+}
+
+variable "image_tag" {
+  type = string
+}
+
+variable "desired_count" {
+  type = number
+}
+
+output "app_url" {
+  value = local.app_url
+}
+
+output "cluster" {
+  value = aws_ecs_cluster.this.name
+}
+
+output "repositories" {
+  value = { for key, repo in aws_ecr_repository.this : key => repo.repository_url }
+}
+
+output "repository_arns" {
+  value = [for repo in aws_ecr_repository.this : repo.arn]
+}
+
+output "task_families" {
+  value = { for key, task in aws_ecs_task_definition.this : key => task.family }
+}
+
+output "service_arns" {
+  value = [for service in aws_ecs_service.this : service.id]
+}
+
+output "role_arns" {
+  value = [aws_iam_role.execution.arn, aws_iam_role.app.arn, aws_iam_role.plain.arn]
+}
+
+output "load_balancer" {
+  value = { arn_suffix = aws_lb.this.arn_suffix, api = aws_lb_target_group.api.arn_suffix, web = aws_lb_target_group.web.arn_suffix }
+}
