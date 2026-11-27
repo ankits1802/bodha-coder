@@ -12,6 +12,7 @@ from app.api.bodies import (
     PlaceBody,
     PracticeBody,
     PracticeUpdateBody,
+    RenewBody,
 )
 from app.api.responses.base import Created, ExactRoute
 from app.api.responses.hq import (
@@ -77,8 +78,9 @@ async def admin_link(practice_id: str, db: Db, mail: Mail, actor: HqActor) -> di
 
 
 @router.post("/hq/practices/{practice_id}/renew", response_model=Renewal)
-async def renew(practice_id: str, db: Db, actor: HqActor) -> dict[str, str]:
-    return {"renews_on": (await hq.renew_practice(db, actor, practice_id)).isoformat()}
+async def renew(practice_id: str, body: RenewBody, db: Db, actor: HqActor) -> dict[str, str | None]:
+    until = await hq.renew_practice(db, actor, practice_id, body.until)
+    return {"renews_on": until.isoformat() if until else None}
 
 
 @router.get("/hq/places", response_model=list[HqPlace])

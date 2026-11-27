@@ -1,13 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deletePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
+import { deletePractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
 import { DeletePracticeDialog } from "../DeletePracticeDialog";
 import { adminLinkLabel, canDeletePractice, confirmsDeletion, runPracticeAction } from "../practiceActions";
 
 vi.mock("@/lib/api/hq", () => ({
   deletePractice: vi.fn(),
-  renewPractice: vi.fn(),
   sendAdminLink: vi.fn(),
   updatePractice: vi.fn(),
 }));
@@ -56,12 +55,10 @@ describe("practice actions", () => {
   });
 
   it("reports what each action did", async () => {
-    vi.mocked(renewPractice).mockResolvedValue({ renews_on: "2028-03-01" });
     vi.mocked(sendAdminLink).mockResolvedValue({ sent: "invite" });
     vi.mocked(deletePractice).mockResolvedValue(undefined);
     vi.mocked(updatePractice).mockResolvedValue(undefined);
 
-    expect(await runPracticeAction({ kind: "renew", practice: PRACTICE })).toBe("Lakeside Primary Care renews 1 Mar 2028");
     expect(await runPracticeAction({ kind: "adminLink", practice: PRACTICE })).toBe("Invite sent to priya@lakeside.example.com");
     expect(await runPracticeAction({ kind: "delete", practice: PRACTICE }, "Lakeside Primary Care")).toBe("Lakeside Primary Care deleted");
     expect(deletePractice).toHaveBeenCalledWith("p1", "Lakeside Primary Care");

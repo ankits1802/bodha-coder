@@ -1,6 +1,5 @@
-import { deletePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
+import { deletePractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
-import { formatCalendarDay } from "@/lib/format";
 import { HQ_TEXT } from "../strings";
 
 export type PracticeActionKind = "block" | "unblock" | "adminLink" | "renew" | "delete";
@@ -40,7 +39,6 @@ export function confirmWords({ kind, practice }: PracticeAction): ConfirmWords {
   const admin = practice.admin_name ?? practice.name;
   if (kind === "block") return { title: confirm.block(practice.name), description: confirm.blockDescription, confirm: confirm.blockAction, destructive: true };
   if (kind === "unblock") return { title: confirm.unblock(practice.name), description: confirm.unblockDescription, confirm: confirm.unblockAction, destructive: false };
-  if (kind === "renew") return { title: confirm.renew(practice.name), confirm: confirm.renewAction, destructive: false };
   const title = practice.admin_status === "invited" ? confirm.adminInvite(admin) : confirm.adminReset(admin);
   return { title, description: practice.admin_email ?? undefined, confirm: confirm.sendAction, destructive: false };
 }
@@ -50,10 +48,6 @@ export async function runPracticeAction({ kind, practice }: PracticeAction, conf
   if (kind === "block" || kind === "unblock") {
     await updatePractice(practice.id, { status: kind === "block" ? "blocked" : "active" });
     return null;
-  }
-  if (kind === "renew") {
-    const { renews_on } = await renewPractice(practice.id);
-    return notices.renewed(practice.name, formatCalendarDay(renews_on, "year"));
   }
   if (kind === "delete") {
     await deletePractice(practice.id, confirmName);

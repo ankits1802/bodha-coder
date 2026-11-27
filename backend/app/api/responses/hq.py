@@ -67,7 +67,7 @@ class AdminLinkSent(View):
 
 
 class Renewal(View):
-    renews_on: str
+    renews_on: str | None
 
 
 class HqPlace(View):

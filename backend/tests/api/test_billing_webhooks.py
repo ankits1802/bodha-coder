@@ -178,7 +178,7 @@ async def test_hq_cannot_change_the_plan_or_renewal_of_a_paying_practice(harness
     for change in ({"renews_on": "2030-01-01"}, {"plan": "professional"}):
         refused = await harness.client.patch(path, headers=hq, json=change)
         assert (refused.status_code, "Stripe" in refused.json()["message"]) == (409, True)
-    assert (await harness.client.post(f"{path}/renew", headers=hq)).status_code == 409
+    assert (await harness.client.post(f"{path}/renew", headers=hq, json={"until": None})).status_code == 409
     assert (await harness.client.patch(path, headers=hq, json={"seats": 12})).status_code == 204
     [row] = (await harness.client.get("/api/hq/practices", headers=hq)).json()
     assert (row["plan"], row["billing_provider"], row["billing_status"], row["billing_interval"]) == (

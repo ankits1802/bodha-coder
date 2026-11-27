@@ -9466,12 +9466,41 @@
         "title": "RemittanceUpload",
         "type": "object"
       },
+      "RenewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "until"
+        ],
+        "title": "RenewBody",
+        "type": "object"
+      },
       "Renewal": {
         "additionalProperties": false,
         "properties": {
           "renews_on": {
-            "title": "Renews On",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renews On"
           }
         },
         "required": [
@@ -14221,6 +14250,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewBody"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

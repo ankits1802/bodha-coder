@@ -5,6 +5,7 @@ import { useAction } from "@/hooks/useAction";
 import { HQ_TEXT } from "../strings";
 import { DeletePracticeDialog } from "./DeletePracticeDialog";
 import { confirmWords, runPracticeAction, type PracticeAction } from "./practiceActions";
+import { RenewDialog } from "./RenewDialog";
 
 interface PracticeActionDialogProps {
   action: PracticeAction;
@@ -20,6 +21,9 @@ export function PracticeActionDialog({ action, onDone, onClose }: PracticeAction
     if (outcome.ok) onDone(outcome.value);
   }
 
+  if (action.kind === "renew") {
+    return <RenewDialog practice={action.practice} onDone={onDone} onClose={onClose} />;
+  }
   if (action.kind === "delete") {
     return (
       <DeletePracticeDialog

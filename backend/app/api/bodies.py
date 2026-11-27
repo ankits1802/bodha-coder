@@ -245,6 +245,10 @@ class DeletePracticeBody(Body):
     confirm_name: str = Field(min_length=1, max_length=200)
 
 
+class RenewBody(Body):
+    until: date | None
+
+
 class PlaceBody(Body):
     name: str | None = Field(default=None, max_length=80)
     active: bool

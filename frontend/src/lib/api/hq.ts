@@ -39,8 +39,8 @@ export function sendAdminLink(practiceId: string): Promise<AdminLinkSent> {
   return request<AdminLinkSent>(practicePath(practiceId, "/admin-link"), { method: "POST" });
 }
 
-export function renewPractice(practiceId: string): Promise<Renewal> {
-  return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST" });
+export function renewPractice(practiceId: string, until: string | null): Promise<Renewal> {
+  return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST", body: { until } });
 }
 
 export function deletePractice(practiceId: string, confirmName: string): Promise<void> {

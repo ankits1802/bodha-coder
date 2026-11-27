@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
 from app.codes.places import UnknownPlaceOfService, setting_for
-from app.core.calendar import shift_years, today_in, zone_named
+from app.core.calendar import today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import (
@@ -41,6 +41,8 @@ STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
 ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
 HQ_SOURCE = "hq"
+RENEWAL_IN_PAST = "choose a renewal date after today"
+NO_END_DATE = "no end date"
 
 
 async def overview(db: AsyncSession) -> dict[str, Any]:
@@ -291,15 +293,16 @@ async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, 
     raise Conflict("the practice admin is blocked")
 
 
-async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str) -> date:
+async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str, until: date | None) -> date | None:
     practice = await _practice(db, practice_id)
     refuse_manual_change(await subscription_for(db, practice.id))
-    today = today_in(zone_named(practice.time_zone))
-    start = max(today, practice.renews_on) if practice.renews_on else today
-    practice.renews_on = shift_years(start, 1)
-    record_activity(db, actor, "practice renewed", practice_id=practice.id, detail=f"renews {practice.renews_on}")
+    if until is not None and until <= today_in(zone_named(practice.time_zone)):
+        raise Invalid(RENEWAL_IN_PAST)
+    practice.renews_on = until
+    detail = f"renews {until.isoformat()}" if until else NO_END_DATE
+    record_activity(db, actor, "practice renewed", practice_id=practice.id, detail=detail)
     await db.commit()
-    return practice.renews_on
+    return until
 
 
 async def _practice(db: AsyncSession, practice_id: str) -> Practice:

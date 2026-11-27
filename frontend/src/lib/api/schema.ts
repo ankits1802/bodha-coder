@@ -3413,8 +3413,11 @@ export interface components {
             };
             ids: string[];
         };
+        RenewBody: {
+            until: string | null;
+        };
         Renewal: {
-            renews_on: string;
+            renews_on: string | null;
         };
         ReopenedNotes: {
             reopened: string[];
@@ -5669,7 +5672,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewBody"];
+            };
+        };
         responses: {
             200: {
                 headers: {
