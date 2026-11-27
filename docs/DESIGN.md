@@ -74,10 +74,23 @@ control. Rules:
 | Rule | How |
 |---|---|
 | Cheap to draw | only `transform`, `opacity`, `background-size` and `stroke-dashoffset` animate; no animation libraries |
-| Scroll without React | `ScrollStage` writes one `--p` (0 to 1) per section in a `requestAnimationFrame`; CSS derives every act from it |
+| Scroll without React | `ScrollStage` writes one `--p` (0 to 1) per section in a `requestAnimationFrame`; CSS derives every act from it. Modes: `enter` (the section rises into view), `pin` (a tall track scrolls past a sticky stage), `through` (a line at 85% of the viewport passes through the element, over at least 60% of the viewport: progress lines such as the workflow timeline) |
 | Paused off screen | `MotionRoot` marks `[data-live]` elements with `data-onscreen`; infinite animations pause when false |
 | Reveals | elements with `data-reveal` below the fold wait (`data-state="waiting"`) and ease in once seen; without JavaScript everything is visible |
 | Reduced motion | `prefers-reduced-motion: reduce` shows every final state, unpins the story and lays its acts out as rows |
 | Pointer | parallax and the magnetic button follow fine pointers only |
 | Haptics | `lib/haptics.ts`: `tap` (primary press), `select` (switch, in-page jump), `success` (approve). The Vibration API where it exists (Android); on touch devices without it, a hidden native switch is ticked, which iOS 18 answers with a system haptic. Only from a user gesture, never on scroll |
 
+## Landing page
+
+The public page at `/` (`features/landing`) follows the rules above with these additions.
+
+| Rule | How |
+|---|---|
+| One primary | "Start free trial" is the only purple button in each region; "Request a demo" is secondary, and footer actions are text links |
+| Product pictures | Mini screens are built from the app's own pieces (`CodeChip`, `CodeChange`, `StatusDot`) and plain shapes, hidden from assistive technology; every word in them still meets 4.5:1, since audits read hidden text too |
+| Animating text | Text inside a looping picture moves by transform only; opacity loops are kept to shapes, so text is never caught half transparent |
+| One dark band | The workflow timeline sits on the label colour (#1D1D1F) with secondary text in #AEAEB2 (7.6:1); status colours keep their meaning there |
+| Truthful figures | A figure is structural ("every suggested code checked against the official code set", "one in ten held") or computed from the visitor's inputs, as in the estimator, which shows its arithmetic and "Your numbers, not ours."; no customer counts, logos, testimonials, certifications or outcome statistics |
+| Controls | Role tabs follow the WAI-ARIA tabs pattern (arrows, Home, End, one tab in the tab order); questions are buttons with `aria-expanded` inside level 3 headings; the estimator pairs each range with a labelled number field and names the allowed range beside an invalid value |
+| Phones | Section links collapse behind a Sections button below 1024px; the brand, Sign in and Start free stay in the bar |

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DemoRequestButton } from "../DemoRequestButton";
 import { Magnetic } from "../motion/Magnetic";
 import { cssVars } from "../motion/cssVars";
+import { StartTrialButton } from "../StartTrialButton";
 import { LANDING_TEXT } from "../strings";
 import styles from "./hero.module.css";
 
@@ -37,8 +38,9 @@ export function Hero() {
         <p className={`m-0 max-w-160 text-title3 text-secondary sm:text-title ${styles.lead}`}>{words.lead}</p>
         <div className={`mt-2 flex flex-wrap items-center justify-center gap-5 ${styles.ctas}`}>
           <Magnetic>
-            <DemoRequestButton />
+            <StartTrialButton label={LANDING_TEXT.startTrial} />
           </Magnetic>
+          <DemoRequestButton />
           <Link href="/sign-in" className={`text-headline tracking-snug text-label ${styles.signIn}`}>
             {words.signIn}
           </Link>

@@ -1,0 +1,94 @@
+.list {
+  border-top: 1px solid #e5e5ea;
+}
+
+.item {
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 22px 0;
+  border: 0;
+  background: transparent;
+  color: #1d1d1f;
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 25px;
+  letter-spacing: -0.02em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.question:hover {
+  color: #000;
+}
+
+.plus {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #ebebef;
+  transition:
+    transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.3s ease;
+}
+
+.plus::before,
+.plus::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1.75px;
+  margin: -0.875px 0 0 -6px;
+  border-radius: 2px;
+  background: #1d1d1f;
+}
+
+.plus::after {
+  transform: rotate(90deg);
+}
+
+.question:hover .plus {
+  background: #e1e1e6;
+}
+
+.question[aria-expanded="true"] .plus {
+  transform: rotate(135deg);
+}
+
+.answer {
+  max-width: 40rem;
+  padding: 0 48px 24px 0;
+  color: #3a3a3c;
+  font-size: 17px;
+  line-height: 26px;
+  animation: answer-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plus {
+    transition: none;
+  }
+
+  .answer {
+    animation: none;
+  }
+}
+
+@keyframes answer-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+}

@@ -1,3 +1,8 @@
+import { Bento } from "./bento/Bento";
+import { ClosingCta } from "./ClosingCta";
+import { Desks } from "./desks/Desks";
+import { Faq } from "./faq/Faq";
+import { Workflow } from "./flow/Workflow";
 import { FloatingProduct } from "./hero/FloatingProduct";
 import { Hero } from "./hero/Hero";
 import styles from "./landing.module.css";
@@ -7,6 +12,7 @@ import { MotionRoot } from "./motion/MotionRoot";
 import { Numbers } from "./sections/Numbers";
 import { SecuritySection } from "./SecuritySection";
 import { Story } from "./story/Story";
+import { Worth } from "./worth/Worth";
 
 export function LandingPage() {
   return (
@@ -17,9 +23,15 @@ export function LandingPage() {
         <FloatingProduct />
         <Story />
         <Numbers />
+        <Desks />
+        <Bento />
+        <Worth />
+        <Workflow />
         <SecuritySection />
-        <LandingFooter />
+        <Faq />
+        <ClosingCta />
       </main>
+      <LandingFooter />
     </MotionRoot>
   );
 }

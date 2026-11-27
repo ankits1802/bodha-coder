@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { actFor, enterProgress, pinProgress, prefersReducedMotion, type ProgressMode } from "./progress";
+import { actFor, enterProgress, pinProgress, prefersReducedMotion, throughProgress, type ProgressMode } from "./progress";
 
 interface ScrollStageProps {
   mode: ProgressMode;
@@ -13,7 +13,9 @@ interface ScrollStageProps {
 function measure(element: HTMLElement, mode: ProgressMode): number {
   const rect = element.getBoundingClientRect();
   const viewport = window.innerHeight;
-  return mode === "pin" ? pinProgress(rect.top, rect.height, viewport) : enterProgress(rect.top, viewport);
+  if (mode === "pin") return pinProgress(rect.top, rect.height, viewport);
+  if (mode === "through") return throughProgress(rect.top, rect.height, viewport);
+  return enterProgress(rect.top, viewport);
 }
 
 export function ScrollStage({ mode, acts, className, children }: ScrollStageProps) {

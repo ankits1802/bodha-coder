@@ -1,0 +1,283 @@
+.phone {
+  position: relative;
+  width: 240px;
+  height: 488px;
+  padding: 9px;
+  border-radius: 42px;
+  background: #1d1d1f;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 50px 90px -40px rgba(0, 0, 0, 0.45);
+  animation: phone-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.island {
+  position: absolute;
+  top: 19px;
+  left: 50%;
+  z-index: 2;
+  width: 72px;
+  height: 21px;
+  margin-left: -36px;
+  border-radius: 999px;
+  background: #000;
+}
+
+.screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 46px 12px 14px;
+  overflow: hidden;
+  border-radius: 34px;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  text-align: left;
+}
+
+.card {
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1px #e5e5ea;
+  font-size: 12.5px;
+}
+
+.option::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1.5px #1d1d1f;
+  opacity: 0;
+}
+
+.radio {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px #aeaeb2;
+}
+
+.radio::after {
+  content: "";
+  position: absolute;
+  inset: 3.5px;
+  border-radius: 999px;
+  background: #1d1d1f;
+  transform: scale(0);
+}
+
+.option[data-chosen="true"]::before {
+  animation: show 8s ease-in-out 1.2s infinite both;
+}
+
+.option[data-chosen="true"] .radio::after {
+  animation: pop 8s ease-in-out 1.2s infinite both;
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+  font-size: 12px;
+}
+
+.box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1.5px #aeaeb2;
+}
+
+.box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #1d1d1f;
+  opacity: 0;
+  animation: show-late 8s ease-in-out 1.2s infinite both;
+}
+
+.boxCheck,
+.toastCheck {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.boxCheck path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 8s ease-in-out 1.2s infinite both;
+}
+
+.sign {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: press 8s ease-in-out 1.2s infinite both;
+}
+
+.toast {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #1d1d1f;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.45);
+  animation: toast 8s cubic-bezier(0.2, 0.8, 0.2, 1) 1.2s infinite both;
+}
+
+.toastCheck {
+  stroke: #34c759;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone,
+  .option[data-chosen="true"]::before,
+  .option[data-chosen="true"] .radio::after,
+  .box::before,
+  .boxCheck path,
+  .sign,
+  .toast {
+    animation: none;
+  }
+
+  .option[data-chosen="true"]::before,
+  .box::before {
+    opacity: 1;
+  }
+
+  .option[data-chosen="true"] .radio::after {
+    transform: none;
+  }
+
+  .boxCheck path {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes phone-in {
+  from {
+    transform: translate3d(0, 40px, 0) rotate(-3deg);
+  }
+}
+
+@keyframes show {
+  0%,
+  10%,
+  94%,
+  100% {
+    opacity: 0;
+  }
+  15%,
+  88% {
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  0%,
+  10%,
+  94%,
+  100% {
+    transform: scale(0);
+  }
+  15%,
+  88% {
+    transform: scale(1);
+  }
+}
+
+@keyframes show-late {
+  0%,
+  28%,
+  94%,
+  100% {
+    opacity: 0;
+  }
+  32%,
+  88% {
+    opacity: 1;
+  }
+}
+
+@keyframes draw {
+  0%,
+  30%,
+  94%,
+  100% {
+    stroke-dashoffset: 1;
+  }
+  36%,
+  88% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes press {
+  0%,
+  44%,
+  50%,
+  100% {
+    transform: scale(1);
+  }
+  47% {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes toast {
+  0%,
+  50%,
+  92%,
+  100% {
+    transform: translate3d(0, 70px, 0);
+  }
+  56%,
+  86% {
+    transform: translate3d(0, 0, 0);
+  }
+}

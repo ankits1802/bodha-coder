@@ -1,0 +1,132 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+}
+
+.head {
+  height: 32px;
+  background: #fafafb;
+  color: #6e6e73;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.line {
+  height: 44px;
+  border-top: 1px solid #ededf0;
+  animation: line-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.4s + var(--i, 0) * 0.12s);
+}
+
+.export {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 18px;
+  overflow: hidden;
+  border-top: 1px solid #ededf0;
+}
+
+.button {
+  position: relative;
+  z-index: 1;
+  animation: press 6s ease-in-out 1.4s infinite;
+}
+
+.file {
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  margin-top: -14px;
+  animation: send 6s cubic-bezier(0.65, 0, 0.35, 1) 1.4s infinite;
+}
+
+.fileBody {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 28px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px #d2d2d7,
+    0 6px 14px -6px rgba(0, 0, 0, 0.25);
+  color: #1d1d1f;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.remit {
+  padding: 14px 18px 16px;
+  border-top: 1px solid #ededf0;
+  background: #fafafb;
+}
+
+.flag {
+  display: inline-flex;
+  animation: nudge 6s ease-in-out 1.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .button,
+  .file,
+  .flag {
+    animation: none;
+  }
+
+  .file {
+    transform: translate3d(-150px, 0, 0);
+  }
+}
+
+@keyframes line-in {
+  from {
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+@keyframes press {
+  0%,
+  6%,
+  100% {
+    transform: scale(1);
+  }
+  3% {
+    transform: scale(0.94);
+  }
+}
+
+@keyframes send {
+  0%,
+  4% {
+    transform: translate3d(0, 0, 0);
+  }
+  22%,
+  70% {
+    transform: translate3d(-150px, 0, 0);
+  }
+  82%,
+  100% {
+    transform: translate3d(-420px, 0, 0);
+  }
+}
+
+@keyframes nudge {
+  0%,
+  40%,
+  52%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  44% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  48% {
+    transform: translate3d(3px, 0, 0);
+  }
+}

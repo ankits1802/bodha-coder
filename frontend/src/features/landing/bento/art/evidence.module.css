@@ -1,0 +1,243 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 34rem);
+}
+
+.note {
+  position: relative;
+  align-self: flex-start;
+  width: min(100%, 26rem);
+  padding: 20px 22px 22px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  color: #1d1d1f;
+  text-align: left;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 30px 60px -30px rgba(0, 0, 0, 0.28);
+}
+
+.note mark {
+  background-color: transparent;
+  background-image: linear-gradient(rgba(52, 199, 89, 0.18), rgba(52, 199, 89, 0.18));
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: ink 9s cubic-bezier(0.3, 0.7, 0.2, 1) 0.6s infinite both;
+}
+
+.beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent 0%, rgba(10, 132, 255, 0.06) 12%, rgba(10, 132, 255, 0.35) 13%, transparent 13.5%);
+  animation: scan 9s cubic-bezier(0.45, 0, 0.2, 1) 0.6s infinite both;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.line {
+  display: block;
+  height: 7px;
+  border-radius: 4px;
+  background: #ededf0;
+}
+
+.wire {
+  position: relative;
+  display: block;
+  width: 2px;
+  height: 44px;
+  margin: -4px 0;
+  background: repeating-linear-gradient(to bottom, #c7c7cc 0 4px, transparent 4px 8px);
+}
+
+.pulse {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #34c759;
+  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.18);
+  animation: travel 9s cubic-bezier(0.65, 0, 0.35, 1) infinite both;
+  animation-delay: calc(0.6s + var(--lag, 0s));
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  align-self: flex-end;
+  width: min(100%, 22rem);
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #fff;
+  color: #1d1d1f;
+  text-align: left;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 30px 60px -28px rgba(0, 0, 0, 0.3);
+  animation: lift 9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s infinite both;
+}
+
+.quote {
+  margin: 12px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid #34c759;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.quote::before {
+  content: "\201C";
+}
+
+.quote::after {
+  content: "\201D";
+}
+
+.found {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: #1d1d1f;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.check {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: #248a3d;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.check path {
+  stroke-dasharray: 1;
+  animation: draw 9s ease-in-out 0.6s infinite both;
+}
+
+.codeSet {
+  display: inline-flex;
+  align-self: flex-end;
+  margin-right: 2rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 16px 30px -18px rgba(0, 0, 0, 0.3);
+  animation: lift 9s cubic-bezier(0.2, 0.8, 0.2, 1) 1.4s infinite both;
+}
+
+@container (min-width: 620px) {
+  .board {
+    width: 100%;
+    max-width: 38rem;
+  }
+
+  .note {
+    width: 30rem;
+  }
+
+  .card {
+    width: 24rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note mark,
+  .beam,
+  .pulse,
+  .card,
+  .check path {
+    animation: none;
+  }
+
+  .beam {
+    display: none;
+  }
+
+  .pulse {
+    top: auto;
+    bottom: 0;
+  }
+}
+
+@keyframes ink {
+  0%,
+  14% {
+    background-size: 0% 100%;
+  }
+  24%,
+  90% {
+    background-size: 100% 100%;
+  }
+  100% {
+    background-size: 0% 100%;
+  }
+}
+
+@keyframes scan {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -14%, 0);
+  }
+  3% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+    transform: translate3d(0, 90%, 0);
+  }
+  24%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 90%, 0);
+  }
+}
+
+@keyframes travel {
+  0%,
+  24% {
+    transform: translate3d(0, 0, 0);
+  }
+  34%,
+  100% {
+    transform: translate3d(0, 36px, 0);
+  }
+}
+
+@keyframes lift {
+  0%,
+  30% {
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+  38%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes draw {
+  0%,
+  36% {
+    stroke-dashoffset: 1;
+  }
+  44%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
