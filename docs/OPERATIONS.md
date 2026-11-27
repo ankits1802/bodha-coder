@@ -1,6 +1,6 @@
 # Operations
 
-Runbooks for a Bodha Coder deployment on AWS as described in [DEPLOY.md](DEPLOY.md). Every action
+Runbooks for a Bodha Assure deployment on AWS as described in [DEPLOY.md](DEPLOY.md). Every action
 that touches PHI is done through the app where possible, so it lands in the access log. When a
 runbook needs SQL, select ids, statuses and times only, never names, text or documents, and note the
 session in the incident record.

@@ -8,7 +8,7 @@ Last reviewed: 2026-11-27.
 
 ## What this repository is
 
-Bodha Coder: a web application that reads clinical visit notes (PDF), checks the billed medical
+Bodha Assure: a web application that reads clinical visit notes (PDF), checks the billed medical
 codes (E/M CPT, ICD-10-CM, modifiers) against the documentation with Gemini, and routes each note
 to a person: ready to approve, needs a coder, ask the provider (CDI query and signed addendum), or
 compliance. Approved codes are exported for billing. Practices are tenants; Bodha HQ runs the
@@ -110,7 +110,7 @@ owner asks.
 
 | Document | Must stay true about |
 |---|---|
-| `README.md` | what Bodha Coder is, how to run and deploy it |
+| `README.md` | what Bodha Assure is, how to run and deploy it |
 | `docs/ARCHITECTURE.md` | layers, data model, how a note flows, storage |
 | `docs/CORE_API.md` | the catalogue of shared components |
 | `docs/DESIGN.md` | the design system every screen follows |

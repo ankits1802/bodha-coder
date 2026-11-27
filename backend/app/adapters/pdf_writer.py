@@ -110,8 +110,8 @@ def render_pdf(document: PdfDocument) -> bytes:
         topMargin=MARGIN,
         bottomMargin=MARGIN,
         title=document.title,
-        author="Bodha Coder",
-        creator="Bodha Coder",
+        author="Bodha Assure",
+        creator="Bodha Assure",
     )
 
     def footer(canvas: Canvas, _: SimpleDocTemplate) -> None:

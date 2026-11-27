@@ -31,9 +31,9 @@ async def send_reset_email(db: AsyncSession, messenger: Messenger, user: User) -
     hours = TOKEN_HOURS["reset"]
     await messenger.email(
         user.email,
-        subject="Reset your Bodha Coder password",
+        subject="Reset your Bodha Assure password",
         body=(
-            f"{user.name}, a password reset was asked for your Bodha Coder account. "
+            f"{user.name}, a password reset was asked for your Bodha Assure account. "
             f"The link works once, for {hours} hour{'s' if hours != 1 else ''}. Reset your password: {link}"
         ),
     )

@@ -1,6 +1,6 @@
 import { UserFacingError } from "@/lib/api/errors";
 
-export const POPUP_BLOCKED = "Allow pop-ups for Bodha Coder to open the PDF.";
+export const POPUP_BLOCKED = "Allow pop-ups for Bodha Assure to open the PDF.";
 
 export async function openDocument(loadUrl: () => Promise<{ url: string }>): Promise<void> {
   const tab = window.open("about:blank", "_blank");

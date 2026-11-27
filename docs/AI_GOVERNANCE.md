@@ -1,12 +1,12 @@
 # AI governance
 
-A practice's compliance committee can adopt this page as the description of how Bodha Coder uses
+A practice's compliance committee can adopt this page as the description of how Bodha Assure uses
 artificial intelligence. It states what the product does today; the practice fills in the owners and
 the review dates.
 
 ## Purpose and limits
 
-Bodha Coder uses a large language model to read a visit note and propose a review: the evaluation and
+Bodha Assure uses a large language model to read a visit note and propose a review: the evaluation and
 management level with its decision-making or time basis, diagnoses with their status, a verdict on
 each billed code, modifiers and add-on codes, documentation gaps with compliant provider questions, an
 audit checklist, quality measures and, when switched on, risk-adjustment conditions.

@@ -46,7 +46,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Sidebar user={user} collapsed={collapsed} onToggle={sidebar.toggle} onNavigate={() => setMenuOpen(false)} />
       </div>
       <main id="main" tabIndex={-1} className="min-w-0 flex-1 px-4 pt-8 pb-12 outline-none sm:px-8 lg:px-12 lg:pt-10">
-        <div className="flex max-w-content flex-col gap-6">
+        <div
+          className={`flex max-w-content flex-col gap-6 lg:transition-[max-width] lg:duration-200 motion-reduce:transition-none ${collapsed ? "lg:max-w-[calc(var(--container-content)_+_10.5rem)]" : ""}`}
+        >
           <PlanBanner role={user.role} />
           {children}
         </div>

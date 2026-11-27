@@ -7,7 +7,7 @@ export const SHARED_TEXT = {
   closeMenu: "Close menu",
   collapseSidebar: "Collapse sidebar",
   expandSidebar: "Expand sidebar",
-  brand: "Bodha Coder",
+  brand: "Bodha Assure",
   tagline: "Clinical coding review",
   platformAdministration: "Platform administration",
   password: { show: "Show password", hide: "Hide password" },
@@ -21,13 +21,13 @@ export const SHARED_TEXT = {
   meta: {
     description:
       "Pre-bill coding and compliance review: every visit note checked against the codes you bill, too high or too low, with the sentence behind each change.",
-    shareAlt: "Bodha Coder: bill the level you can defend.",
+    shareAlt: "Bodha Assure: bill the level you can defend.",
   },
   errors: {
     notFoundCode: "404",
     notFound: "This page doesn't exist.",
     failed: "Something went wrong.",
-    home: "Go to Bodha Coder",
+    home: "Go to Bodha Assure",
     retry: "Try again",
   },
   pager: {

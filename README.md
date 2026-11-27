@@ -1,6 +1,6 @@
-# Bodha Coder
+# Bodha Assure
 
-Clinical coding review. Bodha Coder reads each visit note, checks the billed codes against the
+Clinical coding review. Bodha Assure reads each visit note, checks the billed codes against the
 documentation, and sends the note to the right person: ready to approve, needs a coder, ask the
 provider, or compliance. Approved codes are exported for billing.
 
@@ -94,7 +94,7 @@ them. For Cloudflare R2 set `S3_ENDPOINT_URL=https://<account>.r2.cloudflarestor
 | `EMAIL_TRANSPORT` | `ses` (Amazon SES API), `smtp` (any SMTP server over STARTTLS, including the SES SMTP endpoint), `outbox` (writes each message to `MAIL_OUTBOX_DIR`, for local runs) |
 | `SMS_TRANSPORT` | `sns` (Amazon SNS), `twilio`, `outbox` |
 | `SNS_ORIGINATION_NUMBER` | the toll-free or 10DLC number registered in AWS End User Messaging SMS that SNS texts come from; texts are offered only once it is set (or, for Twilio, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`), and always in development |
-| `MAIL_FROM` | a sender on a domain verified in SES, for example `Bodha Coder <no-reply@yourpractice.com>` |
+| `MAIL_FROM` | a sender on a domain verified in SES, for example `Bodha Assure <no-reply@yourpractice.com>` |
 | `AWS_MESSAGING_REGION` | the SES and SNS region, for example `us-east-1` |
 | `SES_CONFIGURATION_SET` | optional, to track bounces and complaints |
 

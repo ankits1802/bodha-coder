@@ -1,6 +1,6 @@
 # Deploy
 
-How Bodha Coder is packaged, run locally with Docker Compose, and deployed on AWS. Day-two
+How Bodha Assure is packaged, run locally with Docker Compose, and deployed on AWS. Day-two
 procedures are in [OPERATIONS.md](OPERATIONS.md); the load test is in
 [tools/load/README.md](../tools/load/README.md). Decision: [0016](decisions/0016-containers-and-deployment.md).
 
@@ -286,7 +286,7 @@ a cancellation, then repeat in live mode.
 
 Stripe (Dashboard):
 
-1. Products: create **Bodha Coder Essentials** and **Bodha Coder Professional**. On each, add two
+1. Products: create **Bodha Assure Essentials** and **Bodha Assure Professional**. On each, add two
    recurring prices in USD, per unit (the unit is one active provider), tax behaviour as your accountant
    advises: Essentials $149.00 monthly and $1,490.00 yearly; Professional $249.00 monthly and $2,490.00
    yearly. Copy the four `price_…` ids into `STRIPE_PRICE_*`.

@@ -1,6 +1,6 @@
 # Design system
 
-The approved screens are the Bodha Coder design canvas. These rules bind every screen.
+The approved screens are the Bodha Assure design canvas. These rules bind every screen.
 
 ## Type
 

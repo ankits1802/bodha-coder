@@ -4,7 +4,7 @@ x-local-aws:
   region: &region us-east-1
   endpoint: &aws-endpoint http://localhost.localstack.cloud:4566
   bucket: &bucket bodha-local
-  mail-from: &mail-from "Bodha Coder <no-reply@bodha.test>"
+  mail-from: &mail-from "Bodha Assure <no-reply@bodha.test>"
 
 x-backend: &backend
   image: bodha-coder-api:local

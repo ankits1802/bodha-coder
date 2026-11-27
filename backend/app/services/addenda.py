@@ -162,7 +162,7 @@ async def send_code(db: AsyncSession, messenger: Messenger, token: str) -> str:
         utcnow() + timedelta(minutes=CODE_MINUTES),
         0,
     )
-    body = f"Your Bodha Coder verification code is {code}. It expires in {CODE_MINUTES} minutes."
+    body = f"Your Bodha Assure verification code is {code}. It expires in {CODE_MINUTES} minutes."
     channel = await _deliver(messenger, provider, request.channel, subject="Your verification code", body=body)
     await db.commit()
     return _masked(contact_for(provider, channel))

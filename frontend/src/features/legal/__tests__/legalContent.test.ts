@@ -51,7 +51,7 @@ describe("legal content", () => {
   });
 
   it("keeps the product name and the company name in the configuration", () => {
-    expect(LEGAL_PARTY.product).toBe("Bodha Coder");
+    expect(LEGAL_PARTY.product).toBe("Bodha Assure");
     const terms = documentTexts(LEGAL_DOCUMENTS.terms).join(" ");
     expect(terms).toContain(`between ${LEGAL_PARTY.company}, ${LEGAL_PARTY.entity}`);
   });

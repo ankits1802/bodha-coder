@@ -75,7 +75,7 @@ async def test_checkout_creates_a_subscription_for_the_plan_and_provider_count_a
         "custom_id": "practice-1",
         "subscriber": {"email_address": "admin@lakeside.example.com"},
         "application_context": {
-            "brand_name": "Bodha Coder",
+            "brand_name": "Bodha Assure",
             "user_action": "SUBSCRIBE_NOW",
             "shipping_preference": "NO_SHIPPING",
             "return_url": "https://app.test/plan?checkout=done",

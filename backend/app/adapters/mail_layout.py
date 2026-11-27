@@ -15,7 +15,7 @@ PAGE = (
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" '
     'style="padding:32px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
     'style="max-width:520px;background:#FFFFFF;border-radius:14px"><tr><td style="padding:32px">'
-    '<p style="margin:0 0 24px;font-size:13px;font-weight:600;color:#6E6E73">Bodha Coder</p>'
+    '<p style="margin:0 0 24px;font-size:13px;font-weight:600;color:#6E6E73">Bodha Assure</p>'
     '<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1D1D1F">{subject}</h1>{content}'
     "</td></tr></table></td></tr></table></body></html>"
 )

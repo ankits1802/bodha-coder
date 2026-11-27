@@ -27,7 +27,7 @@ export const SIGN_IN_TEXT = {
   newPractice: "New practice?",
   startTrial: "Start a free trial",
   providerErrors: {
-    no_account: (name: string | null) => (name ? `No Bodha Coder account uses this ${name} email.` : "No Bodha Coder account uses this email."),
+    no_account: (name: string | null) => (name ? `No Bodha Assure account uses this ${name} email.` : "No Bodha Assure account uses this email."),
     blocked: () => "This account can't sign in.",
     mismatch: (name: string | null) => (name ? `Use the ${name} account you signed in with before.` : "Use the account you signed in with before."),
     unverified_email: (name: string | null) => (name ? `This ${name} account has no verified email.` : "This account has no verified email."),

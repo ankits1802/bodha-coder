@@ -81,7 +81,7 @@ module "app" {
   secret_arns            = module.data.secret_arns
   ses_identity_arns      = module.data.ses_identity_arns
   ses_configuration_set  = module.data.ses_configuration_set
-  mail_from              = local.sender == "" ? "" : "Bodha Coder <${local.sender}>"
+  mail_from              = local.sender == "" ? "" : "Bodha Assure <${local.sender}>"
   gemini_backend         = var.gemini_backend
   image_tag              = var.image_tag
   desired_count          = 1

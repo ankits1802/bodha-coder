@@ -61,8 +61,8 @@ describe("PricingPage", () => {
     expect(data?.["@context"]).toBe("https://schema.org");
     const graph = data?.["@graph"] ?? [];
     expect(graph.map((product) => [product["@type"], product.name, product.description])).toEqual([
-      ["Product", "Bodha Coder Essentials", "Up to 5 users. Up to 3 providers. Every feature included"],
-      ["Product", "Bodha Coder Professional", "Unlimited users. Up to 50 providers. Every feature included"],
+      ["Product", "Bodha Assure Essentials", "Up to 5 users. Up to 3 providers. Every feature included"],
+      ["Product", "Bodha Assure Professional", "Unlimited users. Up to 50 providers. Every feature included"],
     ]);
     const offers = graph.flatMap((product) => product.offers);
     expect(offers.map((offer) => [offer.price, offer.priceCurrency, offer.priceSpecification.referenceQuantity.unitCode, offer.url])).toEqual([

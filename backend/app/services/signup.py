@@ -172,9 +172,9 @@ async def _send_existing_account(messenger: Messenger, email: str) -> None:
     app_url = get_settings().app_url
     await messenger.email(
         email,
-        subject="You already have a Bodha Coder account",
+        subject="You already have a Bodha Assure account",
         body=(
-            "Someone asked to start a Bodha Coder trial with this email, which already has an account. "
+            "Someone asked to start a Bodha Assure trial with this email, which already has an account. "
             f"Sign in: {app_url}/sign-in. Forgot your password? Reset it: {app_url}/forgot-password. "
             "If this was not you, you can ignore this email."
         ),

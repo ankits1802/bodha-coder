@@ -103,7 +103,7 @@ def patient_initials(name: str | None) -> str:
 def packet_document(facts: PacketFacts) -> PdfDocument:
     blocks: list[PdfBlock] = [*_cover(facts), PdfPageBreak(), *_visit(facts), *_claim(facts), *_em_basis(facts)]
     blocks += [*_decided(facts), *_checks(facts), *_requests(facts), *_history(facts), *_analyses(facts)]
-    return PdfDocument(TITLE, f"Bodha Coder · {TITLE} · {facts.visit.practice_name}", tuple(blocks))
+    return PdfDocument(TITLE, f"Bodha Assure · {TITLE} · {facts.visit.practice_name}", tuple(blocks))
 
 
 def _day(moment: date) -> str:

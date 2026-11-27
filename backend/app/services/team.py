@@ -43,8 +43,8 @@ async def send_invite(db: AsyncSession, messenger: Messenger, user: User, *, pra
     link = f"{get_settings().app_url}/set-password#{token}"
     await messenger.email(
         user.email,
-        subject=f"Join {practice_name} on Bodha Coder",
-        body=f"{user.name}, you have been invited to Bodha Coder. Set your password: {link}",
+        subject=f"Join {practice_name} on Bodha Assure",
+        body=f"{user.name}, you have been invited to Bodha Assure. Set your password: {link}",
     )
 
 

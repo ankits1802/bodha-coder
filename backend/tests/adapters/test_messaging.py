@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.core.errors import Unavailable
 
 INVITE = (
-    "Elena Varga, you have been invited to Bodha Coder. Set your password: https://app.example.com/set-password#abc"
+    "Elena Varga, you have been invited to Bodha Assure. Set your password: https://app.example.com/set-password#abc"
 )
 
 
@@ -41,17 +41,17 @@ async def test_mail_without_a_server_is_reported_as_unavailable():
 
 async def test_ses_sends_text_and_html_from_the_configured_sender():
     client = _client("sesv2")
-    settings = _settings(mail_from="Bodha Coder <no-reply@bodha.example.com>", ses_configuration_set="bodha-mail")
+    settings = _settings(mail_from="Bodha Assure <no-reply@bodha.example.com>", ses_configuration_set="bodha-mail")
     with Stubber(client) as stub:
         stub.add_response(
             "send_email",
             {"MessageId": "m-1"},
             {
-                "FromEmailAddress": "Bodha Coder <no-reply@bodha.example.com>",
+                "FromEmailAddress": "Bodha Assure <no-reply@bodha.example.com>",
                 "Destination": {"ToAddresses": ["admin@lakeside.example.com"]},
                 "Content": {
                     "Simple": {
-                        "Subject": {"Data": "Join Lakeside on Bodha Coder", "Charset": "UTF-8"},
+                        "Subject": {"Data": "Join Lakeside on Bodha Assure", "Charset": "UTF-8"},
                         "Body": {
                             "Text": {"Data": INVITE, "Charset": "UTF-8"},
                             "Html": {"Data": ANY, "Charset": "UTF-8"},
@@ -62,7 +62,7 @@ async def test_ses_sends_text_and_html_from_the_configured_sender():
             },
         )
         await SesEmail(settings, client=client).email(
-            "admin@lakeside.example.com", subject="Join Lakeside on Bodha Coder", body=INVITE
+            "admin@lakeside.example.com", subject="Join Lakeside on Bodha Assure", body=INVITE
         )
         stub.assert_no_pending_responses()
 
@@ -118,7 +118,7 @@ async def test_sns_sends_from_the_registered_origination_number():
 def test_the_html_email_turns_the_link_line_into_a_button_and_escapes_text():
     html = html_from_text("<Join> Lakeside", INVITE)
     assert "<h1" in html and "&lt;Join&gt; Lakeside</h1>" in html
-    assert ">Elena Varga, you have been invited to Bodha Coder.</p>" in html
+    assert ">Elena Varga, you have been invited to Bodha Assure.</p>" in html
     assert '<a href="https://app.example.com/set-password#abc"' in html
     assert ">Set your password</a>" in html
 

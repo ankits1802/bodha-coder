@@ -16,7 +16,7 @@ export const LANDING_TEXT = {
   startTrial: "Start free trial",
   hero: {
     title: "Bill the level you can defend.",
-    lead: "Bodha Coder checks every visit note against the codes you bill, too high or too low, and shows the sentence behind each change.",
+    lead: "Bodha Assure checks every visit note against the codes you bill, too high or too low, and shows the sentence behind each change.",
     signIn: "Sign in ›",
     facts: ["14-day trial, no card", "BAA available", "Evidence for every suggested code"],
   },
@@ -285,7 +285,7 @@ export const LANDING_TEXT = {
     title: "Questions, answered.",
     items: [
       {
-        question: "What does Bodha Coder code?",
+        question: "What does Bodha Assure code?",
         answer:
           "E/M levels for office, hospital, nursing facility and home visits, ICD-10-CM diagnoses, modifiers and add-on codes. HCC V28 and MIPS when you switch them on.",
       },
