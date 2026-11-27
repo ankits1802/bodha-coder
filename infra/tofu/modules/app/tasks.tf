@@ -1,5 +1,5 @@
 locals {
-  app_url   = "https://${aws_cloudfront_distribution.this.domain_name}"
+  app_url   = var.public_url == "" ? "https://${aws_cloudfront_distribution.this.domain_name}" : var.public_url
   api_image = "${aws_ecr_repository.this["api"].repository_url}:${var.image_tag}"
   web_image = "${aws_ecr_repository.this["web"].repository_url}:${var.image_tag}"
   mail = var.ses_identity_arn == "" ? [

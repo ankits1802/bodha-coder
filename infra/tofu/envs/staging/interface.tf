@@ -12,9 +12,9 @@ variable "vpc_cidr" {
   default = "10.40.0.0/16"
 }
 
-variable "github_repository" {
+variable "github_subject_prefix" {
   type    = string
-  default = "CHARTMATE-APP/bodha-coder"
+  default = "repo:CHARTMATE-APP@294807646/bodha-coder@1474397206"
 }
 
 variable "alert_email" {
@@ -40,6 +40,11 @@ variable "gemini_backend" {
   }
 }
 
+variable "public_url" {
+  type    = string
+  default = "https://bodha-coder.vercel.app"
+}
+
 variable "image_tag" {
   type    = string
   default = "bootstrap"
@@ -57,6 +62,10 @@ variable "database_password_version" {
 
 output "app_url" {
   value = module.app.app_url
+}
+
+output "backend_url" {
+  value = module.app.backend_url
 }
 
 output "deploy" {

@@ -74,8 +74,16 @@ variable "desired_count" {
   type = number
 }
 
+variable "public_url" {
+  type = string
+}
+
 output "app_url" {
   value = local.app_url
+}
+
+output "backend_url" {
+  value = "https://${aws_cloudfront_distribution.this.domain_name}"
 }
 
 output "cluster" {

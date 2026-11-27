@@ -80,6 +80,7 @@ module "app" {
   gemini_backend        = var.gemini_backend
   image_tag             = var.image_tag
   desired_count         = 1
+  public_url            = var.public_url
 }
 
 module "watch" {
@@ -92,15 +93,15 @@ module "watch" {
 }
 
 module "deploy" {
-  source             = "../../modules/deploy"
-  name               = local.name
-  github_repository  = var.github_repository
-  github_environment = local.environment
-  cluster            = module.app.cluster
-  repository_arns    = module.app.repository_arns
-  service_arns       = module.app.service_arns
-  task_families      = module.app.task_families
-  role_arns          = module.app.role_arns
-  region             = var.region
-  account_id         = var.account_id
+  source                = "../../modules/deploy"
+  name                  = local.name
+  github_subject_prefix = var.github_subject_prefix
+  github_environment    = local.environment
+  cluster               = module.app.cluster
+  repository_arns       = module.app.repository_arns
+  service_arns          = module.app.service_arns
+  task_families         = module.app.task_families
+  role_arns             = module.app.role_arns
+  region                = var.region
+  account_id            = var.account_id
 }
