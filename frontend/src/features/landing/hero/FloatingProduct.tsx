@@ -8,13 +8,13 @@ const PLACES = [
   { x: "-15%", y: "6%", depth: 0.95, time: "6.5s", tone: "ok" },
   { x: "-5%", y: "44%", depth: 0.5, time: "8s", tone: "ok" },
   { x: "-16%", y: "70%", depth: 0.8, time: "7.2s", tone: "low" },
-  { x: "12%", y: "-14%", depth: 0.45, time: "9s", tone: "ok" },
-  { x: "82%", y: "-15%", depth: 0.7, time: "7.6s", tone: "warn" },
+  { x: "12%", y: "104%", depth: 0.45, time: "9s", tone: "ok" },
+  { x: "82%", y: "106%", depth: 0.7, time: "7.6s", tone: "warn" },
   { x: "104%", y: "16%", depth: 1, time: "6.2s", tone: "ok" },
   { x: "96%", y: "52%", depth: 0.5, time: "8.8s", tone: "ok" },
   { x: "105%", y: "76%", depth: 0.85, time: "7s", tone: "warn" },
-  { x: "58%", y: "-16%", depth: 0.4, time: "9.6s", tone: "ok" },
-  { x: "33%", y: "-15%", depth: 0.65, time: "8.4s", tone: "low" },
+  { x: "57%", y: "108%", depth: 0.4, time: "9.6s", tone: "ok" },
+  { x: "33%", y: "105%", depth: 0.65, time: "8.4s", tone: "low" },
 ] as const;
 
 const DOT = { ok: styles.dotOk, warn: styles.dotWarn, low: styles.dotLow };

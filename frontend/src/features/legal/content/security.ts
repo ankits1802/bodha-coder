@@ -70,7 +70,7 @@ export const SECURITY: LegalDocumentData = {
       SECURITY_HEADINGS,
       bullets(
         `Notes with patient information are read by Google Gemini on Vertex AI, under Google’s business associate terms, in a United States region (${vertexRegion}).`,
-        "Customer data is not used to train AI models. The Gemini Developer API is used only with synthetic test data.",
+        "Google does not use customer data to train its models. We train our own models only on data de-identified under the HIPAA Safe Harbor standard, as the Terms and the BAA describe. The Gemini Developer API is used only with synthetic test data.",
         "The model proposes; people approve. Every suggested code is checked against the official code set for the date of service, and every suggestion quotes its evidence from the note.",
         "Each analysis records the model and prompt version it used.",
       ),
