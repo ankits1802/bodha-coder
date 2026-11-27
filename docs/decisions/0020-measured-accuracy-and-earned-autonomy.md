@@ -83,3 +83,7 @@ interval; the per-note exact-set rate is reported beside them for that reason.
 Follows: the worker must run `evaluation_runs.run_next_evaluation`, and placement or the analysis
 pipeline must call `auto_approval`; `code_sets.py` holds the two code-set queries that `analysis.py`
 should import instead of its own copies.
+
+Amendment: the default provider audit is 40 notes. With 30 notes, even 30 of 30 agreeing gives a Wilson 95%
+lower bound of 88.6%, below the 90% bar, so a 30-note audit could never make a provider eligible; 35 of 35 is
+the smallest passing result.

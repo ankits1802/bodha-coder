@@ -26,6 +26,7 @@ face, no separate code font: codes use the same family with tabular figures.
 | separator | #E5E5EA | lines |
 | label | #1D1D1F | text |
 | secondary | #6E6E73 | secondary text |
+| tertiary | #6E6E73 | the smallest labels; same colour as secondary so it passes 4.5:1 on the sidebar, set apart by size |
 | action | #3A2470 (hover #2D1B59) | the primary action button only |
 | ok | #34C759 | supported, matches |
 | warn | #FF9F0A | needs detail |
@@ -40,3 +41,7 @@ action button and nowhere else.
 Grouped panels with 14px radius, pill buttons (primary, secondary, plain, danger), segmented
 controls, macOS-style sidebar with small line icons, toggles in system green. One primary action
 per screen. No helper sentences: labels, layout and state carry the meaning.
+
+Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
+tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
+rings, never for text.

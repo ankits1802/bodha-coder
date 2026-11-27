@@ -66,7 +66,7 @@ async def test_a_blind_audit_scores_bodha_and_the_claim_with_wilson_intervals(ha
     assert_rate(claim["icd_recall"], 8, 8, 0.675592, 1.0)
     assert claim["icd_f1"] == pytest.approx(16 / 17)
     assert_rate(claim["icd_exact"], 1, 2, 0.094531, 0.905469)
-    assert (results["sample"]["status"], results["sample"]["requested"], results["sample"]["notes"]) == ("done", 30, 2)
+    assert (results["sample"]["status"], results["sample"]["requested"], results["sample"]["notes"]) == ("done", 40, 2)
     assert [(row["provider_name"], row["bodha"]["notes"]) for row in results["providers"]] == [("Elena Varga", 2)]
     assert sorted(row["agreement"]["bodha"]["em"]["direction"] for row in results["items"]) == ["lower", "match"]
 
