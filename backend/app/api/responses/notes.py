@@ -1,10 +1,10 @@
 from typing import Any, Literal
 
-from app.api.responses.base import Channel, Omittable, RequestStatus, TextSource, View
+from app.api.responses.base import Channel, NoteStatus, Omittable, RequestStatus, TextSource, View
 from app.api.responses.work import NoteSummary
 from app.codes.billing_codes import CodeType
 from app.codes.fees import RateSetting
-from app.models import ANALYSIS_STATUSES, CHOICES, CODE_SET_KINDS, SUGGESTION_KINDS
+from app.models import ANALYSIS_STATUSES, CHOICES, CODE_SET_KINDS, NOTE_CHANGE_FIELDS, SUGGESTION_KINDS
 
 __all__ = [
     "AddendumAnswer",
@@ -26,6 +26,7 @@ __all__ = [
     "Finding",
     "FindingAction",
     "MipsScope",
+    "NoteChangeRecord",
     "NoteDetail",
     "NoteHeader",
     "NoteHistory",
@@ -34,6 +35,7 @@ __all__ = [
     "ProviderRef",
     "RequiredElement",
     "TextRevision",
+    "VoidInfo",
 ]
 
 AnalysisStatus = Literal[ANALYSIS_STATUSES]
@@ -49,11 +51,19 @@ class ProviderRef(View):
     channel: Channel
 
 
+class VoidInfo(View):
+    at: str
+    by: str | None
+    reason: str | None
+    was: NoteStatus | None
+
+
 class NoteHeader(NoteSummary):
     assignee_name: str | None
     patient_age: int | None
     patient_sex: str | None
     provider: ProviderRef
+    voided: VoidInfo | None
 
 
 class TextRevision(View):
@@ -199,10 +209,20 @@ class DecisionRecord(View):
     pointers: PointerChoice | None
 
 
+class NoteChangeRecord(View):
+    field: Literal[NOTE_CHANGE_FIELDS]
+    old: str | None
+    new: str | None
+    reason: str | None
+    by: str | None
+    at: str
+
+
 class NoteHistory(View):
     analyses: list[AnalysisRevision]
     code_sets: list[CodeSetRevision]
     decisions: list[DecisionRecord]
+    changes: list[NoteChangeRecord]
 
 
 class AddendumQuestion(View):

@@ -6,7 +6,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pyotp
 from httpx import AsyncClient
-from sqlalchemy import update
+from sqlalchemy import text, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.core.config import get_settings
@@ -65,6 +66,10 @@ async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret:
     response = await client.post(f"{site}/api/auth/mfa/verify", json={"mfa_token": mfa_token, "code": code})
     assert response.status_code == 200, response.text
     return response.json()
+
+
+async def maintenance(db: AsyncSession) -> None:
+    await db.execute(text("SET LOCAL bodha.maintenance = 'on'"))
 
 
 async def forget_last_code(email: str) -> None:

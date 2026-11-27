@@ -14,7 +14,7 @@ def run_with(connection: object) -> None:
 
 
 async def run_online() -> None:
-    engine = create_async_engine(get_settings().database_url)
+    engine = create_async_engine(get_settings().migration_url)
     async with engine.connect() as connection:
         await connection.run_sync(run_with)
     await engine.dispose()

@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.bodies import (
-    DeletePracticeBody,
+    ConfirmPracticeBody,
     DemoBody,
     HqInviteBody,
     HqMemberBody,
@@ -16,19 +16,21 @@ from app.api.bodies import (
 from app.api.responses.base import Created, ExactRoute
 from app.api.responses.hq import (
     AdminLinkSent,
+    AuditVerification,
     DemoRequestRow,
     HqActivityPage,
     HqOverview,
     HqPlace,
     HqPractice,
     HqTeamMember,
+    PracticePurged,
     Renewal,
 )
 from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import hq, hq_team, records
+from app.services import audit_chain, hq, hq_team, retention
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"], route_class=ExactRoute)
@@ -66,9 +68,22 @@ async def edit_practice(practice_id: str, body: PracticeUpdateBody, db: Db, acto
     await hq.update_practice(db, actor, practice_id, body.model_dump(exclude_unset=True))
 
 
-@router.delete("/hq/practices/{practice_id}", status_code=204)
-async def delete_practice(practice_id: str, body: DeletePracticeBody, db: Db, store: Store, actor: HqActor) -> None:
-    await records.delete_practice(db, store, actor, practice_id, confirm_name=body.confirm_name)
+@router.post("/hq/practices/{practice_id}/close", status_code=204)
+async def close_practice(practice_id: str, body: ConfirmPracticeBody, db: Db, actor: HqActor) -> None:
+    await retention.close_practice(db, actor, practice_id, confirm_name=body.confirm_name)
+
+
+@router.post("/hq/practices/{practice_id}/purge", response_model=PracticePurged)
+async def purge_practice(
+    practice_id: str, body: ConfirmPracticeBody, db: Db, store: Store, actor: HqActor
+) -> dict[str, Any]:
+    archive = await retention.purge_practice(db, store, actor, practice_id, confirm_name=body.confirm_name)
+    return {"access_log_entries": archive.entries, "access_log_sha256": archive.sha256}
+
+
+@router.post("/hq/audit-log/verify", response_model=AuditVerification)
+async def verify_audit_log(db: Db, actor: HqActor) -> dict[str, Any]:
+    return await audit_chain.verify_audit_log(db, actor)
 
 
 @router.post("/hq/practices/{practice_id}/admin-link", response_model=AdminLinkSent)
@@ -108,6 +123,7 @@ async def activity(
                 "action": row.action,
                 "practice_id": row.practice_id,
                 "detail": row.detail,
+                "changes": row.changes,
             }
             for row in page.rows
         ],

@@ -1,12 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deletePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
+import { closePractice, purgePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
-import { DeletePracticeDialog } from "../DeletePracticeDialog";
-import { adminLinkLabel, canDeletePractice, confirmsDeletion, runPracticeAction } from "../practiceActions";
+import { adminLinkLabel, canClosePractice, canPurgePractice, confirmsName, runPracticeAction } from "../practiceActions";
+import { TypedNameDialog } from "../TypedNameDialog";
 
 vi.mock("@/lib/api/hq", () => ({
-  deletePractice: vi.fn(),
+  closePractice: vi.fn(),
+  purgePractice: vi.fn(),
   renewPractice: vi.fn(),
   sendAdminLink: vi.fn(),
   updatePractice: vi.fn(),
@@ -22,6 +23,9 @@ const PRACTICE: HqPractice = {
   providers: 6,
   waiting: 0,
   renews_on: "2027-03-01",
+  closed_at: null,
+  purge_after: null,
+  purged_at: null,
   time_zone: "America/Chicago",
   source: "hq",
   signed_up_on: "2026-01-05",
@@ -40,14 +44,22 @@ describe("practice actions", () => {
     vi.resetAllMocks();
   });
 
-  it("deletes only an ended or blocked practice, confirmed by its exact name", () => {
-    expect(canDeletePractice({ status: "blocked" })).toBe(true);
-    expect(canDeletePractice({ status: "ended" })).toBe(true);
-    expect(canDeletePractice({ status: "active" })).toBe(false);
-    expect(canDeletePractice({ status: "trial" })).toBe(false);
-    expect(confirmsDeletion(PRACTICE, "  Lakeside Primary Care ")).toBe(true);
-    expect(confirmsDeletion(PRACTICE, "lakeside primary care")).toBe(false);
-    expect(confirmsDeletion(PRACTICE, "Lakeside")).toBe(false);
+  it("closes only an ended or blocked practice, confirmed by its exact name", () => {
+    expect(canClosePractice({ status: "blocked" })).toBe(true);
+    expect(canClosePractice({ status: "ended" })).toBe(true);
+    expect(canClosePractice({ status: "active" })).toBe(false);
+    expect(canClosePractice({ status: "closed" })).toBe(false);
+    expect(confirmsName(PRACTICE, "  Lakeside Primary Care ")).toBe(true);
+    expect(confirmsName(PRACTICE, "lakeside primary care")).toBe(false);
+    expect(confirmsName(PRACTICE, "Lakeside")).toBe(false);
+  });
+
+  it("purges only a closed practice on or after its purge date", () => {
+    const closed = { status: "closed" as const, purge_after: "2033-11-28" };
+    expect(canPurgePractice(closed, "2033-11-27")).toBe(false);
+    expect(canPurgePractice(closed, "2033-11-28")).toBe(true);
+    expect(canPurgePractice({ status: "purged", purge_after: "2033-11-28" }, "2034-01-01")).toBe(false);
+    expect(canPurgePractice({ status: "ended", purge_after: null }, "2034-01-01")).toBe(false);
   });
 
   it("offers an invited admin a new invite and an active admin a password reset", () => {
@@ -58,31 +70,36 @@ describe("practice actions", () => {
   it("reports what each action did", async () => {
     vi.mocked(renewPractice).mockResolvedValue({ renews_on: "2028-03-01" });
     vi.mocked(sendAdminLink).mockResolvedValue({ sent: "invite" });
-    vi.mocked(deletePractice).mockResolvedValue(undefined);
+    vi.mocked(closePractice).mockResolvedValue(undefined);
+    vi.mocked(purgePractice).mockResolvedValue({ access_log_entries: 1204, access_log_sha256: "ab".repeat(32) });
     vi.mocked(updatePractice).mockResolvedValue(undefined);
 
     expect(await runPracticeAction({ kind: "renew", practice: PRACTICE })).toBe("Lakeside Primary Care renews 1 Mar 2028");
     expect(await runPracticeAction({ kind: "adminLink", practice: PRACTICE })).toBe("Invite sent to priya@lakeside.example.com");
-    expect(await runPracticeAction({ kind: "delete", practice: PRACTICE }, "Lakeside Primary Care")).toBe("Lakeside Primary Care deleted");
-    expect(deletePractice).toHaveBeenCalledWith("p1", "Lakeside Primary Care");
+    expect(await runPracticeAction({ kind: "close", practice: PRACTICE }, "Lakeside Primary Care")).toBe("Lakeside Primary Care closed");
+    expect(closePractice).toHaveBeenCalledWith("p1", "Lakeside Primary Care");
+    expect(await runPracticeAction({ kind: "purge", practice: PRACTICE }, "Lakeside Primary Care")).toBe(
+      "Lakeside Primary Care purged · access log export of 1,204 entries kept",
+    );
+    expect(purgePractice).toHaveBeenCalledWith("p1", "Lakeside Primary Care");
     expect(await runPracticeAction({ kind: "unblock", practice: PRACTICE })).toBeNull();
     expect(updatePractice).toHaveBeenCalledWith("p1", { status: "active" });
   });
 });
 
-describe("DeletePracticeDialog", () => {
-  it("keeps the delete button off until the practice name is typed exactly", () => {
+describe("TypedNameDialog", () => {
+  it("keeps the close button off until the practice name is typed exactly", () => {
     const onConfirm = vi.fn();
-    render(<DeletePracticeDialog practice={PRACTICE} pending={false} error={null} onConfirm={onConfirm} onClose={vi.fn()} />);
-    const remove = screen.getByRole("button", { name: "Delete practice" });
+    render(<TypedNameDialog kind="close" practice={PRACTICE} pending={false} error={null} onConfirm={onConfirm} onClose={vi.fn()} />);
+    const close = screen.getByRole("button", { name: "Close practice" });
     const typed = screen.getByLabelText("Type Lakeside Primary Care to confirm");
 
-    expect(remove).toBeDisabled();
+    expect(close).toBeDisabled();
     fireEvent.change(typed, { target: { value: "Lakeside" } });
-    expect(remove).toBeDisabled();
+    expect(close).toBeDisabled();
     fireEvent.change(typed, { target: { value: "Lakeside Primary Care" } });
-    expect(remove).toBeEnabled();
-    fireEvent.click(remove);
+    expect(close).toBeEnabled();
+    fireEvent.click(close);
     expect(onConfirm).toHaveBeenCalledWith("Lakeside Primary Care");
   });
 });

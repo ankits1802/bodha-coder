@@ -14,6 +14,7 @@ from app.core.calendar import shift_years, today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import (
+    CLOSED_STATUSES,
     PRACTICE_REALM,
     Activity,
     Analysis,
@@ -33,6 +34,7 @@ from app.services.password_reset import send_reset_email
 from app.services.plan_limits import subscription_for
 from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import AdminDraft, PracticeDraft, add_practice_with_admin, signup_source
+from app.services.retention import purge_after
 from app.services.subscriptions import refuse_manual_change
 from app.services.team import EMAIL_TAKEN, send_invite
 from app.services.worklists import count_of
@@ -41,6 +43,8 @@ STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
 ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
 HQ_SOURCE = "hq"
+TRACKED_FIELDS = ("name", "time_zone", "status", "plan", "seats", "renews_on")
+CLOSED_PRACTICE = "a closed practice cannot be changed"
 
 
 async def overview(db: AsyncSession) -> dict[str, Any]:
@@ -113,6 +117,9 @@ def _practice_row(
         "seats": practice.seats,
         **{key: found.get(practice.id, 0) for key, found in counts.items()},
         "renews_on": practice.renews_on.isoformat() if practice.renews_on else None,
+        "closed_at": practice.closed_at.isoformat() if practice.closed_at else None,
+        "purge_after": purge_after(practice.closed_at).isoformat() if practice.closed_at else None,
+        "purged_at": practice.purged_at.isoformat() if practice.purged_at else None,
         "time_zone": practice.time_zone,
         "source": signup_source(practice),
         "signed_up_on": practice.created_at.astimezone(zone_named(practice.time_zone)).date().isoformat(),
@@ -193,6 +200,9 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     practice = await db.get(Practice, practice_id)
     if practice is None:
         raise NotFound("practice not found")
+    if practice.status in CLOSED_STATUSES:
+        raise Conflict(CLOSED_PRACTICE)
+    before = _tracked(practice)
     status, plan, seats = changes.get("status"), changes.get("plan"), changes.get("seats")
     if (status and status not in STATUSES) or (plan and plan not in PLAN_KEYS) or (seats is not None and seats < 1):
         raise Invalid("status, plan or seats is not allowed")
@@ -211,15 +221,24 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     practice.seats = seats if seats is not None else practice.seats
     if "renews_on" in changes:
         practice.renews_on = changes["renews_on"]
+    after = _tracked(practice)
     record_activity(
         db,
         actor,
         "practice updated",
         practice_id=practice.id,
         detail=f"{practice.status}, {practice.plan}, {practice.seats} seats",
+        changes=[
+            {"field": key, "before": before[key], "after": after[key]} for key in after if after[key] != before[key]
+        ],
     )
     await db.commit()
     return practice
+
+
+def _tracked(practice: Practice) -> dict[str, Any]:
+    values = {field: getattr(practice, field) for field in TRACKED_FIELDS}
+    return {field: value.isoformat() if isinstance(value, date) else value for field, value in values.items()}
 
 
 async def places(db: AsyncSession) -> list[PlaceOfService]:
@@ -295,9 +314,15 @@ async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str) -> da
     practice = await _practice(db, practice_id)
     refuse_manual_change(await subscription_for(db, practice.id))
     today = today_in(zone_named(practice.time_zone))
-    start = max(today, practice.renews_on) if practice.renews_on else today
+    previous = practice.renews_on
+    start = max(today, previous) if previous else today
     practice.renews_on = shift_years(start, 1)
-    record_activity(db, actor, "practice renewed", practice_id=practice.id, detail=f"renews {practice.renews_on}")
+    changed = [
+        {"field": "renews_on", "before": previous.isoformat() if previous else None, "after": str(practice.renews_on)}
+    ]
+    record_activity(
+        db, actor, "practice renewed", practice_id=practice.id, detail=f"renews {practice.renews_on}", changes=changed
+    )
     await db.commit()
     return practice.renews_on
 
@@ -306,4 +331,6 @@ async def _practice(db: AsyncSession, practice_id: str) -> Practice:
     practice = await db.get(Practice, practice_id, with_for_update=True)
     if practice is None:
         raise NotFound("practice not found")
+    if practice.status in CLOSED_STATUSES:
+        raise Conflict(CLOSED_PRACTICE)
     return practice

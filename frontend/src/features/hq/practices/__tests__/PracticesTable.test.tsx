@@ -13,6 +13,9 @@ const BASE: HqPractice = {
   providers: 6,
   waiting: 0,
   renews_on: "2027-03-01",
+  closed_at: null,
+  purge_after: null,
+  purged_at: null,
   time_zone: "America/Chicago",
   source: "hq",
   signed_up_on: "2026-01-05",
@@ -47,5 +50,15 @@ describe("PracticesTable", () => {
     if (!harbor || !northside) throw new Error("rows not rendered");
     expect(within(northside).getByText("Past due · PayPal")).toBeInTheDocument();
     expect(within(harbor).queryByText(/Stripe|PayPal/)).not.toBeInTheDocument();
+  });
+
+  it("shows a closed practice with the day its records are kept until and offers nothing to change", () => {
+    const closed: HqPractice = { ...BASE, status: "closed", closed_at: "2026-11-28T15:00:00Z", purge_after: "2099-11-28" };
+    render(<PracticesTable practices={[closed]} onEdit={vi.fn()} onAction={vi.fn()} />);
+    const row = screen.getByText("Northside Clinic").closest("tr");
+    if (!row) throw new Error("row not rendered");
+    expect(within(row).getByText("Closed")).toBeInTheDocument();
+    expect(within(row).getByText("Kept until 28 Nov 2099")).toBeInTheDocument();
+    expect(within(row).queryByRole("button", { name: "More for Northside Clinic" })).not.toBeInTheDocument();
   });
 });

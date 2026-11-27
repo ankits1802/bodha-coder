@@ -13,12 +13,13 @@ from app.api.bodies import (
     BulkReopenBody,
     ComplianceBody,
     DecisionsBody,
-    DeleteNotesBody,
     FlagBody,
     PayerChoiceBody,
     PointersBody,
+    RestoreNoteBody,
     RetryBody,
     VisitTypeBody,
+    VoidNotesBody,
 )
 from app.api.responses.base import DocumentLink, ExactRoute
 from app.api.responses.note_actions import (
@@ -26,7 +27,6 @@ from app.api.responses.note_actions import (
     AssignedNotes,
     ClaimPointers,
     ComplianceOutcome,
-    DeletedNotes,
     NoteLane,
     NotePayer,
     NoteState,
@@ -34,12 +34,13 @@ from app.api.responses.note_actions import (
     ReopenedNotes,
     RequestCancelled,
     RequestCreated,
+    VoidedNotes,
 )
 from app.api.responses.notes import NoteDetail
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
-from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
-from app.services import addenda, assignment, claim_lines, note_changes, note_view, review_actions
+from app.core.roles import ADMINS, APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
+from app.services import addenda, assignment, claim_lines, note_changes, note_view, note_voids, review_actions
 from app.services.records import NewDocument, replace_document
 
 router = APIRouter(prefix="/notes", tags=["notes"], route_class=ExactRoute)
@@ -125,11 +126,19 @@ async def compliance(
     return {"status": note.status, "lane": note.lane}
 
 
-@router.post("/delete", response_model=DeletedNotes)
-async def delete_notes(
-    body: DeleteNotesBody, db: Db, store: Store, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+@router.post("/void", response_model=VoidedNotes)
+async def void_notes(
+    body: VoidNotesBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
 ) -> dict[str, list[str]]:
-    return {"deleted": await note_changes.delete_notes(db, store, actor, body.note_ids)}
+    return {"voided": await note_voids.void_notes(db, actor, body.note_ids, body.reason)}
+
+
+@router.post("/{note_id}/restore", response_model=NoteState)
+async def restore(
+    note_id: str, body: RestoreNoteBody, db: Db, actor: Annotated[Actor, Depends(require(*ADMINS))]
+) -> dict[str, str]:
+    note = await note_voids.restore_note(db, actor, note_id, body.reason)
+    return {"status": note.status}
 
 
 @router.put("/{note_id}/visit-type", response_model=NoteState)

@@ -13,7 +13,15 @@ from app.codes.npi import is_valid_npi
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.core.roles import PRACTICE_ROLES
-from app.models import DEFAULT_CHECKS, MipsList, PlaceOfService, Practice, Provider
+from app.models import (
+    ACCESS_LOG_MAX_YEARS,
+    ACCESS_LOG_MIN_YEARS,
+    DEFAULT_CHECKS,
+    MipsList,
+    PlaceOfService,
+    Practice,
+    Provider,
+)
 from app.services.audit_log import record_activity
 from app.services.payers import has_active_payer, payer_list
 from app.services.plan_limits import ensure_provider_room
@@ -36,7 +44,7 @@ SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
 PROVIDER_FIELDS = ("name", "credential", "specialty", "npi", "place_code", "email", "phone", "channel")
 CREDENTIALS = ("MD", "DO", "NP", "PA", "CNS", "CNM")
 IDLE_MINUTES_CHOICES = (5, 10, 15, 30)
-ACCESS_LOG_YEARS = range(6, 11)
+ACCESS_LOG_YEARS = range(ACCESS_LOG_MIN_YEARS, ACCESS_LOG_MAX_YEARS + 1)
 NO_CONTACT = "questions need an email or phone to be sent to"
 
 
@@ -107,7 +115,7 @@ async def save_security(
     if not set(mfa_roles) <= set(PRACTICE_ROLES) or idle_minutes not in IDLE_MINUTES_CHOICES:
         raise Invalid("choose roles and an inactivity limit from the list")
     if access_log_years is not None and access_log_years not in ACCESS_LOG_YEARS:
-        raise Invalid("keep the access log for 6 to 10 years")
+        raise Invalid(f"keep the access log for {ACCESS_LOG_MIN_YEARS} to {ACCESS_LOG_MAX_YEARS} years")
     practice = actor.practice
     if practice is None:
         raise NotFound("practice not found")

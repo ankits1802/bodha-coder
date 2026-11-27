@@ -1,9 +1,11 @@
-import { deletePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
+import { closePractice, purgePractice, renewPractice, sendAdminLink, updatePractice } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
-import { formatCalendarDay } from "@/lib/format";
+import { localIsoDate } from "@/lib/dates";
+import { formatCalendarDay, formatCount } from "@/lib/format";
 import { HQ_TEXT } from "../strings";
 
-export type PracticeActionKind = "block" | "unblock" | "adminLink" | "renew" | "delete";
+export type PracticeActionKind = "block" | "unblock" | "adminLink" | "renew" | "close" | "purge";
+export type TypedActionKind = Extract<PracticeActionKind, "close" | "purge">;
 
 export interface PracticeAction {
   kind: PracticeActionKind;
@@ -19,8 +21,16 @@ export interface ConfirmWords {
 
 const words = HQ_TEXT.practices;
 
-export function canDeletePractice(practice: Pick<HqPractice, "status">): boolean {
+export function canClosePractice(practice: Pick<HqPractice, "status">): boolean {
   return practice.status === "ended" || practice.status === "blocked";
+}
+
+export function canPurgePractice(practice: Pick<HqPractice, "status" | "purge_after">, today: string = localIsoDate()): boolean {
+  return practice.status === "closed" && practice.purge_after !== null && today >= practice.purge_after;
+}
+
+export function isTypedAction(kind: PracticeActionKind): kind is TypedActionKind {
+  return kind === "close" || kind === "purge";
 }
 
 export function canSendAdminLink(practice: Pick<HqPractice, "admin_status">): boolean {
@@ -31,7 +41,7 @@ export function adminLinkLabel(practice: Pick<HqPractice, "admin_status">): stri
   return practice.admin_status === "invited" ? words.menu.adminInvite : words.menu.adminReset;
 }
 
-export function confirmsDeletion(practice: Pick<HqPractice, "name">, typed: string): boolean {
+export function confirmsName(practice: Pick<HqPractice, "name">, typed: string): boolean {
   return typed.trim() === practice.name;
 }
 
@@ -55,9 +65,13 @@ export async function runPracticeAction({ kind, practice }: PracticeAction, conf
     const { renews_on } = await renewPractice(practice.id);
     return notices.renewed(practice.name, formatCalendarDay(renews_on, "year"));
   }
-  if (kind === "delete") {
-    await deletePractice(practice.id, confirmName);
-    return notices.deleted(practice.name);
+  if (kind === "close") {
+    await closePractice(practice.id, confirmName);
+    return notices.closed(practice.name);
+  }
+  if (kind === "purge") {
+    const { access_log_entries } = await purgePractice(practice.id, confirmName);
+    return notices.purged(practice.name, formatCount(access_log_entries));
   }
   const { sent } = await sendAdminLink(practice.id);
   const email = practice.admin_email ?? "";

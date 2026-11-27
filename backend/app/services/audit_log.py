@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -74,7 +75,13 @@ def record_system_access(
 
 
 def record_activity(
-    db: AsyncSession, actor: Actor | None, action: str, *, practice_id: str | None, detail: str
+    db: AsyncSession,
+    actor: Actor | None,
+    action: str,
+    *,
+    practice_id: str | None,
+    detail: str,
+    changes: list[dict[str, Any]] | None = None,
 ) -> None:
     db.add(
         Activity(
@@ -83,6 +90,7 @@ def record_activity(
             action=action,
             practice_id=practice_id,
             detail=detail[:300],
+            changes=changes,
         )
     )
 

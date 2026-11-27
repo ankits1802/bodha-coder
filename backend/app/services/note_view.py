@@ -8,15 +8,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_store import ObjectStore
 from app.core.config import get_settings
 from app.core.deps import Actor
-from app.models import AddendumRequest, Analysis, CodeSet, Decision, NoteText, Provider, User
+from app.models import AddendumRequest, Analysis, CodeSet, Decision, Note, NoteText, Provider, User
 from app.services.audit_log import record_access
 from app.services.estimates import note_estimate
+from app.services.note_history import note_change_rows
 from app.services.note_texts import current_texts
+from app.services.payers import payer_list
 from app.services.placement import current_decisions, current_findings
 from app.services.pointer_decisions import read_pointer_key
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
 from app.services.worklists import assignee_name, summary
+
+PROVIDER_FIELDS = ("id", "name", "credential", "specialty", "channel")
 
 
 async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str, Any]:
@@ -34,13 +38,8 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
             "assignee_name": await assignee_name(db, note),
             "patient_age": note.patient_age,
             "patient_sex": note.patient_sex,
-            "provider": {
-                "id": provider.id,
-                "name": provider.name,
-                "credential": provider.credential,
-                "specialty": provider.specialty,
-                "channel": provider.channel,
-            },
+            "provider": {key: getattr(provider, key) for key in PROVIDER_FIELDS},
+            "voided": await _voided(db, note),
         },
         "failure": await _latest_failure(db, note.id) if note.status == "failed" else None,
         "texts": await _texts(db, note.id),
@@ -56,7 +55,7 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
         ],
         "claim": [code.label() for code in claim],
         "estimate": await note_estimate(db, note, claim) if analysis else None,
-        "history": await _history(db, note.id, note.practice_id),
+        "history": {**await _history(db, note.id, note.practice_id), "changes": await _changes(db, actor, note)},
         "requests": await _requests(db, note.id),
     }
 
@@ -148,6 +147,19 @@ async def _history(db: AsyncSession, note_id: str, practice_id: str) -> dict[str
             for d in decisions
         ],
     }
+
+
+async def _voided(db: AsyncSession, note: Note) -> dict[str, Any] | None:
+    if note.voided_at is None:
+        return None
+    by = await db.scalar(select(User.name).where(User.id == note.voided_by)) if note.voided_by else None
+    return {"at": note.voided_at.isoformat(), "by": by, "reason": note.void_reason, "was": note.status_before_void}
+
+
+async def _changes(db: AsyncSession, actor: Actor, note: Note) -> list[dict[str, Any]]:
+    users = dict((await db.execute(select(User.id, User.name).where(User.practice_id == note.practice_id))).all())
+    payers = {payer["id"]: payer["name"] for payer in payer_list(actor.own_practice) if payer.get("id")}
+    return await note_change_rows(db, note.id, {**payers, **users})
 
 
 def _pointer_view(key: str) -> dict[str, Any] | None:

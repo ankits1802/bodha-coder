@@ -6,7 +6,14 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
-from app.models import ACCESS_DETAIL_LENGTH, BILLING_INTERVALS, BILLING_PROVIDERS
+from app.models import (
+    ACCESS_DETAIL_LENGTH,
+    ACCESS_LOG_MAX_YEARS,
+    ACCESS_LOG_MIN_YEARS,
+    BILLING_INTERVALS,
+    BILLING_PROVIDERS,
+)
+from app.services.note_voids import REASON_LENGTH
 from app.services.plans import CHECKOUT_PLANS
 
 
@@ -99,8 +106,13 @@ class BulkReopenBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=200)
 
 
-class DeleteNotesBody(Body):
+class VoidNotesBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=500)
+    reason: str = Field(min_length=3, max_length=REASON_LENGTH)
+
+
+class RestoreNoteBody(Body):
+    reason: str = Field(min_length=3, max_length=REASON_LENGTH)
 
 
 class AssignBody(Body):
@@ -136,7 +148,7 @@ class ChecksBody(Body):
 class SecurityBody(Body):
     mfa_roles: list[str]
     idle_minutes: int
-    access_log_years: int | None = Field(default=None, ge=6, le=10)
+    access_log_years: int | None = Field(default=None, ge=ACCESS_LOG_MIN_YEARS, le=ACCESS_LOG_MAX_YEARS)
 
 
 class ProviderDetailsBody(Body):
@@ -241,8 +253,18 @@ class PracticeUpdateBody(Body):
     time_zone: str | None = Field(default=None, max_length=64)
 
 
-class DeletePracticeBody(Body):
+class ConfirmPracticeBody(Body):
     confirm_name: str = Field(min_length=1, max_length=200)
+
+
+class AccessLogExportBody(Body):
+    start: date | None = None
+    end: date | None = None
+    user_id: str | None = Field(default=None, max_length=36)
+    action: str | None = Field(default=None, max_length=40)
+    note_id: str | None = Field(default=None, max_length=36)
+    patient: str | None = Field(default=None, max_length=200)
+    birth_date: date | None = None
 
 
 class PlaceBody(Body):

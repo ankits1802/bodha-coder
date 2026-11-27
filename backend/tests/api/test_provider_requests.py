@@ -2,7 +2,7 @@ from sqlalchemy import update
 
 from app.core.db import SessionFactory
 from app.models import AddendumRequest
-from tests.builders import practice_with_provider, read_next_note, upload_note
+from tests.builders import maintenance, practice_with_provider, read_next_note, upload_note
 from tests.fakes import NOTE_TEXT
 
 QUESTION = {"key": "dx:N18.30", "text": "What stage is the kidney disease?"}
@@ -43,6 +43,7 @@ async def _provider_session(harness, link_token: str) -> dict[str, str]:
 
 async def _change_request(request_id: str, **values) -> None:
     async with SessionFactory() as db:
+        await maintenance(db)
         await db.execute(update(AddendumRequest).where(AddendumRequest.id == request_id).values(**values))
         await db.commit()
 

@@ -4,6 +4,7 @@ import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import type { AnalysisStatus, DecisionRecord, NoteDetail } from "@/lib/api/types";
 import { codeLabel } from "../findings";
 import { REVIEW_TEXT } from "../strings";
+import { HistoryChanges } from "./HistoryChanges";
 import { HistoryEntry, HistoryList, joinMeta } from "./HistoryEntry";
 import { HistoryRequests } from "./HistoryRequests";
 import { TabSection } from "./TabSection";
@@ -110,6 +111,9 @@ export function HistoryTab({ detail }: { detail: NoteDetail }) {
       </Section>
       <Section title={words.decisions} count={history.decisions.length}>
         <Decisions detail={detail} />
+      </Section>
+      <Section title={words.changes} count={history.changes.length}>
+        <HistoryChanges changes={history.changes} />
       </Section>
       <Section title={words.requests} count={requests.length}>
         <HistoryRequests requests={requests} />

@@ -8,13 +8,16 @@ import { Pager, offsetFrom } from "@/components/ui/Pager";
 import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useQueryParams } from "@/hooks/useQueryParams";
+import { useAction } from "@/hooks/useAction";
 import { useRemote } from "@/hooks/useRemote";
-import { getHqActivity, getHqPractices } from "@/lib/api/hq";
+import { getHqActivity, getHqPractices, verifyAuditLog } from "@/lib/api/hq";
+import type { AuditVerification } from "@/lib/api/types";
 import { saveFile } from "@/lib/download";
 import { HQ_TEXT } from "../strings";
 import { ActivityFilters } from "./ActivityFilters";
 import { ActivityTable } from "./ActivityTable";
 import { activityCsv, matchesSearch } from "./activityModel";
+import { AuditCheck } from "./AuditCheck";
 
 const words = HQ_TEXT.activity;
 
@@ -32,6 +35,15 @@ export function HqActivityScreen() {
   const names = new Map(practiceList.map((practice) => [practice.id, practice.name]));
   const page = activity.state.status === "success" ? activity.state.data : null;
   const shown = (page?.items ?? []).filter((entry) => matchesSearch(entry, search, names));
+  const verify = useAction(verifyAuditLog);
+  const [check, setCheck] = useState<AuditVerification | null>(null);
+
+  async function runCheck(): Promise<void> {
+    const outcome = await verify.run();
+    if (!outcome.ok) return;
+    setCheck(outcome.value);
+    activity.reload();
+  }
 
   function exportCsv(): void {
     saveFile(new Blob([activityCsv(shown, names)], { type: "text/csv" }), words.fileName);
@@ -42,11 +54,17 @@ export function HqActivityScreen() {
       <PageHeader
         title={words.title}
         actions={
-          <Button disabled={shown.length === 0} onClick={exportCsv}>
-            {words.export}
-          </Button>
+          <>
+            <Button pending={verify.pending} onClick={() => void runCheck()}>
+              {words.verify}
+            </Button>
+            <Button disabled={shown.length === 0} onClick={exportCsv}>
+              {words.export}
+            </Button>
+          </>
         }
       />
+      <AuditCheck result={check} error={verify.error} />
       <ActivityFilters
         search={search}
         action={action}

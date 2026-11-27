@@ -3,7 +3,7 @@ import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { HqActivityEntry } from "@/lib/api/types";
 import { FORMAT_WORDS, formatDateTime } from "@/lib/format";
 import { HQ_TEXT } from "../strings";
-import { actionLabel, actionTone, practiceLabel } from "./activityModel";
+import { actionLabel, actionTone, changeLines, practiceLabel } from "./activityModel";
 
 interface ActivityTableProps {
   entries: HqActivityEntry[];
@@ -34,7 +34,14 @@ export function ActivityTable({ entries, names }: ActivityTableProps) {
               <StatusDot tone={actionTone(entry.action)}>{actionLabel(entry.action)}</StatusDot>
             </Td>
             <Td>{practiceLabel(entry.practice_id, names)}</Td>
-            <Td className="text-secondary">{entry.detail ?? FORMAT_WORDS.empty}</Td>
+            <Td className="text-secondary">
+              {entry.detail ?? FORMAT_WORDS.empty}
+              {changeLines(entry.changes).map((line) => (
+                <span key={line} className="block text-footnote">
+                  {line}
+                </span>
+              ))}
+            </Td>
             <Td className="text-secondary">{entry.actor}</Td>
           </Tr>
         ))}

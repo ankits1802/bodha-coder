@@ -182,7 +182,7 @@ export const LANDING_TEXT = {
       settings: [
         { label: "Two-step", value: "Admin, Compliance" },
         { label: "Sign out after", value: "15 min" },
-        { label: "Access log kept", value: "6 years" },
+        { label: "Access log kept", value: "7 years" },
       ],
       autonomy: "Auto-approve",
       off: "Off",

@@ -56,6 +56,7 @@ export const SHARED_TEXT = {
     approved: "Approved",
     exported: "Exported",
     ready: "Ready",
+    voided: "Voided",
   },
   nav: {
     groups: { work: "Work", practice: "Practice", platform: "Platform" },

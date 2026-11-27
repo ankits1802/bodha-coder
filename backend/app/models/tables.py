@@ -14,11 +14,12 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
+from app.models.base import Base, IdMixin, LedgerMixin, one_of, timestamp, utcnow
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
 ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
@@ -26,7 +27,12 @@ HQ_REALM = "hq"
 PRACTICE_REALM = "practice"
 REALMS = (HQ_REALM, PRACTICE_REALM)
 REALM_OF_ROLE = f"CASE WHEN role = '{HQ_REALM}' THEN '{HQ_REALM}' ELSE '{PRACTICE_REALM}' END"
-NOTE_STATUSES = ("queued", "reading", "ready", "failed", "approved", "exported")
+NOTE_STATUSES = ("queued", "reading", "ready", "failed", "approved", "exported", "voided")
+VOIDED = "voided"
+PRACTICE_STATUSES = ("trial", "active", "ended", "blocked", "closed", "purged")
+CLOSED_STATUSES = ("closed", "purged")
+ACCESS_LOG_MIN_YEARS = 7
+ACCESS_LOG_MAX_YEARS = 10
 LANES = ("approve", "coder", "provider", "compliance")
 ANALYSIS_STATUSES = ("queued", "running", "succeeded", "failed", "superseded")
 SUGGESTION_KINDS = (
@@ -52,14 +58,17 @@ LANE_REASONS = (
     "matches",
 )
 DEFAULT_TIME_ZONE = "America/Chicago"
-ACCESS_DETAIL_LENGTH = 300
 
 
 class Practice(IdMixin, Base):
     __tablename__ = "practices"
     __table_args__ = (
-        one_of("status", ("trial", "active", "ended", "blocked")),
-        CheckConstraint("access_log_years >= 6", name="access_log_years_min"),
+        one_of("status", PRACTICE_STATUSES),
+        CheckConstraint(f"access_log_years >= {ACCESS_LOG_MIN_YEARS}", name="access_log_years_min"),
+        CheckConstraint(
+            f"(status IN ({', '.join(repr(item) for item in CLOSED_STATUSES)})) = (closed_at IS NOT NULL)",
+            name="closed_when_closed_at",
+        ),
     )
     name: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(16), default="trial")
@@ -72,9 +81,12 @@ class Practice(IdMixin, Base):
     idle_minutes: Mapped[int] = mapped_column(Integer, default=15)
     private_messages: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
-    access_log_years: Mapped[int] = mapped_column(Integer, default=6)
+    access_log_years: Mapped[int] = mapped_column(Integer, default=ACCESS_LOG_MIN_YEARS)
     intake: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     signup: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    closed_at: Mapped[datetime | None] = timestamp()
+    closed_by: Mapped[str | None] = mapped_column(String(36))
+    purged_at: Mapped[datetime | None] = timestamp()
 
 
 class User(IdMixin, Base):
@@ -176,7 +188,7 @@ class Provider(IdMixin, Base):
     auto_approve: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Batch(IdMixin, Base):
+class Batch(LedgerMixin, Base):
     __tablename__ = "batches"
     __table_args__ = (one_of("source", ("upload", "intake")),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
@@ -191,7 +203,13 @@ class Batch(IdMixin, Base):
 class Note(IdMixin, Base):
     __tablename__ = "notes"
     __table_args__ = (
-        UniqueConstraint("practice_id", "file_sha256"),
+        Index(
+            "uq_notes_practice_file",
+            "practice_id",
+            "file_sha256",
+            unique=True,
+            postgresql_where=text(f"status <> '{VOIDED}'"),
+        ),
         Index("ix_notes_work", "practice_id", "status", "lane", "due_at"),
         one_of("status", NOTE_STATUSES),
         CheckConstraint("lane IS NULL OR lane IN ('approve', 'coder', 'provider', 'compliance')", name="lane_allowed"),
@@ -229,9 +247,13 @@ class Note(IdMixin, Base):
     due_at: Mapped[datetime] = timestamp(nullable=False)
     assigned_to: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
     payer: Mapped[str | None] = mapped_column(String(64))
+    voided_at: Mapped[datetime | None] = timestamp()
+    voided_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    void_reason: Mapped[str | None] = mapped_column(Text)
+    status_before_void: Mapped[str | None] = mapped_column(String(16))
 
 
-class NoteText(IdMixin, Base):
+class NoteText(LedgerMixin, Base):
     __tablename__ = "note_texts"
     __table_args__ = (UniqueConstraint("note_id", "revision"), one_of("source", ("document", "addendum")))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
@@ -241,7 +263,7 @@ class NoteText(IdMixin, Base):
     addendum_request_id: Mapped[str | None] = mapped_column(ForeignKey("addendum_requests.id"))
 
 
-class Analysis(IdMixin, Base):
+class Analysis(LedgerMixin, Base):
     __tablename__ = "analyses"
     __table_args__ = (
         UniqueConstraint("note_id", "revision"),
@@ -265,9 +287,14 @@ class Analysis(IdMixin, Base):
     response_key: Mapped[str | None] = mapped_column(String(300))
     report: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(String(300))
+    prompt_key: Mapped[str | None] = mapped_column(String(300))
+    prompt_sha256: Mapped[str | None] = mapped_column(String(64))
+    app_version: Mapped[str | None] = mapped_column(String(64))
+    generation: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    document_key: Mapped[str | None] = mapped_column(String(300))
 
 
-class Suggestion(IdMixin, Base):
+class Suggestion(LedgerMixin, Base):
     __tablename__ = "suggestions"
     __table_args__ = (UniqueConstraint("analysis_id", "key"), one_of("kind", SUGGESTION_KINDS))
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
@@ -284,7 +311,7 @@ class Suggestion(IdMixin, Base):
     detail: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
-class Decision(IdMixin, Base):
+class Decision(LedgerMixin, Base):
     __tablename__ = "decisions"
     __table_args__ = (
         Index("ix_decisions_note_key", "note_id", "suggestion_key", "created_at"),
@@ -297,7 +324,7 @@ class Decision(IdMixin, Base):
     actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
 
 
-class CodeSet(IdMixin, Base):
+class CodeSet(LedgerMixin, Base):
     __tablename__ = "code_sets"
     __table_args__ = (UniqueConstraint("note_id", "kind", "revision"), one_of("kind", CODE_SET_KINDS))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
@@ -341,32 +368,6 @@ class MipsList(IdMixin, Base):
     measure_ids: Mapped[list[str]] = mapped_column(JSONB)
     updated_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
-
-class AccessLog(IdMixin, Base):
-    __tablename__ = "access_log"
-    __table_args__ = (
-        Index("ix_access_log_practice_time", "practice_id", "created_at"),
-        one_of("actor_kind", ("user", "provider", "system")),
-    )
-    practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
-    actor_kind: Mapped[str] = mapped_column(String(8))
-    actor_id: Mapped[str] = mapped_column(String(36))
-    actor_name: Mapped[str] = mapped_column(String(120))
-    action: Mapped[str] = mapped_column(String(40))
-    note_id: Mapped[str | None] = mapped_column(String(36))
-    detail: Mapped[str | None] = mapped_column(String(ACCESS_DETAIL_LENGTH))
-    ip: Mapped[str | None] = mapped_column(String(64))
-    user_agent: Mapped[str | None] = mapped_column(String(300))
-
-
-class Activity(IdMixin, Base):
-    __tablename__ = "activity"
-    actor_id: Mapped[str | None] = mapped_column(String(36))
-    actor_name: Mapped[str] = mapped_column(String(120))
-    action: Mapped[str] = mapped_column(String(40))
-    practice_id: Mapped[str | None] = mapped_column(String(36), index=True)
-    detail: Mapped[str | None] = mapped_column(String(300))
 
 
 class DemoRequest(IdMixin, Base):

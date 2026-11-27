@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import AddendumRequest, Note, Provider
+from app.models import VOIDED, AddendumRequest, Note, Provider
 from app.services.addenda import DEFAULT_OPTIONS, OTHER_ANSWER
 from app.services.query_governance import ASKED_STATUSES
 
@@ -87,7 +87,7 @@ async def query_metrics(db: AsyncSession, practice_id: str, *, days: int, now: d
 async def _notes_by_provider(db: AsyncSession, practice_id: str, since: datetime) -> dict[str, int]:
     rows = await db.execute(
         select(Note.provider_id, func.count())
-        .where(Note.practice_id == practice_id, Note.created_at >= since)
+        .where(Note.practice_id == practice_id, Note.status != VOIDED, Note.created_at >= since)
         .group_by(Note.provider_id)
     )
     return {provider_id: count for provider_id, count in rows.all()}

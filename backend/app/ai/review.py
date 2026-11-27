@@ -11,6 +11,7 @@ from app.ai.contracts import (
     CodeReview,
     ModelClient,
     ModelReply,
+    ModelRequest,
     PatientFacts,
     ReviewInputs,
     ReviewOutcome,
@@ -35,22 +36,23 @@ logger = logging.getLogger(__name__)
 async def review_note(client: ModelClient, inputs: ReviewInputs) -> ReviewOutcome:
     _check_inputs(inputs)
     parts = _model_parts(inputs)
-    replies: list[ModelReply] = []
+    calls: list[tuple[ModelRequest, ModelReply]] = []
     valid: dict[Part, Any] = {}
     if parts:
         first = await _ask(client, inputs, parts)
-        replies.append(first)
-        valid = _parsed_parts(first, parts, inputs)
+        calls.append(first)
+        valid = _parsed_parts(first[1], parts, inputs)
         missing = tuple(part for part in parts if part not in valid)
         if any(part not in TOP_UP_OPTIONAL for part in missing):
             recovered, top_up = await _top_up(client, inputs, missing)
             valid |= recovered
-            replies.extend(top_up)
+            calls.extend(top_up)
     return ReviewOutcome(
         report=_report(valid, inputs),
         prompt_version=PROMPT_VERSION,
-        replies=tuple(replies),
+        replies=tuple(reply for _, reply in calls),
         failed_sections=_failed_sections(parts, valid),
+        requests=tuple(request for request, _ in calls),
     )
 
 
@@ -83,25 +85,22 @@ def _pdf_for(inputs: ReviewInputs) -> bytes | None:
     return inputs.pdf or None
 
 
-async def _ask(client: ModelClient, inputs: ReviewInputs, parts: Sequence[Part]) -> ModelReply:
-    return await client.generate(
-        render_review_prompt(inputs, parts),
-        schema=bundle_schema(parts),
-        pdf=_pdf_for(inputs),
-        system=SYSTEM_INSTRUCTION,
-    )
+async def _ask(client: ModelClient, inputs: ReviewInputs, parts: Sequence[Part]) -> tuple[ModelRequest, ModelReply]:
+    request = ModelRequest(render_review_prompt(inputs, parts), bundle_schema(parts), SYSTEM_INSTRUCTION)
+    reply = await client.generate(request.prompt, schema=request.schema, pdf=_pdf_for(inputs), system=request.system)
+    return request, reply
 
 
 async def _top_up(
     client: ModelClient, inputs: ReviewInputs, missing: Sequence[Part]
-) -> tuple[dict[Part, Any], tuple[ModelReply, ...]]:
+) -> tuple[dict[Part, Any], tuple[tuple[ModelRequest, ModelReply], ...]]:
     logger.info("review top-up for %s", ", ".join(missing))
     try:
-        reply = await _ask(client, inputs, missing)
+        call = await _ask(client, inputs, missing)
     except ModelError as error:
         logger.warning("review top-up for %s failed (%s)", ", ".join(missing), type(error).__name__)
         return {}, ()
-    return _parsed_parts(reply, missing, inputs), (reply,)
+    return _parsed_parts(call[1], missing, inputs), (call,)
 
 
 def _parsed_parts(reply: ModelReply, parts: Sequence[Part], inputs: ReviewInputs) -> dict[Part, Any]:

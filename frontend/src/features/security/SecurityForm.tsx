@@ -13,7 +13,7 @@ import { RolesPicker } from "./RolesPicker";
 import { SECURITY_TEXT } from "./strings";
 
 const IDLE_CHOICES: readonly IdleMinutes[] = [5, 10, 15, 30];
-const YEAR_CHOICES: readonly AccessLogYears[] = [6, 7, 8, 9, 10];
+const YEAR_CHOICES: readonly AccessLogYears[] = [7, 8, 9, 10];
 const ROW = "flex min-h-13 items-center justify-between gap-4 border-t border-hairline px-4.5 text-body";
 
 async function saveAndRefresh(settings: SecuritySettings): Promise<void> {

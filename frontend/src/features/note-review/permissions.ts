@@ -1,4 +1,4 @@
-import { DELETABLE_STATUSES } from "@/components/shared/noteStatus";
+import { canVoidNote } from "@/components/shared/noteStatus";
 import type { NoteDetail, Role } from "@/lib/api/types";
 import { canDo } from "@/lib/roles";
 import { openQuestions } from "./findings";
@@ -13,7 +13,8 @@ export interface ReviewPermissions {
   reopen: boolean;
   remind: boolean;
   cancelRequest: boolean;
-  deleteNote: boolean;
+  voidNote: boolean;
+  restore: boolean;
   editVisitType: boolean;
 }
 
@@ -33,7 +34,8 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     reopen: status === "approved" && canDo(role, "approve"),
     remind: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
     cancelRequest: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
-    deleteNote: DELETABLE_STATUSES.includes(status) && canDo(role, "manageNotes"),
+    voidNote: canVoidNote(role, status, detail.analysis !== null),
+    restore: status === "voided" && canDo(role, "restoreNote"),
     editVisitType: EDITABLE.includes(status) && canDo(role, "manageNotes"),
   };
 }

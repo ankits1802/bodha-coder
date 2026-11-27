@@ -110,6 +110,11 @@ network that name is an alias of the LocalStack container, and on the host it re
 `127.0.0.1`, so signed PDF links open in the browser. Sent emails are at
 `http://localhost:4566/_aws/ses` and texts at `http://localhost:4566/_aws/sns/sms-messages`.
 
+Compose and CI run the API, the worker and the migrations as the one database user (`bodha`), with
+no `RUNTIME_DATABASE_PASSWORD`, so no `bodha_runtime` role is created there. The immutability triggers
+still refuse changes from that user unless a transaction sets `bodha.maintenance`, which the tests do
+only to build old rows.
+
 The compose stack is for test data only. LocalStack is not covered by any business associate
 agreement, so real patient documents never go into it. For a shared staging host, put a TLS proxy
 in front of `127.0.0.1:3000` and set `APP_URL` to its `https://` address.
@@ -203,7 +208,11 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 
 | Setting | `api` | `worker` | `migrate` | Source |
 |---|---|---|---|---|
-| `DATABASE_URL` (`postgresql+asyncpg://bodha_app:…@<endpoint>:5432/bodha?ssl=require`) | yes | yes | yes | secret |
+| `DATABASE_URL` (`postgresql+asyncpg://bodha_runtime:…@<endpoint>:5432/bodha?ssl=require`, the runtime role) | yes | yes | | secret |
+| `MIGRATION_DATABASE_URL` (`postgresql+asyncpg://bodha_app:…@<endpoint>:5432/bodha?ssl=require`, the schema owner; `DATABASE_URL` is used when unset) | | | yes | secret |
+| `RUNTIME_DATABASE_PASSWORD` (the `bodha_runtime` password; read only by migration 0014, which creates or updates the role) | | | yes | secret |
+| `APP_VERSION` (the image tag, recorded on every analysis) | yes | yes | | plain |
+| `RETENTION_DAYS` (optional; days a closed practice's records are kept before HQ may purge them, and the floor of the access-log purge; default and minimum 2557) | yes | yes | | plain |
 | `SECRET_KEY` | yes | yes | yes | secret |
 | `MFA_ENCRYPTION_KEY` | yes | | | secret |
 | `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_SECRET`, `YAHOO_CLIENT_SECRET` | yes | | | secret |
@@ -373,9 +382,22 @@ admin's email, the practice id, the plan and the provider count.
   storage with autoscaling, storage and Performance Insights encrypted with a customer managed KMS
   key, deletion protection, `rds.force_ssl=1`, automatic minor version upgrades in the maintenance
   window.
-- Automated backups kept 35 days, which gives point-in-time restore to any second in that window.
-- The master user's password is managed by RDS in Secrets Manager and used only by people. The app
-  connects as `bodha_app`, which owns the schema; its password lives in the `DATABASE_URL` secret.
+- Automated backups give point-in-time restore over their window; AWS Backup keeps a monthly snapshot
+  for seven years (Backups, below).
+- The master user's password is managed by RDS in Secrets Manager and used only by people. `bodha_app`
+  owns the schema and runs migrations (`MIGRATION_DATABASE_URL`). The `api` and `worker` services
+  connect as `bodha_runtime` (`DATABASE_URL`), which migration 0014 creates when the `migrate` task has
+  `RUNTIME_DATABASE_PASSWORD` (use letters and digits only; the migration writes a SCRAM-SHA-256
+  verifier, so the password itself never appears in SQL), and which may only read and insert, update
+  tables that are not append-only, delete credentials (sessions, sign-in links, recovery codes,
+  rate-limit events, sign-in identities) and practice configuration lists, and run the two purge
+  functions, which refuse anything younger than 2557 days. It cannot truncate, alter the schema or
+  bypass the immutability triggers ([0038](decisions/0038-seven-year-retention-and-tamper-evidence.md)).
+  Order of the first release with the role: store both secrets, run `migrate` with
+  `MIGRATION_DATABASE_URL` and `RUNTIME_DATABASE_PASSWORD`, then point `DATABASE_URL` of `api` and
+  `worker` at `bodha_runtime` and deploy them. To rotate the password, store the new one and run a
+  migration with it set, or `ALTER ROLE bodha_runtime PASSWORD …` as `bodha_app` in a recorded session,
+  then redeploy `api` and `worker`.
 - Parameter group: `log_parameter_max_length=0` and `log_parameter_max_length_on_error=0`, and no
   `log_statement=all`, so query parameters (patient data) never reach the database logs.
   `log_min_duration_statement=1000` is safe with those set.
@@ -385,21 +407,25 @@ admin's email, the practice id, the plan and the provider count.
 ### Object storage: S3
 
 - One bucket per environment, Block Public Access on (all four settings), Object Ownership
-  "bucket owner enforced", versioning on.
+  "bucket owner enforced", versioning on, S3 Object Lock in governance mode with a default retention
+  of seven years, so no object version can be removed before then without the separate
+  `s3:BypassGovernanceRetention` permission, which no task role holds.
 - Default encryption SSE-KMS with a customer managed key and S3 Bucket Keys.
 - Bucket policy: deny any request without TLS (`aws:SecureTransport` false), and deny
   `s3:PutObject` whose `s3:x-amz-server-side-encryption` is `AES256`, so a wrong setting fails
   loudly.
 - Lifecycle: abort incomplete multipart uploads after 7 days; move current objects to Standard-IA
-  after 90 days; expire noncurrent versions 30 days after they become noncurrent; remove expired
-  delete markers. Deleting a practice therefore leaves recoverable versions for 30 days.
+  after 90 days; expire noncurrent versions no sooner than 2557 days after they become noncurrent;
+  remove expired delete markers. Nothing under `practices/`, `archives/`, `ses-inbound/` or
+  `ses-retained/` expires before seven years.
 - CloudTrail data events for the bucket (reads and writes) to a separate, locked log bucket.
 - No CORS configuration is needed: signed PDF links are opened, not fetched.
-- The worker deletes, once a day, objects older than 24 hours that no record holds (the orphan sweep in
-  [ARCHITECTURE.md](ARCHITECTURE.md#records-replaced-pdfs-retention-and-practice-deletion)); it needs
-  no permission beyond its task role's.
-- Email intake adds the `ses-inbound/` prefix, an SES statement in this bucket policy and the key
-  policy, a one-day lifecycle rule on that prefix and a Lambda function: [infra/ses_intake](../infra/ses_intake/README.md).
+- The worker deletes, once a day, objects older than 24 hours whose record does not exist (the orphan
+  sweep in [ARCHITECTURE.md](ARCHITECTURE.md#records-replaced-pdfs-retention-voids-and-closing-a-practice));
+  under Object Lock that only adds a delete marker. It needs no permission beyond its task role's.
+- Email intake adds the `ses-inbound/` and `ses-retained/` prefixes, an SES statement in this bucket
+  policy and the key policy, and a Lambda function that keeps every raw message under `ses-retained/`:
+  [infra/ses_intake](../infra/ses_intake/README.md).
 
 ### Email: SES
 
@@ -428,7 +454,9 @@ admin's email, the practice id, the plan and the provider count.
 
 | Secret | Read by |
 |---|---|
-| `bodha/<env>/database-url` | api, worker, migrate |
+| `bodha/<env>/database-url` (`bodha_runtime`) | api, worker |
+| `bodha/<env>/migration-database-url` (`bodha_app`) | migrate |
+| `bodha/<env>/runtime-database-password` | migrate |
 | `bodha/<env>/secret-key` | api, worker, migrate |
 | `bodha/<env>/mfa-encryption-key` | api |
 | `bodha/<env>/google-client-secret` | api |
@@ -447,8 +475,11 @@ Fargate tasks do not have, so it needs a credential supplier the adapter does no
 
 ### Logs, metrics and alarms: CloudWatch
 
-- Log groups `/bodha/<env>/api`, `/worker`, `/web`, `/migrate`, encrypted with KMS, kept 400 days.
-  The PHI access log lives in Postgres (`access_log`), kept for each practice's retention period.
+- Log groups `/bodha/<env>/api`, `/worker`, `/web`, `/migrate`, encrypted with KMS, kept seven years
+  (2557 days). The PHI access log lives in Postgres (`access_log`), kept for each practice's retention
+  period (7 to 10 years) and hash-chained.
+- CloudTrail records management events for the account, and data events for the documents bucket, to a
+  separate locked log bucket kept seven years.
 - Metric filters: `{ $.logger = "bodha.access" && $.status >= 500 }` on the API group and
   `{ $.level = "ERROR" }` on the worker group.
 - Alarms, all to one SNS topic for the on-call rota (alarm text names metrics, never data):
@@ -496,7 +527,9 @@ back to the queue at once, without spending an attempt, so deploys do not delay 
 1. CI is green on the commit.
 2. Build both images, tag them with the commit SHA, push to ECR.
 3. Register task definition revisions for `api`, `worker`, `web` and `migrate` with that tag.
-4. Run the migration as a one-off task in the private subnets with the worker's security group:
+3a. Set `APP_VERSION` on the `api` and `worker` task definitions to the same tag.
+4. Run the migration as a one-off task in the private subnets with the worker's security group
+   (it connects with `MIGRATION_DATABASE_URL`):
    `aws ecs run-task --cluster bodha-prod --launch-type FARGATE --task-definition bodha-migrate:<rev> --network-configuration …`,
    then `aws ecs wait tasks-stopped` and check the container's `exitCode` is `0` with
    `aws ecs describe-tasks`. A non-zero exit stops the release.
@@ -513,9 +546,8 @@ can still link practice accounts while both run; an HQ link from that release is
 
 ### Backups and the restore drill
 
-- RDS: automated backups (35 days, point in time) plus an AWS Backup plan that copies a daily
-  snapshot to a vault in a separate backup account and region, with Vault Lock and retention set
-  by the records policy.
+- RDS: automated backups (point in time) plus an AWS Backup plan that keeps a monthly snapshot for
+  seven years, copied to a vault in a separate backup account and region with Vault Lock.
 - S3: versioning and the lifecycle above; replicate the bucket to the backup account
   (SSE-KMS replication with the destination key) where the records policy requires a second copy.
 - Every quarter, and after any change to the database setup, run a restore drill and record the
@@ -523,7 +555,8 @@ can still link practice accounts while both run; an HQ link from that release is
   The restored copy holds PHI, so it lives in an isolated recovery VPC in the production account,
   never in staging:
   1. Restore the production database to a point in time 15 minutes ago as a new instance.
-  2. Run one `api` task in the recovery VPC with `DATABASE_URL` pointing at the restored instance
+  2. Run one `api` task in the recovery VPC with `DATABASE_URL` pointing at the restored instance as
+     `bodha_runtime`
      and the production bucket (read access only).
   3. Check that `/api/health/ready` is ready, that row counts of `notes`, `analyses` and
      `access_log` match the source at that time, and that three random notes open with their PDFs.

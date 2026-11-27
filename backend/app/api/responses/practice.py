@@ -8,6 +8,7 @@ from app.services.provider_details import BILLS_UNDER
 __all__ = [
     "AccessLogEntry",
     "AccessLogPage",
+    "AccessLogPerson",
     "ImportedProviders",
     "IntakeView",
     "MipsChoice",
@@ -137,11 +138,18 @@ class AccessLogEntry(View):
     user_agent: str | None
 
 
+class AccessLogPerson(View):
+    id: str
+    name: str
+
+
 class AccessLogPage(View):
     items: list[AccessLogEntry]
     total: int
     offset: int
     page_size: int
+    actions: list[str]
+    people: list[AccessLogPerson]
 
 
 class IntakeView(View):

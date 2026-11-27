@@ -16,7 +16,7 @@ from app.adapters.billing_contract import (
 )
 from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, provider_label
-from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
+from app.ai.contracts import ModelClient, ModelReply, ModelRequest, ReviewInputs, ReviewOutcome, ReviewReport
 
 NOTE_TEXT = (
     "Follow-up of diabetes and blood pressure. 67-year-old woman with type 2 diabetes, hypertension and chronic kidney "
@@ -176,10 +176,12 @@ class FakeBillingProvider:
 class ScriptedReviewer:
     report: ReviewReport
     calls: list[ReviewInputs] = field(default_factory=list)
+    requests: tuple[ModelRequest, ...] = ()
+    replies: tuple[ModelReply, ...] = ()
 
     async def __call__(self, client: ModelClient, inputs: ReviewInputs) -> ReviewOutcome:
         self.calls.append(inputs)
-        return ReviewOutcome(report=self.report, prompt_version="test")
+        return ReviewOutcome(report=self.report, prompt_version="test", replies=self.replies, requests=self.requests)
 
 
 def text_pdf(text: str) -> bytes:

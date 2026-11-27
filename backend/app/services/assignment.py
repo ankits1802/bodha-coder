@@ -8,6 +8,7 @@ from app.core.errors import Conflict, Forbidden, Invalid, NotFound
 from app.core.roles import ADMINS, NOTE_READERS
 from app.models import Note, User
 from app.services.audit_log import record_access
+from app.services.note_history import record_note_change
 from app.services.worklists import QUEUE_STATUSES
 
 ASSIGNED = "assigned"
@@ -23,6 +24,7 @@ async def assign_notes(db: AsyncSession, actor: Actor, note_ids: list[str], user
     for note in notes:
         if note.assigned_to == target:
             continue
+        record_note_change(db, actor, note, "assignee", old=note.assigned_to, new=target)
         note.assigned_to = target
         record_access(db, actor, ASSIGNED, note_id=note.id, detail=f"to {assignee.name if assignee else NOBODY}")
     await db.commit()

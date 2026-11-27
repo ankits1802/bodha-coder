@@ -6,7 +6,6 @@ import type {
   Choice,
   ComplianceDecision,
   ComplianceOutcome,
-  DeletedNotes,
   DocumentLink,
   NoteDetail,
   NoteLane,
@@ -17,6 +16,7 @@ import type {
   ReopenedNotes,
   RequestCancelled,
   RequestCreated,
+  VoidedNotes,
 } from "./types";
 
 const notePath = (noteId: string, suffix = ""): string => `/api/notes/${encodeURIComponent(noteId)}${suffix}`;
@@ -71,8 +71,12 @@ export function setNotePayer(noteId: string, payer: string | null): Promise<Note
   return request<NotePayer>(notePath(noteId, "/payer"), { method: "PUT", body: { payer } });
 }
 
-export function deleteNotes(noteIds: string[]): Promise<DeletedNotes> {
-  return request<DeletedNotes>("/api/notes/delete", { body: { note_ids: noteIds } });
+export function voidNotes(noteIds: string[], reason: string): Promise<VoidedNotes> {
+  return request<VoidedNotes>("/api/notes/void", { body: { note_ids: noteIds, reason } });
+}
+
+export function restoreNote(noteId: string, reason: string): Promise<NoteState> {
+  return request<NoteState>(notePath(noteId, "/restore"), { body: { reason } });
 }
 
 export function assignNotes(noteIds: string[], userId: string | null): Promise<AssignedNotes> {

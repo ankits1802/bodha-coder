@@ -13,6 +13,7 @@ import { SECURITY_TEXT } from "./strings";
 export function SecurityScreen() {
   const { user } = useSession();
   const managesPractice = canDo(user?.role, "manageSecurity");
+  const readsAccessLog = canDo(user?.role, "readAccessLog");
   return (
     <>
       <PageHeader title={SECURITY_TEXT.title} />
@@ -20,7 +21,7 @@ export function SecurityScreen() {
       <DevicesPanel />
       <RecoveryCodesPanel />
       <DigestPreferencePanel />
-      {managesPractice ? <AccessLogPanel /> : null}
+      {readsAccessLog ? <AccessLogPanel /> : null}
     </>
   );
 }
