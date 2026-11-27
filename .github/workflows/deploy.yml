@@ -35,8 +35,22 @@ jobs:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
       - uses: aws-actions/amazon-ecr-login@v2
+      - name: Find images already built for this commit
+        id: built
+        run: |
+          for pair in "api=$ECR_API_REPOSITORY" "web=$ECR_WEB_REPOSITORY"; do
+            key="${pair%%=*}"
+            repository="${pair#*=}"
+            if aws ecr describe-images --repository-name "${repository#*/}" --image-ids imageTag="$TAG" > /dev/null 2>&1; then
+              echo "$key=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$key=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
       - uses: docker/setup-buildx-action@v4
+        if: steps.built.outputs.api != 'true' || steps.built.outputs.web != 'true'
       - name: Build and push the API image
+        if: steps.built.outputs.api != 'true'
         uses: docker/build-push-action@v7
         with:
           context: backend
@@ -45,6 +59,7 @@ jobs:
           cache-from: type=gha,scope=api
           cache-to: type=gha,mode=max,scope=api
       - name: Build and push the web image
+        if: steps.built.outputs.web != 'true'
         uses: docker/build-push-action@v7
         with:
           context: frontend
