@@ -16,15 +16,14 @@ async def test_a_flag_and_its_return_by_compliance_are_kept_with_old_and_new_val
     await invite_member(harness, practice, name="Jordan Diaz", email="jordan@lakeside.example.com", role="compliance")
     compliance = await sign_in(harness.client, "jordan@lakeside.example.com", secret_box=practice.secrets)
 
-    returned = await harness.client.post(
-        f"{path}/compliance", headers=compliance, json={"decision": "return", "reason": RETURN}
-    )
+    body = {"decision": "return", "return_reason": {"reason": "documentation_missing", "note": RETURN}}
+    returned = await harness.client.post(f"{path}/compliance", headers=compliance, json=body)
 
     assert returned.status_code == 200, returned.text
     detail = (await harness.client.get(path, headers=practice.admin)).json()
     assert _changes(detail) == [
         ("flag", None, FLAG, None, "Practice Admin"),
-        ("flag", FLAG, None, RETURN, "Jordan Diaz"),
+        ("flag", FLAG, None, f"Documentation missing: {RETURN}", "Jordan Diaz"),
     ]
 
 

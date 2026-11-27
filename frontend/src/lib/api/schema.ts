@@ -2954,6 +2954,7 @@ export interface components {
             decision: "confirm" | "return" | "keep";
             override?: components["schemas"]["OverrideBody"] | null;
             reason?: string | null;
+            return_reason?: components["schemas"]["ReturnReasonBody"] | null;
         };
         ComplianceList: {
             items: components["schemas"]["ComplianceRow"][];
@@ -2981,7 +2982,7 @@ export interface components {
             id: string;
             impact_cents: number | null;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
-            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             patient_name: string | null;
             payer: string | null;
             place_code: string;
@@ -3283,9 +3284,12 @@ export interface components {
         Finding: {
             action: "keep" | "lower" | "raise" | "replace" | "add" | "remove" | "review" | "ask" | "info" | "not_applicable";
             allowed: ("accept" | "keep" | "ask" | "add" | "skip")[];
+            amount_change: number | null;
             choice: "accept" | "keep" | "ask" | "add" | "skip";
             code_after: string | null;
             code_before: string | null;
+            decide_again: boolean;
+            decided: boolean;
             default_choice: "accept" | "keep" | "ask" | "add" | "skip";
             departing_choices: ("accept" | "keep" | "ask" | "add" | "skip")[];
             detail: {
@@ -3730,7 +3734,7 @@ export interface components {
             headline: string | null;
             id: string;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
-            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             patient_age: number | null;
             patient_name: string | null;
             patient_sex: string | null;
@@ -3738,6 +3742,7 @@ export interface components {
             place_code: string;
             provider: components["schemas"]["ProviderRef"];
             provider_name: string;
+            returned: components["schemas"]["ReturnView"] | null;
             service_date: string;
             status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             visit_type: string;
@@ -3750,6 +3755,7 @@ export interface components {
             code_sets: components["schemas"]["CodeSetRevision"][];
             decisions: components["schemas"]["DecisionRecord"][];
             exports: components["schemas"]["NoteExportRecord"][];
+            returns: components["schemas"]["ReturnRecord"][];
             snapshots: components["schemas"]["SnapshotRecord"][];
         };
         NoteLane: {
@@ -3770,7 +3776,7 @@ export interface components {
             headline: string | null;
             id: string;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
-            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             patient_name: string | null;
             payer: string | null;
             place_code: string;
@@ -4182,7 +4188,7 @@ export interface components {
             id: string;
             impact_cents: number | null;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
-            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             patient_name: string | null;
             payer: string | null;
             place_code: string;
@@ -4201,7 +4207,7 @@ export interface components {
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
             overdue: boolean;
             provider_id: string | null;
-            reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             sort: "due" | "impact";
         };
         QueueViewFiltersBody: {
@@ -4209,7 +4215,7 @@ export interface components {
             lane?: ("approve" | "coder" | "provider" | "compliance") | null;
             overdue?: boolean;
             provider_id?: string | null;
-            reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
             sort?: "due" | "impact";
         };
         QueueViews: {
@@ -4348,6 +4354,25 @@ export interface components {
         };
         RetryBody: {
             note_ids?: string[] | null;
+        };
+        ReturnReasonBody: {
+            note?: string | null;
+            reason: "level_not_supported" | "documentation_missing" | "coding_error" | "ask_provider" | "payer_policy" | "other";
+        };
+        ReturnRecord: {
+            at: string;
+            by: string | null;
+            flag_reason: string | null;
+            note: string | null;
+            reason: "level_not_supported" | "documentation_missing" | "coding_error" | "ask_provider" | "payer_policy" | "other";
+            role: string | null;
+        };
+        ReturnView: {
+            at: string;
+            by: string | null;
+            items: number;
+            note: string | null;
+            reason: "level_not_supported" | "documentation_missing" | "coding_error" | "ask_provider" | "payer_policy" | "other";
         };
         ReviewSettings: {
             confirm_level_changes: boolean;
@@ -8246,7 +8271,7 @@ export interface operations {
         parameters: {
             query?: {
                 lane?: ("approve" | "coder" | "provider" | "compliance") | null;
-                reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+                reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches" | "returned") | null;
                 search?: string | null;
                 provider_id?: string | null;
                 batch_id?: string | null;

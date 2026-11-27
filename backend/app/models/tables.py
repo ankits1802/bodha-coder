@@ -59,6 +59,7 @@ LANE_REASONS = (
     "code_changes",
     "questions",
     "matches",
+    "returned",
 )
 DEFAULT_TIME_ZONE = "America/Chicago"
 
@@ -259,6 +260,7 @@ class Note(IdMixin, Base):
     void_reason: Mapped[str | None] = mapped_column(Text)
     status_before_void: Mapped[str | None] = mapped_column(String(16))
     impact_cents: Mapped[int | None] = mapped_column(Integer)
+    returned_at: Mapped[datetime | None] = timestamp()
 
 
 class NoteText(LedgerMixin, Base):

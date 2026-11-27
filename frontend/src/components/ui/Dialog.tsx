@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { useModalDialog } from "./useModalDialog";
 
 interface DialogProps {
   open: boolean;
@@ -15,21 +16,8 @@ interface DialogProps {
 const SIZES = { md: "max-w-120", lg: "max-w-170" } as const;
 
 export function Dialog({ open, onClose, title, description, footer, size = "md", children }: DialogProps) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const ref = useModalDialog(open);
   const titleId = useId();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      if (typeof dialog.showModal === "function") dialog.showModal();
-      else dialog.setAttribute("open", "");
-    }
-    if (!open && dialog.open) {
-      if (typeof dialog.close === "function") dialog.close();
-      else dialog.removeAttribute("open");
-    }
-  }, [open]);
 
   return (
     <dialog

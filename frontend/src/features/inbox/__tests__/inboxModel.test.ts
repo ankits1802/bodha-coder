@@ -23,6 +23,9 @@ describe("inbox sentences", () => {
     );
     expect(sentence({ kind: "plan_ending", actor_name: "Bodha", payload: { ends_on: "2026-12-01" } })).toBe("The plan ends on 1 Dec 2026");
     expect(sentence({ kind: "compliance_returned", actor_name: "Ruth Cole", payload: {} })).toBe("Ruth Cole returned a note");
+    expect(sentence({ kind: "compliance_returned", actor_name: "Ruth Cole", payload: { reason: "level_not_supported" } })).toBe(
+      "Ruth Cole returned a note: Level not supported",
+    );
   });
 
   it("names the patient and the visit day only when the note is known", () => {
@@ -34,7 +37,7 @@ describe("inbox sentences", () => {
 describe("inbox targets", () => {
   it("opens the note, its history for a mention, training or the plan", () => {
     expect(inboxTarget(inboxEntry({ kind: "provider_answered" }))).toBe("/notes/note-1");
-    expect(inboxTarget(inboxEntry({ kind: "mentioned" }))).toBe("/notes/note-1?tab=history");
+    expect(inboxTarget(inboxEntry({ kind: "mentioned" }))).toBe("/notes/note-1?history=1");
     expect(inboxTarget(inboxEntry({ kind: "training_assigned", note_id: null }))).toBe("/training");
     expect(inboxTarget(inboxEntry({ kind: "payment_failed", note_id: null }))).toBe("/settings/plan");
     expect(inboxTarget(inboxEntry({ kind: "plan_ending", note_id: null }))).toBe("/settings/plan");

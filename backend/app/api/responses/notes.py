@@ -12,7 +12,7 @@ from app.api.responses.review_records import (
 from app.api.responses.work import NoteSummary
 from app.codes.billing_codes import CodeType
 from app.codes.fees import RateSetting
-from app.models import ANALYSIS_STATUSES, CHOICES, CODE_SET_KINDS, NOTE_CHANGE_FIELDS, SUGGESTION_KINDS
+from app.models import ANALYSIS_STATUSES, CHOICES, CODE_SET_KINDS, NOTE_CHANGE_FIELDS, RETURN_REASONS, SUGGESTION_KINDS
 
 __all__ = [
     "AddendumAnswer",
@@ -42,11 +42,15 @@ __all__ = [
     "PointerChoice",
     "ProviderRef",
     "RequiredElement",
+    "ReturnReason",
+    "ReturnRecord",
+    "ReturnView",
     "TextRevision",
     "VoidInfo",
 ]
 
 AnalysisStatus = Literal[ANALYSIS_STATUSES]
+ReturnReason = Literal[RETURN_REASONS]
 Choice = Literal[CHOICES]
 FindingAction = Literal["keep", "lower", "raise", "replace", "add", "remove", "review", "ask", "info", "not_applicable"]
 
@@ -66,12 +70,21 @@ class VoidInfo(View):
     was: NoteStatus | None
 
 
+class ReturnView(View):
+    reason: ReturnReason
+    note: str | None
+    by: str | None
+    at: str
+    items: int
+
+
 class NoteHeader(NoteSummary):
     assignee_name: str | None
     patient_age: int | None
     patient_sex: str | None
     provider: ProviderRef
     voided: VoidInfo | None
+    returned: ReturnView | None
 
 
 class TextRevision(View):
@@ -160,6 +173,9 @@ class Finding(View):
     departing_choices: list[Choice]
     override: OverrideView | None
     override_needed: bool
+    decided: bool
+    decide_again: bool
+    amount_change: float | None
 
 
 class EstimateLine(View):
@@ -235,6 +251,15 @@ class NoteChangeRecord(View):
     at: str
 
 
+class ReturnRecord(View):
+    reason: ReturnReason
+    note: str | None
+    by: str | None
+    role: str | None
+    at: str
+    flag_reason: str | None
+
+
 class NoteHistory(View):
     analyses: list[AnalysisRevision]
     code_sets: list[CodeSetRevision]
@@ -243,6 +268,7 @@ class NoteHistory(View):
     snapshots: list[SnapshotRecord]
     exports: list[NoteExportRecord]
     attestations: list[AttestationRecord]
+    returns: list[ReturnRecord]
 
 
 class AddendumQuestion(View):

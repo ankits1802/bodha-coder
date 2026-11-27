@@ -2901,6 +2901,16 @@
               }
             ],
             "title": "Reason"
+          },
+          "return_reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnReasonBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3140,7 +3150,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -5075,6 +5086,17 @@
             "title": "Allowed",
             "type": "array"
           },
+          "amount_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Change"
+          },
           "choice": {
             "enum": [
               "accept",
@@ -5107,6 +5129,14 @@
               }
             ],
             "title": "Code Before"
+          },
+          "decide_again": {
+            "title": "Decide Again",
+            "type": "boolean"
+          },
+          "decided": {
+            "title": "Decided",
+            "type": "boolean"
           },
           "default_choice": {
             "enum": [
@@ -5214,7 +5244,10 @@
           "allowed",
           "departing_choices",
           "override",
-          "override_needed"
+          "override_needed",
+          "decided",
+          "decide_again",
+          "amount_change"
         ],
         "title": "Finding",
         "type": "object"
@@ -7867,7 +7900,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -7932,6 +7966,16 @@
             "title": "Provider Name",
             "type": "string"
           },
+          "returned": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "service_date": {
             "title": "Service Date",
             "type": "string"
@@ -7985,7 +8029,8 @@
           "patient_age",
           "patient_sex",
           "provider",
-          "voided"
+          "voided",
+          "returned"
         ],
         "title": "NoteHeader",
         "type": "object"
@@ -8035,6 +8080,13 @@
             "title": "Exports",
             "type": "array"
           },
+          "returns": {
+            "items": {
+              "$ref": "#/components/schemas/ReturnRecord"
+            },
+            "title": "Returns",
+            "type": "array"
+          },
           "snapshots": {
             "items": {
               "$ref": "#/components/schemas/SnapshotRecord"
@@ -8050,7 +8102,8 @@
           "changes",
           "snapshots",
           "exports",
-          "attestations"
+          "attestations",
+          "returns"
         ],
         "title": "NoteHistory",
         "type": "object"
@@ -8212,7 +8265,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -11079,7 +11133,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -11250,7 +11305,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -11339,7 +11395,8 @@
                   "waiting_on_provider",
                   "code_changes",
                   "questions",
-                  "matches"
+                  "matches",
+                  "returned"
                 ],
                 "type": "string"
               },
@@ -12274,6 +12331,171 @@
           }
         },
         "title": "RetryBody",
+        "type": "object"
+      },
+      "ReturnReasonBody": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "enum": [
+              "level_not_supported",
+              "documentation_missing",
+              "coding_error",
+              "ask_provider",
+              "payer_policy",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ReturnReasonBody",
+        "type": "object"
+      },
+      "ReturnRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "flag_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Reason"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "enum": [
+              "level_not_supported",
+              "documentation_missing",
+              "coding_error",
+              "ask_provider",
+              "payer_policy",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          }
+        },
+        "required": [
+          "reason",
+          "note",
+          "by",
+          "role",
+          "at",
+          "flag_reason"
+        ],
+        "title": "ReturnRecord",
+        "type": "object"
+      },
+      "ReturnView": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "items": {
+            "title": "Items",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "enum": [
+              "level_not_supported",
+              "documentation_missing",
+              "coding_error",
+              "ask_provider",
+              "payer_policy",
+              "other"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "note",
+          "by",
+          "at",
+          "items"
+        ],
+        "title": "ReturnView",
         "type": "object"
       },
       "ReviewSettings": {
@@ -20138,7 +20360,8 @@
                     "waiting_on_provider",
                     "code_changes",
                     "questions",
-                    "matches"
+                    "matches",
+                    "returned"
                   ],
                   "type": "string"
                 },

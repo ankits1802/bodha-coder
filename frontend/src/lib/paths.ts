@@ -3,6 +3,16 @@ export const SETUP_PATH = "/settings/setup";
 export const TEAM_PATH = "/settings/team";
 export const SECURITY_SETTINGS_PATH = "/settings/security";
 export const ACCESS_LOG_PATH = "/insights/access-log";
+export const COMPLIANCE_PATH = "/compliance";
+export const HISTORY_OPEN = "1";
+
+export function notePath(noteId: string): string {
+  return `/notes/${encodeURIComponent(noteId)}`;
+}
+
+export function noteHistoryPath(noteId: string): string {
+  return `${notePath(noteId)}?${new URLSearchParams({ history: HISTORY_OPEN }).toString()}`;
+}
 
 const SETUP_OPENS = ["addProvider", "importProviders", "addPayer"] as const;
 

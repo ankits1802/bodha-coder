@@ -17,6 +17,7 @@ const REASON_TONES: Record<LaneReason, StatusTone> = {
   code_changes: "dark",
   questions: "warn",
   matches: "ok",
+  returned: "warn",
 };
 
 const EM_ACTION_TONES: Partial<Record<EmAction, StatusTone>> = {

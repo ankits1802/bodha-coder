@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { shortcutKeys } from "@/components/shared/shortcuts/registry";
-import { useIsMac } from "@/components/shared/shortcuts/useIsMac";
+import { KeyHint } from "@/components/shared/shortcuts/KeyHint";
 import { Button } from "@/components/ui/Button";
 import type { NoteDetail } from "@/lib/api/types";
 import type { ReviewPermissions } from "../permissions";
@@ -20,14 +19,10 @@ interface ClaimBarProps {
   onAsk: () => void;
   onFlag: () => void;
   onKeep: () => void;
+  onReturn: () => void;
 }
 
-function Key({ value, onPrimary = false }: { value: string; onPrimary?: boolean }) {
-  const tone = onPrimary ? "bg-white/15 text-white/85" : "bg-fill-hover text-secondary";
-  return <kbd className={`rounded-sm px-1.25 font-sans text-micro leading-4.25 tabular-nums ${tone}`}>{value}</kbd>;
-}
-
-function ComplianceButtons({ detail, actions, onKeep }: Pick<ClaimBarProps, "detail" | "actions" | "onKeep">) {
+function ComplianceButtons({ detail, actions, onKeep, onReturn }: Pick<ClaimBarProps, "detail" | "actions" | "onKeep" | "onReturn">) {
   const words = REVIEW_TEXT.actions;
   const em = detail.findings.find((finding) => finding.kind === "em");
   const billed = em?.code_before ?? null;
@@ -37,7 +32,7 @@ function ComplianceButtons({ detail, actions, onKeep }: Pick<ClaimBarProps, "det
       <Button variant="plain" className="text-secondary" onClick={onKeep} disabled={actions.pending}>
         {billed ? words.keepBilled(billed) : words.keepPlain}
       </Button>
-      <Button onClick={() => void actions.decideCompliance("return", null)} disabled={actions.pending}>
+      <Button onClick={onReturn} disabled={actions.pending}>
         {words.returnToCoder}
       </Button>
       <Button variant="primary" onClick={() => void actions.decideCompliance("confirm", null)} pending={actions.pending}>
@@ -47,9 +42,8 @@ function ComplianceButtons({ detail, actions, onKeep }: Pick<ClaimBarProps, "det
   );
 }
 
-function CoderButtons({ detail, permissions, actions, questionCount, onAsk }: Omit<ClaimBarProps, "onFlag" | "onKeep">) {
+function CoderButtons({ detail, permissions, actions, questionCount, onAsk }: Omit<ClaimBarProps, "onFlag" | "onKeep" | "onReturn">) {
   const words = REVIEW_TEXT.actions;
-  const mac = useIsMac();
   const asking = permissions.ask && questionCount > 0;
   return (
     <>
@@ -60,12 +54,12 @@ function CoderButtons({ detail, permissions, actions, questionCount, onAsk }: Om
           onClick={() => void actions.approve()}
           pending={actions.pending}
         >
-          {asking ? words.approveWithoutAsking : words.approve} <Key value={shortcutKeys("approve", mac)} onPrimary={!asking} />
+          {asking ? words.approveWithoutAsking : words.approve} <KeyHint shortcut="approve" onPrimary={!asking} />
         </Button>
       ) : null}
       {asking ? (
         <Button variant="primary" onClick={onAsk}>
-          {words.askProvider(detail.note.provider.name, questionCount)} <Key value={shortcutKeys("askProvider", mac)} onPrimary />
+          {words.askProvider(detail.note.provider.name, questionCount)} <KeyHint shortcut="askProvider" onPrimary />
         </Button>
       ) : null}
     </>

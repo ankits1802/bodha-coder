@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DayBannerView } from "../DayBannerView";
@@ -22,8 +22,18 @@ describe("DayBannerView", () => {
     expect(banner).toHaveTextContent("3 notes · 16.7 h documented · 80% at the two highest levels · 1 cloned pair");
   });
 
+  it("shows the summary first and keeps the other notes of the day folded until asked", () => {
+    render(<DayBannerView day={BUSY_DAY} noteId="a" />);
+
+    const toggle = screen.getByRole("button", { name: "2 other notes that day" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("list", { name: "Other notes that day" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Ben Cole" })).not.toBeInTheDocument();
+  });
+
   it("links to the other notes of the day and marks the one cloned from this note", () => {
     render(<DayBannerView day={BUSY_DAY} noteId="a" />);
+    fireEvent.click(screen.getByRole("button", { name: "2 other notes that day" }));
 
     const others = within(screen.getByRole("list", { name: "Other notes that day" })).getAllByRole("listitem");
     expect(others).toHaveLength(2);

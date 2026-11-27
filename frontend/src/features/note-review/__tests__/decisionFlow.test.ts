@@ -1,30 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { Finding, NoteDetail, QueuePage, QueueRow } from "@/lib/api/types";
-import { choiceFor, codeFindings, decisionOrder, nextInOrder, questionFindings, withChoice } from "../decisionFlow";
+import type { QueuePage, QueueRow } from "@/lib/api/types";
+import { choiceFor, nextInOrder, shownChoice, stepInOrder, withChoice } from "../decisionFlow";
 import { currentFindingKey } from "../useFindingFocus";
-import { neighboursIn, withoutNote } from "../useNoteData";
-
-function finding(overrides: Partial<Finding>): Finding {
-  return {
-    kind: "diagnosis",
-    key: "dx:I10",
-    action: "keep",
-    title: "Hypertension",
-    reasoning: "",
-    code_before: "I10",
-    code_after: null,
-    evidence: [],
-    severity: null,
-    detail: {},
-    default_choice: "keep",
-    choice: "keep",
-    allowed: ["keep"],
-    departing_choices: [],
-    override: null,
-    override_needed: false,
-    ...overrides,
-  };
-}
+import { neighboursIn, withoutNote, type ReviewScope } from "../useNoteData";
+import { finding, noteDetail, queueTotals } from "./fixtures";
 
 const EM = finding({ kind: "em", key: "em", action: "lower", code_before: "99215", code_after: "99214", choice: "accept", allowed: ["accept", "keep"] });
 const SUPPORTED = finding({});
@@ -36,46 +15,39 @@ function row(id: string): QueueRow {
   return { id } as QueueRow;
 }
 
-const LANES: QueuePage["lanes"] = {
-  approve: { total: 0, due_soon: 0 },
-  coder: { total: 3, due_soon: 0 },
-  provider: { total: 0, due_soon: 0 },
-  compliance: { total: 0, due_soon: 0 },
-};
-const PROVIDER_REASONS: QueuePage["provider_reasons"] = {
-  questions: { total: 0, due_soon: 0 },
-  waiting_on_provider: { total: 0, due_soon: 0 },
-};
+const CODER: ReviewScope = { lane: "coder", reason: null };
+const QUESTIONS: ReviewScope = { lane: "provider", reason: "questions" };
 const PAGE: QueuePage = {
   items: [row("a"), row("b"), row("c")],
-  lanes: LANES,
-  provider_reasons: PROVIDER_REASONS,
+  ...queueTotals({ coder: 3, provider: 2 }, { questions: 2 }),
   total: 3,
   all_total: 3,
   failed: 0,
   page_size: 50,
 };
 
-describe("decision order", () => {
-  it("lists the code findings visit code first and keeps only those with a choice to make", () => {
-    expect(codeFindings(FINDINGS).map((item) => item.key)).toEqual(["em", "dx:E11.65", "dx:I10"]);
-    expect(decisionOrder(FINDINGS, "codes")).toEqual(["em", "dx:E11.65"]);
-    expect(questionFindings(FINDINGS).map((item) => item.key)).toEqual(["cdiq-1"]);
-    expect(decisionOrder(FINDINGS, "questions")).toEqual(["cdiq-1"]);
-    expect(decisionOrder(FINDINGS, "history")).toEqual([]);
-  });
-
+describe("moving between findings", () => {
   it("moves to the next finding, and from the last one to nothing", () => {
     expect(nextInOrder(["em", "dx:E11.65"], "em")).toBe("dx:E11.65");
     expect(nextInOrder(["em", "dx:E11.65"], "dx:E11.65")).toBeNull();
     expect(nextInOrder(["em", "dx:E11.65"], "gone")).toBe("em");
   });
 
+  it("steps down past the last finding to Approve and back up from Approve to the last finding", () => {
+    const order = ["em", "dx:E11.65", "cdiq-1"];
+    expect(stepInOrder(order, "em", 1)).toBe("dx:E11.65");
+    expect(stepInOrder(order, "cdiq-1", 1)).toBeNull();
+    expect(stepInOrder(order, null, 1)).toBeNull();
+    expect(stepInOrder(order, null, -1)).toBe("cdiq-1");
+    expect(stepInOrder(order, "em", -1)).toBe("em");
+    expect(stepInOrder(order, "gone", -1)).toBe("em");
+  });
+
   it("starts at the first finding, follows the last move and stops after the last finding", () => {
-    expect(currentFindingKey(["em", "dx:E11.65"], "codes", null)).toBe("em");
-    expect(currentFindingKey(["em", "dx:E11.65"], "codes", { tab: "codes", key: "dx:E11.65" })).toBe("dx:E11.65");
-    expect(currentFindingKey(["em", "dx:E11.65"], "codes", { tab: "codes", key: null })).toBeNull();
-    expect(currentFindingKey(["cdiq-1"], "questions", { tab: "codes", key: null })).toBe("cdiq-1");
+    expect(currentFindingKey(["em", "dx:E11.65"], null)).toBe("em");
+    expect(currentFindingKey(["em", "dx:E11.65"], { key: "dx:E11.65" })).toBe("dx:E11.65");
+    expect(currentFindingKey(["em", "dx:E11.65"], { key: null })).toBeNull();
+    expect(currentFindingKey(["cdiq-1"], { key: "em" })).toBe("cdiq-1");
   });
 });
 
@@ -90,24 +62,39 @@ describe("choices from the keyboard", () => {
   });
 
   it("shows a choice at once without touching the other findings", () => {
-    const detail = { findings: FINDINGS } as NoteDetail;
+    const detail = noteDetail(FINDINGS);
     const changed = withChoice(detail, "em", "keep");
     expect(changed.findings.map((item) => item.choice)).toEqual(["add", "ask", "keep", "keep"]);
+    expect(changed.findings[3]?.decided).toBe(true);
     expect(detail.findings[3]?.choice).toBe("accept");
+  });
+
+  it("shows no choice on a finding compliance sent back until it is decided again", () => {
+    const returned = finding({ ...EM, decide_again: true });
+    expect(shownChoice(returned)).toBeNull();
+    const decided = withChoice(noteDetail([returned]), "em", "accept").findings[0];
+    expect(decided && shownChoice(decided)).toBe("accept");
   });
 });
 
 describe("review order", () => {
   it("finds the neighbours of a note and the count of its lane", () => {
-    expect(neighboursIn(PAGE, "b", "coder")).toEqual({ previous: "a", next: "c", index: 2, total: 3 });
-    expect(neighboursIn(PAGE, "x", "coder")).toEqual({ previous: null, next: "a", index: null, total: 3 });
+    expect(neighboursIn(PAGE, "b", CODER)).toEqual({ previous: "a", next: "c", index: 2, total: 3 });
+    expect(neighboursIn(PAGE, "x", CODER)).toEqual({ previous: null, next: "a", index: null, total: 3 });
   });
 
   it("drops an approved note from the order and from its lane count", () => {
-    const after = withoutNote(PAGE, "a", "coder");
+    const after = withoutNote(PAGE, "a", CODER);
     expect(after.items.map((item) => item.id)).toEqual(["b", "c"]);
     expect(after.lanes.coder.total).toBe(2);
-    expect(neighboursIn(after, "b", "coder")).toEqual({ previous: null, next: "c", index: 1, total: 2 });
-    expect(withoutNote(PAGE, "x", "coder")).toBe(PAGE);
+    expect(neighboursIn(after, "b", CODER)).toEqual({ previous: null, next: "c", index: 1, total: 2 });
+    expect(withoutNote(PAGE, "x", CODER)).toBe(PAGE);
+  });
+
+  it("keeps a split of the provider lane to itself and counts it down", () => {
+    const after = withoutNote(PAGE, "a", QUESTIONS);
+    expect(after.provider_reasons.questions.total).toBe(1);
+    expect(after.lanes.provider.total).toBe(1);
+    expect(after.provider_reasons.waiting_on_provider.total).toBe(0);
   });
 });

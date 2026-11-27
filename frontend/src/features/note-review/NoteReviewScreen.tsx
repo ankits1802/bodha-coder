@@ -6,7 +6,6 @@ import { AreaGuard } from "@/components/shared/AreaGuard";
 import { prefetchNoteDetail, useNoteDetail } from "@/components/shared/noteDetail";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { placeName, usePlaceNames } from "@/hooks/usePlaceNames";
-import type { Lane } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
 import { useSession } from "@/lib/session/useSession";
 import { NoteSkeleton } from "./components/NoteSkeleton";
@@ -15,20 +14,20 @@ import { ReviewWorkspace } from "./components/ReviewWorkspace";
 import { reviewPermissions } from "./permissions";
 import { canReplacePdf } from "./replacePdf";
 import { REVIEW_TEXT } from "./strings";
-import { parseLane } from "./useNoteData";
+import { parseScope, type ReviewScope } from "./useNoteData";
 import { useReviewActions } from "./useReviewActions";
 import { useReviewNavigation } from "./useReviewNavigation";
 
 const REMOTE_TEXT = { loading: REVIEW_TEXT.loading, empty: REVIEW_TEXT.notFound, retry: REVIEW_TEXT.retry };
 
-function NoteReview({ noteId, lane }: { noteId: string; lane: Lane | null }) {
+function NoteReview({ noteId, scope }: { noteId: string; scope: ReviewScope }) {
   const { user } = useSession();
   const note = useNoteDetail(noteId);
-  const nav = useReviewNavigation(noteId, lane);
+  const nav = useReviewNavigation(noteId, scope);
   const detail = note.state.status === "success" ? note.state.data : null;
   const actions = useReviewActions(noteId, {
     approved: () => nav.approved(detail?.note.patient_name ?? null),
-    moveOn: nav.moveOn,
+    complianceDone: (decision) => nav.complianceDone(REVIEW_TEXT.complianceDone[decision]),
     changed: note.reload,
   });
   const placeNames = usePlaceNames();
@@ -71,7 +70,7 @@ function NoteReview({ noteId, lane }: { noteId: string; lane: Lane | null }) {
                 onGo={nav.go}
                 onReplace={note.replace}
                 onReload={note.reload}
-                onApproved={nav.moveOn}
+                onComplianceDone={nav.complianceDone}
               />
             )}
           </RemoteView>
@@ -83,10 +82,10 @@ function NoteReview({ noteId, lane }: { noteId: string; lane: Lane | null }) {
 
 export function NoteReviewScreen({ noteId }: { noteId: string }) {
   const searchParams = useSearchParams();
-  const lane = parseLane(searchParams.get("lane"));
+  const scope = parseScope(searchParams.get("lane"), searchParams.get("reason"));
   return (
     <AreaGuard area="queue">
-      <NoteReview key={noteId} noteId={noteId} lane={lane} />
+      <NoteReview key={noteId} noteId={noteId} scope={scope} />
     </AreaGuard>
   );
 }

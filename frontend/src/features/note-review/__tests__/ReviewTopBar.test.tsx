@@ -29,9 +29,9 @@ describe("ReviewTopBar", () => {
     const onGo = vi.fn();
     renderBar(onGo);
 
-    const previous = screen.getByRole("button", { name: "Previous note (K)" });
-    const next = screen.getByRole("button", { name: "Next note (J)" });
-    expect(previous).toHaveAttribute("title", "Previous note (K)");
+    const previous = screen.getByRole("button", { name: "Previous note (Shift+K)" });
+    const next = screen.getByRole("button", { name: "Next note (Shift+J)" });
+    expect(previous).toHaveAttribute("title", "Previous note (Shift+K)");
     expect(next).toBeDisabled();
     fireEvent.click(previous);
     expect(onGo).toHaveBeenCalledWith("note-1");

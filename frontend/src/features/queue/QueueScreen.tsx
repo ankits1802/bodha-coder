@@ -46,6 +46,7 @@ function QueueContent({ user }: { user: User }) {
   const selectedRows = rows.filter((row) => selection.selectedIds.includes(row.id));
   const controls = {
     lane: filters.lane,
+    reason: filters.reason,
     member: user,
     selectable: selectsRows(user),
     canRemind: canDo(user.role, "ask"),
@@ -58,7 +59,7 @@ function QueueContent({ user }: { user: User }) {
     filters,
     rows,
     selection,
-    nextHref: next ? noteHref(next.id, filters.lane) : null,
+    nextHref: next ? noteHref(next.id, filters.lane, filters.reason) : null,
     onAssign: () => {
       actions.clearDialogErrors();
       setDialog("assign");
@@ -73,7 +74,7 @@ function QueueContent({ user }: { user: User }) {
           {QUEUE_TEXT.readAgain(formatCount(failed))}
         </Button>
       ) : null}
-      {next ? <ButtonLink href={noteHref(next.id, filters.lane)}>{QUEUE_TEXT.reviewNext}</ButtonLink> : null}
+      {next ? <ButtonLink href={noteHref(next.id, filters.lane, filters.reason)}>{QUEUE_TEXT.reviewNext}</ButtonLink> : null}
       {approvable.length > 0 ? (
         <Button variant="primary" pending={actions.approving} onClick={() => void actions.approveSelected(approvable.map((row) => row.id))}>
           {QUEUE_TEXT.approveAll(formatCount(approvable.length))}

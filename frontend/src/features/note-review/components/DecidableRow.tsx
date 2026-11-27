@@ -26,7 +26,7 @@ interface DecidableRowProps {
 export function DecidableRow({ finding, decision, quote = null, children }: DecidableRowProps) {
   const { editable, savingKey, currentKey, onChoose, onPicked, prompt } = decision;
   const pending = prompt?.pending?.finding.key === finding.key ? prompt.pending : null;
-  const shown = pending ? { ...finding, choice: pending.choice } : finding;
+  const shown = pending ? { ...finding, choice: pending.choice, decide_again: false } : finding;
   return (
     <FindingRow
       finding={finding}

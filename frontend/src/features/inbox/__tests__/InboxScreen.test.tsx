@@ -55,7 +55,7 @@ describe("InboxScreen", () => {
     expect(links[0]).toHaveAttribute("href", "/notes/note-1");
     expect(links[1]).toHaveTextContent("Priya Nair mentioned you");
     expect(links[1]).not.toHaveTextContent("Unread");
-    expect(links[1]).toHaveAttribute("href", "/notes/note-1?tab=history");
+    expect(links[1]).toHaveAttribute("href", "/notes/note-1?history=1");
     expect(screen.getByText("1 unread")).toBeInTheDocument();
     expect(announceInboxCount).toHaveBeenCalledWith(1);
     expect(getInbox).toHaveBeenCalledWith(0);

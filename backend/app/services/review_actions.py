@@ -133,6 +133,7 @@ async def flag(db: AsyncSession, actor: Actor, note_id: str, reason: str) -> Not
     flagged = reason.strip()[:2000]
     record_note_change(db, actor, note, "flag", old=note.flag_reason, new=flagged)
     note.flag_reason, note.flagged_by, note.compliance_cleared_by = flagged, actor.user.id, None
+    note.returned_at = None
     await refresh_placement(db, note)
     record_access(db, actor, "flagged for compliance", note_id=note.id, detail=reason.strip()[:300])
     await db.commit()

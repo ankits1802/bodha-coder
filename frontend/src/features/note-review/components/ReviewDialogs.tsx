@@ -1,6 +1,7 @@
 "use client";
 
 import { ReasonDialog } from "@/components/shared/ReasonDialog";
+import { ReturnDialog } from "@/components/shared/return-reason/ReturnDialog";
 import type { SignatureGate } from "@/components/shared/signature/useSignatureGate";
 import { decideCompliance, flagNote } from "@/lib/api/notes";
 import type { Finding, NoteDetail } from "@/lib/api/types";
@@ -8,7 +9,7 @@ import { COMPLIANCE_REASON_MAX } from "@/lib/validation";
 import { REVIEW_TEXT } from "../strings";
 import { AskProviderDialog } from "./AskProviderDialog";
 
-export type OpenDialog = "ask" | "flag" | "keep" | null;
+export type OpenDialog = "ask" | "flag" | "keep" | "return" | null;
 
 interface ReviewDialogsProps {
   open: OpenDialog;
@@ -16,7 +17,7 @@ interface ReviewDialogsProps {
   questions: Finding[];
   onClose: () => void;
   onChanged: () => void;
-  onApproved: () => void;
+  onComplianceDone: (message: string) => void;
   gate: SignatureGate;
 }
 
@@ -24,7 +25,7 @@ const FLAG_TEXT = { ...REVIEW_TEXT.flagDialog, invalid: REVIEW_TEXT.flagDialog.t
 const KEEP_TEXT = { ...REVIEW_TEXT.keepDialog, invalid: REVIEW_TEXT.keepDialog.required };
 const FLAG_MAX = 2000;
 
-export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onApproved, gate }: ReviewDialogsProps) {
+export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onComplianceDone, gate }: ReviewDialogsProps) {
   const noteId = detail.note.id;
   if (open === "ask") return <AskProviderDialog detail={detail} questions={questions} onClose={onClose} onSent={onChanged} />;
   if (open === "flag") {
@@ -37,10 +38,13 @@ export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onA
         minLength={1}
         maxLength={COMPLIANCE_REASON_MAX}
         onClose={onClose}
-        onDone={onApproved}
+        onDone={() => onComplianceDone(REVIEW_TEXT.complianceDone.keep)}
         submit={gate.gated((reason: string) => decideCompliance(noteId, "keep", reason))}
       />
     );
+  }
+  if (open === "return") {
+    return <ReturnDialog noteId={noteId} onClose={onClose} onReturned={() => onComplianceDone(REVIEW_TEXT.complianceDone.return)} />;
   }
   return null;
 }

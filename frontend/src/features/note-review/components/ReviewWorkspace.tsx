@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { NoteDetail } from "@/lib/api/types";
-import { openQuestions } from "../findings";
+import { askableQuestions } from "../findings";
 import type { ReviewPermissions } from "../permissions";
 import type { Neighbours } from "../useNoteData";
 import type { ReviewActions } from "../useReviewActions";
@@ -30,11 +30,11 @@ interface ReviewWorkspaceProps {
   onGo: (noteId: string) => void;
   onReplace: (detail: NoteDetail) => void;
   onReload: () => void;
-  onApproved: () => void;
+  onComplianceDone: (message: string) => void;
 }
 
 export function ReviewWorkspace(props: ReviewWorkspaceProps) {
-  const { detail, placeLabel, permissions, neighbours, onGo, onReplace, onReload, onApproved } = props;
+  const { detail, placeLabel, permissions, neighbours, onGo, onReplace, onReload, onComplianceDone } = props;
   const [dialog, setDialog] = useState<OpenDialog>(null);
   const decisions = useDecisions(detail, onReplace);
   const prompt = useOverridePrompt(decisions);
@@ -46,7 +46,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
       await props.actions.approve();
     },
   };
-  const questions = openQuestions(detail.findings);
+  const questions = askableQuestions(detail.findings, detail.requests);
   const { previous, next } = neighbours;
   const openAsk = permissions.ask ? () => setDialog("ask") : null;
 
@@ -76,8 +76,8 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
           canRestore={permissions.restore}
           onRestored={onReload}
         />
-        <DayBanner noteId={detail.note.id} />
         <SummaryPanel detail={detail} />
+        <DayBanner noteId={detail.note.id} />
         <div className="flex flex-wrap items-start gap-6">
           <NotePanel texts={detail.texts} findings={detail.findings} />
           <ReviewPanel
@@ -99,6 +99,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
         onAsk={() => setDialog("ask")}
         onFlag={() => setDialog("flag")}
         onKeep={() => setDialog("keep")}
+        onReturn={() => setDialog("return")}
       />
       <ReviewDialogs
         open={dialog}
@@ -109,7 +110,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
           setDialog(null);
           onReload();
         }}
-        onApproved={onApproved}
+        onComplianceDone={onComplianceDone}
         gate={actions.signatureGate}
       />
       <SignatureGateDialog gate={actions.signatureGate} />

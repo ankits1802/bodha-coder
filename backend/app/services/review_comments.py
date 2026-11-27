@@ -155,7 +155,7 @@ def comment_view(
 
 
 def mention_message(practice_name: str, note_id: str) -> tuple[str, str]:
-    link = f"{get_settings().app_url}/notes/{note_id}?tab=history"
+    link = f"{get_settings().app_url}/notes/{note_id}?history=1"
     return f"Mentioned at {practice_name}", f"{practice_name}: you were mentioned in a review comment. Open: {link}"
 
 

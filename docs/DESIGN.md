@@ -76,6 +76,23 @@ note review the finding that `y` and `n` act on carries a dark bar at its left e
 to the next finding after each decision, then to Approve. Form fields are checked when they lose
 focus, not only on submit.
 
+## Note review
+
+One findings list replaces the review tabs ([0043](decisions/0043-one-findings-list-and-returns.md)).
+
+| Rule | How |
+|---|---|
+| Order | Before you approve (a missing override reason, a billed code Bodha could not confirm, an item compliance returned, a Critical audit risk while compliance holds the note), Changes from the largest estimated dollar change down (the change shown after the status), Questions with Ask and the requests sent, Risk adjustment (scores, categories, suspected conditions), then Audit and wording (audit risks by severity, wording that belongs to no finding, audit findings, the checklist and quality measures). Each group has a small secondary heading |
+| Supported | Findings that only confirm the bill fold into one "12 supported" text button; Accept all supported (secondary, with its key) records them in one save and becomes an Accepted dot |
+| Wording | Suggested wording sits under the finding whose code it rewords: the note's words, the recommendation and the wording in a muted figure |
+| Filters | A small segmented control above the list: All, Changes, Questions, Risk, Guidance, each with its count. The choice lives in `?filter=`; old `?tab=` links open on the nearest filter (codes to Changes, wording to Guidance, audit and risk to Risk) |
+| History | History (plain) at the end of the filter row opens a drawer from the right, full height, at most 37.5 rem wide and the full width on a phone, with Close (plain); Escape closes it. `?history=1` and the old `?tab=history` open it |
+| Returned | A note compliance returned shows a warn alert, "Returned by Jordan Diaz: Level not supported · …"; each item to decide again is listed first with a Decide again dot and no choice selected until it is decided |
+| Keyboard | `j` and `k` or the down and up arrows move the bar between findings with a choice (the arrows only while focus is in the list or on the page; decision segments move with left and right), and past the last one to Approve; `y` and `n` decide the barred finding wherever it sits; Shift+Y accepts all supported; `e` edits the billed codes and Enter saves, moving to the reasons first when none is chosen (a digit picks one, Enter saves); Shift+J and Shift+K open the next and previous note; `a` and `q` are unchanged |
+| Return to coder | A dialog with the six reasons as radios numbered 1 to 6 (Level not supported, Documentation missing, Coding error, Ask the provider, Payer policy, Other), Note (optional, required for Other) and Return to coder as the primary. The compliance list and the note open the same dialog |
+| After the work | Approving the last note of a lane opens the queue on the next lane with work the person can do; a compliance decision made inside a note goes back to Compliance. Ask provider is hidden while a sent request covers the open questions |
+| Same day | The provider's day sits below the summary: its line of facts first and "2 other notes that day" as a text button that unfolds the list |
+
 Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.

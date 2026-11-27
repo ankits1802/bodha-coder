@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Finding, NoteText } from "@/lib/api/types";
 import { parseCodeList } from "@/lib/validation";
 import { codeAfterLabel, codeLabel, quoteCheck, quoteStatus } from "../findings";
+import { finding as baseFinding } from "./fixtures";
 
 const TEXTS: NoteText[] = [
   { revision: 1, source: "document", text: "PHQ-9 score 4.\nGAD-7  score 2. Plan: increase metformin.", created_at: "2026-11-25T09:00:00Z" },
@@ -9,25 +10,18 @@ const TEXTS: NoteText[] = [
 ];
 
 function finding(overrides: Partial<Finding>): Finding {
-  return {
+  return baseFinding({
     kind: "code_review",
     key: "addon:96127",
     action: "add",
     title: "Depression screening",
-    reasoning: "",
     code_before: null,
     code_after: "96127",
-    evidence: [],
-    severity: null,
-    detail: {},
     default_choice: "accept",
     choice: "accept",
     allowed: ["accept", "keep"],
-    departing_choices: [],
-    override: null,
-    override_needed: false,
     ...overrides,
-  };
+  });
 }
 
 describe("quoteCheck", () => {

@@ -12,6 +12,7 @@ __all__ = [
     "CHANGE_KINDS",
     "COMPLIANCE_LEVEL_GAP",
     "QUESTION_KINDS",
+    "RETURNED_LANE_REASON",
     "Placement",
     "choices_for",
     "claim",
@@ -25,6 +26,7 @@ QUESTION_KINDS = ("cdi_query", "diagnosis")
 CHANGE_KINDS = ("em", "diagnosis", "code_review", "modifier")
 REPLACING_KINDS = ("em", "diagnosis", "code_review")
 ACCEPTING_CHOICES = ("accept", "add")
+RETURNED_LANE_REASON = "returned"
 ADDED_HEADLINES = (
     ("em", "Visit code missing"),
     ("diagnosis", "Diagnosis missing"),
@@ -38,6 +40,9 @@ class Placement:
     lane: str
     reason: str
     headline: str
+
+
+RETURNED_PLACEMENT = Placement("coder", RETURNED_LANE_REASON, "Returned")
 
 
 def choices_for(findings: Iterable[Finding], decisions: Mapping[str, str]) -> dict[str, str]:
@@ -55,7 +60,13 @@ def has_diagnosis_codes(codes: Iterable[Code]) -> bool:
 
 
 def place(
-    findings: list[Finding], *, flagged: bool, cleared: bool, awaiting_provider: bool, billed_diagnoses: bool
+    findings: list[Finding],
+    *,
+    flagged: bool,
+    cleared: bool,
+    awaiting_provider: bool,
+    billed_diagnoses: bool,
+    returned: bool = False,
 ) -> Placement:
     em = next((item for item in findings if item.kind == "em"), None)
     severe = [item for item in findings if item.kind == "audit_risk" and item.severity in SEVERE_AUDIT]
@@ -65,6 +76,8 @@ def place(
         return _compliance_placement(flagged, gap)
     if awaiting_provider:
         return Placement("provider", "waiting_on_provider", "Waiting on provider")
+    if returned:
+        return RETURNED_PLACEMENT
     changes = [item for item in findings if _needs_coder(item, billed_diagnoses=billed_diagnoses)]
     if changes:
         return Placement("coder", "code_changes", _change_headline(em, changes))

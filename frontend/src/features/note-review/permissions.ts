@@ -1,7 +1,7 @@
 import { canVoidNote } from "@/components/shared/noteStatus";
 import type { NoteDetail, Role } from "@/lib/api/types";
 import { canDo } from "@/lib/roles";
-import { openQuestions } from "./findings";
+import { askableQuestions } from "./findings";
 
 export interface ReviewPermissions {
   decide: boolean;
@@ -29,7 +29,7 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
   return {
     decide: ready && canDo(role, "decide"),
     approve: ready && !inCompliance && canDo(role, "approve"),
-    ask: ready && openQuestions(detail.findings).length > 0 && canDo(role, "ask"),
+    ask: ready && askableQuestions(detail.findings, detail.requests).length > 0 && canDo(role, "ask"),
     flag: ready && !inCompliance && canDo(role, "flag"),
     compliance: ready && inCompliance && canDo(role, "complianceDecision"),
     retry: status === "failed" && canDo(role, "retry"),

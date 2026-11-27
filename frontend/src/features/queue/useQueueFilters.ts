@@ -2,7 +2,7 @@
 
 import { useQueryParams, type QueryChanges } from "@/hooks/useQueryParams";
 import type { Lane, LaneReason, QueueQuery, QueueSort } from "@/lib/api/types";
-import { isLane, isLaneReason } from "./queueRules";
+import { isLane, isLaneReason } from "@/lib/labels";
 
 export type AssignedFilter = "" | "me" | "none";
 

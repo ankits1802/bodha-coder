@@ -15,16 +15,20 @@ interface SegmentedControlProps<V extends string> {
   segments: Segment<V>[];
   onChange: (value: V) => void;
   size?: "sm" | "md";
+  orientation?: "both" | "horizontal";
 }
 
-const NEXT_KEYS: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+const SIDE_KEYS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
+const NEXT_KEYS: Record<string, number> = { ...SIDE_KEYS, ArrowDown: 1, ArrowUp: -1 };
 
-export function SegmentedControl<V extends string>({ label, value, segments, onChange, size = "md" }: SegmentedControlProps<V>) {
+export function SegmentedControl<V extends string>(props: SegmentedControlProps<V>) {
+  const { label, value, segments, onChange, size = "md", orientation = "both" } = props;
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const focusable = segments.some((segment) => segment.value === value) ? value : segments[0]?.value;
+  const keys = orientation === "horizontal" ? SIDE_KEYS : NEXT_KEYS;
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
-    const step = NEXT_KEYS[event.key];
+    const step = keys[event.key];
     if (step === undefined) return;
     event.preventDefault();
     const next = (index + step + segments.length) % segments.length;
@@ -35,7 +39,7 @@ export function SegmentedControl<V extends string>({ label, value, segments, onC
   }
 
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap rounded-segment bg-control p-0.5">
+    <div role="radiogroup" aria-label={label} aria-orientation={orientation === "horizontal" ? "horizontal" : undefined} className="inline-flex max-w-full flex-wrap rounded-segment bg-control p-0.5">
       {segments.map((segment, index) => {
         const on = segment.value === value;
         return (
