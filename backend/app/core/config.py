@@ -1,3 +1,4 @@
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal, Self
 from urllib.parse import urlsplit
@@ -5,7 +6,11 @@ from urllib.parse import urlsplit
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.model_prices import ModelPrice
+
 WEB_SCHEMES = ("https://", "http://")
+DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL_PRICES = {DEFAULT_GEMINI_MODEL: ModelPrice(input=Decimal("0.50"), output=Decimal("3.00"))}
 BILLING_SETTINGS = (
     "stripe_secret_key",
     "stripe_webhook_secret",
@@ -71,7 +76,8 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     google_cloud_project: str | None = None
     google_cloud_location: str | None = None
-    gemini_model: str = "gemini-3.8-flash"
+    gemini_model: str = DEFAULT_GEMINI_MODEL
+    model_prices: dict[str, ModelPrice] = Field(default_factory=lambda: dict(DEFAULT_MODEL_PRICES))
     gemini_timeout_seconds: int = 90
     ai_workers: int = 8
     ai_job_timeout_seconds: int = 600

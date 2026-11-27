@@ -25,6 +25,8 @@ class HqOverview(View):
     people: int
     read_last_24h: int
     tokens_last_24h: int
+    cost_last_24h_usd: float
+    unpriced_last_24h: int
     failed_last_24h: int
     waiting: int
     running: int

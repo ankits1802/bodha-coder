@@ -32,6 +32,7 @@ from app.api.routes import (
 from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
 from app.api.routes.defensibility import router as defensibility_router
+from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.intake import router as intake_router
 from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
@@ -84,6 +85,7 @@ app.include_router(remittances_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
+app.include_router(expenditure_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

@@ -3944,6 +3944,51 @@
         "title": "ExpectedClaim",
         "type": "object"
       },
+      "Expenditure": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "title": "From",
+            "type": "string"
+          },
+          "practices": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeSpend"
+            },
+            "title": "Practices",
+            "type": "array"
+          },
+          "time_zone": {
+            "const": "UTC",
+            "title": "Time Zone",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/SpendFigures"
+          },
+          "unpriced_models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unpriced Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "time_zone",
+          "totals",
+          "practices",
+          "unpriced_models"
+        ],
+        "title": "Expenditure",
+        "type": "object"
+      },
       "ExportBody": {
         "additionalProperties": false,
         "properties": {
@@ -4514,6 +4559,10 @@
       "HqOverview": {
         "additionalProperties": false,
         "properties": {
+          "cost_last_24h_usd": {
+            "title": "Cost Last 24H Usd",
+            "type": "number"
+          },
           "failed_last_24h": {
             "title": "Failed Last 24H",
             "type": "integer"
@@ -4538,6 +4587,10 @@
             "title": "Tokens Last 24H",
             "type": "integer"
           },
+          "unpriced_last_24h": {
+            "title": "Unpriced Last 24H",
+            "type": "integer"
+          },
           "waiting": {
             "title": "Waiting",
             "type": "integer"
@@ -4548,6 +4601,8 @@
           "people",
           "read_last_24h",
           "tokens_last_24h",
+          "cost_last_24h_usd",
+          "unpriced_last_24h",
           "failed_last_24h",
           "waiting",
           "running"
@@ -7324,6 +7379,98 @@
         "title": "PracticeSetup",
         "type": "object"
       },
+      "PracticeSpend": {
+        "additionalProperties": false,
+        "properties": {
+          "analyses": {
+            "title": "Analyses",
+            "type": "integer"
+          },
+          "cost_per_note_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Note Usd"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "plan": {
+            "enum": [
+              "trial",
+              "essentials",
+              "professional",
+              "enterprise"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "plan_monthly_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Monthly Cents"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderSpend"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "unpriced_analyses": {
+            "title": "Unpriced Analyses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "analyses",
+          "notes",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "cost_per_note_usd",
+          "unpriced_analyses",
+          "id",
+          "name",
+          "plan",
+          "plan_monthly_cents",
+          "providers"
+        ],
+        "title": "PracticeSpend",
+        "type": "object"
+      },
       "PracticeSummary": {
         "additionalProperties": false,
         "properties": {
@@ -8385,6 +8532,67 @@
           "addendum_text"
         ],
         "title": "ProviderRequest",
+        "type": "object"
+      },
+      "ProviderSpend": {
+        "additionalProperties": false,
+        "properties": {
+          "analyses": {
+            "title": "Analyses",
+            "type": "integer"
+          },
+          "cost_per_note_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Note Usd"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "unpriced_analyses": {
+            "title": "Unpriced Analyses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "analyses",
+          "notes",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "cost_per_note_usd",
+          "unpriced_analyses",
+          "id",
+          "name"
+        ],
+        "title": "ProviderSpend",
         "type": "object"
       },
       "ProviderToken": {
@@ -10486,6 +10694,57 @@
           "email"
         ],
         "title": "SignupBody",
+        "type": "object"
+      },
+      "SpendFigures": {
+        "additionalProperties": false,
+        "properties": {
+          "analyses": {
+            "title": "Analyses",
+            "type": "integer"
+          },
+          "cost_per_note_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Note Usd"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "unpriced_analyses": {
+            "title": "Unpriced Analyses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "analyses",
+          "notes",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "cost_per_note_usd",
+          "unpriced_analyses"
+        ],
+        "title": "SpendFigures",
         "type": "object"
       },
       "SwitchBody": {
@@ -13554,6 +13813,121 @@
           }
         },
         "summary": "Demo Requests",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/expenditure": {
+      "get": {
+        "operationId": "spend_api_hq_expenditure_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "practice_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Practice Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Expenditure"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Spend",
         "tags": [
           "hq"
         ]

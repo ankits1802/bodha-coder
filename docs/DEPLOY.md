@@ -216,7 +216,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
-| `GEMINI_MODEL`, `AI_WORKERS` | | yes | | plain |
+| `GEMINI_MODEL`, `AI_WORKERS`, `MODEL_PRICES` | | yes | | plain |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
 The `web` service needs `SITE_URL=https://www.bodhaai.co` and `ADMIN_URL=https://admin.bodhaai.co` as
@@ -228,6 +228,15 @@ and `aws:kms` without a key id would use the AWS managed key rather than the buc
 `S3_ENDPOINT_URL`, `AWS_ENDPOINT_URL` or access keys on AWS: the task role supplies credentials.
 `ssl=require` encrypts the database connection; verifying the server certificate needs the RDS CA
 bundle in the image.
+
+### Model prices
+
+What each review costs is worked out when it is stored ([0035](decisions/0035-model-spend-per-provider.md))
+and shown on HQ's Spend page.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `MODEL_PRICES` | `{"gemini-3.8-flash": {"input": 0.50, "output": 3.00}}` | a JSON object from each model name, exactly as analyses record it, to its price in USD per million input and output tokens (output includes thinking tokens). An estimate: set it from Google's current price list for the region and tier in use. A model it leaves out records no cost, the worker logs that model's name once, and HQ's Spend page counts those reviews as without a price. A new price applies to reviews stored after the worker restarts; stored costs keep the price they were stored with |
 
 ### Self sign-up and sign-in services
 

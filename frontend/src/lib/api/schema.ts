@@ -543,6 +543,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hq/expenditure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["spend_api_hq_expenditure_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hq/overview": {
         parameters: {
             query?: never;
@@ -2599,6 +2615,14 @@ export interface components {
             level: string | null;
             modifiers: string[];
         };
+        Expenditure: {
+            from: string;
+            practices: components["schemas"]["PracticeSpend"][];
+            time_zone: "UTC";
+            to: string;
+            totals: components["schemas"]["SpendFigures"];
+            unpriced_models: string[];
+        };
         ExportBody: {
             again?: boolean;
             note_ids?: string[] | null;
@@ -2684,12 +2708,14 @@ export interface components {
             blocked: boolean;
         };
         HqOverview: {
+            cost_last_24h_usd: number;
             failed_last_24h: number;
             people: number;
             practices: number;
             read_last_24h: number;
             running: number;
             tokens_last_24h: number;
+            unpriced_last_24h: number;
             waiting: number;
         };
         HqPlace: {
@@ -3112,6 +3138,20 @@ export interface components {
             security: components["schemas"]["SecuritySettings"];
             total: number;
         };
+        PracticeSpend: {
+            analyses: number;
+            cost_per_note_usd: number | null;
+            cost_usd: number;
+            id: string;
+            input_tokens: number;
+            name: string;
+            notes: number;
+            output_tokens: number;
+            plan: "trial" | "essentials" | "professional" | "enterprise";
+            plan_monthly_cents: number | null;
+            providers: components["schemas"]["ProviderSpend"][];
+            unpriced_analyses: number;
+        };
         PracticeSummary: {
             can_send_texts: boolean;
             checks: components["schemas"]["Checks"];
@@ -3257,6 +3297,17 @@ export interface components {
             status: "sent" | "answered" | "expired" | "cancelled";
             texts: components["schemas"]["TextRevision"][];
             visit_type: string;
+        };
+        ProviderSpend: {
+            analyses: number;
+            cost_per_note_usd: number | null;
+            cost_usd: number;
+            id: string;
+            input_tokens: number;
+            name: string;
+            notes: number;
+            output_tokens: number;
+            unpriced_analyses: number;
         };
         ProviderToken: {
             provider_token: string;
@@ -3569,6 +3620,15 @@ export interface components {
             name: string;
             practice_name: string;
             time_zone: string;
+        };
+        SpendFigures: {
+            analyses: number;
+            cost_per_note_usd: number | null;
+            cost_usd: number;
+            input_tokens: number;
+            notes: number;
+            output_tokens: number;
+            unpriced_analyses: number;
         };
         SwitchBody: {
             request_id: string;
@@ -5226,6 +5286,63 @@ export interface operations {
                 };
             };
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    spend_api_hq_expenditure_get: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                practice_id?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Expenditure"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -8,10 +8,9 @@ from app.ai.review import PROMPT_VERSION
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Analysis, CodeSet, NoteText, Suggestion
-from app.services.analysis import AnalysisDeps
 from app.services.evaluation_runs import run_evaluation
 from tests.api.quality_helpers import SequenceReviewer, approved_note, higher_report, read_note
-from tests.builders import marisol_report, practice_with_provider
+from tests.builders import analysis_deps, marisol_report, practice_with_provider
 from tests.fakes import FailingReviewer, ScriptedReviewer
 
 
@@ -26,7 +25,7 @@ async def evaluation_case(harness, icd_catalog):
 async def evaluate(harness, icd_catalog, practice, reviewer) -> dict:
     queued = await harness.client.post("/api/quality/evaluations", headers=practice.admin)
     assert queued.status_code == 200, queued.text
-    deps = AnalysisDeps(reviewer, None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, reviewer)
     async with SessionFactory() as db:
         assert await run_evaluation(db, queued.json()["id"], deps) is True
         assert await run_evaluation(db, queued.json()["id"], deps) is False

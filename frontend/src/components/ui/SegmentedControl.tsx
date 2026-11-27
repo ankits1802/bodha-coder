@@ -11,7 +11,7 @@ export interface Segment<V extends string> {
 
 interface SegmentedControlProps<V extends string> {
   label: string;
-  value: V;
+  value: V | null;
   segments: Segment<V>[];
   onChange: (value: V) => void;
   size?: "sm" | "md";
@@ -21,6 +21,7 @@ const NEXT_KEYS: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLe
 
 export function SegmentedControl<V extends string>({ label, value, segments, onChange, size = "md" }: SegmentedControlProps<V>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusable = segments.some((segment) => segment.value === value) ? value : segments[0]?.value;
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
     const step = NEXT_KEYS[event.key];
@@ -47,7 +48,7 @@ export function SegmentedControl<V extends string>({ label, value, segments, onC
             role="radio"
             aria-checked={on}
             aria-label={segment.accessibleLabel}
-            tabIndex={on ? 0 : -1}
+            tabIndex={segment.value === focusable ? 0 : -1}
             onClick={() => onChange(segment.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={`${size === "sm" ? "h-6.5 px-2.5" : "h-7 px-3"} cursor-pointer rounded-nav text-subhead font-medium tracking-snug whitespace-nowrap text-label ${on ? "bg-surface shadow-segment-on" : "bg-transparent"}`}

@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Computed,
@@ -246,6 +247,7 @@ class Analysis(IdMixin, Base):
     __table_args__ = (
         UniqueConstraint("note_id", "revision"),
         Index("ix_analyses_queue", "status", "requested_at"),
+        Index("ix_analyses_finished_at", "finished_at"),
         one_of("status", ANALYSIS_STATUSES),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
@@ -262,6 +264,8 @@ class Analysis(IdMixin, Base):
     finished_at: Mapped[datetime | None] = timestamp()
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cost_microusd: Mapped[int | None] = mapped_column(BigInteger)
+    price_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     response_key: Mapped[str | None] = mapped_column(String(300))
     report: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(String(300))

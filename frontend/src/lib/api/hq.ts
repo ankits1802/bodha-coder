@@ -6,6 +6,7 @@ import type {
   DemoRequestRow,
   HqActivityPage,
   HqActivityQuery,
+  HqExpenditure,
   HqInvite,
   HqMemberUpdate,
   HqOverview,
@@ -15,6 +16,7 @@ import type {
   NewPractice,
   PracticeUpdate,
   Renewal,
+  SpendRange,
 } from "./types";
 
 export function getHqOverview(): Promise<HqOverview> {
@@ -57,6 +59,10 @@ export function setHqPlace(code: string, name: string | null, active: boolean): 
 
 export function getHqActivity(query: HqActivityQuery): Promise<HqActivityPage> {
   return request<HqActivityPage>("/api/hq/activity", { query: { ...query } });
+}
+
+export function getHqExpenditure(range: SpendRange): Promise<HqExpenditure> {
+  return request<HqExpenditure>("/api/hq/expenditure", { query: { from: range.from, to: range.to } });
 }
 
 const teamPath = (userId: string, suffix = ""): string => `/api/hq/team/${encodeURIComponent(userId)}${suffix}`;

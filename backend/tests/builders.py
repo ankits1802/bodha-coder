@@ -11,9 +11,10 @@ from sqlalchemy import update
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.core.config import get_settings
 from app.core.db import SessionFactory
+from app.core.model_prices import PriceBook
 from app.core.security import hash_password
 from app.models import User
-from app.services.analysis import AnalysisDeps
+from app.services.analysis import AnalysisDeps, Reviewer
 from app.worker import process_one
 from tests.fakes import (
     NOTE_TEXT,
@@ -211,9 +212,16 @@ async def upload_note(harness: Harness, practice: Practice, *, file_name: str = 
     )
 
 
+def analysis_deps(
+    harness: Harness, icd_catalog, reviewer: Reviewer, *, prices: PriceBook | None = None
+) -> AnalysisDeps:
+    book = prices if prices is not None else PriceBook(get_settings().model_prices)
+    return AnalysisDeps(reviewer, None, harness.store, icd_catalog, book)
+
+
 async def read_next_note(harness: Harness, icd_catalog, report: ReviewReport | None = None) -> ScriptedReviewer:
     reviewer = ScriptedReviewer(report or marisol_report())
-    deps = AnalysisDeps(reviewer, None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, reviewer)
     assert await process_one(deps, get_settings()) is True
     return reviewer
 

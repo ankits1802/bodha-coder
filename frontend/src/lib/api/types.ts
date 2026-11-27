@@ -156,6 +156,10 @@ export type HqPlace = Schemas["HqPlace"];
 export type HqActivityEntry = Schemas["HqActivityEntry"];
 export type HqActivityPage = Schemas["HqActivityPage"];
 export type HqTeamMember = Schemas["HqTeamMember"];
+export type HqExpenditure = Schemas["Expenditure"];
+export type SpendFigures = Schemas["SpendFigures"];
+export type PracticeSpend = Schemas["PracticeSpend"];
+export type ProviderSpend = Schemas["ProviderSpend"];
 export type HqInvite = Schemas["HqInviteBody"];
 export type HqMemberUpdate = Schemas["HqMemberBody"];
 
@@ -325,4 +329,9 @@ export interface HqActivityQuery {
   practice_id: string | null;
   action: string | null;
   offset: number;
+}
+
+export interface SpendRange {
+  from: string;
+  to: string;
 }

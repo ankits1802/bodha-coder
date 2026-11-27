@@ -43,7 +43,7 @@ Nothing a person or the model produced is overwritten.
 |---|---|---|
 | `notes` | one visit document: file, patient, date of service, provider, place, lane, headline | current state only; everything below is the history |
 | `note_texts` | the note's text: a `document` revision for each PDF (extracted text, or empty for a scan until the model's text is stored as the next `document` revision), then one per signed addendum. A read uses the texts from the latest `document` revision onward | append-only |
-| `analyses` | one row per model run or re-derivation: inputs (context), model, prompt version, tokens, validated report, raw response key | append-only; older runs become `superseded` |
+| `analyses` | one row per model run or re-derivation: inputs (context), model, prompt version, tokens (top-up calls included), `cost_microusd` and the `price_snapshot` it was priced at, validated report, raw response key | append-only; older runs become `superseded` |
 | `suggestions` | each suggestion of an analysis: kind, codes before and after, action, reasoning, evidence quotes, severity, detail | belong to one analysis |
 | `decisions` | each choice a person made on a suggestion, and each diagnosis-pointer choice for a claim line (`pointers:<code>:<diagnoses>`) | append-only; the latest per key applies |
 | `code_sets` | billed and final code lists; a final procedure line carries its `pointers` when the coder linked them | append-only revisions per kind |
@@ -166,6 +166,17 @@ Vertex inline; split it"). PHI goes through Vertex under Google's BAA. Decision:
 [0012](decisions/0012-vertex-ai.md). `demo` answers with canned reviews (`adapters/demo_model.py`)
 and is refused at start-up when `APP_ENVIRONMENT` is `production` (the default):
 [0023](decisions/0023-demo-model-backend.md).
+
+## Model spend
+
+Decision: [0035](decisions/0035-model-spend-per-provider.md).
+
+| Piece | How it works |
+|---|---|
+| Prices | `MODEL_PRICES` (a JSON object, read by `Settings.model_prices`) maps a model name, exactly as analyses record it, to `{"input": …, "output": …}` in USD per million tokens; the default prices `GEMINI_MODEL`'s default at 0.50 and 3.00, an estimate to be kept in line with Google's price list. The worker holds one `core.model_prices.PriceBook` in `AnalysisDeps` |
+| Stored cost | when an analysis is stored (`services.analysis._store_outcome`), every reply's tokens are priced at its own model's price and summed (top-up calls included), rounded once to whole microdollars into `analyses.cost_microusd`, and the prices used go to `analyses.price_snapshot` (`{model: {"input", "output"}}`). A model missing from `MODEL_PRICES` leaves both null and logs its name once per worker process. Migration 0011 priced the succeeded and superseded rows of `gemini-3.8-flash` at 0.50 and 3.00 and left every other row null |
+| HQ spend | `GET /api/hq/expenditure?from=&to=[&practice_id=]` (HQ only; `services.expenditure`): every analysis that consumed tokens (any status, failed and superseded included) whose `finished_at` falls on the UTC days from `from` to `to`, grouped by the note's practice and current provider: analyses, distinct notes, input and output tokens, cost in dollars to the cent, cost per note to four places, and the analyses whose cost is unknown, counted apart and never priced; the models without a price are listed. Practices and providers run from the highest cost. `/hq/spend` shows the totals, the practices with their plan's price per provider and month, each opening to its providers, with range presets (this month, last month, last 30 days, this year, all in UTC days) and a CSV of the provider rows |
+| HQ overview | `tokens_last_24h`, `cost_last_24h_usd` and `unpriced_last_24h` count the analyses that consumed tokens and finished in the last 24 hours |
 
 ## Web client data
 

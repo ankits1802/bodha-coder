@@ -29,6 +29,7 @@ from app.models import (
 from app.services.account_lookup import email_in_use
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
+from app.services.expenditure import spend_since
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import subscription_for
 from app.services.plans import PLAN_KEYS
@@ -48,13 +49,12 @@ NO_END_DATE = "no end date"
 async def overview(db: AsyncSession) -> dict[str, Any]:
     since = utcnow() - timedelta(hours=24)
     by_status = dict((await db.execute(select(Analysis.status, func.count()).group_by(Analysis.status))).all())
-    today = (
-        await db.execute(
-            select(func.count(), func.coalesce(func.sum(Analysis.input_tokens + Analysis.output_tokens), 0)).where(
-                Analysis.finished_at >= since, Analysis.status.in_(("succeeded", "superseded"))
-            )
-        )
-    ).one()
+    read = await db.scalar(
+        select(func.count())
+        .select_from(Analysis)
+        .where(Analysis.finished_at >= since, Analysis.status.in_(("succeeded", "superseded")))
+    )
+    spent = await spend_since(db, since)
     failed = await db.scalar(
         select(func.count()).select_from(Analysis).where(Analysis.finished_at >= since, Analysis.status == "failed")
     )
@@ -67,8 +67,10 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
     return {
         "practices": practices or 0,
         "people": people or 0,
-        "read_last_24h": today[0],
-        "tokens_last_24h": int(today[1]),
+        "read_last_24h": read or 0,
+        "tokens_last_24h": spent["input_tokens"] + spent["output_tokens"],
+        "cost_last_24h_usd": spent["cost_usd"],
+        "unpriced_last_24h": spent["unpriced_analyses"],
         "failed_last_24h": failed or 0,
         "waiting": by_status.get("queued", 0),
         "running": by_status.get("running", 0),

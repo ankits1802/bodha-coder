@@ -7,7 +7,7 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { useRemote } from "@/hooks/useRemote";
 import { getHqOverview, getHqPractices } from "@/lib/api/hq";
 import type { HqOverview } from "@/lib/api/types";
-import { formatCount, formatDay, formatPercent, formatTime, ratio } from "@/lib/format";
+import { formatCount, formatDay, formatMoney, formatPercent, formatTime, ratio } from "@/lib/format";
 import { HQ_TEXT } from "../strings";
 import { attentionItems, busiest } from "./overviewModel";
 import { AttentionList, BusiestTable, ListSection } from "./PracticeLists";
@@ -32,6 +32,11 @@ function OverviewStats({ overview }: { overview: HqOverview }) {
         note={words.failedShare(formatPercent(ratio(overview.failed_last_24h, attempts)))}
       />
       <StatCell label={words.tokens} value={formatCount(overview.tokens_last_24h)} />
+      <StatCell
+        label={words.cost}
+        value={formatMoney(overview.cost_last_24h_usd)}
+        note={overview.unpriced_last_24h > 0 ? words.unpriced(overview.unpriced_last_24h) : undefined}
+      />
     </StatGrid>
   );
 }

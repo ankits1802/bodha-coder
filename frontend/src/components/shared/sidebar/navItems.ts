@@ -33,6 +33,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "security", area: "security", href: "/security", label: words.security, icon: "lock", group: "practice" },
   { key: "hqOverview", area: "hq", href: "/hq", label: words.hqOverview, icon: "gauge", group: "platform" },
   { key: "hqPractices", area: "hq", href: "/hq/practices", label: words.hqPractices, icon: "house", group: "platform" },
+  { key: "hqSpend", area: "hq", href: "/hq/spend", label: words.hqSpend, icon: "bars", group: "platform" },
   { key: "hqActivity", area: "hq", href: "/hq/activity", label: words.hqActivity, icon: "clock", group: "platform" },
   { key: "hqDemos", area: "hq", href: "/hq/demos", label: words.hqDemos, icon: "inbox", group: "platform" },
   { key: "hqTeam", area: "hq", href: "/hq/team", label: words.hqTeam, icon: "people", group: "platform" },

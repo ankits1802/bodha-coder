@@ -1,5 +1,6 @@
 import type { BillingProvider, BillingStatus, MemberStatus } from "@/lib/api/types";
 import type { PracticeFilter } from "./practices/practiceFilters";
+import type { SpendPreset } from "./spend/spendModel";
 import type { HqConfirmKind } from "./team/hqTeamModel";
 
 export const HQ_TEXT = {
@@ -25,6 +26,8 @@ export const HQ_TEXT = {
     failed: "Could not read",
     failedShare: (share: string) => `${share} of attempts`,
     tokens: "Model tokens in 24 h",
+    cost: "Model cost in 24 h",
+    unpriced: (count: number) => `${count} without a price`,
     healthy: "No failed reads in 24 h",
     failing: (count: number) => (count === 1 ? "1 failed read in 24 h" : `${count} failed reads in 24 h`),
     attention: "Needs attention",
@@ -202,5 +205,58 @@ export const HQ_TEXT = {
     columns: { when: "When", action: "Action", practice: "Practice", detail: "Detail", by: "By" },
     csvHeader: ["time", "action", "practice", "detail", "by"],
     fileName: "bodha-activity.csv",
+  },
+  spend: {
+    title: "Spend",
+    loading: "Loading spend",
+    empty: "No model use in this range",
+    range: (from: string, to: string) => `${from} – ${to}`,
+    zone: (range: string, zone: string) => `${range} · ${zone}`,
+    presetLabel: "Range",
+    presets: {
+      thisMonth: "This month",
+      lastMonth: "Last month",
+      last30Days: "Last 30 days",
+      thisYear: "This year",
+    } satisfies Record<SpendPreset, string>,
+    from: "From",
+    to: "To",
+    download: "Download CSV",
+    totalsLabel: "Spend in range",
+    stats: {
+      cost: "Model cost",
+      costPerNote: "Cost per note",
+      notes: "Notes reviewed",
+      analyses: "Analyses",
+      inputTokens: "Input tokens",
+      outputTokens: "Output tokens",
+    },
+    unpriced: (count: number, models: readonly string[]) =>
+      `${count} without a price${models.length > 0 ? ` · ${models.join(", ")}` : ""}`,
+    tableLabel: "Spend by practice and provider",
+    columns: {
+      practice: "Practice",
+      plan: "Plan",
+      notes: "Notes",
+      analyses: "Analyses",
+      input: "Input tokens",
+      output: "Output tokens",
+      cost: "Cost",
+      perNote: "Per note",
+      unpriced: "No price",
+    },
+    perProvider: (price: string) => `${price} / provider / month`,
+    csvHeader: [
+      "practice",
+      "provider",
+      "analyses",
+      "notes_reviewed",
+      "input_tokens",
+      "output_tokens",
+      "cost_usd",
+      "cost_per_note_usd",
+      "analyses_without_price",
+    ],
+    fileName: (from: string, to: string) => `bodha-spend-${from}-${to}.csv`,
   },
 } as const;

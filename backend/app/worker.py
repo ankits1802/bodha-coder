@@ -24,6 +24,7 @@ from app.codes.icd import IcdCatalog, IcdReleaseUnavailable, load_catalog
 from app.core.config import Settings, get_settings
 from app.core.db import SessionFactory
 from app.core.logging import configure_logging, log_queue_metrics
+from app.core.model_prices import PriceBook
 from app.models import Analysis, utcnow
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
 from app.services.digests import send_due_digests
@@ -199,7 +200,9 @@ async def purge_loop() -> None:
 async def run() -> None:
     settings = get_settings()
     icd = await asyncio.to_thread(load_catalog)
-    deps = AnalysisDeps(review_note, model_client(settings, icd), S3ObjectStore(settings), icd)
+    deps = AnalysisDeps(
+        review_note, model_client(settings, icd), S3ObjectStore(settings), icd, PriceBook(settings.model_prices)
+    )
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
     messenger, listing = build_messenger(settings), S3ListingStore(settings)
     billing = build_billing_providers(settings)

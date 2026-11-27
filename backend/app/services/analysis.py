@@ -17,6 +17,7 @@ from app.codes.billing_codes import Code
 from app.codes.icd import IcdCatalog
 from app.codes.mips_scope import practice_scope
 from app.codes.places import setting_for
+from app.core.model_prices import PriceBook
 from app.models import Analysis, MipsList, Note, NoteText, Practice, Suggestion, utcnow
 from app.services.code_sets import latest_codes, next_revision
 from app.services.findings import Finding, build_findings
@@ -33,6 +34,7 @@ class AnalysisDeps:
     client: ModelClient
     store: ObjectStore
     icd: IcdCatalog
+    prices: PriceBook
 
 
 async def request_analysis(db: AsyncSession, note: Note, *, reason: str) -> Analysis:
@@ -151,6 +153,9 @@ async def _store_outcome(
     analysis.prompt_version = outcome.prompt_version
     analysis.input_tokens = sum(reply.input_tokens for reply in outcome.replies)
     analysis.output_tokens = sum(reply.output_tokens for reply in outcome.replies)
+    costing = deps.prices.costing(outcome.replies)
+    analysis.cost_microusd = costing.microusd if costing else None
+    analysis.price_snapshot = costing.snapshot if costing else None
     analysis.context = {**analysis.context, "failed_sections": sorted(outcome.failed_sections)}
     note.current_analysis_id = analysis.id
 

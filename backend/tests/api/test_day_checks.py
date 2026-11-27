@@ -5,10 +5,9 @@ from datetime import date
 
 from app.ai.contracts import EmReview, ModelClient, ReviewInputs, ReviewOutcome, ReviewReport
 from app.core.config import get_settings
-from app.services.analysis import AnalysisDeps
 from app.worker import process_one
 from tests.batches import NoteFile, lines_pdf, note_ids_by_file, upload_batch
-from tests.builders import practice_with_provider
+from tests.builders import analysis_deps, practice_with_provider
 
 BUSY_DAY = date(2026, 11, 25)
 QUIET_DAY = date(2026, 11, 24)
@@ -65,7 +64,7 @@ def _note(marker: str, patient: str, body: list[str], *, day: date = BUSY_DAY, b
 
 
 async def _read_all(harness, icd_catalog, count: int, minutes: dict[str, int]) -> None:
-    deps = AnalysisDeps(TimedReviewer(minutes), None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, TimedReviewer(minutes))
     for _ in range(count):
         assert await process_one(deps, get_settings()) is True
 

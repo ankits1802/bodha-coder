@@ -32,6 +32,16 @@ describe("DateRange", () => {
     expect(screen.getByRole("button", { name: "Monday 9 November 2026" })).toBeDisabled();
   });
 
+  it("draws compact filter fields named by their labels with the same bounds", () => {
+    render(
+      <DateRange variant="filter" start="2026-11-10" end="2026-11-20" labels={{ start: "From", end: "To" }} today="2026-11-27" onChange={() => undefined} />,
+    );
+    expect(screen.getByRole("textbox", { name: "From" })).toHaveValue("10 Nov 2026");
+    expect(screen.queryByText("From", { selector: "label" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Choose date To" }));
+    expect(screen.getByRole("button", { name: "Monday 9 November 2026" })).toBeDisabled();
+  });
+
   it("refuses a typed end before the start and passes on a valid one", () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

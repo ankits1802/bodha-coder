@@ -156,6 +156,7 @@ Gemini Developer API (`GEMINI_API_KEY`) is for development with made-up notes.
 | `GOOGLE_CLOUD_PROJECT` | the Google Cloud project that holds the signed BAA and has the Vertex AI API enabled |
 | `GOOGLE_CLOUD_LOCATION` | a regional endpoint such as `us-central1`, where notes are processed |
 | `GEMINI_MODEL` | a Gemini model Vertex serves in that location |
+| `MODEL_PRICES` | a JSON object from model name to `{"input": …, "output": …}` in USD per million tokens, used to keep what each review cost and shown on HQ's Spend page; defaults to `gemini-3.8-flash` at 0.50 and 3.00, an estimate to set from Google's price list ([0035](docs/decisions/0035-model-spend-per-provider.md)) |
 
 Vertex uses Application Default Credentials: the service account attached to the worker on Google
 Cloud, workload identity federation elsewhere, or `GOOGLE_APPLICATION_CREDENTIALS` pointing at a key
