@@ -9,17 +9,20 @@ function Headline({ title }: { title: string }) {
   const words = title.split(" ");
   return (
     <h1 className="m-0 max-w-240 font-display text-display font-bold tracking-display sm:text-display-lg lg:text-hero xl:text-mega">
-      {words.map((word, index) => (
-        <span key={`${word}-${index}`}>
-          <span
-            className={index === words.length - 1 ? `${styles.word} ${styles.defend}` : styles.word}
-            style={cssVars({ "--i": index })}
-          >
-            {word}
+      <span className="sr-only">{title}</span>
+      <span aria-hidden="true">
+        {words.map((word, index) => (
+          <span key={`${word}-${index}`}>
+            <span
+              className={index === words.length - 1 ? `${styles.word} ${styles.defend}` : styles.word}
+              style={cssVars({ "--i": index })}
+            >
+              {word}
+            </span>
+            {index < words.length - 1 ? " " : null}
           </span>
-          {index < words.length - 1 ? " " : null}
-        </span>
-      ))}
+        ))}
+      </span>
     </h1>
   );
 }

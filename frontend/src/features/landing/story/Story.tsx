@@ -12,9 +12,10 @@ export function Story() {
       <ScrollStage mode="pin" acts={words.acts.length} className={styles.track}>
         <div className={styles.sticky}>
           <h2 className={`font-display ${styles.steps}`}>
+            <span className="sr-only">{words.acts.map((act) => act.step).join(" ")}</span>
             {words.acts.map((act, index) => (
-              <span key={act.step} data-index={index} className={styles.step}>
-                {act.step}{" "}
+              <span key={act.step} aria-hidden="true" data-index={index} className={styles.step}>
+                {act.step}
               </span>
             ))}
           </h2>

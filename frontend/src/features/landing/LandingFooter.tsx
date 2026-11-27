@@ -12,14 +12,17 @@ export function LandingFooter() {
     <>
       <section id="demo" className={styles.closing}>
         <h2 className="relative m-0 max-w-200 font-display text-hero-sm font-bold tracking-display sm:text-display-lg lg:text-hero">
-          {words.map((word, index) => (
-            <span key={`${word}-${index}`}>
-              <span data-reveal="" className="inline-block" style={cssVars({ "--delay": `${index * 90}ms` })}>
-                {word}
+          <span className="sr-only">{demo.title}</span>
+          <span aria-hidden="true">
+            {words.map((word, index) => (
+              <span key={`${word}-${index}`}>
+                <span data-reveal="" className="inline-block" style={cssVars({ "--delay": `${index * 90}ms` })}>
+                  {word}
+                </span>
+                {index < words.length - 1 ? " " : null}
               </span>
-              {index < words.length - 1 ? " " : null}
-            </span>
-          ))}
+            ))}
+          </span>
         </h2>
         <div data-reveal="" className="relative" style={cssVars({ "--delay": "420ms" })}>
           <Magnetic>
