@@ -226,7 +226,7 @@ async def verify_code(db: AsyncSession, token: str, code: str, client: Client) -
 
 async def _record_code_check(db: AsyncSession, request: AddendumRequest, client: Client, action: str) -> None:
     provider = await db.get_one(Provider, request.provider_id)
-    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client[0], client[1])
+    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client.ip, client.agent)
     record_provider_access(db, actor, provider.name, action, note_id=request.note_id)
 
 

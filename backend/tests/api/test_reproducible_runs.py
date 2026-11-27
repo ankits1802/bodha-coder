@@ -8,9 +8,8 @@ from app.ai.errors import ModelRequestRejected, ModelUnavailable
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Analysis, AnalysisFailure, Note, utcnow
-from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.builders import marisol_report, practice_with_provider
+from tests.builders import analysis_deps, marisol_report, practice_with_provider
 from tests.fakes import FailingReviewer, ScriptedReviewer, text_pdf
 
 SCHEMA = {"type": "object", "properties": {"em": {"type": "object"}}}
@@ -53,7 +52,7 @@ async def test_a_run_keeps_its_rendered_prompt_settings_code_version_codes_and_d
     note_id = await _upload(harness, practice)
     reviewer = ScriptedReviewer(marisol_report(), requests=(REQUEST,), replies=(REPLY,))
 
-    assert await process_one(AnalysisDeps(reviewer, None, harness.store, icd_catalog), get_settings()) is True
+    assert await process_one(analysis_deps(harness, icd_catalog, reviewer), get_settings()) is True
 
     analysis, note = await _run(note_id)
     key = f"practices/{practice.id}/notes/{note_id}/analyses/1.prompt.json"
@@ -92,11 +91,11 @@ async def test_each_failed_attempt_keeps_its_own_error(harness, icd_catalog):
     busy = FailingReviewer(ModelUnavailable("Gemini generate_content failed after retries (ServerError)."))
     refused = FailingReviewer(ModelRequestRejected("The Gemini account has no credits left (HTTP 402)."))
 
-    assert await process_one(AnalysisDeps(busy, None, harness.store, icd_catalog), get_settings()) is True
+    assert await process_one(analysis_deps(harness, icd_catalog, busy), get_settings()) is True
     async with SessionFactory() as db:
         await db.execute(update(Analysis).where(Analysis.note_id == note_id).values(requested_at=utcnow()))
         await db.commit()
-    assert await process_one(AnalysisDeps(refused, None, harness.store, icd_catalog), get_settings()) is True
+    assert await process_one(analysis_deps(harness, icd_catalog, refused), get_settings()) is True
 
     analysis, _ = await _run(note_id)
     async with SessionFactory() as db:

@@ -5,9 +5,8 @@ from sqlalchemy.exc import DBAPIError
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Analysis, Note
-from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.builders import invite_member, practice_with_provider, reviewed_note, sign_in, upload_note
+from tests.builders import analysis_deps, invite_member, practice_with_provider, reviewed_note, sign_in, upload_note
 from tests.fakes import ScriptedReviewer
 
 CODER = {"name": "Priya Nair", "email": "priya@lakeside.example.com", "role": "coder"}
@@ -46,7 +45,7 @@ async def test_a_coder_voids_an_unread_note_and_every_record_and_file_stays(harn
     assert [(row["field"], row["old"], row["new"], row["reason"]) for row in detail["history"]["changes"]] == [
         ("status", "queued", "voided", MISTAKE)
     ]
-    deps = AnalysisDeps(ScriptedReviewer(None), None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, ScriptedReviewer(None))
     assert await process_one(deps, get_settings()) is False
     log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
     assert ("voided note", note_id, "was queued") in {(row["action"], row["note_id"], row["detail"]) for row in log}

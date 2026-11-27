@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from datetime import timedelta
+from itertools import zip_longest
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,7 +47,7 @@ def prompt_record(outcome: ReviewOutcome, *, document_key: str | None, document_
         "document": {"key": document_key, "sha256": document_sha256},
         "requests": [
             {**_request_view(request), **_reply_settings(reply)}
-            for request, reply in zip(outcome.requests, outcome.replies, strict=True)
+            for request, reply in zip_longest(outcome.requests, outcome.replies)
         ],
     }
 
@@ -55,11 +56,11 @@ def generation_settings(outcome: ReviewOutcome) -> dict[str, Any]:
     return {
         "calls": [
             {
-                "model": reply.model,
-                "schema_sha256": sha256_of_json(request.schema) if request.schema is not None else None,
+                "model": reply.model if reply else None,
+                "schema_sha256": sha256_of_json(request.schema) if request and request.schema is not None else None,
                 **_reply_settings(reply),
             }
-            for request, reply in zip(outcome.requests, outcome.replies, strict=True)
+            for request, reply in zip_longest(outcome.requests, outcome.replies)
         ]
     }
 
@@ -85,9 +86,13 @@ def record_failure(db: AsyncSession, analysis: Analysis, error: str, *, retry_in
     )
 
 
-def _request_view(request: ModelRequest) -> dict[str, Any]:
+def _request_view(request: ModelRequest | None) -> dict[str, Any]:
+    if request is None:
+        return {"system": None, "prompt": None, "schema": None}
     return {"system": request.system, "prompt": request.prompt, "schema": request.schema}
 
 
-def _reply_settings(reply: ModelReply) -> dict[str, Any]:
+def _reply_settings(reply: ModelReply | None) -> dict[str, Any]:
+    if reply is None:
+        return {"temperature": None, "schema_applied": None}
     return {"temperature": reply.temperature, "schema_applied": reply.schema_applied}
