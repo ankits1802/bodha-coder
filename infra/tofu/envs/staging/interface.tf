@@ -45,6 +45,11 @@ variable "public_url" {
   default = "https://bodha-coder.vercel.app"
 }
 
+variable "google_client_id" {
+  type    = string
+  default = ""
+}
+
 variable "image_tag" {
   type    = string
   default = "bootstrap"

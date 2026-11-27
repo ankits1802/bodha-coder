@@ -15,7 +15,7 @@ ephemeral "random_password" "hq_password" {
 }
 
 locals {
-  secret_names = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq"]
+  secret_names = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret"]
 }
 
 resource "aws_secretsmanager_secret" "this" {

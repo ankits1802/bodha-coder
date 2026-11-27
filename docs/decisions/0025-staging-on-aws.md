@@ -33,3 +33,17 @@ About $64 a month at list prices: internal load balancer about $18, Fargate abou
 public IPv4 addresses about $11, database about $14, KMS, secrets and CloudWatch about $4;
 CloudFront stays inside its free tier. The budget alert at $100 filters on the `Project` cost
 allocation tag, which a billing administrator must activate.
+
+## Amendment (2026-11-27): frontend on Vercel
+
+Until there is a domain, staging's public address is `https://bodha-coder.vercel.app` (Vercel team
+`chart-mate`, project `bodha-coder`). Next.js forwards `/api/*` to `BACKEND_URL`, set in Vercel to
+the CloudFront address, so the browser stays on one origin and cookies, uploads and API calls need no
+change; `APP_URL` follows the Vercel address for links and Google sign-in. `deploy-frontend.yml`
+builds with the Vercel CLI in GitHub Actions and deploys the prebuilt output, from CHARTMATE-APP
+only, once a `VERCEL_TOKEN` repository secret exists. The ECS `web` service stays as a fallback.
+
+Staging only: a browser request reaches the API through Vercel, CloudFront and the load balancer,
+so the API sees Vercel's addresses rather than each user's, which loosens per-address sign-in rate
+limits; and real patient data through Vercel would need Vercel's HIPAA agreement.
+

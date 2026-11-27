@@ -81,6 +81,7 @@ module "app" {
   image_tag             = var.image_tag
   desired_count         = 1
   public_url            = var.public_url
+  google_client_id      = var.google_client_id
 }
 
 module "watch" {

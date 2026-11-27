@@ -26,3 +26,13 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
 
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
+
+## Frontend on Vercel
+
+The Vercel CLI on an operator's machine may be signed in to another account. Keep this project's
+login separate with a dedicated global-config folder outside the repository and pass it to every
+command: `vercel login -Q <folder>`, `vercel -Q <folder> link --project bodha-coder` in `frontend/`,
+`vercel -Q <folder> env add BACKEND_URL production`. Releases from CHARTMATE-APP use
+`deploy-frontend.yml` with the `VERCEL_TOKEN` secret and the `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`
+repository variables.
+
