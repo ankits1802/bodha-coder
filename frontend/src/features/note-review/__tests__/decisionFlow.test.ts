@@ -42,7 +42,19 @@ const LANES: QueuePage["lanes"] = {
   provider: { total: 0, due_soon: 0 },
   compliance: { total: 0, due_soon: 0 },
 };
-const PAGE: QueuePage = { items: [row("a"), row("b"), row("c")], lanes: LANES, total: 3, all_total: 3, failed: 0, page_size: 50 };
+const PROVIDER_REASONS: QueuePage["provider_reasons"] = {
+  questions: { total: 0, due_soon: 0 },
+  waiting_on_provider: { total: 0, due_soon: 0 },
+};
+const PAGE: QueuePage = {
+  items: [row("a"), row("b"), row("c")],
+  lanes: LANES,
+  provider_reasons: PROVIDER_REASONS,
+  total: 3,
+  all_total: 3,
+  failed: 0,
+  page_size: 50,
+};
 
 describe("decision order", () => {
   it("lists the code findings visit code first and keeps only those with a choice to make", () => {

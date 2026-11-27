@@ -1,6 +1,6 @@
 from typing import Literal
 
-from app.api.responses.base import View
+from app.api.responses.base import PracticeRole, View
 from app.api.responses.team import MemberStatus
 from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, SUBSCRIPTION_STATUSES
 from app.services.hq import STATUSES
@@ -15,8 +15,15 @@ __all__ = [
     "HqActivityEntry",
     "HqActivityPage",
     "HqOverview",
+    "HqPerson",
+    "HqPersonPractice",
     "HqPlace",
     "HqPractice",
+    "HqPracticeHit",
+    "HqPracticePage",
+    "HqPracticePlace",
+    "HqSearchPerson",
+    "HqSearchResults",
     "HqTeamMember",
     "Renewal",
 ]
@@ -107,3 +114,51 @@ class DemoRequestRow(View):
     organization: str
     message: str | None
     received_at: str
+
+
+class HqPracticePlace(View):
+    code: str
+    name: str
+    active: bool
+    providers: int
+    notes: int
+
+
+class HqPracticePage(View):
+    practice: HqPractice
+    places: list[HqPracticePlace]
+
+
+class HqPerson(View):
+    id: str
+    name: str
+    email: str
+    role: PracticeRole
+    status: MemberStatus
+    mfa_enabled: bool
+    last_active_at: str | None
+
+
+class HqPracticeHit(View):
+    id: str
+    name: str
+    status: Literal[STATUSES]
+
+
+class HqPersonPractice(View):
+    id: str
+    name: str
+    role: PracticeRole
+
+
+class HqSearchPerson(View):
+    id: str
+    name: str
+    email: str
+    practices: list[HqPersonPractice]
+
+
+class HqSearchResults(View):
+    practices: list[HqPracticeHit]
+    people: list[HqSearchPerson]
+    limit: int

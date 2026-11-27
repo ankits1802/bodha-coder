@@ -1,9 +1,11 @@
 import { ASSIGNABLE_STATUSES, DELETABLE_STATUSES } from "@/components/shared/noteStatus";
-import type { Lane, QueueRow, User } from "@/lib/api/types";
+import type { Lane, LaneReason, QueueRow, User } from "@/lib/api/types";
 import { LANE_ORDER } from "@/lib/labels";
 import { canDo } from "@/lib/roles";
 
 export type Member = Pick<User, "id" | "role">;
+
+export const NOTE_ROW_ATTRIBUTE = "data-note-id";
 
 export interface BulkAbilities {
   approve: boolean;
@@ -11,8 +13,28 @@ export interface BulkAbilities {
   remove: boolean;
 }
 
+const LANE_REASONS: Record<LaneReason, true> = {
+  flagged: true,
+  levels_too_high: true,
+  audit_risk: true,
+  waiting_on_provider: true,
+  code_changes: true,
+  questions: true,
+  matches: true,
+};
+
 export function isLane(value: string | null): value is Lane {
   return value !== null && (LANE_ORDER as readonly string[]).includes(value);
+}
+
+export function isLaneReason(value: string | null): value is LaneReason {
+  return value !== null && Object.hasOwn(LANE_REASONS, value);
+}
+
+export function rowToToggle(rows: QueueRow[], member: Member, selectedIds: string[], focusedId: string | null): string | null {
+  const focused = rows.find((row) => row.id === focusedId && isSelectable(row, member));
+  if (focused) return focused.id;
+  return rows.find((row) => isSelectable(row, member) && !selectedIds.includes(row.id))?.id ?? null;
 }
 
 export function isApprovable(row: QueueRow): boolean {

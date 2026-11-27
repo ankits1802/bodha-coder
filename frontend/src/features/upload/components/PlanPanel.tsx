@@ -1,25 +1,25 @@
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
-import type { Place, Provider, UploadPlan } from "@/lib/api/types";
 import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
+import { sharedValue, type Placement, type References, type UploadEntry } from "../uploadEntries";
+import { placeOptions, providerOptions } from "./placementOptions";
 
 interface PlanPanelProps {
-  plan: UploadPlan;
-  providers: Provider[];
-  places: Place[];
-  onChange: (plan: UploadPlan) => void;
+  entries: UploadEntry[];
+  references: References;
+  visitType: string;
+  onPlace: (change: Partial<Placement>) => void;
+  onVisitType: (visitType: string) => void;
 }
 
-export function PlanPanel({ plan, providers, places, onChange }: PlanPanelProps) {
+export function PlanPanel({ entries, references, visitType, onPlace, onVisitType }: PlanPanelProps) {
   const words = UPLOAD_TEXT.plan;
-
-  function chooseProvider(providerId: string): void {
-    const provider = providers.find((item) => item.id === providerId);
-    const usual = provider?.place_code && places.some((place) => place.code === provider.place_code) ? provider.place_code : null;
-    onChange({ ...plan, provider_id: providerId, place_code: usual ?? plan.place_code });
-  }
+  const providerId = sharedValue(entries, "providerId");
+  const serviceDate = sharedValue(entries, "serviceDate");
+  const placeCode = sharedValue(entries, "placeCode");
+  const blank = (value: string, choose: string) => (value || entries.length < 2 ? choose : words.mixed);
 
   return (
     <section
@@ -30,38 +30,36 @@ export function PlanPanel({ plan, providers, places, onChange }: PlanPanelProps)
         {(control) => (
           <Select
             {...control}
-            value={plan.provider_id}
-            options={[
-              { value: "", label: words.chooseProvider },
-              ...providers.map((provider) => ({ value: provider.id, label: words.providerOption(provider.name, provider.credential) })),
-            ]}
-            onChange={chooseProvider}
+            value={providerId}
+            options={providerOptions(references.providers, blank(providerId, words.chooseProvider))}
+            onChange={(chosen) => onPlace({ providerId: chosen })}
           />
         )}
       </Field>
       <Field label={words.date}>
         {(control) => (
-          <DatePicker {...control} value={plan.service_date || null} onChange={(day) => onChange({ ...plan, service_date: day ?? "" })} />
+          <DatePicker
+            {...control}
+            value={serviceDate || null}
+            onChange={(day) => {
+              if (day) onPlace({ serviceDate: day });
+            }}
+          />
         )}
       </Field>
       <Field label={words.place}>
         {(control) => (
           <Select
             {...control}
-            value={plan.place_code}
-            options={[{ value: "", label: words.choosePlace }, ...places.map((place) => ({ value: place.code, label: words.placeOption(place.name, place.code) }))]}
-            onChange={(place_code) => onChange({ ...plan, place_code })}
+            value={placeCode}
+            options={placeOptions(references.places, blank(placeCode, words.choosePlace))}
+            onChange={(chosen) => onPlace({ placeCode: chosen })}
           />
         )}
       </Field>
       <Field label={words.visitType}>
         {(control) => (
-          <Select
-            {...control}
-            value={plan.visit_type}
-            options={VISIT_TYPES.map((type) => ({ value: type, label: type }))}
-            onChange={(visit_type) => onChange({ ...plan, visit_type })}
-          />
+          <Select {...control} value={visitType} options={VISIT_TYPES.map((type) => ({ value: type, label: type }))} onChange={onVisitType} />
         )}
       </Field>
     </section>

@@ -32,6 +32,7 @@ from app.services.evaluation_runs import fail_evaluation, fail_stale_evaluations
 from app.services.file_sweep import sweep_orphan_files
 from app.services.intake import poll_intake
 from app.services.job_control import queue_counts, requeue_interrupted
+from app.services.plan_notices import notify_plans_ending
 from app.services.quantity_sync import sync_quantities
 from app.services.query_governance import escalate_unanswered
 from app.services.records import purge_access_logs
@@ -48,6 +49,7 @@ EVALUATION_INTERVAL_SECONDS = 60
 ESCALATION_INTERVAL_SECONDS = 3_600
 SWEEP_INTERVAL_SECONDS = 86_400
 QUANTITY_SYNC_INTERVAL_SECONDS = 900
+PLAN_NOTICE_INTERVAL_SECONDS = 3_600
 STALE_EVALUATION = timedelta(hours=6)
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
@@ -162,6 +164,11 @@ async def escalate_once(messenger: Messenger) -> None:
         await escalate_unanswered(db, messenger, utcnow())
 
 
+async def notify_plans_ending_once() -> None:
+    async with SessionFactory() as db:
+        await notify_plans_ending(db, utcnow())
+
+
 async def sync_quantities_once(billing: dict[str, BillingProvider]) -> None:
     async with SessionFactory() as db:
         await sync_quantities(db, billing)
@@ -217,6 +224,7 @@ async def run() -> None:
         every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
         every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),
         every(QUANTITY_SYNC_INTERVAL_SECONDS, "subscription quantity sync", lambda: sync_quantities_once(billing)),
+        every(PLAN_NOTICE_INTERVAL_SECONDS, "plan ending notices", notify_plans_ending_once),
     )
     with suppress(NotImplementedError):
         asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, everything.cancel)

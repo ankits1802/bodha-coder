@@ -94,7 +94,14 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
     }
 
 
-async def practices(db: AsyncSession) -> list[dict[str, Any]]:
+async def practice_row(db: AsyncSession, practice_id: str) -> dict[str, Any]:
+    found = await practices(db, practice_id=practice_id)
+    if not found:
+        raise NotFound("practice not found")
+    return found[0]
+
+
+async def practices(db: AsyncSession, *, practice_id: str | None = None) -> list[dict[str, Any]]:
     counts = {
         "users": await _count_by_practice(db, PracticeMembership.practice_id, *SEAT_HOLDING),
         "providers": await _count_by_practice(db, Provider.practice_id),
@@ -103,7 +110,8 @@ async def practices(db: AsyncSession) -> list[dict[str, Any]]:
     admins = await _first_admins(db)
     failures = await _recent_failures(db, utcnow() - timedelta(hours=24))
     billing = {row.practice_id: row for row in await db.scalars(select(Subscription))}
-    rows = await db.scalars(select(Practice).order_by(Practice.name))
+    query = select(Practice).order_by(Practice.name)
+    rows = await db.scalars(query if practice_id is None else query.where(Practice.id == practice_id))
     return [
         {
             **_practice_row(p, counts, admins.get(p.id), failures.get(p.id, (0, None))),

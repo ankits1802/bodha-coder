@@ -30,6 +30,7 @@ describe("role-based navigation", () => {
   it("shows each role only the screens its routes allow", () => {
     expect(keysFor("admin")).toEqual([
       "today",
+      "inbox",
       "upload",
       "queue",
       "compliance",
@@ -43,10 +44,10 @@ describe("role-based navigation", () => {
       "plan",
       "security",
     ]);
-    expect(keysFor("coder")).toEqual(["today", "upload", "queue", "training", "security"]);
-    expect(keysFor("cdi")).toEqual(["today", "queue", "training", "security"]);
-    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "training", "insights", "quality", "security"]);
-    expect(keysFor("biller")).toEqual(["today", "queue", "billing", "remittances", "training", "security"]);
+    expect(keysFor("coder")).toEqual(["today", "inbox", "upload", "queue", "training", "security"]);
+    expect(keysFor("cdi")).toEqual(["today", "inbox", "queue", "training", "security"]);
+    expect(keysFor("compliance")).toEqual(["today", "inbox", "queue", "compliance", "training", "insights", "quality", "security"]);
+    expect(keysFor("biller")).toEqual(["today", "inbox", "queue", "billing", "remittances", "training", "security"]);
     expect(keysFor("viewer")).toEqual(["today", "insights", "security"]);
     expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
   });

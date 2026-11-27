@@ -20,6 +20,7 @@ describe("tourStepsFor", () => {
       "welcome",
       "search",
       "today",
+      "inbox",
       "upload",
       "queue",
       "decide",
@@ -46,6 +47,7 @@ describe("tourStepsFor", () => {
       "welcome",
       "search",
       "today",
+      "inbox",
       "upload",
       "queue",
       "decide",
@@ -59,11 +61,12 @@ describe("tourStepsFor", () => {
   });
 
   it("gives every other practice role exactly the areas it can open", () => {
-    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "queue", "decide", "evidence", "ask", "training", "security", "help", "replay"]);
+    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "queue", "decide", "evidence", "ask", "training", "security", "help", "replay"]);
     expect(keysFor("compliance")).toEqual([
       "welcome",
       "search",
       "today",
+      "inbox",
       "queue",
       "decide",
       "evidence",
@@ -75,7 +78,7 @@ describe("tourStepsFor", () => {
       "help",
       "replay",
     ]);
-    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "queue", "evidence", "billing", "remittances", "training", "security", "help", "replay"]);
+    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "queue", "evidence", "billing", "remittances", "training", "security", "help", "replay"]);
     expect(keysFor("viewer")).toEqual(["welcome", "today", "insights", "security", "help", "replay"]);
   });
 

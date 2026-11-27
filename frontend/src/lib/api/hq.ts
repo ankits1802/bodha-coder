@@ -12,8 +12,11 @@ import type {
   HqInvite,
   HqMemberUpdate,
   HqOverview,
+  HqPerson,
   HqPlace,
   HqPractice,
+  HqPracticePage,
+  HqSearchResults,
   HqTeamMember,
   NewPractice,
   PracticeUpdate,
@@ -29,11 +32,23 @@ export function getHqPractices(): Promise<HqPractice[]> {
   return request<HqPractice[]>("/api/hq/practices");
 }
 
+export function searchHq(text: string): Promise<HqSearchResults> {
+  return request<HqSearchResults>("/api/hq/search", { query: { q: text } });
+}
+
 export function addPractice(body: NewPractice): Promise<Created> {
   return request<Created>("/api/hq/practices", { body });
 }
 
 const practicePath = (practiceId: string, suffix = ""): string => `/api/hq/practices/${encodeURIComponent(practiceId)}${suffix}`;
+
+export function getHqPracticePage(practiceId: string): Promise<HqPracticePage> {
+  return request<HqPracticePage>(practicePath(practiceId));
+}
+
+export function getHqPracticePeople(practiceId: string): Promise<HqPerson[]> {
+  return request<HqPerson[]>(practicePath(practiceId, "/people"));
+}
 
 export function updatePractice(practiceId: string, update: PracticeUpdate): Promise<void> {
   return requestNothing(practicePath(practiceId), { method: "PATCH", body: update });
@@ -67,8 +82,8 @@ export function getHqActivity(query: HqActivityQuery): Promise<HqActivityPage> {
   return request<HqActivityPage>("/api/hq/activity", { query: { ...query } });
 }
 
-export function getHqExpenditure(range: SpendRange): Promise<HqExpenditure> {
-  return request<HqExpenditure>("/api/hq/expenditure", { query: { from: range.from, to: range.to } });
+export function getHqExpenditure(range: SpendRange, practiceId?: string): Promise<HqExpenditure> {
+  return request<HqExpenditure>("/api/hq/expenditure", { query: { from: range.from, to: range.to, practice_id: practiceId } });
 }
 
 const teamPath = (userId: string, suffix = ""): string => `/api/hq/team/${encodeURIComponent(userId)}${suffix}`;

@@ -16,6 +16,7 @@ from app.core.errors import Conflict, Forbidden, Invalid, NotFound
 from app.core.roles import ADMINS, COMPLIANCE, NOTE_READERS
 from app.models import PracticeMembership, ReviewComment, ReviewCommentRemoval, Suggestion, User
 from app.services.audit_log import record_access
+from app.services.inbox import Notice, PayloadValue, notify
 from app.services.memberships import active_members, member_names
 from app.services.review_actions import note_for
 
@@ -31,6 +32,7 @@ __all__ = [
 ]
 
 logger = logging.getLogger("bodha.comments")
+MENTIONED = "mentioned"
 
 
 @dataclass(frozen=True)
@@ -81,11 +83,18 @@ async def post_comment(
     db.add(comment)
     await db.flush()
     record_access(db, actor, "commented", note_id=note.id, detail=f"on {draft.finding_key or 'the note'}")
+    others = [user for user in mentioned if user.id != actor.user.id]
     if mentioned:
         record_access(db, actor, "mentioned", note_id=note.id, detail=f"{len(mentioned)} people")
+        await notify(db, note.practice_id, [user.id for user in others], _mention_notice(actor, comment))
     await db.commit()
-    await _send_mentions(messenger, actor, note.id, [user for user in mentioned if user.id != actor.user.id])
+    await _send_mentions(messenger, actor, note.id, others)
     return comment_view(comment, None, {user.id: user.name for user in mentioned}, actor=actor)
+
+
+def _mention_notice(actor: Actor, comment: ReviewComment) -> Notice:
+    payload: dict[str, PayloadValue] = {"comment_id": comment.id, "on": "finding" if comment.finding_key else "note"}
+    return Notice(MENTIONED, actor.user.name, actor.user.id, comment.note_id, payload)
 
 
 async def remove_comment(db: AsyncSession, actor: Actor, comment_id: str) -> dict[str, Any]:

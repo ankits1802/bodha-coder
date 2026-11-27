@@ -19,6 +19,7 @@ const INSIGHT_READERS: readonly Role[] = ["admin", "compliance", "viewer"];
 
 export type Area =
   | "today"
+  | "inbox"
   | "upload"
   | "queue"
   | "compliance"
@@ -46,6 +47,7 @@ export type Action =
 
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
+  inbox: NOTE_READERS,
   upload: UPLOADERS,
   queue: NOTE_READERS,
   compliance: COMPLIANCE,
@@ -90,6 +92,10 @@ export function canReach(user: SessionUser | null | undefined, area: Area): bool
 
 export function canSearch(user: SessionUser | null | undefined): boolean {
   return user != null && !user.billing_only && canDo(user.role, "search");
+}
+
+export function canSearchPlatform(user: SessionUser | null | undefined): boolean {
+  return user != null && canUse(user.role, "hq");
 }
 
 export function canOpenPath(user: SessionUser, pathname: string): boolean {

@@ -1,4 +1,5 @@
-import type { BillingProvider, BillingStatus, MemberStatus } from "@/lib/api/types";
+import type { BillingProvider, BillingStatus, HqPractice, MemberStatus } from "@/lib/api/types";
+import type { PracticeTab } from "./practice/practiceTabs";
 import type { PracticeFilter } from "./practices/practiceFilters";
 import type { SpendPreset } from "./spend/spendModel";
 import type { HqConfirmKind } from "./team/hqTeamModel";
@@ -153,6 +154,60 @@ export const HQ_TEXT = {
         seats: "Use a whole number from 1 to 10,000",
       },
     },
+  },
+  practice: {
+    title: "Practice",
+    loading: "Loading practice",
+    renew: "Renew",
+    addAdmin: "Add admin",
+    tabsLabel: "Show",
+    tabs: { people: "People", plan: "Plan & renewal", spend: "Spend", activity: "Activity", places: "Places" } satisfies Record<
+      PracticeTab,
+      string
+    >,
+    people: {
+      loading: "Loading people",
+      empty: "No members",
+      tableLabel: "People",
+      columns: { name: "Name", role: "Role", status: "Status", twoStep: "Two-step", lastActive: "Last active" },
+    },
+    plan: {
+      label: "Plan & renewal",
+      plan: "Plan",
+      renewal: "Renewal",
+      billing: "Billing",
+      noBilling: "Arranged by HQ",
+      users: "Users",
+      usersOfSeats: (users: string, seats: string) => `${users} of ${seats} seats`,
+      providers: "Active providers",
+      admin: "First admin",
+      timeZone: "Time zone",
+      started: "Started",
+      startedBy: { hq: "Added by HQ", self: "Self sign-up" } satisfies Record<NonNullable<HqPractice["source"]>, string>,
+      startedOn: (how: string, day: string) => `${how} · ${day}`,
+    },
+    spendEmpty: "No model use in this range",
+    activityEmpty: "No activity for this practice",
+    places: {
+      empty: "No places in use",
+      tableLabel: "Places of service in use",
+      columns: { code: "Code", name: "Name", status: "Status", providers: "Providers", notes: "Notes" },
+      active: "Active",
+      inactive: "Off",
+    },
+  },
+  search: {
+    title: "Search",
+    label: "Search",
+    placeholder: "Practice name or email",
+    searching: "Searching",
+    empty: "No practices or people found",
+    practices: "Practices",
+    people: "People",
+    membership: (practice: string, role: string) => `${practice} · ${role}`,
+    noPractice: "No practice",
+    firstResults: (count: string) => `First ${count} of each`,
+    close: "Close",
   },
   places: {
     title: "Places of service",

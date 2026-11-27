@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import type { QueueRow, User } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
@@ -10,30 +9,31 @@ import type { QueueActions } from "../useQueueActions";
 import { AssignDialog } from "./AssignDialog";
 import { BulkBar } from "./BulkBar";
 
-type OpenDialog = "assign" | "delete" | null;
+export type BulkDialog = "assign" | "delete" | null;
 
 interface BulkActionsProps {
   member: User;
   rows: QueueRow[];
   actions: QueueActions;
+  dialog: BulkDialog;
+  onDialog: (dialog: BulkDialog) => void;
   onClear: () => void;
 }
 
-export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps) {
-  const [dialog, setDialog] = useState<OpenDialog>(null);
+export function BulkActions({ member, rows, actions, dialog, onDialog, onClear }: BulkActionsProps) {
   const ids = rows.map((row) => row.id);
   const amount = formatCount(rows.length);
-  const show = (next: OpenDialog) => {
+  const show = (next: BulkDialog) => {
     actions.clearDialogErrors();
-    setDialog(next);
+    onDialog(next);
   };
 
   async function assignTo(userId: string | null): Promise<void> {
-    if (await actions.assignSelected(ids, userId)) setDialog(null);
+    if (await actions.assignSelected(ids, userId)) onDialog(null);
   }
 
   async function remove(): Promise<void> {
-    if (await actions.deleteSelected(ids)) setDialog(null);
+    if (await actions.deleteSelected(ids)) onDialog(null);
   }
 
   return (
@@ -53,7 +53,7 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
         member={member}
         pending={actions.assigning}
         error={actions.assignError}
-        onClose={() => setDialog(null)}
+        onClose={() => onDialog(null)}
         onAssign={(userId) => void assignTo(userId)}
       />
       <ConfirmDialog
@@ -66,7 +66,7 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
         pending={actions.deleting}
         error={actions.deleteError}
         onConfirm={() => void remove()}
-        onClose={() => setDialog(null)}
+        onClose={() => onDialog(null)}
       />
     </>
   );

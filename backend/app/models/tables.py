@@ -236,6 +236,7 @@ class Note(IdMixin, Base):
     due_at: Mapped[datetime] = timestamp(nullable=False)
     assigned_to: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
     payer: Mapped[str | None] = mapped_column(String(64))
+    impact_cents: Mapped[int | None] = mapped_column(Integer)
 
 
 class NoteText(IdMixin, Base):

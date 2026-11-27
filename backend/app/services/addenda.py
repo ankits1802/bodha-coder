@@ -26,6 +26,7 @@ from app.models import (
 from app.services.analysis import next_revision, request_analysis
 from app.services.attestations import ADDENDUM_ATTESTATION, Statement, checked_wording, record_attestation
 from app.services.audit_log import record_access, record_provider_access
+from app.services.inbox import Notice, notify
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.provider_channels import EMAIL, contact_for, require_channel, usable_channel
@@ -40,6 +41,7 @@ OTHER_ANSWER = "Other"
 DEFAULT_OPTIONS = ("Yes", "No", "Clinically undetermined")
 CODE_ACCEPTED = "verified code"
 CODE_REFUSED = "code not accepted"
+ANSWERED = "provider_answered"
 LINK_WORDING = {
     QUESTIONS_PURPOSE: ("Questions from {practice}", "{practice} has questions about one of your visit notes."),
     LEVEL_CHANGE_PURPOSE: (
@@ -333,6 +335,8 @@ async def answer(
     note.status = "queued"
     await request_analysis(db, note, reason="addendum")
     record_provider_access(db, actor, provider.name, "signed addendum", note_id=note.id)
+    answered = Notice(ANSWERED, provider.name, note_id=note.id, payload={"questions": len(chosen)})
+    await notify(db, note.practice_id, [request.sent_by], answered)
     await db.commit()
     return request
 

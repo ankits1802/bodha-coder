@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { SHARED_TEXT } from "@/components/shared/strings";
-import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pager, offsetFrom } from "@/components/ui/Pager";
@@ -11,37 +11,18 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import { getBilling } from "@/lib/api/billing";
-import type { BillingList, BillingShow } from "@/lib/api/types";
+import type { BillingShow } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
 import { useSession } from "@/lib/session/useSession";
 import { BILLING_SHOWS, isBillingShow } from "./billingRows";
 import { BillingStats } from "./components/BillingStats";
 import { BillingTable } from "./components/BillingTable";
-import { BILLING_TEXT } from "./strings";
-import { useExport, type ExportAction } from "./useExport";
-import { ClaimLinesButton } from "./components/ClaimLinesButton";
+import { ExportClaimLines } from "./components/ExportClaimLines";
 import { ExportFiles } from "./components/ExportFiles";
+import { BILLING_TEXT } from "./strings";
 
 const REMOTE_TEXT = { loading: BILLING_TEXT.loading, empty: BILLING_TEXT.empty, retry: BILLING_TEXT.retry };
 const SEGMENTS = BILLING_SHOWS.map((value) => ({ value, label: BILLING_TEXT.show[value] }));
-
-function ExportButton({ show, page, exporter }: { show: BillingShow; page: BillingList | null; exporter: ExportAction }) {
-  if (!page || page.items.length === 0 || show === "all") return null;
-  if (show === "exported") {
-    const rows = page.items;
-    return (
-      <Button pending={exporter.pending} onClick={() => void exporter.downloadAgain(rows.map((row) => row.id))}>
-        {BILLING_TEXT.downloadAgain(formatCount(rows.length))}
-      </Button>
-    );
-  }
-  const visits = Math.min(page.total, page.limit);
-  return (
-    <Button variant="primary" pending={exporter.pending} onClick={() => void exporter.exportAll(visits)}>
-      {BILLING_TEXT.export(formatCount(visits))}
-    </Button>
-  );
-}
 
 function BillingContent() {
   const params = useQueryParams();
@@ -49,7 +30,7 @@ function BillingContent() {
   const show: BillingShow = isBillingShow(showParam) ? showParam : "ready";
   const offset = offsetFrom(params.get("offset"));
   const billing = useRemote(`billing:${show}:${offset}`, () => getBilling(show, offset));
-  const exporter = useExport(billing.reload);
+  const [notice, setNotice] = useState<string | null>(null);
   const page = billing.state.status === "success" ? billing.state.data : null;
   const rows = page ? page.items : null;
   const filter = (
@@ -69,14 +50,18 @@ function BillingContent() {
         title={BILLING_TEXT.title}
         subtitle={page ? BILLING_TEXT.subtitle(formatCount(page.total)) : undefined}
         actions={
-          <>
-            {show === "ready" && page && page.items.length > 0 ? <ClaimLinesButton onExported={billing.reload} /> : null}
-            <ExportButton show={show} page={page} exporter={exporter} />
-          </>
+          show === "ready" && page && page.items.length > 0 ? (
+            <ExportClaimLines
+              visits={Math.min(page.total, page.limit)}
+              onExported={(message) => {
+                setNotice(message);
+                billing.reload();
+              }}
+            />
+          ) : null
         }
       />
-      {exporter.notice ? <InlineAlert tone="ok">{exporter.notice}</InlineAlert> : null}
-      {exporter.error ? <InlineAlert tone="bad">{exporter.error}</InlineAlert> : null}
+      {notice ? <InlineAlert tone="ok">{notice}</InlineAlert> : null}
       {rows && rows.length > 0 ? null : filter}
       <RemoteView state={billing.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0 && data.offset === 0} onRetry={billing.reload}>
         {(data) => (

@@ -45,6 +45,19 @@ export type EmAction = NonNullable<QueueRow["em_action"]>;
 export type BatchProgress = Schemas["BatchProgress"];
 export type TodaySummary = Schemas["TodaySummary"];
 export type QueuePage = Schemas["QueuePage"];
+export type ProviderReasonCounts = Schemas["ProviderReasonCounts"];
+export type ProviderReason = keyof ProviderReasonCounts;
+export type QueueViewFilters = Schemas["QueueViewFilters"];
+export type QueueSort = QueueViewFilters["sort"];
+export type QueueViews = Schemas["QueueViews"];
+export type BuiltinView = Schemas["BuiltinView"];
+export type BuiltinViewKey = BuiltinView["key"];
+export type SavedView = Schemas["SavedView"];
+export type QueueViewBody = Schemas["QueueViewBody"];
+export type InboxPage = Schemas["InboxPage"];
+export type InboxEntry = Schemas["InboxEntry"];
+export type InboxKind = InboxEntry["kind"];
+export type InboxCount = Schemas["InboxCount"];
 export type SearchResults = Schemas["SearchResults"];
 export type CompliancePattern = Schemas["CompliancePattern"];
 export type ComplianceRow = Schemas["ComplianceRow"];
@@ -104,6 +117,7 @@ export type PayerFlagRule = PayerFlag["rule"];
 export type PayerFlagSeverity = PayerFlag["severity"];
 
 export type FilePreview = Schemas["FilePreview"];
+export type MatchConfidence = Schemas["MatchConfidence"];
 export type UploadResult = Schemas["UploadResult"];
 export type UploadedBatch = Schemas["UploadedBatch"];
 export type BatchPage = Schemas["BatchPage"];
@@ -117,6 +131,7 @@ export type ImportedProviders = Schemas["ImportedProviders"];
 export type BillingRow = Schemas["BillingRow"];
 export type BillingSummary = Schemas["BillingSummary"];
 export type BillingList = Schemas["BillingList"];
+export type ClaimLinesFormat = NonNullable<Schemas["ClaimLinesBody"]["format"]>;
 
 export type Outcomes = Schemas["Outcomes"];
 export type Insights = Schemas["Insights"];
@@ -166,6 +181,12 @@ export type AdminAppointed = Schemas["AdminAppointed"];
 export type Renewal = Schemas["Renewal"];
 export type DemoRequestRow = Schemas["DemoRequestRow"];
 export type HqPlace = Schemas["HqPlace"];
+export type HqPracticePage = Schemas["HqPracticePage"];
+export type HqPracticePlace = Schemas["HqPracticePlace"];
+export type HqPerson = Schemas["HqPerson"];
+export type HqSearchResults = Schemas["HqSearchResults"];
+export type HqSearchPerson = Schemas["HqSearchPerson"];
+export type HqPracticeHit = Schemas["HqPracticeHit"];
 export type HqActivityEntry = Schemas["HqActivityEntry"];
 export type HqActivityPage = Schemas["HqActivityPage"];
 export type HqTeamMember = Schemas["HqTeamMember"];
@@ -301,22 +322,28 @@ export interface MdmElements {
 
 export interface QueueQuery {
   lane?: Lane;
+  reason?: LaneReason;
   search?: string;
   provider_id?: string;
   batch_id?: string;
   assigned?: string;
+  overdue?: boolean;
+  sort?: QueueSort;
   offset?: number;
 }
 
-export interface FileDetail {
+export interface FilePlacement {
+  provider_id: string;
+  service_date: string;
+  place_code: string;
+}
+
+export interface FileDetail extends FilePlacement {
   billed: string | null;
   visit_type: string | null;
 }
 
-export interface UploadPlan {
-  provider_id: string;
-  service_date: string;
-  place_code: string;
+export interface UploadPlan extends FilePlacement {
   visit_type: string;
 }
 

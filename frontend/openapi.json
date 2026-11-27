@@ -1576,6 +1576,23 @@
         "title": "BlindSubmitted",
         "type": "object"
       },
+      "Body_preview_api_uploads_preview_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_preview_api_uploads_preview_post",
+        "type": "object"
+      },
       "Body_replace_pdf_api_notes__note_id__document_post": {
         "properties": {
           "file": {
@@ -1619,18 +1636,39 @@
             "type": "array"
           },
           "place_code": {
-            "maxLength": 2,
-            "title": "Place Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Code"
           },
           "provider_id": {
-            "title": "Provider Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
           },
           "service_date": {
-            "format": "date",
-            "title": "Service Date",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Date"
           },
           "visit_type": {
             "maxLength": 40,
@@ -1639,14 +1677,36 @@
           }
         },
         "required": [
-          "provider_id",
-          "service_date",
-          "place_code",
           "visit_type",
           "details",
           "files"
         ],
         "title": "Body_upload_api_uploads_post",
+        "type": "object"
+      },
+      "BuiltinView": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/QueueViewFilters"
+          },
+          "key": {
+            "enum": [
+              "my_work",
+              "questions_to_send",
+              "unassigned",
+              "overdue",
+              "flagged"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "filters"
+        ],
+        "title": "BuiltinView",
         "type": "object"
       },
       "BulkApproveBody": {
@@ -2740,6 +2800,17 @@
             "title": "Id",
             "type": "string"
           },
+          "impact_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Cents"
+          },
           "lane": {
             "anyOf": [
               {
@@ -2856,6 +2927,7 @@
           "billed",
           "suggested",
           "em_action",
+          "impact_cents",
           "flagged_by_name"
         ],
         "title": "ComplianceRow",
@@ -4611,6 +4683,13 @@
       "FilePreview": {
         "additionalProperties": false,
         "properties": {
+          "check": {
+            "title": "Check",
+            "type": "boolean"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/MatchConfidence"
+          },
           "cpt": {
             "anyOf": [
               {
@@ -4622,9 +4701,17 @@
             ],
             "title": "Cpt"
           },
+          "duplicate": {
+            "title": "Duplicate",
+            "type": "boolean"
+          },
           "file_name": {
             "title": "File Name",
             "type": "string"
+          },
+          "overall": {
+            "title": "Overall",
+            "type": "number"
           },
           "patient_name": {
             "anyOf": [
@@ -4636,6 +4723,28 @@
               }
             ],
             "title": "Patient Name"
+          },
+          "place_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Place Code"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
           },
           "service_date": {
             "anyOf": [
@@ -4651,9 +4760,15 @@
         },
         "required": [
           "file_name",
+          "cpt",
+          "duplicate",
+          "provider_id",
           "service_date",
+          "place_code",
           "patient_name",
-          "cpt"
+          "confidence",
+          "overall",
+          "check"
         ],
         "title": "FilePreview",
         "type": "object"
@@ -5115,6 +5230,102 @@
         "title": "HqOverview",
         "type": "object"
       },
+      "HqPerson": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_active_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Active At"
+          },
+          "mfa_enabled": {
+            "title": "Mfa Enabled",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "invited",
+              "active",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "status",
+          "mfa_enabled",
+          "last_active_at"
+        ],
+        "title": "HqPerson",
+        "type": "object"
+      },
+      "HqPersonPractice": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "HqPersonPractice",
+        "type": "object"
+      },
       "HqPlace": {
         "additionalProperties": false,
         "properties": {
@@ -5347,6 +5558,153 @@
         "title": "HqPractice",
         "type": "object"
       },
+      "HqPracticeHit": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "trial",
+              "active",
+              "ended",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
+        "title": "HqPracticeHit",
+        "type": "object"
+      },
+      "HqPracticePage": {
+        "additionalProperties": false,
+        "properties": {
+          "places": {
+            "items": {
+              "$ref": "#/components/schemas/HqPracticePlace"
+            },
+            "title": "Places",
+            "type": "array"
+          },
+          "practice": {
+            "$ref": "#/components/schemas/HqPractice"
+          }
+        },
+        "required": [
+          "practice",
+          "places"
+        ],
+        "title": "HqPracticePage",
+        "type": "object"
+      },
+      "HqPracticePlace": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "providers": {
+            "title": "Providers",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "active",
+          "providers",
+          "notes"
+        ],
+        "title": "HqPracticePlace",
+        "type": "object"
+      },
+      "HqSearchPerson": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "practices": {
+            "items": {
+              "$ref": "#/components/schemas/HqPersonPractice"
+            },
+            "title": "Practices",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "practices"
+        ],
+        "title": "HqSearchPerson",
+        "type": "object"
+      },
+      "HqSearchResults": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/HqSearchPerson"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "practices": {
+            "items": {
+              "$ref": "#/components/schemas/HqPracticeHit"
+            },
+            "title": "Practices",
+            "type": "array"
+          }
+        },
+        "required": [
+          "practices",
+          "people",
+          "limit"
+        ],
+        "title": "HqSearchResults",
+        "type": "object"
+      },
       "HqTeamMember": {
         "additionalProperties": false,
         "properties": {
@@ -5506,6 +5864,219 @@
           "imported"
         ],
         "title": "ImportedProviders",
+        "type": "object"
+      },
+      "InboxCount": {
+        "additionalProperties": false,
+        "properties": {
+          "unread": {
+            "title": "Unread",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread"
+        ],
+        "title": "InboxCount",
+        "type": "object"
+      },
+      "InboxEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "actor_name": {
+            "title": "Actor Name",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "provider_answered",
+              "level_disagreed",
+              "request_expired",
+              "mentioned",
+              "training_assigned",
+              "payment_failed",
+              "plan_ending",
+              "compliance_returned"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          },
+          "patient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Name"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/InboxPayload"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "service_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Date"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "note_id",
+          "actor_name",
+          "payload",
+          "patient_name",
+          "service_date",
+          "created_at",
+          "read_at"
+        ],
+        "title": "InboxEntry",
+        "type": "object"
+      },
+      "InboxPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InboxEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unread": {
+            "title": "Unread",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "unread",
+          "offset",
+          "page_size"
+        ],
+        "title": "InboxPage",
+        "type": "object"
+      },
+      "InboxPayload": {
+        "additionalProperties": false,
+        "properties": {
+          "access_until": {
+            "title": "Access Until",
+            "type": "string"
+          },
+          "comment_id": {
+            "title": "Comment Id",
+            "type": "string"
+          },
+          "ends_on": {
+            "title": "Ends On",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "on": {
+            "enum": [
+              "finding",
+              "note"
+            ],
+            "title": "On",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "questions",
+              "level_change"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "questions": {
+            "title": "Questions",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "title": "InboxPayload",
+        "type": "object"
+      },
+      "InboxReadBody": {
+        "additionalProperties": false,
+        "properties": {
+          "all": {
+            "default": false,
+            "title": "All",
+            "type": "boolean"
+          },
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Ids",
+            "type": "array"
+          }
+        },
+        "title": "InboxReadBody",
         "type": "object"
       },
       "InsightEstimates": {
@@ -6009,6 +6580,35 @@
           "password"
         ],
         "title": "LoginBody",
+        "type": "object"
+      },
+      "MatchConfidence": {
+        "additionalProperties": false,
+        "properties": {
+          "patient": {
+            "title": "Patient",
+            "type": "number"
+          },
+          "place": {
+            "title": "Place",
+            "type": "number"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "number"
+          },
+          "service_date": {
+            "title": "Service Date",
+            "type": "number"
+          }
+        },
+        "required": [
+          "provider",
+          "service_date",
+          "place",
+          "patient"
+        ],
+        "title": "MatchConfidence",
         "type": "object"
       },
       "MemberBody": {
@@ -7829,6 +8429,10 @@
       "PlanStatus": {
         "additionalProperties": false,
         "properties": {
+          "ending_soon": {
+            "title": "Ending Soon",
+            "type": "boolean"
+          },
           "plan": {
             "enum": [
               "trial",
@@ -7920,6 +8524,7 @@
           "standing",
           "renews_on",
           "trial_days_left",
+          "ending_soon",
           "users",
           "user_limit",
           "providers",
@@ -8555,24 +9160,6 @@
           "notify_digest"
         ],
         "title": "PreferencesBody",
-        "type": "object"
-      },
-      "PreviewBody": {
-        "additionalProperties": false,
-        "properties": {
-          "file_names": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 500,
-            "title": "File Names",
-            "type": "array"
-          }
-        },
-        "required": [
-          "file_names"
-        ],
-        "title": "PreviewBody",
         "type": "object"
       },
       "Provider": {
@@ -9307,6 +9894,23 @@
         "title": "ProviderQueryMetrics",
         "type": "object"
       },
+      "ProviderReasonCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "questions": {
+            "$ref": "#/components/schemas/LaneCount"
+          },
+          "waiting_on_provider": {
+            "$ref": "#/components/schemas/LaneCount"
+          }
+        },
+        "required": [
+          "questions",
+          "waiting_on_provider"
+        ],
+        "title": "ProviderReasonCounts",
+        "type": "object"
+      },
       "ProviderRef": {
         "additionalProperties": false,
         "properties": {
@@ -9810,6 +10414,9 @@
             "title": "Page Size",
             "type": "integer"
           },
+          "provider_reasons": {
+            "$ref": "#/components/schemas/ProviderReasonCounts"
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -9818,6 +10425,7 @@
         "required": [
           "items",
           "lanes",
+          "provider_reasons",
           "total",
           "all_total",
           "failed",
@@ -9922,6 +10530,17 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "impact_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Cents"
           },
           "lane": {
             "anyOf": [
@@ -10038,9 +10657,223 @@
           "assignee_name",
           "billed",
           "suggested",
-          "em_action"
+          "em_action",
+          "impact_cents"
         ],
         "title": "QueueRow",
+        "type": "object"
+      },
+      "QueueViewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/QueueViewFiltersBody"
+          },
+          "name": {
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "filters"
+        ],
+        "title": "QueueViewBody",
+        "type": "object"
+      },
+      "QueueViewFilters": {
+        "additionalProperties": false,
+        "properties": {
+          "assigned": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned"
+          },
+          "lane": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approve",
+                  "coder",
+                  "provider",
+                  "compliance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "flagged",
+                  "levels_too_high",
+                  "audit_risk",
+                  "waiting_on_provider",
+                  "code_changes",
+                  "questions",
+                  "matches"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sort": {
+            "enum": [
+              "due",
+              "impact"
+            ],
+            "title": "Sort",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lane",
+          "reason",
+          "assigned",
+          "provider_id",
+          "overdue",
+          "sort"
+        ],
+        "title": "QueueViewFilters",
+        "type": "object"
+      },
+      "QueueViewFiltersBody": {
+        "additionalProperties": false,
+        "properties": {
+          "assigned": {
+            "anyOf": [
+              {
+                "pattern": "^(me|none|[0-9a-f-]{36})$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned"
+          },
+          "lane": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approve",
+                  "coder",
+                  "provider",
+                  "compliance"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lane"
+          },
+          "overdue": {
+            "default": false,
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "flagged",
+                  "levels_too_high",
+                  "audit_risk",
+                  "waiting_on_provider",
+                  "code_changes",
+                  "questions",
+                  "matches"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sort": {
+            "default": "due",
+            "enum": [
+              "due",
+              "impact"
+            ],
+            "title": "Sort",
+            "type": "string"
+          }
+        },
+        "title": "QueueViewFiltersBody",
+        "type": "object"
+      },
+      "QueueViews": {
+        "additionalProperties": false,
+        "properties": {
+          "builtin": {
+            "items": {
+              "$ref": "#/components/schemas/BuiltinView"
+            },
+            "title": "Builtin",
+            "type": "array"
+          },
+          "saved": {
+            "items": {
+              "$ref": "#/components/schemas/SavedView"
+            },
+            "title": "Saved",
+            "type": "array"
+          }
+        },
+        "required": [
+          "builtin",
+          "saved"
+        ],
+        "title": "QueueViews",
         "type": "object"
       },
       "QueuedNotes": {
@@ -11302,6 +12135,29 @@
         "title": "SampleResults",
         "type": "object"
       },
+      "SavedView": {
+        "additionalProperties": false,
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/QueueViewFilters"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "filters"
+        ],
+        "title": "SavedView",
+        "type": "object"
+      },
       "SearchResults": {
         "additionalProperties": false,
         "properties": {
@@ -12035,6 +12891,9 @@
             "title": "Next Up",
             "type": "array"
           },
+          "provider_reasons": {
+            "$ref": "#/components/schemas/ProviderReasonCounts"
+          },
           "waiting": {
             "title": "Waiting",
             "type": "integer"
@@ -12044,6 +12903,7 @@
           "waiting",
           "due_soon",
           "lanes",
+          "provider_reasons",
           "next_up",
           "batches"
         ],
@@ -12336,6 +13196,13 @@
             "title": "Batch Id",
             "type": "string"
           },
+          "batch_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Batch Ids",
+            "type": "array"
+          },
           "duplicates": {
             "items": {
               "type": "string"
@@ -12346,6 +13213,7 @@
         },
         "required": [
           "batch_id",
+          "batch_ids",
           "accepted",
           "duplicates"
         ],
@@ -16415,6 +17283,92 @@
           "hq"
         ]
       },
+      "get": {
+        "operationId": "practice_page_api_hq_practices__practice_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HqPracticePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Practice Page",
+        "tags": [
+          "hq"
+        ]
+      },
       "patch": {
         "operationId": "edit_practice_api_hq_practices__practice_id__patch",
         "parameters": [
@@ -16691,6 +17645,98 @@
         ]
       }
     },
+    "/api/hq/practices/{practice_id}/people": {
+      "get": {
+        "operationId": "practice_people_api_hq_practices__practice_id__people_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HqPerson"
+                  },
+                  "title": "Response Practice People Api Hq Practices  Practice Id  People Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Practice People",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
     "/api/hq/practices/{practice_id}/renew": {
       "post": {
         "operationId": "renew_api_hq_practices__practice_id__renew_post",
@@ -16784,6 +17830,95 @@
           }
         },
         "summary": "Renew",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/search": {
+      "get": {
+        "operationId": "search_api_hq_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HqSearchResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Search",
         "tags": [
           "hq"
         ]
@@ -17118,6 +18253,254 @@
         "summary": "Resend Invite",
         "tags": [
           "hq"
+        ]
+      }
+    },
+    "/api/inbox": {
+      "get": {
+        "operationId": "items_api_inbox_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Items",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/inbox/count": {
+      "get": {
+        "operationId": "count_api_inbox_count_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Count",
+        "tags": [
+          "inbox"
+        ]
+      }
+    },
+    "/api/inbox/read": {
+      "post": {
+        "operationId": "read_api_inbox_read_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboxReadBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Read",
+        "tags": [
+          "inbox"
         ]
       }
     },
@@ -17555,7 +18938,12 @@
             "schema": {
               "anyOf": [
                 {
-                  "pattern": "^(approve|coder|provider|compliance)$",
+                  "enum": [
+                    "approve",
+                    "coder",
+                    "provider",
+                    "compliance"
+                  ],
                   "type": "string"
                 },
                 {
@@ -17563,6 +18951,31 @@
                 }
               ],
               "title": "Lane"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "flagged",
+                    "levels_too_high",
+                    "audit_risk",
+                    "waiting_on_provider",
+                    "code_changes",
+                    "questions",
+                    "matches"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
             }
           },
           {
@@ -17629,6 +19042,30 @@
                 }
               ],
               "title": "Assigned"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overdue",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Overdue",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "due",
+              "enum": [
+                "due",
+                "impact"
+              ],
+              "title": "Sort",
+              "type": "string"
             }
           },
           {
@@ -23103,6 +24540,243 @@
         ]
       }
     },
+    "/api/queue-views": {
+      "get": {
+        "operationId": "views_api_queue_views_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueViews"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Views",
+        "tags": [
+          "work"
+        ]
+      },
+      "post": {
+        "operationId": "save_view_api_queue_views_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueViewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Save View",
+        "tags": [
+          "work"
+        ]
+      }
+    },
+    "/api/queue-views/{view_id}": {
+      "delete": {
+        "operationId": "delete_view_api_queue_views__view_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "view_id",
+            "required": true,
+            "schema": {
+              "title": "View Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Delete View",
+        "tags": [
+          "work"
+        ]
+      }
+    },
     "/api/remittances": {
       "get": {
         "operationId": "remittance_list_api_remittances_get",
@@ -25380,9 +27054,9 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/PreviewBody"
+                "$ref": "#/components/schemas/Body_preview_api_uploads_preview_post"
               }
             }
           },

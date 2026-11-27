@@ -1,7 +1,10 @@
+import { isPdf } from "@/components/shared/upload-drop/droppedFiles";
 import { buildUploadForm } from "@/lib/api/uploads";
-import type { FileDetail, FilePreview, UploadPlan } from "@/lib/api/types";
+import type { FileDetail, FilePreview, Place, Provider } from "@/lib/api/types";
 import { isIsoDate } from "@/lib/dates";
 import { parseCodeList } from "@/lib/validation";
+
+export { isPdf };
 
 export interface UploadEntry {
   id: string;
@@ -9,18 +12,43 @@ export interface UploadEntry {
   patientName: string | null;
   billed: string | null;
   visitType: string | null;
+  providerId: string;
+  serviceDate: string;
+  placeCode: string;
+  check: boolean;
+  confidence: number | null;
+  serverDuplicate: boolean;
   duplicate: boolean;
   keep: boolean;
 }
 
-export type EntryStatus = "ready" | "fix" | "duplicate" | "noCodes";
+export type Placement = Pick<UploadEntry, "providerId" | "serviceDate" | "placeCode">;
+export type EntryEdit = Partial<Pick<UploadEntry, "billed" | "visitType" | "keep">>;
+export type EntryStatus = "ready" | "check" | "fix" | "duplicate" | "uploaded" | "noCodes";
 
-export function isPdf(file: File): boolean {
-  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+export interface References {
+  providers: Provider[];
+  places: Place[];
 }
 
+const LEFT_OUT: readonly EntryStatus[] = ["duplicate", "uploaded"];
+
 export function newEntry(file: File, id: string): UploadEntry {
-  return { id, file, patientName: null, billed: null, visitType: null, duplicate: false, keep: false };
+  return {
+    id,
+    file,
+    patientName: null,
+    billed: null,
+    visitType: null,
+    providerId: "",
+    serviceDate: "",
+    placeCode: "",
+    check: false,
+    confidence: null,
+    serverDuplicate: false,
+    duplicate: false,
+    keep: false,
+  };
 }
 
 export function withDuplicates(entries: UploadEntry[]): UploadEntry[] {
@@ -42,8 +70,30 @@ export function applyPreview(entries: UploadEntry[], ids: string[], previews: Fi
       ...entry,
       patientName: entry.patientName ?? preview.patient_name,
       billed: entry.billed ?? preview.cpt,
+      providerId: entry.providerId || (preview.provider_id ?? ""),
+      serviceDate: entry.serviceDate || (preview.service_date ?? ""),
+      placeCode: entry.placeCode || (preview.place_code ?? ""),
+      check: preview.check,
+      confidence: preview.overall,
+      serverDuplicate: preview.duplicate,
     };
   });
+}
+
+export function usualPlace(providerId: string, references: References): string | null {
+  const provider = references.providers.find((item) => item.id === providerId);
+  const code = provider?.place_code ?? null;
+  return code && references.places.some((place) => place.code === code) ? code : null;
+}
+
+export function placed(entry: UploadEntry, change: Partial<Placement>, references: References): UploadEntry {
+  const next = { ...entry, ...change, check: false };
+  if (change.providerId === undefined || change.placeCode !== undefined) return next;
+  return { ...next, placeCode: usualPlace(change.providerId, references) ?? entry.placeCode };
+}
+
+export function hasPlacement(entry: UploadEntry): boolean {
+  return Boolean(entry.providerId && entry.placeCode) && isIsoDate(entry.serviceDate);
 }
 
 export function invalidCodes(entry: UploadEntry): string[] {
@@ -52,42 +102,45 @@ export function invalidCodes(entry: UploadEntry): string[] {
 
 export function entryStatus(entry: UploadEntry): EntryStatus {
   if (entry.duplicate && !entry.keep) return "duplicate";
+  if (entry.serverDuplicate) return "uploaded";
   const parsed = parseCodeList(entry.billed ?? "");
   if (parsed.invalid.length > 0) return "fix";
+  if (entry.check || !hasPlacement(entry)) return "check";
   return parsed.codes.length > 0 ? "ready" : "noCodes";
 }
 
 export function includedEntries(entries: UploadEntry[]): UploadEntry[] {
-  return entries.filter((entry) => entryStatus(entry) !== "duplicate");
+  return entries.filter((entry) => !LEFT_OUT.includes(entryStatus(entry)));
 }
 
 export function uploadDetails(entries: UploadEntry[]): FileDetail[] {
   return includedEntries(entries).map((entry) => ({
     billed: entry.billed === null ? null : entry.billed.trim(),
     visit_type: entry.visitType,
+    provider_id: entry.providerId,
+    service_date: entry.serviceDate,
+    place_code: entry.placeCode,
   }));
 }
 
-export function isPlanComplete(plan: UploadPlan): boolean {
-  return Boolean(plan.provider_id && plan.place_code && plan.visit_type) && isIsoDate(plan.service_date);
+export function canStartUpload(entries: UploadEntry[]): boolean {
+  const included = includedEntries(entries);
+  return included.length > 0 && included.every((entry) => hasPlacement(entry) && entryStatus(entry) !== "fix");
 }
 
-export function canStartUpload(plan: UploadPlan, entries: UploadEntry[]): boolean {
+export function makeUploadForm(visitType: string, entries: UploadEntry[]): FormData {
   const included = includedEntries(entries);
-  return isPlanComplete(plan) && included.length > 0 && included.every((entry) => entryStatus(entry) !== "fix");
-}
-
-export function makeUploadForm(plan: UploadPlan, entries: UploadEntry[]): FormData {
-  const included = includedEntries(entries);
-  return buildUploadForm(plan, included.map((entry) => entry.file), uploadDetails(entries));
+  return buildUploadForm(visitType, included.map((entry) => entry.file), uploadDetails(entries));
 }
 
 export function countByStatus(entries: UploadEntry[]): Record<EntryStatus, number> {
-  const counts: Record<EntryStatus, number> = { ready: 0, fix: 0, duplicate: 0, noCodes: 0 };
+  const counts: Record<EntryStatus, number> = { ready: 0, check: 0, fix: 0, duplicate: 0, uploaded: 0, noCodes: 0 };
   for (const entry of entries) counts[entryStatus(entry)] += 1;
   return counts;
 }
 
-export function suggestedServiceDate(previews: FilePreview[]): string | null {
-  return previews.find((preview) => preview.service_date && isIsoDate(preview.service_date))?.service_date ?? null;
+export function sharedValue(entries: UploadEntry[], key: keyof Placement): string {
+  const values = new Set(includedEntries(entries).map((entry) => entry[key]));
+  const [only] = values;
+  return values.size === 1 && only ? only : "";
 }

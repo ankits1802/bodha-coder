@@ -1,6 +1,9 @@
+import type { BuiltinViewKey, QueueSort } from "@/lib/api/types";
+
 export const QUEUE_TEXT = {
   title: "Review queue",
-  subtitle: (count: string) => `${count} notes, sorted by when they're due`,
+  subtitle: (count: string, sort: QueueSort) =>
+    sort === "impact" ? `${count} notes, sorted by dollar impact` : `${count} notes, sorted by when they're due`,
   reviewNext: "Review next",
   oneBatch: "One batch",
   allBatches: "Show all notes",
@@ -15,6 +18,25 @@ export const QUEUE_TEXT = {
   anyone: "Anyone",
   mine: "Mine",
   unassigned: "Unassigned",
+  sort: "Sort",
+  sorts: { due: "Due date", impact: "Dollar impact" } satisfies Record<QueueSort, string>,
+  impact: "Dollar impact",
+  views: {
+    label: "Views",
+    builtin: {
+      my_work: "My work",
+      questions_to_send: "Questions to send",
+      unassigned: "Unassigned",
+      overdue: "Overdue",
+      flagged: "Flagged",
+    } satisfies Record<BuiltinViewKey, string>,
+    save: "Save view",
+    saveTitle: "Save this view",
+    name: "Name",
+    saveConfirm: "Save",
+    manage: "Saved views",
+    remove: (name: string) => `Delete ${name}`,
+  },
   tableLabel: "Notes waiting for review",
   columns: {
     select: "Select",

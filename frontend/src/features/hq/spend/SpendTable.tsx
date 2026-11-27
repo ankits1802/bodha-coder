@@ -38,21 +38,28 @@ function PlanCell({ practice }: { practice: PracticeSpend }) {
   );
 }
 
+function PracticeName({ practice, open, onToggle }: { practice: PracticeSpend; open: boolean; onToggle: () => void }) {
+  if (practice.providers.length === 0) return <span className="pl-5 font-medium">{practice.name}</span>;
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className="inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-medium text-label"
+    >
+      <Chevron direction={open ? "down" : "right"} />
+      {practice.name}
+    </button>
+  );
+}
+
 function PracticeRows({ practice }: { practice: PracticeSpend }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Tr>
         <Td>
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen((shown) => !shown)}
-            className="inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-medium text-label"
-          >
-            <Chevron direction={open ? "down" : "right"} />
-            {practice.name}
-          </button>
+          <PracticeName practice={practice} open={open} onToggle={() => setOpen((shown) => !shown)} />
         </Td>
         <PlanCell practice={practice} />
         <FigureCells figures={practice} />

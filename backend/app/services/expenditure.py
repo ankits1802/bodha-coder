@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
@@ -13,11 +14,18 @@ from app.core.model_prices import usd_from_microusd
 from app.models import Analysis, Note, Practice, Provider
 from app.services.plans import CATALOG
 
-__all__ = ["SPEND_TIME_ZONE", "SpendRow", "expenditure", "spend_figures", "spend_report", "spend_since"]
+__all__ = ["SPEND_TIME_ZONE", "PracticeRef", "SpendRow", "expenditure", "spend_figures", "spend_report", "spend_since"]
 
 SPEND_TIME_ZONE = "UTC"
 COST_PER_NOTE_PLACES = 4
 CONSUMED_TOKENS = func.coalesce(Analysis.input_tokens, 0) + func.coalesce(Analysis.output_tokens, 0) > 0
+
+
+@dataclass(frozen=True)
+class PracticeRef:
+    id: str
+    name: str
+    plan: str
 
 
 @dataclass(frozen=True)
@@ -39,29 +47,41 @@ async def expenditure(db: AsyncSession, *, start: date, end: date, practice_id: 
     if end < start:
         raise Invalid("the range must end on or after the day it starts")
     conditions = [Analysis.finished_at >= _midnight(start), Analysis.finished_at < _midnight(end + timedelta(days=1))]
+    listed = await _practices(db, practice_id)
     if practice_id is not None:
-        if await db.get(Practice, practice_id) is None:
+        if not listed:
             raise NotFound("practice not found")
         conditions.append(Note.practice_id == practice_id)
     return {
         "from": start.isoformat(),
         "to": end.isoformat(),
         "time_zone": SPEND_TIME_ZONE,
-        **spend_report(await _spend_rows(db, conditions)),
+        **spend_report(await _spend_rows(db, conditions), listed),
         "unpriced_models": await _unpriced_models(db, conditions),
     }
+
+
+async def _practices(db: AsyncSession, practice_id: str | None) -> list[PracticeRef]:
+    query = select(Practice.id, Practice.name, Practice.plan).order_by(Practice.name, Practice.id)
+    rows = await db.execute(query if practice_id is None else query.where(Practice.id == practice_id))
+    return [PracticeRef(*row) for row in rows.tuples()]
 
 
 async def spend_since(db: AsyncSession, since: datetime) -> dict[str, Any]:
     return spend_figures(await _spend_rows(db, [Analysis.finished_at >= since]))
 
 
-def spend_report(rows: list[SpendRow]) -> dict[str, Any]:
+def spend_report(rows: list[SpendRow], practices: Sequence[PracticeRef] = ()) -> dict[str, Any]:
     groups: dict[str, list[SpendRow]] = {}
     for row in rows:
         groups.setdefault(row.practice_id, []).append(row)
     ordered = sorted(groups.values(), key=lambda group: _rank(sum(row.cost_microusd for row in group), group[0]))
-    return {"totals": spend_figures(rows), "practices": [_practice_view(group) for group in ordered]}
+    used = [_practice_view(_practice_of(group[0]), group) for group in ordered]
+    idle = [_practice_view(practice, []) for practice in practices if practice.id not in groups]
+    return {
+        "totals": spend_figures(rows),
+        "practices": used + sorted(idle, key=lambda view: (view["name"], view["id"])),
+    }
 
 
 def spend_figures(rows: list[SpendRow]) -> dict[str, Any]:
@@ -80,14 +100,17 @@ def spend_figures(rows: list[SpendRow]) -> dict[str, Any]:
     }
 
 
-def _practice_view(group: list[SpendRow]) -> dict[str, Any]:
-    first = group[0]
-    terms = CATALOG.get(first.plan)
+def _practice_of(row: SpendRow) -> PracticeRef:
+    return PracticeRef(row.practice_id, row.practice_name, row.plan)
+
+
+def _practice_view(practice: PracticeRef, group: list[SpendRow]) -> dict[str, Any]:
+    terms = CATALOG.get(practice.plan)
     providers = sorted(group, key=lambda row: (-row.cost_microusd, row.provider_name, row.provider_id))
     return {
-        "id": first.practice_id,
-        "name": first.practice_name,
-        "plan": first.plan,
+        "id": practice.id,
+        "name": practice.name,
+        "plan": practice.plan,
         "plan_monthly_cents": terms.monthly_cents if terms else None,
         **spend_figures(group),
         "providers": [{"id": row.provider_id, "name": row.provider_name, **spend_figures([row])} for row in providers],

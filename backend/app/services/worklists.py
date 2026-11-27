@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Select, and_, func, or_, select
+from sqlalchemy import ColumnElement, Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code
@@ -16,47 +18,89 @@ DUE_SOON = timedelta(hours=24)
 RECENT_BATCH_DAYS = 3
 QUEUE_STATUSES = ("queued", "reading", "ready", "failed")
 UNASSIGNED = "none"
+ASSIGNED_PATTERN = r"^(me|none|[0-9a-f-]{36})$"
+QUEUE_SORTS = ("due", "impact")
+DUE_SORT, IMPACT_SORT = QUEUE_SORTS
+PROVIDER_LANE = "provider"
+PROVIDER_REASONS = ("questions", "waiting_on_provider")
+SORT_ORDERS: dict[str, tuple[Any, ...]] = {
+    DUE_SORT: (Note.due_at, Note.created_at, Note.id),
+    IMPACT_SORT: (func.abs(Note.impact_cents).desc().nulls_last(), Note.due_at, Note.created_at, Note.id),
+}
+
+
+@dataclass(frozen=True)
+class QueueFilter:
+    lane: str | None = None
+    reason: str | None = None
+    search: str | None = None
+    provider_id: str | None = None
+    batch_id: str | None = None
+    assigned: str | None = None
+    overdue: bool = False
+    sort: str = DUE_SORT
 
 
 async def lane_counts(db: AsyncSession, practice_id: str, *, now: datetime | None = None) -> dict[str, dict[str, int]]:
+    return await _ready_counts(db, practice_id, Note.lane, LANES, now=now)
+
+
+async def provider_reason_counts(
+    db: AsyncSession, practice_id: str, *, now: datetime | None = None
+) -> dict[str, dict[str, int]]:
+    provider_lane = Note.lane == PROVIDER_LANE
+    return await _ready_counts(db, practice_id, Note.lane_reason, PROVIDER_REASONS, provider_lane, now=now)
+
+
+async def _ready_counts(
+    db: AsyncSession,
+    practice_id: str,
+    column: Any,
+    keys: Sequence[str],
+    *conditions: ColumnElement[bool],
+    now: datetime | None,
+) -> dict[str, dict[str, int]]:
     soon = (now or utcnow()) + DUE_SOON
     rows = await db.execute(
-        select(Note.lane, func.count(), func.count().filter(Note.due_at <= soon))
-        .where(Note.practice_id == practice_id, Note.status == "ready")
-        .group_by(Note.lane)
+        select(column, func.count(), func.count().filter(Note.due_at <= soon))
+        .where(Note.practice_id == practice_id, Note.status == "ready", *conditions)
+        .group_by(column)
     )
-    found = {lane: {"total": total, "due_soon": due} for lane, total, due in rows}
-    return {lane: found.get(lane, {"total": 0, "due_soon": 0}) for lane in LANES}
+    found = {key: {"total": total, "due_soon": due} for key, total, due in rows}
+    return {key: found.get(key, {"total": 0, "due_soon": 0}) for key in keys}
 
 
-def queue_query(
-    practice_id: str,
-    *,
-    lane: str | None,
-    search: str | None,
-    provider_id: str | None,
-    batch_id: str | None = None,
-    assigned: str | None = None,
-) -> Select[Any]:
+def queue_query(practice_id: str, wanted: QueueFilter, *, now: datetime | None = None) -> Select[Any]:
     query = (
         select(Note, Provider.name)
         .join(Provider, Provider.id == Note.provider_id)
-        .where(Note.practice_id == practice_id, Note.status.in_(QUEUE_STATUSES))
+        .where(Note.practice_id == practice_id, Note.status.in_(QUEUE_STATUSES), *_conditions(wanted, now or utcnow()))
     )
-    if lane:
-        query = query.where(Note.lane == lane, Note.status == "ready")
-    if provider_id:
-        query = query.where(Note.provider_id == provider_id)
-    if batch_id:
-        query = query.where(Note.batch_id == batch_id)
-    if assigned == UNASSIGNED:
-        query = query.where(Note.assigned_to.is_(None))
-    elif assigned:
-        query = query.where(Note.assigned_to == assigned)
-    if search:
-        pattern = f"%{search.strip()}%"
-        query = query.where(or_(Note.patient_name.ilike(pattern), Note.file_name.ilike(pattern)))
-    return query.order_by(Note.due_at, Note.created_at)
+    return query.order_by(*SORT_ORDERS[wanted.sort])
+
+
+def _conditions(wanted: QueueFilter, now: datetime) -> list[ColumnElement[bool]]:
+    found: list[ColumnElement[bool]] = []
+    if wanted.lane or wanted.reason:
+        found.append(Note.status == "ready")
+    if wanted.lane:
+        found.append(Note.lane == wanted.lane)
+    if wanted.reason:
+        found.append(Note.lane_reason == wanted.reason)
+    if wanted.provider_id:
+        found.append(Note.provider_id == wanted.provider_id)
+    if wanted.batch_id:
+        found.append(Note.batch_id == wanted.batch_id)
+    if wanted.overdue:
+        found.append(Note.due_at < now)
+    if wanted.assigned:
+        found.append(
+            Note.assigned_to.is_(None) if wanted.assigned == UNASSIGNED else Note.assigned_to == wanted.assigned
+        )
+    if wanted.search:
+        pattern = f"%{wanted.search.strip()}%"
+        found.append(or_(Note.patient_name.ilike(pattern), Note.file_name.ilike(pattern)))
+    return found
 
 
 async def count_of(db: AsyncSession, query: Select[Any]) -> int:
@@ -85,6 +129,7 @@ async def queue_rows(
             "billed": billed.get(note.id, []),
             "suggested": changes.get(note.current_analysis_id or "", []),
             "em_action": em_actions.get(note.current_analysis_id or ""),
+            "impact_cents": note.impact_cents,
         }
         for note, provider_name in rows
     ]
@@ -159,9 +204,7 @@ async def _em_actions(db: AsyncSession, analysis_ids: list[str]) -> dict[str, st
 
 async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, Any]:
     lanes = await lane_counts(db, practice_id)
-    next_up = await queue_rows(
-        db, queue_query(practice_id, lane="coder", search=None, provider_id=None), offset=0, limit=3
-    )
+    next_up = await queue_rows(db, queue_query(practice_id, QueueFilter(lane="coder")), offset=0, limit=3)
     since = today_in(zone) - timedelta(days=RECENT_BATCH_DAYS)
     batch_rows = await db.execute(
         select(Batch.id, Provider.name, Batch.service_date, Batch.place_code, Note.status, func.count())
@@ -189,6 +232,7 @@ async def today(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str,
         "waiting": waiting,
         "due_soon": due_soon,
         "lanes": lanes,
+        "provider_reasons": await provider_reason_counts(db, practice_id),
         "next_up": next_up,
         "batches": sorted(batches.values(), key=lambda item: item["service_date"], reverse=True),
     }

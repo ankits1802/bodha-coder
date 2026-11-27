@@ -32,6 +32,7 @@ from app.models import (
     Decision,
     EvalCase,
     EvalRun,
+    InboxItem,
     MipsList,
     Note,
     NoteText,
@@ -39,6 +40,7 @@ from app.models import (
     PracticeMembership,
     Provider,
     ProviderAttestation,
+    QueueView,
     RecoveryCode,
     Remittance,
     RemittanceLine,
@@ -85,8 +87,8 @@ REVIEW_RECORD_TABLES = (
     ClaimExport,
 )
 QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
-PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity, Subscription)
-USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity)
+PRACTICE_TABLES = (InboxItem, QueueView, Note, Batch, Provider, MipsList, AccessLog, Activity, Subscription)
+USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity, InboxItem, QueueView)
 
 
 @dataclass(frozen=True)

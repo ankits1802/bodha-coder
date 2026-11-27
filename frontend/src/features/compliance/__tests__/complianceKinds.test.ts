@@ -25,6 +25,7 @@ function row(id: string, laneReason: LaneReason | null, headline: string): Compl
     billed: ["99310"],
     suggested: ["99308"],
     em_action: "lower",
+    impact_cents: null,
   };
 }
 

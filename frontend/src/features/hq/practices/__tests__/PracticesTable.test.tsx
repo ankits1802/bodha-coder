@@ -39,6 +39,12 @@ describe("PracticesTable", () => {
     expect(within(northside).queryByText("Self sign-up")).not.toBeInTheDocument();
   });
 
+  it("opens each practice's own page from its name", () => {
+    render(<PracticesTable practices={[BASE, SELF]} onEdit={vi.fn()} onAction={vi.fn()} onAppoint={vi.fn()} />);
+    expect(screen.getByRole("link", { name: "Northside Clinic" })).toHaveAttribute("href", "/hq/practices/p1");
+    expect(screen.getByRole("link", { name: "Harbor Pediatrics" })).toHaveAttribute("href", "/hq/practices/p2");
+  });
+
   it("shows how a paying practice pays and whether the payment is in good standing", () => {
     const paying: HqPractice = { ...BASE, billing_provider: "paypal", billing_status: "past_due", billing_interval: "annual" };
     render(<PracticesTable practices={[paying, SELF]} onEdit={vi.fn()} onAction={vi.fn()} onAppoint={vi.fn()} />);

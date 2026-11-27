@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
@@ -5,6 +6,7 @@ import type { HqPractice } from "@/lib/api/types";
 import { FORMAT_WORDS, formatCalendarDay, formatCount } from "@/lib/format";
 import { MEMBER_STATUS_LABELS, PLAN_LABELS } from "@/lib/labels";
 import { practiceStatusView, renewalLine } from "../practiceStatus";
+import { practiceHref } from "../practice/practiceTabs";
 import { HQ_TEXT } from "../strings";
 import { adminLinkLabel, canDeletePractice, canSendAdminLink, type PracticeActionKind } from "./practiceActions";
 import { billingView } from "./practiceBilling";
@@ -84,7 +86,9 @@ function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowAct
   return (
     <Tr>
       <Td>
-        <span className="font-medium">{practice.name}</span>
+        <Link href={practiceHref(practice.id)} className="font-medium text-label hover:underline">
+          {practice.name}
+        </Link>
         <span className="block text-footnote text-secondary">{words.providers(practice.providers)}</span>
         <SelfSignUp practice={practice} />
       </Td>

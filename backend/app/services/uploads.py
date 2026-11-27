@@ -10,7 +10,7 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, note_document_key
-from app.codes.billing_codes import Code, FilenameFacts, parse_code_list, parse_note_filename
+from app.codes.billing_codes import Code, parse_code_list, parse_note_filename
 from app.codes.places import setting_for
 from app.core.calendar import day_bounds, zone_named
 from app.core.config import get_settings
@@ -46,13 +46,26 @@ class UploadPlan:
 
 
 @dataclass(frozen=True)
+class FilePlacement:
+    provider_id: str | None = None
+    service_date: date | None = None
+    place_code: str | None = None
+
+
+@dataclass(frozen=True)
 class UploadResult:
-    batch_id: str
+    batch_ids: list[str]
     accepted: list[str]
     duplicates: list[str]
 
+    @property
+    def batch_id(self) -> str:
+        return self.batch_ids[0]
+
     def detail(self) -> str:
-        return f"{len(self.accepted)} notes, batch {self.batch_id}"
+        if len(self.batch_ids) == 1:
+            return f"{len(self.accepted)} notes, batch {self.batch_id}"
+        return f"{len(self.accepted)} notes in {len(self.batch_ids)} batches"
 
 
 @dataclass(frozen=True)
@@ -63,8 +76,21 @@ class Uploader:
     source: str
 
 
-def preview(file_names: list[str]) -> list[FilenameFacts]:
-    return [parse_note_filename(name) for name in file_names]
+PlannedBatch = tuple[UploadPlan, list[UploadFile]]
+
+
+def grouped_files(
+    files: list[tuple[UploadFile, FilePlacement]], default: FilePlacement, visit_type: str
+) -> list[PlannedBatch]:
+    groups: dict[UploadPlan, list[UploadFile]] = {}
+    for file, placement in files:
+        provider_id = placement.provider_id or default.provider_id
+        service_date = placement.service_date or default.service_date
+        place_code = placement.place_code or default.place_code
+        if not provider_id or service_date is None or not place_code:
+            raise Invalid(f"{file.name}: choose the provider, date of service and place of service")
+        groups.setdefault(UploadPlan(provider_id, service_date, place_code, visit_type), []).append(file)
+    return list(groups.items())
 
 
 def due_at(service_date: date, zone: ZoneInfo) -> datetime:
@@ -81,10 +107,10 @@ def billed_codes_for(file: UploadFile) -> tuple[Code, ...]:
 
 
 async def create_upload(
-    db: AsyncSession, store: ObjectStore, actor: Actor, plan: UploadPlan, files: list[UploadFile]
+    db: AsyncSession, store: ObjectStore, actor: Actor, batches: list[PlannedBatch]
 ) -> UploadResult:
     uploader = Uploader(actor.practice_id, actor.zone, actor.user.id, UPLOAD_SOURCE)
-    result = await _store_batch(db, store, uploader, plan, files)
+    result = await _store_batches(db, store, uploader, batches)
     record_access(db, actor, UPLOADED_NOTES, detail=result.detail())
     await db.commit()
     return result
@@ -94,21 +120,36 @@ async def create_intake_upload(
     db: AsyncSession, store: ObjectStore, practice: Practice, plan: UploadPlan, files: list[UploadFile]
 ) -> UploadResult:
     uploader = Uploader(practice.id, zone_named(practice.time_zone), None, INTAKE_SOURCE)
-    result = await _store_batch(db, store, uploader, plan, files)
+    result = await _store_batches(db, store, uploader, [(plan, files)])
     record_system_access(db, INTAKE_ACTOR, practice.id, UPLOADED_NOTES, detail=result.detail())
     await db.commit()
     return result
 
 
+async def _store_batches(
+    db: AsyncSession, store: ObjectStore, uploader: Uploader, batches: list[PlannedBatch]
+) -> UploadResult:
+    if not batches or not all(files for _, files in batches):
+        raise Invalid("add at least one PDF")
+    for plan, files in batches:
+        await _check_plan(db, uploader.practice_id, plan)
+        for file in files:
+            check_pdf(file.name, file.data)
+            billed_codes_for(file)
+    batch_ids: list[str] = []
+    accepted: list[str] = []
+    duplicates: list[str] = []
+    for plan, files in batches:
+        stored = await _store_batch(db, store, uploader, plan, files)
+        batch_ids.append(stored.batch_id)
+        accepted += stored.accepted
+        duplicates += stored.duplicates
+    return UploadResult(batch_ids, accepted, duplicates)
+
+
 async def _store_batch(
     db: AsyncSession, store: ObjectStore, uploader: Uploader, plan: UploadPlan, files: list[UploadFile]
 ) -> UploadResult:
-    await _check_plan(db, uploader.practice_id, plan)
-    if not files:
-        raise Invalid("add at least one PDF")
-    for file in files:
-        check_pdf(file.name, file.data)
-        billed_codes_for(file)
     batch = Batch(
         practice_id=uploader.practice_id,
         provider_id=plan.provider_id,
@@ -124,7 +165,7 @@ async def _store_batch(
     for file in files:
         note = await _add_note(db, store, uploader, batch, file)
         (accepted if note else duplicates).append(file.name)
-    return UploadResult(batch.id, accepted, duplicates)
+    return UploadResult([batch.id], accepted, duplicates)
 
 
 async def _check_plan(db: AsyncSession, practice_id: str, plan: UploadPlan) -> None:
