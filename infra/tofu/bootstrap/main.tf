@@ -216,6 +216,61 @@ data "aws_iam_policy_document" "edge" {
   }
 
   statement {
+    sid = "Backups"
+    actions = [
+      "backup:CreateBackupVault",
+      "backup:DeleteBackupVault",
+      "backup:DescribeBackupVault",
+      "backup:ListBackupVaults",
+      "backup:PutBackupVaultLockConfiguration",
+      "backup:DeleteBackupVaultLockConfiguration",
+      "backup:PutBackupVaultAccessPolicy",
+      "backup:GetBackupVaultAccessPolicy",
+      "backup:DeleteBackupVaultAccessPolicy",
+      "backup:CreateBackupPlan",
+      "backup:UpdateBackupPlan",
+      "backup:DeleteBackupPlan",
+      "backup:GetBackupPlan",
+      "backup:ListBackupPlans",
+      "backup:ListBackupPlanVersions",
+      "backup:CreateBackupSelection",
+      "backup:DeleteBackupSelection",
+      "backup:GetBackupSelection",
+      "backup:ListBackupSelections",
+      "backup:TagResource",
+      "backup:UntagResource",
+      "backup:ListTags",
+      "backup-storage:MountCapsule",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "Trail"
+    actions = [
+      "cloudtrail:CreateTrail",
+      "cloudtrail:UpdateTrail",
+      "cloudtrail:DeleteTrail",
+      "cloudtrail:GetTrail",
+      "cloudtrail:GetTrailStatus",
+      "cloudtrail:StartLogging",
+      "cloudtrail:StopLogging",
+      "cloudtrail:PutEventSelectors",
+      "cloudtrail:GetEventSelectors",
+      "cloudtrail:AddTags",
+      "cloudtrail:RemoveTags",
+      "cloudtrail:ListTags",
+    ]
+    resources = ["arn:aws:cloudtrail:${var.region}:${var.account_id}:trail/bodha-*"]
+  }
+
+  statement {
+    sid       = "TrailRead"
+    actions   = ["cloudtrail:DescribeTrails", "cloudtrail:ListTrails"]
+    resources = ["*"]
+  }
+
+  statement {
     sid = "Budgets"
     actions = [
       "budgets:ModifyBudget",

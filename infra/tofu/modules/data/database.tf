@@ -40,7 +40,7 @@ resource "aws_db_instance" "this" {
   engine_version             = "17"
   instance_class             = var.database_class
   allocated_storage          = 20
-  max_allocated_storage      = 50
+  max_allocated_storage      = 200
   storage_type               = "gp3"
   storage_encrypted          = true
   kms_key_id                 = aws_kms_key.this.arn

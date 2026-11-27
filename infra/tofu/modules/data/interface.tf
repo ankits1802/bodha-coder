@@ -53,6 +53,16 @@ variable "mail_domain" {
   type = string
 }
 
+variable "retention_days" {
+  type    = number
+  default = 2557
+
+  validation {
+    condition     = var.retention_days >= 2557
+    error_message = "Records are kept at least 7 years (2557 days)."
+  }
+}
+
 output "kms_key_arn" {
   value = aws_kms_key.this.arn
 }
