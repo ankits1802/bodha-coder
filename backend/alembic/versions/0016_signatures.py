@@ -1,25 +1,26 @@
+from pathlib import Path
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 revision = "0016"
-down_revision = "0013"
+down_revision = "0015"
 branch_labels = None
 depends_on = None
 
 SEALED_TABLES = ("signatures", "signature_adoptions", "signing_events")
 ONE_OWNER = "(user_id IS NULL) <> (provider_id IS NULL)"
 PROVIDER_IN_PRACTICE = "provider_id IS NULL OR practice_id IS NOT NULL"
-REFUSE_CHANGE = """
-CREATE FUNCTION refuse_sealed_record_change() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-    IF TG_OP = 'DELETE' AND current_setting('bodha.erasure', true) = 'on' THEN
-        RETURN OLD;
-    END IF;
-    RAISE EXCEPTION '% rows are sealed records and are never changed or deleted', TG_TABLE_NAME;
-END
-$$
-"""
+RUNTIME_ROLE = "bodha_runtime"
+PURGE_SOURCE = Path(__file__).with_name("0015_audit_hardening.sql")
+PURGE_HEAD = "CREATE FUNCTION bodha_purge_practice("
+PURGE_ANCHOR = "    'DELETE FROM review_comment_removals WHERE practice_id = $1',\n"
+SEALED_PURGE_STEPS = (
+    "    'DELETE FROM signing_events WHERE practice_id = $1 OR signer_user_id = ANY($2)',\n"
+    "    'DELETE FROM signature_adoptions WHERE practice_id = $1 OR user_id = ANY($2)',\n"
+    "    'DELETE FROM signatures WHERE practice_id = $1 OR user_id = ANY($2)',\n"
+)
 
 
 def _keyed() -> list[sa.Column]:
@@ -155,22 +156,50 @@ def _create_signing_events() -> None:
     op.create_index("ix_signing_events_practice", table, ["practice_id", "signed_at"])
 
 
+def _run(statement: str) -> None:
+    op.get_bind().exec_driver_sql(statement)
+
+
+def _purge_function() -> str:
+    statements = PURGE_SOURCE.read_text(encoding="utf-8").split("\n;\n")
+    found = [statement.strip() for statement in statements if statement.strip().startswith(PURGE_HEAD)]
+    if len(found) != 1 or found[0].count(PURGE_ANCHOR) != 1:
+        raise RuntimeError("bodha_purge_practice in 0015 no longer has the step the signing records go before")
+    return found[0].replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION", 1)
+
+
+def _row_trigger(name: str, event: str, table: str, function: str) -> None:
+    _run(f"CREATE TRIGGER {name} BEFORE {event} ON {table} FOR EACH ROW EXECUTE FUNCTION {function}")
+
+
+def _protect(table: str) -> None:
+    _row_trigger("bodha_append_only", "UPDATE OR DELETE", table, "bodha_reject_change()")
+    _row_trigger("bodha_stamp", "INSERT", table, "bodha_stamp('created_at')")
+    _run(f"CREATE TRIGGER bodha_no_truncate BEFORE TRUNCATE ON {table} EXECUTE FUNCTION bodha_reject_change()")
+
+
+def _runtime_role_exists() -> bool:
+    found = op.get_bind().scalar(sa.text("SELECT 1 FROM pg_roles WHERE rolname = :name"), {"name": RUNTIME_ROLE})
+    return bool(found)
+
+
 def upgrade() -> None:
     _create_signatures()
     _create_adoptions()
     _create_signing_events()
-    op.execute(REFUSE_CHANGE)
     for table in SEALED_TABLES:
-        op.execute(
-            f"CREATE TRIGGER {table}_sealed BEFORE UPDATE OR DELETE ON {table} "
-            "FOR EACH ROW EXECUTE FUNCTION refuse_sealed_record_change()"
-        )
+        _protect(table)
+    if _runtime_role_exists():
+        _run(f"GRANT SELECT, INSERT ON {', '.join(SEALED_TABLES)} TO {RUNTIME_ROLE}")
+    purge = _purge_function()
+    _run(purge.replace(PURGE_ANCHOR, SEALED_PURGE_STEPS + PURGE_ANCHOR, 1))
 
 
 def downgrade() -> None:
+    _run(_purge_function())
     for table in SEALED_TABLES:
-        op.execute(f"DROP TRIGGER {table}_sealed ON {table}")
-    op.execute("DROP FUNCTION refuse_sealed_record_change()")
+        for trigger in ("bodha_append_only", "bodha_stamp", "bodha_no_truncate"):
+            _run(f"DROP TRIGGER {trigger} ON {table}")
     op.drop_table("signing_events")
     op.drop_table("signature_adoptions")
     op.drop_table("signatures")

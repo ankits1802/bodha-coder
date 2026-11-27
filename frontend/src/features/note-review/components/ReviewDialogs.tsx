@@ -1,12 +1,12 @@
 "use client";
 
+import { ReasonDialog } from "@/components/shared/ReasonDialog";
 import type { SignatureGate } from "@/components/shared/signature/useSignatureGate";
 import { decideCompliance, flagNote } from "@/lib/api/notes";
 import type { Finding, NoteDetail } from "@/lib/api/types";
 import { COMPLIANCE_REASON_MAX } from "@/lib/validation";
 import { REVIEW_TEXT } from "../strings";
 import { AskProviderDialog } from "./AskProviderDialog";
-import { ReasonDialog } from "./ReasonDialog";
 
 export type OpenDialog = "ask" | "flag" | "keep" | null;
 

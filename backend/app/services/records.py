@@ -1,91 +1,23 @@
 from __future__ import annotations
 
 import hashlib
-import logging
 from dataclasses import dataclass
-from datetime import date, datetime
-from typing import Any
-from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.object_store import ObjectStore, note_document_revision_key, person_prefix, practice_prefix
+from app.adapters.object_store import ObjectStore, note_document_revision_key
 from app.adapters.pdf_text import DocumentUnreadable, read_pdf_text
-from app.core.calendar import day_bounds, shift_years, zone_named
-from app.core.db import permit_record_erasure
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
-from app.models import (
-    AccessLog,
-    Activity,
-    AddendumRequest,
-    Analysis,
-    ApprovedClaim,
-    AuditPackage,
-    AuditSample,
-    Batch,
-    ClaimExport,
-    ClaimExportItem,
-    CodeSet,
-    Decision,
-    EvalCase,
-    EvalRun,
-    MipsList,
-    Note,
-    NoteText,
-    Practice,
-    Provider,
-    ProviderAttestation,
-    RecoveryCode,
-    Remittance,
-    RemittanceLine,
-    ReviewComment,
-    ReviewCommentRemoval,
-    Session,
-    Signature,
-    SignatureAdoption,
-    SigningEvent,
-    Subscription,
-    Suggestion,
-    User,
-    UserIdentity,
-    UserToken,
-)
+from app.models import VOIDED, AddendumRequest, Analysis, Note, NoteText
 from app.services.analysis import next_revision, request_analysis
-from app.services.audit_log import record_access, record_activity
-from app.services.plan_limits import is_live, subscription_for
+from app.services.audit_log import record_access
 from app.services.uploads import check_pdf
-from app.services.worklists import count_of
 
-__all__ = [
-    "ACCESS_LOG_PAGE",
-    "PRACTICE_DELETED",
-    "NewDocument",
-    "access_log_page",
-    "delete_practice",
-    "purge_access_logs",
-    "replace_document",
-    "retention_cutoff",
-]
+__all__ = ["NewDocument", "replace_document"]
 
-logger = logging.getLogger("bodha.records")
-ACCESS_LOG_PAGE = 200
-PRACTICE_DELETED = "practice deleted"
-FIXED_DOCUMENT_STATUSES = ("exported", "reading")
-DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
-NOTE_CHILDREN = (Decision, Suggestion, NoteText)
-REVIEW_RECORD_TABLES = (
-    ReviewCommentRemoval,
-    ReviewComment,
-    ProviderAttestation,
-    AuditPackage,
-    ClaimExportItem,
-    ClaimExport,
-)
-QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
-PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity, Subscription)
-USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity)
+FIXED_DOCUMENT_STATUSES = ("exported", "reading", VOIDED)
 
 
 @dataclass(frozen=True)
@@ -129,7 +61,7 @@ async def _locked_note(db: AsyncSession, actor: Actor, note_id: str) -> Note:
 
 async def _check_replaceable(db: AsyncSession, note: Note) -> None:
     if note.status in FIXED_DOCUMENT_STATUSES:
-        raise Conflict("the PDF of an exported note or a note being read cannot be replaced")
+        raise Conflict("the PDF of an exported, voided or being-read note cannot be replaced")
     open_request = await db.scalar(
         select(AddendumRequest.id).where(AddendumRequest.note_id == note.id, AddendumRequest.status == "sent")
     )
@@ -146,127 +78,10 @@ def _document_text(document: NewDocument) -> str:
 
 
 async def _check_new_file(db: AsyncSession, note: Note, sha256: str) -> None:
-    holder = await db.scalar(select(Note.id).where(Note.practice_id == note.practice_id, Note.file_sha256 == sha256))
+    holder = await db.scalar(
+        select(Note.id).where(Note.practice_id == note.practice_id, Note.file_sha256 == sha256, Note.status != VOIDED)
+    )
     if holder == note.id:
         raise Conflict("this PDF is already the note's document")
     if holder is not None:
         raise Conflict("this PDF is already uploaded as another note")
-
-
-async def access_log_page(
-    db: AsyncSession, actor: Actor, *, day: date, user_id: str | None, offset: int
-) -> dict[str, Any]:
-    start, end = day_bounds(day, actor.zone)
-    query = select(AccessLog).where(
-        AccessLog.practice_id == actor.practice_id, AccessLog.created_at >= start, AccessLog.created_at < end
-    )
-    if user_id:
-        query = query.where(AccessLog.actor_id == user_id)
-    rows = await db.scalars(
-        query.order_by(AccessLog.created_at.desc(), AccessLog.id).offset(offset).limit(ACCESS_LOG_PAGE)
-    )
-    return {
-        "items": [_access_entry(row) for row in rows],
-        "total": await count_of(db, query),
-        "offset": offset,
-        "page_size": ACCESS_LOG_PAGE,
-    }
-
-
-def _access_entry(row: AccessLog) -> dict[str, Any]:
-    return {
-        "at": row.created_at.isoformat(),
-        "actor": row.actor_name,
-        "actor_kind": row.actor_kind,
-        "action": row.action,
-        "note_id": row.note_id,
-        "detail": row.detail,
-        "ip": row.ip,
-        "user_agent": row.user_agent,
-    }
-
-
-def retention_cutoff(now: datetime, zone: ZoneInfo, years: int) -> datetime:
-    if now.tzinfo is None:
-        raise ValueError("now must carry a time zone")
-    return day_bounds(shift_years(now.astimezone(zone).date(), -years), zone)[0]
-
-
-async def purge_access_logs(db: AsyncSession, now: datetime) -> int:
-    practices = (await db.execute(select(Practice.id, Practice.time_zone, Practice.access_log_years))).all()
-    removed = 0
-    for practice_id, time_zone, years in practices:
-        cutoff = retention_cutoff(now, zone_named(time_zone), years)
-        result = await db.execute(
-            delete(AccessLog).where(AccessLog.practice_id == practice_id, AccessLog.created_at < cutoff)
-        )
-        removed += result.rowcount or 0
-    await db.commit()
-    return removed
-
-
-async def delete_practice(
-    db: AsyncSession, store: ObjectStore, actor: Actor, practice_id: str, *, confirm_name: str
-) -> None:
-    practice = await db.get(Practice, practice_id, with_for_update=True)
-    if practice is None:
-        raise NotFound("practice not found")
-    if practice.status not in DELETABLE_PRACTICE_STATUSES:
-        raise Conflict("end or block the practice before deleting it")
-    if confirm_name.strip() != practice.name:
-        raise Invalid("type the practice name exactly as shown to delete it")
-    if is_live(await subscription_for(db, practice_id)):
-        raise Conflict("cancel the practice's subscription before deleting it")
-    name = practice.name
-    people = list((await db.scalars(select(User.id).where(User.practice_id == practice_id))).all())
-    await _delete_practice_rows(db, practice_id)
-    record_activity(db, actor, PRACTICE_DELETED, practice_id=practice_id, detail=name)
-    await db.commit()
-    await _remove_practice_files(store, practice_id)
-    await _remove_people_files(store, people)
-
-
-async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
-    notes = select(Note.id).where(Note.practice_id == practice_id)
-    users = select(User.id).where(User.practice_id == practice_id)
-    remittances = select(Remittance.id).where(Remittance.practice_id == practice_id)
-    await _delete_sealed_rows(db, practice_id, users)
-    await db.execute(delete(RemittanceLine).where(RemittanceLine.remittance_id.in_(remittances)))
-    for table in QUALITY_AND_REMITTANCE_TABLES:
-        await db.execute(delete(table).where(table.practice_id == practice_id))
-    for table in REVIEW_RECORD_TABLES:
-        await db.execute(delete(table).where(table.practice_id == practice_id))
-    for table in NOTE_CHILDREN:
-        await db.execute(delete(table).where(table.note_id.in_(notes)))
-    await db.execute(delete(AddendumRequest).where(AddendumRequest.practice_id == practice_id))
-    await db.execute(delete(ApprovedClaim).where(ApprovedClaim.practice_id == practice_id))
-    for table in (Analysis, CodeSet):
-        await db.execute(delete(table).where(table.note_id.in_(notes)))
-    for table in PRACTICE_TABLES:
-        await db.execute(delete(table).where(table.practice_id == practice_id))
-    for table in USER_CHILDREN:
-        await db.execute(delete(table).where(table.user_id.in_(users)))
-    await db.execute(delete(User).where(User.practice_id == practice_id))
-    await db.execute(delete(Practice).where(Practice.id == practice_id))
-
-
-async def _delete_sealed_rows(db: AsyncSession, practice_id: str, users: Any) -> None:
-    await permit_record_erasure(db)
-    await db.execute(delete(SigningEvent).where(SigningEvent.practice_id == practice_id))
-    for table in (SignatureAdoption, Signature):
-        await db.execute(delete(table).where(or_(table.practice_id == practice_id, table.user_id.in_(users))))
-
-
-async def _remove_people_files(store: ObjectStore, people: list[str]) -> None:
-    for user_id in people:
-        try:
-            await store.delete_prefix(person_prefix(user_id))
-        except Exception:
-            logger.exception("stored signatures of a deleted practice's people were not removed")
-
-
-async def _remove_practice_files(store: ObjectStore, practice_id: str) -> None:
-    try:
-        await store.delete_prefix(practice_prefix(practice_id))
-    except Exception:
-        logger.exception("stored files of deleted practice %s were not removed", practice_id)

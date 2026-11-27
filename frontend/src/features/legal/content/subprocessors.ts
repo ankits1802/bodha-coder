@@ -28,7 +28,7 @@ export const SUBPROCESSORS: LegalDocumentData = {
         caption: "Subprocessors that may process Customer Data, including PHI",
         columns: COLUMNS,
         rows: [
-          ["Amazon Web Services, Inc.", "Hosting and operations: application containers (ECS on Fargate), database (RDS for PostgreSQL), document storage (S3, encrypted with KMS), encryption keys (KMS), secrets (Secrets Manager) and monitoring (CloudWatch)", "All Customer Data, including visit notes and other PHI, account data, and service logs that exclude PHI", `United States (${SERVICE_FACTS.region})`],
+          ["Amazon Web Services, Inc.", "Hosting and operations: application containers (ECS on Fargate), database (RDS for PostgreSQL), document storage (S3, encrypted with KMS), encryption keys (KMS), secrets (Secrets Manager), backups (AWS Backup), monitoring and logs (CloudWatch) and account activity logging (CloudTrail)", "All Customer Data, including visit notes and other PHI, account data, and service logs that exclude PHI", `United States (${SERVICE_FACTS.region})`],
           ["Amazon Web Services, Inc.", "Email (SES) and text messages (SNS)", "Recipient email addresses and phone numbers, and messages with sign-in links, codes and secure links but no patient details", `United States (${SERVICE_FACTS.region})`],
           ["Google LLC (Google Cloud)", "Gemini models on Vertex AI that read visit notes and propose reviews", "Note text and PDFs, billed codes and the related PHI sent for each review, and signature images to check before they are kept", `United States (${vertexRegion})`],
         ],

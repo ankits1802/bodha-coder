@@ -1,95 +1,20 @@
 from __future__ import annotations
 
-import logging
-
-from sqlalchemy import delete, exists, select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.object_store import ObjectStore, note_prefix
-from app.core.db import permit_record_erasure
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
-from app.models import (
-    AddendumRequest,
-    Analysis,
-    ApprovedClaim,
-    AuditPackage,
-    AuditSample,
-    Batch,
-    CodeSet,
-    Decision,
-    EvalCase,
-    Note,
-    NoteText,
-    ProviderAttestation,
-    RemittanceLine,
-    ReviewComment,
-    ReviewCommentRemoval,
-    SigningEvent,
-    Suggestion,
-)
+from app.models import AddendumRequest, Note
 from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
+from app.services.note_change_history import record_note_change
+from app.services.note_voids import refuse_voided
 from app.services.payers import payer_list
 from app.services.placement import refresh_placement
 from app.services.review_actions import note_for
 
-logger = logging.getLogger("bodha.notes")
-DELETABLE = ("queued", "ready", "failed", "approved")
 EDITABLE = ("queued", "ready", "failed")
-CHILD_TABLES = (
-    SigningEvent,
-    ReviewCommentRemoval,
-    ReviewComment,
-    ProviderAttestation,
-    AuditPackage,
-    Decision,
-    Suggestion,
-    AuditSample,
-    EvalCase,
-    NoteText,
-    AddendumRequest,
-    ApprovedClaim,
-    Analysis,
-    CodeSet,
-)
-
-
-async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_ids: list[str]) -> list[str]:
-    wanted = set(note_ids)
-    notes = list(
-        (
-            await db.scalars(
-                select(Note).where(Note.practice_id == actor.practice_id, Note.id.in_(wanted)).with_for_update()
-            )
-        ).all()
-    )
-    if len(notes) != len(wanted):
-        raise NotFound("note not found")
-    if any(note.status not in DELETABLE for note in notes):
-        raise Conflict("exported notes and notes being read cannot be deleted")
-    ids = [note.id for note in notes]
-    folders = [note_prefix(note.practice_id, note.id) for note in notes]
-    await db.execute(update(RemittanceLine).where(RemittanceLine.note_id.in_(ids)).values(note_id=None))
-    await permit_record_erasure(db)
-    for table in CHILD_TABLES:
-        await db.execute(delete(table).where(table.note_id.in_(ids)))
-    await db.execute(delete(Note).where(Note.id.in_(ids)))
-    batch_ids = {note.batch_id for note in notes}
-    await db.execute(delete(Batch).where(Batch.id.in_(batch_ids), ~exists().where(Note.batch_id == Batch.id)))
-    for note in notes:
-        record_access(db, actor, "deleted note", note_id=note.id, detail=note.file_name)
-    await db.commit()
-    await _remove_files(store, folders)
-    return ids
-
-
-async def _remove_files(store: ObjectStore, folders: list[str]) -> None:
-    try:
-        for folder in folders:
-            await store.delete_prefix(folder)
-    except Exception:
-        logger.exception("stored files of deleted notes were not removed")
 
 
 async def change_visit_type(db: AsyncSession, actor: Actor, note_id: str, visit_type: str) -> Note:
@@ -102,6 +27,7 @@ async def change_visit_type(db: AsyncSession, actor: Actor, note_id: str, visit_
     if note.status != "queued":
         note.status = "queued"
         await request_analysis(db, note, reason="visit_type")
+    record_note_change(db, actor, note, "visit_type", old=previous, new=visit_type)
     record_access(db, actor, "changed visit type", note_id=note.id, detail=f"{previous} to {visit_type}")
     await db.commit()
     return note
@@ -124,11 +50,14 @@ async def cancel_request(db: AsyncSession, actor: Actor, note_id: str) -> Note:
 
 async def set_payer(db: AsyncSession, actor: Actor, note_id: str, payer_id: str | None) -> Note:
     note = await note_for(db, actor, note_id)
+    refuse_voided(note)
     if note.status == "exported":
         raise Conflict("an exported note keeps its payer")
     known = actor.practice is not None and any(payer.get("id") == payer_id for payer in payer_list(actor.practice))
     if payer_id is not None and not known:
         raise NotFound("payer not found")
+    if note.payer != payer_id:
+        record_note_change(db, actor, note, "payer", old=note.payer, new=payer_id)
     note.payer = payer_id
     record_access(db, actor, "set payer", note_id=note.id)
     await db.commit()

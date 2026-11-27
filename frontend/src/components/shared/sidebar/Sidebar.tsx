@@ -9,6 +9,7 @@ import { SHARED_TEXT } from "../strings";
 import { ActionEntry, NavEntry } from "./NavEntry";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
+import { PracticeSwitcher, hasPracticeChoice } from "./PracticeSwitcher";
 import { SidebarFooter } from "./SidebarFooter";
 import { useNavCounts, type NavCounts } from "./useNavCounts";
 
@@ -44,6 +45,7 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
           <span aria-hidden="true">B</span>
           <span className="sr-only">{SHARED_TEXT.brand}</span>
         </Link>
+        {hasPracticeChoice(user) ? <PracticeSwitcher user={user} collapsed /> : null}
         {toggle}
       </div>
     );
@@ -54,7 +56,11 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
         <Link href={homeFor(user)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
           {SHARED_TEXT.brand}
         </Link>
-        <span className="truncate text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
+        {hasPracticeChoice(user) ? (
+          <PracticeSwitcher user={user} collapsed={false} />
+        ) : (
+          <span className="truncate text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
+        )}
       </div>
       {toggle}
     </div>

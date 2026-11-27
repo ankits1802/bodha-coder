@@ -89,7 +89,7 @@ def _manifest(note: Note, actor: Actor, package_id: str, generated: str, files: 
             "note_id": note.id,
             "generated_at": generated,
             "generated_by": actor.user.name,
-            "role": actor.user.role,
+            "role": actor.role,
             "files": [
                 {"path": item.path, "sha256": hashlib.sha256(item.content).hexdigest(), "bytes": len(item.content)}
                 for item in files
@@ -111,7 +111,7 @@ def _package_row(
         file_count=file_count,
         actor_id=actor.user.id,
         actor_name=actor.user.name,
-        actor_role=actor.user.role,
+        actor_role=actor.role,
         ip=actor.ip,
         user_agent=(actor.user_agent or "")[:AGENT_LENGTH] or None,
     )

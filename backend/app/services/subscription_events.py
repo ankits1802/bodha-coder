@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.billing_contract import PAYMENT_FAILED, BillingProvider, ProcessorEvent, ProcessorSubscription
 from app.core.calendar import today_in, zone_named
 from app.core.config import get_settings
-from app.models import BillingEvent, Practice, Subscription, utcnow
+from app.models import CLOSED_STATUSES, BillingEvent, Practice, Subscription, utcnow
 from app.services.audit_log import record_activity
 from app.services.plan_limits import LIVE_STATUSES, is_live, subscription_for
 from app.services.plans import plan_for_price
@@ -23,7 +23,7 @@ logger = logging.getLogger("bodha.billing")
 SUBSCRIPTION_CHANGED = "subscription changed"
 ACTIVE, PAST_DUE = "active", "past_due"
 ENDED_STATUSES = ("canceled", "expired")
-HQ_DECIDED_STATUSES = ("ended", "blocked")
+HQ_DECIDED_STATUSES = ("ended", "blocked", *CLOSED_STATUSES)
 EVENT_KIND_LENGTH = 80
 
 
@@ -74,9 +74,7 @@ def access_until(row: Subscription, zone: ZoneInfo, grace_days: int) -> date:
 async def _first_delivery(db: AsyncSession, provider_name: str, event: ProcessorEvent) -> bool:
     statement = (
         insert(BillingEvent)
-        .values(
-            provider=provider_name, event_id=event.event_id, kind=event.kind[:EVENT_KIND_LENGTH], received_at=utcnow()
-        )
+        .values(provider=provider_name, event_id=event.event_id, kind=event.kind[:EVENT_KIND_LENGTH])
         .on_conflict_do_nothing()
         .returning(BillingEvent.event_id)
     )

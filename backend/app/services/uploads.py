@@ -16,7 +16,7 @@ from app.core.calendar import day_bounds, zone_named
 from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
-from app.models import Batch, CodeSet, Note, PlaceOfService, Practice, Provider, User, new_id
+from app.models import VOIDED, Batch, CodeSet, Note, PlaceOfService, Practice, Provider, User, new_id
 from app.services.analysis import request_analysis
 from app.services.audit_log import SystemActor, record_access, record_system_access
 
@@ -141,7 +141,11 @@ async def _add_note(
     db: AsyncSession, store: ObjectStore, uploader: Uploader, batch: Batch, file: UploadFile
 ) -> Note | None:
     sha256 = hashlib.sha256(file.data).hexdigest()
-    held = await db.scalar(select(Note.id).where(Note.practice_id == uploader.practice_id, Note.file_sha256 == sha256))
+    held = await db.scalar(
+        select(Note.id).where(
+            Note.practice_id == uploader.practice_id, Note.file_sha256 == sha256, Note.status != VOIDED
+        )
+    )
     if held is not None:
         return None
     billed = billed_codes_for(file)
@@ -190,7 +194,7 @@ def check_pdf(name: str, data: bytes) -> None:
 
 
 async def batch_history(db: AsyncSession, practice_id: str, *, offset: int) -> dict[str, Any]:
-    filters = (Batch.practice_id == practice_id, exists().where(Note.batch_id == Batch.id))
+    filters = (Batch.practice_id == practice_id, exists().where(Note.batch_id == Batch.id, Note.status != VOIDED))
     rows = (
         await db.execute(
             select(Batch, Provider.name, User.name)
@@ -218,7 +222,7 @@ async def _status_counts(db: AsyncSession, batch_ids: list[str]) -> dict[str, di
         return {}
     rows = await db.execute(
         select(Note.batch_id, Note.status, func.count())
-        .where(Note.batch_id.in_(batch_ids))
+        .where(Note.batch_id.in_(batch_ids), Note.status != VOIDED)
         .group_by(Note.batch_id, Note.status)
     )
     found: dict[str, dict[str, int]] = {}

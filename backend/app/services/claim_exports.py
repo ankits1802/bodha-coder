@@ -193,7 +193,7 @@ def _exporter(actor: Actor) -> dict[str, Any]:
     return {
         "actor_id": actor.user.id,
         "actor_name": actor.user.name,
-        "actor_role": actor.user.role,
+        "actor_role": actor.role,
         "ip": actor.ip,
         "user_agent": (actor.user_agent or "")[:AGENT_LENGTH] or None,
     }

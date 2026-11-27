@@ -63,6 +63,16 @@ puts it in effect. Register `https://admin.<domain>/api/auth/<provider>/callback
 provider, then invite owners with a one-off task running
 `python -m app.scripts.invite_hq "Full Name <email>" ...` on the worker task definition, whose role may send email (the migrate and bootstrap roles may not). A re-run of `deploy.yml` for a commit whose images exist skips the builds and only releases.
 
+## Runtime database role
+
+The api and worker connect as `bodha_runtime`, a role without DELETE on retained tables, no TRUNCATE
+and no schema rights; migrations connect as the master `bodha_app` through `MIGRATION_DATABASE_URL`.
+The migration that creates the role reads `RUNTIME_DATABASE_PASSWORD`, which only the migrate task
+receives. First rollout: apply with `runtime_database = false`, release the migration, then set
+`runtime_database = true`, apply and force a new deployment. Rotate by raising
+`runtime_password_version`, applying, running `python -m app.scripts.runtime_password` once on the
+migrate task definition (it alters the role to the new password), then forcing a new deployment.
+
 ## Retention
 
 Everything is kept at least `retention_days` (2557, seven years; the variable refuses less):

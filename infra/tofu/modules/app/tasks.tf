@@ -52,10 +52,17 @@ locals {
   }
   identity_environment = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_ID", value = provider.id } if provider.id != ""]
   identity_secrets     = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_SECRET", valueFrom = var.secret_arns[provider.secret] } if provider.id != ""]
-  shared_secrets = concat([
-    { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
+  base_secrets = concat([
     { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
   ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [], local.billing_secrets)
+  shared_secrets = concat([
+    { name = "DATABASE_URL", valueFrom = var.secret_arns[var.runtime_database ? "runtime-database-url" : "database-url"] },
+  ], local.base_secrets)
+  migration_secrets = concat([
+    { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
+    { name = "MIGRATION_DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
+    { name = "RUNTIME_DATABASE_PASSWORD", valueFrom = var.secret_arns["runtime-database-password"] },
+  ], local.base_secrets)
   tasks = {
     api = {
       image   = local.api_image
@@ -93,7 +100,7 @@ locals {
       port        = null
       stop        = 30
       environment = local.shared_environment
-      secrets     = local.shared_secrets
+      secrets     = local.migration_secrets
     }
     bootstrap = {
       image       = local.api_image

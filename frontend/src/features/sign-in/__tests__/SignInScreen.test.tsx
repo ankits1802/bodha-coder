@@ -21,7 +21,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/lib/api/auth", () => ({
-  FORGOT_PASSWORD_PATH: "/forgot-password",
+  FORGOT_PASSWORD_PATH: "/forgot-password", NEW_PRACTICE_PATH: "/practices/new",
   SIGN_UP_PATH: "/sign-up",
   providerStartPath: (provider: string) => `/api/auth/${provider}/start`,
   isSignedIn: (result: object) => "access_token" in result,
@@ -45,9 +45,9 @@ const ADMIN: User = {
     id: "practice-1",
     name: "Lakeside Primary Care",
     checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false },
-    can_send_texts: true, idle_minutes: 15,
-    time_zone: "America/Chicago",
+    can_send_texts: true, idle_minutes: 15, time_zone: "America/Chicago",
   },
+  practices: [],
 };
 
 async function reachVerifyStep(): Promise<void> {

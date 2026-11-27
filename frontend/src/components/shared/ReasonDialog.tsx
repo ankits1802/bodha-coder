@@ -19,12 +19,13 @@ interface ReasonDialogProps {
   text: ReasonDialogText;
   minLength: number;
   maxLength: number;
+  destructive?: boolean;
   onClose: () => void;
   onDone: () => void;
   submit: (reason: string) => Promise<unknown>;
 }
 
-export function ReasonDialog({ text, minLength, maxLength, onClose, onDone, submit }: ReasonDialogProps) {
+export function ReasonDialog({ text, minLength, maxLength, destructive = false, onClose, onDone, submit }: ReasonDialogProps) {
   const formId = useId();
   const [reason, setReason] = useState("");
   const [tried, setTried] = useState(false);
@@ -40,7 +41,7 @@ export function ReasonDialog({ text, minLength, maxLength, onClose, onDone, subm
   const footer = (
     <>
       <Button onClick={onClose}>{text.cancel}</Button>
-      <Button type="submit" form={formId} variant="primary" pending={action.pending}>
+      <Button type="submit" form={formId} variant={destructive ? "danger" : "primary"} pending={action.pending}>
         {text.submit}
       </Button>
     </>

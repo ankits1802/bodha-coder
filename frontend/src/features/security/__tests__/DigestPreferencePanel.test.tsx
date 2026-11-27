@@ -8,7 +8,7 @@ import { DigestPreferencePanel } from "../DigestPreferencePanel";
 vi.mock("@/lib/api/account", () => ({ getPreferences: vi.fn(), savePreferences: vi.fn() }));
 
 function signIn(role: Role): void {
-  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, billing_only: false, practice: null } });
+  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, billing_only: false, practice: null, practices: [] } });
 }
 
 describe("DigestPreferencePanel", () => {

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/errors";
 import { renewPractice } from "@/lib/api/hq";
@@ -45,11 +46,14 @@ describe("RenewDialog", () => {
   });
 
   it("shows why the server refused", async () => {
-    vi.mocked(renewPractice).mockRejectedValue(new ApiError(409, "conflict", "this practice pays through Stripe; change the plan there"));
+    vi.mocked(renewPractice).mockImplementationOnce(async () => {
+      throw new ApiError(409, "conflict", "this practice pays through Stripe; change the plan there");
+    });
     render(<RenewDialog practice={PRACTICE} onDone={vi.fn()} onClose={vi.fn()} />);
+    const dialog = screen.getByRole("dialog", { name: "Renew Lakeside Primary Care" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Renew" }));
+    await userEvent.setup().click(within(dialog).getByRole("button", { name: "Renew" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Stripe");
+    expect(await within(dialog).findByText(/pays through Stripe/i)).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ export const SIGN_UP_TEXT = {
   pageTitle: "Start your free trial",
   title: "Start your free trial",
   completeTitle: "Create your practice",
+  newPracticeTitle: "New practice",
   or: "or",
   name: "Your name",
   practiceName: "Practice name",

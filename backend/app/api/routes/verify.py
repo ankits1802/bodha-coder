@@ -15,8 +15,7 @@ router = APIRouter(prefix="/verify", tags=["verify"], route_class=ExactRoute)
 
 @router.get("/{code}", response_model=SealVerification)
 async def verify(code: str, request: Request, db: Db, store: Store, signer: Sealer) -> dict[str, Any]:
-    ip, _ = client_of(request)
-    checked = await seal_verification.verify_code(db, store, signer, code, ip=ip)
+    checked = await seal_verification.verify_code(db, store, signer, code, ip=client_of(request).ip)
     row = checked.event
     return {
         "valid": checked.valid,

@@ -14,8 +14,8 @@ export const TERMS: LegalDocumentData = {
   slug: "terms",
   title: LEGAL_TITLES.terms,
   summary: `The agreement between your organization and us for using ${LEGAL_PARTY.product}.`,
-  version: "1.0",
-  updated: "2026-11-27",
+  version: "1.1",
+  updated: "2026-11-28",
   numbered: true,
   sections: [...TERMS_OPENING, ...TERMS_DUTIES, ...TERMS_MONEY, ...TERMS_DATA, ...TERMS_RIGHTS, ...TERMS_ENDING, ...TERMS_RISK, ...TERMS_GENERAL],
 };

@@ -10,6 +10,7 @@ export const SHARED_TEXT = {
   brand: "Bodha Assure",
   tagline: "Clinical coding review",
   platformAdministration: "Platform administration",
+  practiceSwitcher: { label: (name: string) => `Practice: ${name}` },
   password: { show: "Show password", hide: "Hide password" },
   identityProviders: {
     label: "Sign-in services",
@@ -56,6 +57,7 @@ export const SHARED_TEXT = {
     approved: "Approved",
     exported: "Exported",
     ready: "Ready",
+    voided: "Voided",
   },
   nav: {
     groups: { work: "Work", practice: "Practice", platform: "Platform" },

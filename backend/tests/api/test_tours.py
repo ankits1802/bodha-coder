@@ -1,8 +1,10 @@
-from sqlalchemy import select
+from datetime import timedelta
+
+from sqlalchemy import func, select, update
 
 from app.core.db import SessionFactory
-from app.models import PersonTour, User
-from tests.builders import Harness, invite_member, practice_with_provider, sign_in
+from app.models import PersonTour, Practice, User
+from tests.builders import Harness, invite_member, maintenance, practice_with_provider, sign_in
 
 TOURS = "/api/account/tours"
 COMPLETED = {"version": 1, "outcome": "completed"}
@@ -66,15 +68,22 @@ async def test_tours_need_a_session_and_a_known_tour_outcome_and_version(harness
     assert (await harness.client.get(TOURS, headers=lakeside.admin)).json() == []
 
 
-async def test_deleting_a_practice_removes_its_peoples_tours_and_keeps_hq_tours(harness):
+async def test_purging_a_practice_removes_its_peoples_tours_and_keeps_hq_tours(harness):
     lakeside = await practice_with_provider(harness)
     hq = await sign_in(harness.client, HQ_EMAIL, secret_box=lakeside.secrets)
     await put_tour(harness, lakeside.admin, "practice", COMPLETED)
     await put_tour(harness, hq, "hq", COMPLETED)
     path = f"/api/hq/practices/{lakeside.id}"
     assert (await harness.client.patch(path, headers=hq, json={"status": "blocked"})).status_code == 204
-    deleted = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
-    assert deleted.status_code == 204, deleted.text
+    closed = await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
+    assert closed.status_code == 204, closed.text
+    async with SessionFactory() as db:
+        await maintenance(db)
+        moment = func.clock_timestamp() - timedelta(days=2558)
+        await db.execute(update(Practice).where(Practice.id == lakeside.id).values(closed_at=moment))
+        await db.commit()
+    purged = await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
+    assert purged.status_code == 200, purged.text
     async with SessionFactory() as db:
         rows = await db.execute(select(User.email, PersonTour.tour).join(User, User.id == PersonTour.user_id))
     assert rows.all() == [(HQ_EMAIL, "hq")]

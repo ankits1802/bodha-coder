@@ -7,7 +7,7 @@ from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.core.security import issue_token
 from app.models import Practice, User, UserIdentity
-from tests.builders import back_from, forget_last_code, practice_with_member, sign_in_page
+from tests.builders import back_from, forget_last_code, practice_people, practice_with_member, sign_in_page
 
 SIGNUP_COOKIE = {"domain": "app.test", "path": "/api/signup"}
 OWNER = "omar@harbor.example.com"
@@ -34,7 +34,7 @@ async def test_a_verified_identity_without_an_account_goes_to_sign_up_with_a_coo
     assert all(part in cookie for part in ("httponly", "secure", "samesite=lax", "path=/api/signup", "max-age=1800"))
     assert harness.client.cookies.get("bodha_signup", **SIGNUP_COOKIE)
     pending = await harness.client.get("/api/signup/identity")
-    assert pending.json() == {"email": OWNER, "name": "Omar Haddad", "provider": "google"}
+    assert pending.json() == {"email": OWNER, "name": "Omar Haddad", "provider": "google", "has_account": False}
 
 
 @pytest.mark.parametrize("provider", ["google", "microsoft", "yahoo"])
@@ -47,8 +47,8 @@ async def test_completing_sign_up_creates_an_active_admin_bound_to_the_identity(
     assert cleared and "max-age=0" in cleared[0].lower()
     assert harness.client.cookies.get("bodha_signup", **SIGNUP_COOKIE) is None
     assert await identities() == [(OWNER, provider, "subject-1")]
-    async with SessionFactory() as db:
-        practice, admin = (await db.execute(select(Practice, User).join(User, User.practice_id == Practice.id))).one()
+    [(practice, admin, membership)] = await practice_people()
+    assert membership.role == "admin"
     assert (practice.status, practice.plan, practice.seats, practice.time_zone) == (
         "trial",
         "trial",
@@ -97,11 +97,15 @@ async def test_completing_sign_up_needs_the_agreement_and_a_name(harness):
     assert await identities() == []
 
 
-async def test_an_email_that_gained_an_account_meanwhile_cannot_complete_sign_up(harness):
+async def test_an_email_that_gained_an_account_meanwhile_becomes_admin_of_the_new_practice(harness):
     await arrive_at_sign_up(harness, email="sam@lakeside.example.com")
     await practice_with_member(harness, name="Sam Patel", email="sam@lakeside.example.com", role="coder")
     response = await harness.client.post("/api/signup/identity", json=FORM)
-    assert response.status_code == 409
+    assert response.status_code == 200, response.text
+    assert response.json()["mfa"] == "setup"
+    people = await practice_people()
+    sam = [(practice.name, member.role) for practice, person, member in people if person.name == "Sam Patel"]
+    assert sam == [("Lakeside", "coder"), ("Harbor Pediatrics", "admin")]
 
 
 async def test_a_microsoft_account_without_a_verified_email_is_sent_back_with_its_reason(harness):

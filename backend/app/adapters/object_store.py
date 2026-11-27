@@ -48,6 +48,16 @@ def analysis_response_key(practice_id: str, note_id: str, revision: int) -> str:
     return f"practices/{practice_id}/notes/{note_id}/analyses/{revision}.json"
 
 
+def analysis_prompt_key(practice_id: str, note_id: str, revision: int) -> str:
+    return f"practices/{practice_id}/notes/{note_id}/analyses/{revision}.prompt.json"
+
+
+def access_log_archive_key(practice_id: str) -> str:
+    if not practice_id or "/" in practice_id:
+        raise ValueError(f"not a practice id: {practice_id!r}")
+    return f"archives/practices/{practice_id}/access-log.csv"
+
+
 def evaluation_response_key(practice_id: str, run_id: str, case_id: str, attempt: int) -> str:
     return f"practices/{practice_id}/evaluations/{run_id}/{case_id}-{attempt}.json"
 

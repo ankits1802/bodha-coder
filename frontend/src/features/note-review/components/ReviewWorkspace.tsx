@@ -73,6 +73,8 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
           onRetry={permissions.retry ? () => void actions.retry() : null}
           onReopen={permissions.reopen ? () => void actions.reopen() : null}
           retryPending={actions.pending}
+          canRestore={permissions.restore}
+          onRestored={onReload}
         />
         <DayBanner noteId={detail.note.id} />
         <SummaryPanel detail={detail} />

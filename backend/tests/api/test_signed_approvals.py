@@ -3,15 +3,15 @@ import hashlib
 import json
 
 import pytest
-from sqlalchemy import delete, select, text, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import DBAPIError
 
 from app.adapters.development_signer import DEVELOPMENT_KEY_ID, DevelopmentRecordSigner
-from app.core.db import SessionFactory, permit_record_erasure
+from app.core.db import SessionFactory
 from app.models import ApprovedClaim, Note, Signature, SigningEvent
 from app.services.approval import SIGNED_STATEMENTS
 from tests.api.review_helpers import approve
-from tests.builders import adopt_signature, invite_member, reviewed_note, sign_in
+from tests.builders import adopt_signature, invite_member, maintenance, reviewed_note, sign_in
 
 CODER = "cora@lakeside.example.com"
 
@@ -127,9 +127,8 @@ async def test_a_changed_signature_image_is_detected(harness, icd_catalog):
 async def test_a_changed_frozen_claim_is_detected(harness, icd_catalog):
     _, _, event = await _approved(harness, icd_catalog)
     async with SessionFactory() as db:
-        await db.execute(text("ALTER TABLE approved_claims DISABLE TRIGGER approved_claims_append_only"))
+        await maintenance(db)
         await db.execute(update(ApprovedClaim).values(approver_name="Someone Else"))
-        await db.execute(text("ALTER TABLE approved_claims ENABLE TRIGGER approved_claims_append_only"))
         await db.commit()
 
     answer = await _verify(harness, event.code)
@@ -140,9 +139,8 @@ async def test_a_changed_frozen_claim_is_detected(harness, icd_catalog):
 async def test_a_changed_signing_record_breaks_the_envelope_and_the_seal(harness, icd_catalog):
     _, _, event = await _approved(harness, icd_catalog)
     async with SessionFactory() as db:
-        await db.execute(text("ALTER TABLE signing_events DISABLE TRIGGER signing_events_sealed"))
+        await maintenance(db)
         await db.execute(update(SigningEvent).values(signer_name="Someone Else"))
-        await db.execute(text("ALTER TABLE signing_events ENABLE TRIGGER signing_events_sealed"))
         await db.commit()
 
     assert (await _verify(harness, event.code))["problems"] == ["envelope_changed", "seal_invalid"]
@@ -157,26 +155,21 @@ async def test_the_database_refuses_to_change_or_delete_sealed_rows(harness, icd
         delete(Signature),
     ):
         async with SessionFactory() as db:
-            with pytest.raises(DBAPIError, match="sealed records"):
+            with pytest.raises(DBAPIError, match="refused on"):
                 await db.execute(statement)
     assert [row.id for row in await _events()] == [event.id]
-    async with SessionFactory() as db:
-        await permit_record_erasure(db)
-        erased = await db.execute(delete(SigningEvent))
-        await db.rollback()
-    assert erased.rowcount == 1
-    assert [row.id for row in await _events()] == [event.id]
 
 
-async def test_deleting_an_approved_note_erases_its_seals_and_keeps_the_signer_s_signature(harness, icd_catalog):
+async def test_voiding_an_approved_note_keeps_its_seal_verifiable(harness, icd_catalog):
     practice, note_id, event = await _approved(harness, icd_catalog)
 
-    deleted = await harness.client.post("/api/notes/delete", headers=practice.admin, json={"note_ids": [note_id]})
+    voided = await harness.client.post(
+        "/api/notes/void", headers=practice.admin, json={"note_ids": [note_id], "reason": "Uploaded twice"}
+    )
 
-    assert deleted.status_code == 200, deleted.text
-    assert await _events() == []
-    async with SessionFactory() as db:
-        assert await db.get(Signature, event.signature_id) is not None
+    assert voided.status_code == 200, voided.text
+    assert [row.id for row in await _events()] == [event.id]
+    assert (await _verify(harness, event.code))["valid"] is True
 
 
 async def test_a_compliance_decision_is_sealed_as_its_own_event(harness, icd_catalog):

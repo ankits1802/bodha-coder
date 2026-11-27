@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.core.db import SessionFactory
 from app.models import (
@@ -19,6 +19,7 @@ from app.models import (
     Note,
     NoteText,
     Practice,
+    PracticeMembership,
     Provider,
     RecoveryCode,
     ReviewComment,
@@ -31,6 +32,7 @@ from tests.builders import (
     DOCUMENTED,
     accept_invite,
     create_hq_user,
+    maintenance,
     new_practice,
     practice_with_provider,
     read_next_note,
@@ -41,7 +43,7 @@ from tests.builders import (
 
 PRACTICE_ROWS = (
     Practice,
-    User,
+    PracticeMembership,
     Provider,
     Batch,
     Note,
@@ -66,7 +68,8 @@ async def _hq(harness) -> dict[str, str]:
 async def _owned_ids(practice_id: str) -> tuple[list[str], list[str]]:
     async with SessionFactory() as db:
         note_ids = list((await db.scalars(select(Note.id).where(Note.practice_id == practice_id))).all())
-        user_ids = list((await db.scalars(select(User.id).where(User.practice_id == practice_id))).all())
+        members = select(PracticeMembership.user_id).where(PracticeMembership.practice_id == practice_id)
+        user_ids = list((await db.scalars(members)).all())
         return note_ids, user_ids
 
 
@@ -77,6 +80,7 @@ async def _row_counts(practice_id: str, owned: tuple[list[str], list[str]]) -> d
             **{table: (table.id if table is Practice else table.practice_id) == practice_id for table in PRACTICE_ROWS},
             **{table: table.note_id.in_(note_ids) for table in NOTE_ROWS},
             **{table: table.user_id.in_(user_ids) for table in USER_ROWS},
+            User: User.id.in_(user_ids),
         }
         counts = {}
         for table, condition in conditions.items():
@@ -173,7 +177,7 @@ async def _practice_with_every_record(harness, icd_catalog):
     return lakeside
 
 
-async def test_deleting_a_practice_removes_its_rows_and_files_and_leaves_others(harness, icd_catalog):
+async def test_purging_a_closed_practice_removes_its_rows_and_files_and_leaves_others(harness, icd_catalog):
     lakeside = await _practice_with_every_record(harness, icd_catalog)
     harbor = await practice_with_provider(harness, name="Harbor", admin_email="admin@harbor.example.com")
     assert (await upload_note(harness, harbor)).status_code == 200
@@ -185,21 +189,28 @@ async def test_deleting_a_practice_removes_its_rows_and_files_and_leaves_others(
 
     hq = await sign_in(harness.client, "hq-admin@lakeside.example.com", secret_box=lakeside.secrets)
     path = f"/api/hq/practices/{lakeside.id}"
-    refused = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
-    assert refused.status_code == 409
     await harness.client.patch(path, headers=hq, json={"status": "blocked"})
-    misnamed = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "lakeside"})
-    assert misnamed.status_code == 422
+    assert (
+        await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
+    ).status_code == 204
+    async with SessionFactory() as db:
+        await maintenance(db)
+        moment = func.clock_timestamp() - timedelta(days=2558)
+        await db.execute(update(Practice).where(Practice.id == lakeside.id).values(closed_at=moment))
+        await db.commit()
 
-    deleted = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
-    assert deleted.status_code == 204, deleted.text
-    assert await _row_counts(lakeside.id, owned) == {**{name: 0 for name in before}, "activity": 1}
+    purged = await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
+
+    assert purged.status_code == 200, purged.text
+    kept = {"practices": 1, "activity": before["activity"] + 3}
+    assert await _row_counts(lakeside.id, owned) == {**{name: 0 for name in before}, **kept}
     assert await _row_counts(harbor.id, harbor_owned) == harbor_before
     assert not any(key.startswith(f"practices/{lakeside.id}/") for key in harness.store.objects)
+    assert f"archives/practices/{lakeside.id}/access-log.csv" in harness.store.objects
     assert any(key.startswith(f"practices/{harbor.id}/") for key in harness.store.objects)
     trail = (await harness.client.get("/api/hq/activity", headers=hq, params={"practice_id": lakeside.id})).json()
-    assert [(item["action"], item["detail"]) for item in trail["items"]] == [("practice deleted", "Lakeside")]
+    assert [item["action"] for item in trail["items"][:3]] == ["practice purged", "practice closed", "practice updated"]
     assert (await harness.client.get("/api/today", headers=lakeside.admin)).status_code == 401
     assert (await harness.client.get("/api/today", headers=harbor.admin)).status_code == 200
-    gone = await harness.client.request("DELETE", path, headers=hq, json={"confirm_name": "Lakeside"})
-    assert gone.status_code == 404
+    again = await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
+    assert again.status_code == 409

@@ -1,4 +1,4 @@
-import type { AttestationAnswer, Choice, ExportFormat, OverrideReason, RequestPurpose } from "@/lib/api/types";
+import type { AttestationAnswer, Choice, ExportFormat, NoteChangeField, NoteStatus, OverrideReason, RequestPurpose } from "@/lib/api/types";
 
 export const REVIEW_TEXT = {
   pageTitle: "Note review",
@@ -206,6 +206,35 @@ export const REVIEW_TEXT = {
     confirmed: (wording: string) => `Confirmed: ${wording}`,
     from: (address: string) => `From ${address}`,
     noteThread: "Note",
+    changes: "Changes",
+    field: {
+      status: "Status",
+      flag: "Flag",
+      payer: "Payer",
+      assignee: "Assigned to",
+      visit_type: "Visit type",
+    } satisfies Record<NoteChangeField, string>,
+    noteStatus: {
+      queued: "Waiting to be read",
+      reading: "Being read",
+      ready: "Ready",
+      failed: "Could not read",
+      approved: "Approved",
+      exported: "Exported",
+      voided: "Voided",
+    } satisfies Record<NoteStatus, string>,
+    notSet: "Not set",
+    change: (before: string, after: string) => `${before} → ${after}`,
+  },
+  voided: {
+    label: "Voided",
+    line: (by: string, at: string, reason: string) => `Voided by ${by}, ${at}: ${reason}`,
+    someone: "someone",
+    restore: "Restore",
+    restoreTitle: "Restore this note?",
+    restoreReason: "Reason",
+    restoreTooShort: "Give the reason",
+    cancel: "Cancel",
   },
   banner: {
     reading: "Bodha is reading this note.",
@@ -222,11 +251,12 @@ export const REVIEW_TEXT = {
     visitType: "Visit type",
     payer: "Payer",
     noPayer: "Payer not set",
-    delete: "Delete note",
-    deleteTitle: "Delete this note?",
-    deleteDescription: "Its PDF, reads and decisions are removed.",
+    void: "Void note",
+    voidTitle: "Void this note?",
+    voidReason: "Reason",
+    voidTooShort: "Give the reason",
     keep: "Keep",
-    confirm: "Delete",
+    confirm: "Void",
     assignee: "Assigned to",
     assignedTo: (name: string) => `Assigned to ${name}`,
     unassigned: "Unassigned",

@@ -11,14 +11,14 @@ from app.api.responses.base import ExactRoute
 from app.api.wiring import (
     Mail,
     RefreshCookie,
-    challenge_body,
     clear_refresh_cookie,
     client_of,
+    sign_in_body,
     signed_in_body,
     user_view,
 )
 from app.core.db import SessionFactory
-from app.core.deps import Actor, Db, session_actor
+from app.core.deps import Actor, Db, PracticeAccess, session_actor
 from app.core.errors import Unauthorized
 from app.core.realms import CurrentSite
 from app.services import auth, password_reset
@@ -28,11 +28,8 @@ router = APIRouter(prefix="/auth", tags=["auth"], route_class=ExactRoute)
 
 @router.post("/login", response_model=SignedIn | MfaChallenge)
 async def login(body: LoginBody, request: Request, response: Response, db: Db, site: CurrentSite) -> dict[str, Any]:
-    ip, agent = client_of(request)
-    result = await auth.login(db, body.email, body.password, realms=site.realms, ip=ip, agent=agent)
-    if isinstance(result, auth.MfaChallenge):
-        return challenge_body(result)
-    return await signed_in_body(db, response, result)
+    result = await auth.login(db, body.email, body.password, realms=site.realms, client=client_of(request))
+    return await sign_in_body(db, response, result)
 
 
 @router.post("/mfa/setup", response_model=MfaEnrolment)
@@ -43,8 +40,7 @@ async def mfa_setup(body: MfaStartBody, db: Db, site: CurrentSite) -> dict[str, 
 
 @router.post("/mfa/verify", response_model=SignedIn)
 async def mfa_verify(body: MfaBody, request: Request, response: Response, db: Db, site: CurrentSite) -> dict[str, Any]:
-    ip, agent = client_of(request)
-    tokens = await auth.mfa_verify(db, body.mfa_token, body.code, realms=site.realms, ip=ip, agent=agent)
+    tokens = await auth.mfa_verify(db, body.mfa_token, body.code, realms=site.realms, client=client_of(request))
     return await signed_in_body(db, response, tokens)
 
 
@@ -52,8 +48,8 @@ async def mfa_verify(body: MfaBody, request: Request, response: Response, db: Db
 async def mfa_recover(
     body: RecoveryBody, request: Request, response: Response, db: Db, site: CurrentSite
 ) -> dict[str, Any]:
-    ip, agent = client_of(request)
-    tokens = await auth.mfa_recover(db, body.mfa_token, body.recovery_code, realms=site.realms, ip=ip, agent=agent)
+    client = client_of(request)
+    tokens = await auth.mfa_recover(db, body.mfa_token, body.recovery_code, realms=site.realms, client=client)
     return await signed_in_body(db, response, tokens)
 
 
@@ -65,21 +61,21 @@ async def refresh(response: Response, db: Db, site: CurrentSite, refresh_token: 
 
 
 @router.post("/logout", status_code=204)
-async def logout(response: Response, db: Db, refresh_token: RefreshCookie = None) -> None:
-    await auth.logout(db, refresh_token)
+async def logout(request: Request, response: Response, db: Db, refresh_token: RefreshCookie = None) -> None:
+    await auth.logout(db, refresh_token, client=client_of(request))
     clear_refresh_cookie(response)
 
 
 @router.post("/password", status_code=204)
-async def set_password(body: PasswordBody, db: Db, site: CurrentSite) -> None:
-    await auth.set_password(db, body.token, body.password, site.realms)
+async def set_password(body: PasswordBody, request: Request, db: Db, site: CurrentSite) -> None:
+    await auth.set_password(db, body.token, body.password, site.realms, client_of(request))
 
 
 @router.post("/forgot", status_code=204)
 async def forgot(
     body: ForgotBody, request: Request, db: Db, mail: Mail, background: BackgroundTasks, *, site: CurrentSite
 ) -> None:
-    await password_reset.count_reset_request(db, str(body.email), ip=client_of(request)[0])
+    await password_reset.count_reset_request(db, str(body.email), ip=client_of(request).ip)
     background.add_task(_send_reset, mail, str(body.email), site.realms)
 
 
@@ -89,5 +85,5 @@ async def _send_reset(mail: Messenger, email: str, realms: tuple[str, ...]) -> N
 
 
 @router.get("/me", response_model=User)
-async def me(actor: Annotated[Actor, Depends(session_actor)]) -> dict[str, Any]:
-    return user_view(actor.user, actor.practice)
+async def me(db: Db, actor: Annotated[Actor, Depends(session_actor)]) -> dict[str, Any]:
+    return await user_view(db, actor.user, PracticeAccess(actor.practice, actor.membership))

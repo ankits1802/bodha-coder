@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { ReasonDialog } from "@/components/shared/ReasonDialog";
 import type { QueueRow, User } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
+import { VOID_REASON_MAX, VOID_REASON_MIN } from "@/lib/validation";
 import { bulkAbilities } from "../queueRules";
 import { QUEUE_TEXT } from "../strings";
 import type { QueueActions } from "../useQueueActions";
 import { AssignDialog } from "./AssignDialog";
 import { BulkBar } from "./BulkBar";
 
-type OpenDialog = "assign" | "delete" | null;
+type OpenDialog = "assign" | "void" | null;
 
 interface BulkActionsProps {
   member: User;
@@ -32,10 +33,6 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
     if (await actions.assignSelected(ids, userId)) setDialog(null);
   }
 
-  async function remove(): Promise<void> {
-    if (await actions.deleteSelected(ids)) setDialog(null);
-  }
-
   return (
     <>
       <BulkBar
@@ -45,7 +42,7 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
         onClear={onClear}
         onApprove={() => void actions.approveSelected(ids)}
         onAssign={() => show("assign")}
-        onDelete={() => show("delete")}
+        onVoid={() => show("void")}
       />
       <AssignDialog
         open={dialog === "assign"}
@@ -56,18 +53,23 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
         onClose={() => setDialog(null)}
         onAssign={(userId) => void assignTo(userId)}
       />
-      <ConfirmDialog
-        open={dialog === "delete"}
-        destructive
-        title={QUEUE_TEXT.deleteTitle(rows.length, amount)}
-        description={QUEUE_TEXT.deleteDescription}
-        confirmLabel={QUEUE_TEXT.deleteConfirm(rows.length, amount)}
-        cancelLabel={QUEUE_TEXT.keep}
-        pending={actions.deleting}
-        error={actions.deleteError}
-        onConfirm={() => void remove()}
-        onClose={() => setDialog(null)}
-      />
+      {dialog === "void" ? (
+        <ReasonDialog
+          destructive
+          text={{
+            title: QUEUE_TEXT.voidTitle(rows.length, amount),
+            reason: QUEUE_TEXT.voidReason,
+            submit: QUEUE_TEXT.voidConfirm(rows.length, amount),
+            cancel: QUEUE_TEXT.keep,
+            invalid: QUEUE_TEXT.voidReasonTooShort,
+          }}
+          minLength={VOID_REASON_MIN}
+          maxLength={VOID_REASON_MAX}
+          onClose={() => setDialog(null)}
+          onDone={() => setDialog(null)}
+          submit={(reason) => actions.voidSelected(ids, reason)}
+        />
+      ) : null}
     </>
   );
 }

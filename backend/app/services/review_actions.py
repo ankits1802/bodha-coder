@@ -12,8 +12,10 @@ from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import LEVEL_CHANGE_PURPOSE, AddendumRequest, Analysis, CodeSet, Decision, Note, utcnow
 from app.services.analysis import latest_codes, next_revision, request_analysis, save_findings
+from app.services.analysis_records import billed_context
 from app.services.audit_log import record_access
 from app.services.findings import Finding, build_findings
+from app.services.note_change_history import record_note_change
 from app.services.override_reasons import OverrideReason, departs_from_bodha, reason_text
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.pointer_decisions import POINTER_CHOICE, POINTER_KEY, pointer_key, read_pointer_key
@@ -50,7 +52,7 @@ def new_decision(note: Note, actor: Actor, key: str, choice: str, reason: Overri
         suggestion_key=key,
         choice=choice,
         actor_id=actor.user.id,
-        actor_role=actor.user.role,
+        actor_role=actor.role,
         override_reason=reason.reason if reason else None,
         override_note=reason.note if reason else None,
     )
@@ -128,7 +130,9 @@ async def save_pointers(
 
 async def flag(db: AsyncSession, actor: Actor, note_id: str, reason: str) -> Note:
     note = await open_note(db, actor, note_id)
-    note.flag_reason, note.flagged_by, note.compliance_cleared_by = reason.strip()[:2000], actor.user.id, None
+    flagged = reason.strip()[:2000]
+    record_note_change(db, actor, note, "flag", old=note.flag_reason, new=flagged)
+    note.flag_reason, note.flagged_by, note.compliance_cleared_by = flagged, actor.user.id, None
     await refresh_placement(db, note)
     record_access(db, actor, "flagged for compliance", note_id=note.id, detail=reason.strip()[:300])
     await db.commit()
@@ -150,7 +154,7 @@ async def update_billed(
             codes=[code.as_json() for code in parsed.codes],
             reason="edited",
             actor_id=actor.user.id,
-            actor_role=actor.user.role,
+            actor_role=actor.role,
             override_reason=reason.reason,
             override_note=reason.note,
         )
@@ -174,7 +178,7 @@ async def _rederive(db: AsyncSession, note: Note, current: Analysis, billed: tup
         reason="billed_codes",
         status="succeeded",
         text_revision=current.text_revision,
-        context={**current.context, "billed": [c.code for c in billed]},
+        context={**current.context, "billed": billed_context(billed)},
         model=current.model,
         prompt_version=current.prompt_version,
         response_key=current.response_key,

@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Activity, Practice, User
-from tests.builders import PASSWORD, accept_invite, create_hq_user, new_practice, sign_in
+from tests.builders import PASSWORD, accept_invite, create_hq_user, new_practice, practice_people, sign_in
 
 EMAIL = "rosa@lakeside.example.com"
 SIGNED_UP_BY = "127.0.0.1"
@@ -24,9 +24,7 @@ def signup_body(**changes) -> dict:
 
 
 async def practice_rows() -> list[tuple[Practice, User]]:
-    async with SessionFactory() as db:
-        rows = await db.execute(select(Practice, User).join(User, User.practice_id == Practice.id))
-        return list(rows.tuples().all())
+    return [(practice, person) for practice, person, _ in await practice_people()]
 
 
 async def hq_headers(harness) -> dict[str, str]:

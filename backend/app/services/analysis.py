@@ -19,6 +19,7 @@ from app.codes.mips_scope import practice_scope
 from app.codes.places import setting_for
 from app.core.model_prices import PriceBook
 from app.models import Analysis, MipsList, Note, NoteText, Practice, Suggestion, utcnow
+from app.services.analysis_records import billed_context, keep_run_inputs, record_failure
 from app.services.code_sets import latest_codes, next_revision
 from app.services.findings import Finding, build_findings
 from app.services.note_texts import current_texts, note_texts
@@ -68,6 +69,7 @@ async def run_analysis(db: AsyncSession, analysis: Analysis, deps: AnalysisDeps)
     analysis.text_revision, analysis.context = source.revision, _context(inputs)
     outcome = await deps.review(deps.client, inputs)
     await _store_outcome(db, analysis, note, outcome, deps)
+    await keep_run_inputs(deps.store, analysis, note, outcome)
     if source.text is None and outcome.report.extracted_text:
         revision = await next_revision(db, NoteText, note.id)
         db.add(NoteText(note_id=note.id, revision=revision, source="document", text=outcome.report.extracted_text))
@@ -132,7 +134,7 @@ def _context(inputs: ReviewInputs) -> dict[str, Any]:
         "setting": inputs.setting,
         "place_of_service": inputs.place_of_service,
         "visit_type": inputs.visit_type,
-        "billed": [code.code for code in inputs.billed_codes],
+        "billed": billed_context(inputs.billed_codes),
         "mips_measures": list(inputs.mips_scope.measure_ids) if inputs.mips_scope else None,
         "source": "pdf" if inputs.note_text is None else "text and pdf" if inputs.pdf else "text",
     }
@@ -190,6 +192,7 @@ def _adopt_patient(note: Note, outcome: ReviewOutcome) -> None:
 
 
 async def fail_attempt(db: AsyncSession, analysis: Analysis, error: str, *, retry_in: timedelta | None) -> None:
+    record_failure(db, analysis, error, retry_in=retry_in)
     analysis.error = error[:300]
     if retry_in is not None:
         analysis.status, analysis.requested_at = "queued", utcnow() + retry_in

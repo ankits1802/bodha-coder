@@ -24,6 +24,7 @@ function menuFor(member: TeamMember, props: Pick<MemberRowProps, "onConfirm" | "
   if (member.status === "active") items.push({ key: "password", label: words.passwordReset, onSelect: () => props.onSend("password", member) });
   if (member.status === "blocked") items.push({ key: "unblock", label: words.unblock, onSelect: () => props.onConfirm("unblock", member) });
   else items.push({ key: "block", label: words.block, tone: "danger", onSelect: () => props.onConfirm("block", member) });
+  items.push({ key: "remove", label: words.remove, tone: "danger", onSelect: () => props.onConfirm("remove", member) });
   return items;
 }
 

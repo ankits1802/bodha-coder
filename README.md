@@ -122,13 +122,20 @@ the API through the web server's `/api` proxy. The addresses for every environme
 [docs/DEPLOY.md](docs/DEPLOY.md#self-sign-up-and-sign-in-services).
 
 A practice can start a free trial at `/sign-up`, with its work email or with Google, Microsoft or
-Yahoo. The email path sends a set-password link (an email that already has an account gets a
-"sign in or reset your password" email instead, and the page answers the same way); the other path
-asks for the practice name and time zone and goes straight to two-step setup. A trial practice has
+Yahoo. The email path sends a set-password link (an email that already has an account gets an email
+asking to sign in and add the practice from `/practices/new` instead, and the page answers the same
+way); the other path asks for the practice name and time zone and goes straight to two-step setup,
+making an existing account with that email the new practice's admin. A trial practice has
 `TRIAL_SEATS` seats until `TRIAL_DAYS` after sign-up, and HQ sees it marked "Self sign-up". A sign-in
 service signs in an existing account with the same verified email and binds that service's account
 to it; two-step verification still applies. With `SELF_SIGNUP_ENABLED=false` only existing accounts
-sign in and HQ adds every practice. Sign-in, sign-up, password reset, two-step codes, service returns,
+sign in and HQ adds every practice.
+
+One account can belong to several practices, with a role in each: inviting an email that already has
+an account adds that practice to it, and the person switches practices from the top of the sidebar and
+sees their practices, and can leave one, on the Security page. Blocks, plan limits, the plan-ended rule
+and two-step requirements apply per practice
+([0037](docs/decisions/0037-multi-practice-membership.md)). Sign-in, sign-up, password reset, two-step codes, service returns,
 provider codes and demo requests are rate limited per address and account, so uvicorn must see the
 visitor's address (`--proxy-headers` and `--forwarded-allow-ips`, above).
 

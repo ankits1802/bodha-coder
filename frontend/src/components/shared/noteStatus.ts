@@ -1,6 +1,7 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
-import type { EmAction, Lane, LaneReason, NoteStatus, NoteSummary } from "@/lib/api/types";
+import type { EmAction, Lane, LaneReason, NoteStatus, NoteSummary, Role } from "@/lib/api/types";
 import { LANE_LABELS } from "@/lib/labels";
+import { canDo } from "@/lib/roles";
 import { SHARED_TEXT } from "./strings";
 
 export interface NoteStatusView {
@@ -33,8 +34,14 @@ const LANE_TONES: Record<Lane, StatusTone> = {
 
 export const LANE_DOT_TONES = LANE_TONES;
 
-export const DELETABLE_STATUSES: readonly NoteStatus[] = ["queued", "ready", "failed", "approved"];
+export const UNREAD_STATUSES: readonly NoteStatus[] = ["queued", "failed"];
+const UNVOIDABLE_STATUSES: readonly NoteStatus[] = ["reading", "voided"];
 export const ASSIGNABLE_STATUSES: readonly NoteStatus[] = ["queued", "reading", "ready", "failed"];
+
+export function canVoidNote(role: Role | null | undefined, status: NoteStatus, read: boolean): boolean {
+  if (UNVOIDABLE_STATUSES.includes(status) || !canDo(role, "manageNotes")) return false;
+  return canDo(role, "voidAnyNote") || (UNREAD_STATUSES.includes(status) && !read);
+}
 
 type StatusFields = Pick<NoteSummary, "status" | "lane" | "lane_reason" | "headline"> & { em_action?: EmAction | null };
 
@@ -48,6 +55,7 @@ export function noteStatus(note: StatusFields): NoteStatusView {
   const words = SHARED_TEXT.noteStatus;
   if (note.status === "queued" || note.status === "reading") return { tone: "neutral", label: words.reading };
   if (note.status === "failed") return { tone: "bad", label: words.failed };
+  if (note.status === "voided") return { tone: "neutral", label: words.voided };
   if (note.status === "approved" || note.status === "exported") return { tone: "ok", label: words[note.status] };
   return { tone: toneOf(note), label: note.headline ?? (note.lane ? LANE_LABELS[note.lane] : words.ready) };
 }

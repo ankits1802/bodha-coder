@@ -13,8 +13,10 @@ from app.core.calendar import zone_named
 from app.core.config import get_settings
 from app.core.deps import ACTIVE_PRACTICE_STATUSES, Actor
 from app.core.errors import Conflict, NotFound, Unavailable
+from app.core.roles import ADMINS
 from app.models import AddendumRequest, Note, NoteText, Practice, Provider, User
 from app.services.audit_log import record_access, record_activity
+from app.services.memberships import active_members
 from app.services.review_actions import note_for
 
 __all__ = [
@@ -103,13 +105,7 @@ async def _escalate_practice(
     practice = await db.get_one(Practice, practice_id)
     if practice.status not in ACTIVE_PRACTICE_STATUSES:
         return 0
-    admins = (
-        await db.scalars(
-            select(User.email)
-            .where(User.practice_id == practice_id, User.role == "admin", User.status == "active")
-            .order_by(User.email)
-        )
-    ).all()
+    admins = (await db.scalars(active_members(practice_id, User.email, roles=ADMINS).order_by(User.email))).all()
     subject, body = f"Provider questions waiting at {practice.name}", escalation_text(practice.name, len(requests))
     sent = 0
     for email in admins:

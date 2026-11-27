@@ -9,13 +9,18 @@ ephemeral "random_password" "mfa_key" {
   override_special = "-_"
 }
 
+ephemeral "random_password" "runtime" {
+  length  = 40
+  special = false
+}
+
 ephemeral "random_password" "hq_password" {
   length  = 24
   special = false
 }
 
 locals {
-  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key", "stripe-secret-key", "stripe-webhook-secret", "paypal-client-secret"]
+  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key", "stripe-secret-key", "stripe-webhook-secret", "paypal-client-secret", "runtime-database-password", "runtime-database-url"]
   mail_from_domain = "mail.${var.mail_domain}"
 }
 
@@ -30,6 +35,26 @@ resource "aws_secretsmanager_secret_version" "database_url" {
   secret_id                = aws_secretsmanager_secret.this["database-url"].id
   secret_string_wo         = "postgresql+asyncpg://bodha_app:${ephemeral.random_password.database.result}@${aws_db_instance.this.address}:5432/bodha?ssl=require"
   secret_string_wo_version = var.database_password_version
+
+  lifecycle {
+    replace_triggered_by = [aws_db_instance.this.id]
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "runtime_password" {
+  secret_id                = aws_secretsmanager_secret.this["runtime-database-password"].id
+  secret_string_wo         = ephemeral.random_password.runtime.result
+  secret_string_wo_version = var.runtime_password_version
+
+  lifecycle {
+    replace_triggered_by = [aws_db_instance.this.id]
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "runtime_url" {
+  secret_id                = aws_secretsmanager_secret.this["runtime-database-url"].id
+  secret_string_wo         = "postgresql+asyncpg://bodha_runtime:${ephemeral.random_password.runtime.result}@${aws_db_instance.this.address}:5432/bodha?ssl=require"
+  secret_string_wo_version = var.runtime_password_version
 
   lifecycle {
     replace_triggered_by = [aws_db_instance.this.id]

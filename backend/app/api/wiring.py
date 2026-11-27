@@ -12,10 +12,11 @@ from app.adapters.oidc import IdentityProvider
 from app.adapters.seal_keys import RecordSigner
 from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
-from app.core.deps import billing_only_since
+from app.core.deps import Client, PracticeAccess, billing_only_since
 from app.core.errors import NotFound
-from app.models import Practice, User
+from app.models import User
 from app.services.auth import MfaChallenge, Tokens
+from app.services.memberships import practices_of
 from app.services.practice_setup import practice_checks
 from app.services.signatures import SignatureTools
 
@@ -62,8 +63,8 @@ def signature_tools(request: Request) -> SignatureTools:
     return SignatureTools(request.app.state.store, request.app.state.image_model)
 
 
-def client_of(request: Request) -> tuple[str | None, str | None]:
-    return (request.client.host if request.client else None), request.headers.get("user-agent")
+def client_of(request: Request) -> Client:
+    return Client(request.client.host if request.client else None, request.headers.get("user-agent"))
 
 
 Store = Annotated[ObjectStore, Depends(store)]
@@ -123,8 +124,7 @@ def _clear_lax_cookie(response: Response, name: str, *, path: str) -> None:
 
 async def signed_in_body(db: AsyncSession, response: Response, tokens: Tokens) -> dict[str, Any]:
     set_refresh_cookie(response, tokens.refresh)
-    practice = await db.get(Practice, tokens.user.practice_id) if tokens.user.practice_id else None
-    body: dict[str, Any] = {"access_token": tokens.access, "user": user_view(tokens.user, practice)}
+    body: dict[str, Any] = {"access_token": tokens.access, "user": await user_view(db, tokens.user, tokens.standing)}
     if tokens.recovery_codes:
         body["recovery_codes"] = list(tokens.recovery_codes)
     return body
@@ -134,13 +134,20 @@ def challenge_body(challenge: MfaChallenge) -> dict[str, str]:
     return {"mfa": challenge.step, "mfa_token": challenge.token}
 
 
-def user_view(user: User, practice: Practice | None) -> dict[str, Any]:
+async def sign_in_body(db: AsyncSession, response: Response, result: Tokens | MfaChallenge) -> dict[str, Any]:
+    if isinstance(result, MfaChallenge):
+        return challenge_body(result)
+    return await signed_in_body(db, response, result)
+
+
+async def user_view(db: AsyncSession, user: User, standing: PracticeAccess) -> dict[str, Any]:
+    practice = standing.practice
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
-        "role": user.role,
-        "billing_only": billing_only_since(user, practice) is not None,
+        "role": standing.role,
+        "billing_only": billing_only_since(standing.role, practice) is not None,
         "practice": None
         if practice is None
         else {
@@ -151,4 +158,7 @@ def user_view(user: User, practice: Practice | None) -> dict[str, Any]:
             "idle_minutes": practice.idle_minutes,
             "time_zone": practice.time_zone,
         },
+        "practices": [
+            {"id": choice.id, "name": choice.name, "role": choice.role} for choice in await practices_of(db, user)
+        ],
     }

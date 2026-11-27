@@ -21,7 +21,7 @@ ASSIGNED_FILTER = r"^(me|none|[0-9a-f-]{36})$"
 @router.get("/today", response_model=TodaySummary)
 async def today(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES))]) -> dict[str, Any]:
     summary = await worklists.today(db, actor.practice_id, actor.zone)
-    if actor.user.role == "viewer":
+    if actor.role == "viewer":
         summary["next_up"] = []
     return summary
 

@@ -6,14 +6,16 @@ from urllib.parse import parse_qs, urlsplit
 
 import pyotp
 from httpx import AsyncClient
-from sqlalchemy import update
+from sqlalchemy import select, text, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.core.model_prices import PriceBook
 from app.core.security import hash_password
-from app.models import User
+from app.models import Practice as PracticeRow
+from app.models import PracticeMembership, User
 from app.services.analysis import AnalysisDeps, Reviewer
 from app.worker import process_one
 from tests.fakes import (
@@ -82,6 +84,10 @@ async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret:
     return response.json()
 
 
+async def maintenance(db: AsyncSession) -> None:
+    await db.execute(text("SET LOCAL bodha.maintenance = 'on'"))
+
+
 async def forget_last_code(email: str) -> None:
     async with SessionFactory() as db:
         await db.execute(update(User).where(User.email == email).values(mfa_last_step=None))
@@ -117,6 +123,17 @@ async def new_practice(
     assert response.status_code == 200, response.text
     await accept_invite(harness)
     return response.json()["id"]
+
+
+async def practice_people() -> list[tuple[PracticeRow, User, PracticeMembership]]:
+    async with SessionFactory() as db:
+        rows = await db.execute(
+            select(PracticeRow, User, PracticeMembership)
+            .join(PracticeMembership, PracticeMembership.practice_id == PracticeRow.id)
+            .join(User, User.id == PracticeMembership.user_id)
+            .order_by(PracticeRow.created_at, PracticeMembership.created_at)
+        )
+        return list(rows.tuples().all())
 
 
 def marisol_report() -> ReviewReport:
@@ -201,8 +218,9 @@ async def back_from_google(harness: Harness, code: str):
     return await back_from(harness, "google", code)
 
 
-async def back_from(harness: Harness, provider: str, code: str, *, site: str = ""):
-    start = await harness.client.get(f"{site}/api/auth/{provider}/start")
+async def back_from(harness: Harness, provider: str, code: str, *, site: str = "", intent: str | None = None):
+    query = {"intent": intent} if intent else None
+    start = await harness.client.get(f"{site}/api/auth/{provider}/start", params=query)
     assert start.status_code == 302, start.text
     state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
     return await harness.client.get(f"{site}/api/auth/{provider}/callback", params={"code": code, "state": state})

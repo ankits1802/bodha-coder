@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import type { NoteHeader } from "@/lib/api/types";
 import { REVIEW_TEXT } from "../strings";
+import { VoidedLine } from "./VoidedLine";
 
 interface StatusBannerProps {
   note: NoteHeader;
@@ -9,10 +10,13 @@ interface StatusBannerProps {
   onRetry: (() => void) | null;
   onReopen: (() => void) | null;
   retryPending: boolean;
+  canRestore: boolean;
+  onRestored: () => void;
 }
 
-export function StatusBanner({ note, reason, onRetry, onReopen, retryPending }: StatusBannerProps) {
+export function StatusBanner({ note, reason, onRetry, onReopen, retryPending, canRestore, onRestored }: StatusBannerProps) {
   const words = REVIEW_TEXT.banner;
+  if (note.voided) return <VoidedLine noteId={note.id} voided={note.voided} canRestore={canRestore} onRestored={onRestored} />;
   if (note.status === "queued" || note.status === "reading") return <InlineAlert tone="warn">{words.reading}</InlineAlert>;
   if (note.status === "approved" || note.status === "exported") {
     const reopen = onReopen ? (

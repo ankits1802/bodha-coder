@@ -15,10 +15,11 @@ from app.codes.billing_codes import Code
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
 from app.core.roles import NOTE_READERS
-from app.models import AuditRun, AuditSample, Note, Provider, User
+from app.models import AuditRun, AuditSample, Note, PracticeMembership, Provider, User
 from app.services.agreement import elements_of, summarize, visit_agreement
 from app.services.analysis import latest_codes
 from app.services.audit_log import record_access, record_activity
+from app.services.memberships import active_members, member_names
 from app.services.placement import SETTLED_STATUSES, current_findings
 from app.services.routing import choices_for, claim
 
@@ -111,9 +112,8 @@ async def run_items(db: AsyncSession, practice_id: str, run_id: str) -> tuple[Au
 
 
 async def practice_names(db: AsyncSession, practice_id: str) -> Names:
-    users = (await db.execute(select(User.id, User.name).where(User.practice_id == practice_id))).all()
     providers = (await db.execute(select(Provider.id, Provider.name).where(Provider.practice_id == practice_id))).all()
-    return Names(dict(users), dict(providers))
+    return Names(await member_names(db, practice_id), dict(providers))
 
 
 async def sample_options(db: AsyncSession, actor: Actor) -> dict[str, Any]:
@@ -124,14 +124,14 @@ async def sample_options(db: AsyncSession, actor: Actor) -> dict[str, Any]:
             .order_by(Provider.name)
         )
     )
-    reviewers = await db.scalars(
-        select(User)
-        .where(User.practice_id == actor.practice_id, User.status == "active", User.role.in_(NOTE_READERS))
-        .order_by(User.name)
+    reviewers = await db.execute(
+        active_members(actor.practice_id, User.id, User.name, PracticeMembership.role, roles=NOTE_READERS).order_by(
+            User.name
+        )
     )
     return {
         "providers": [{"id": item.id, "name": item.name, "specialty": item.specialty} for item in providers],
-        "reviewers": [{"id": user.id, "name": user.name, "role": user.role} for user in reviewers],
+        "reviewers": [{"id": user_id, "name": name, "role": role} for user_id, name, role in reviewers.tuples()],
         "specialties": sorted({item.specialty for item in providers if item.specialty}),
         "default_size": DEFAULT_SAMPLE_SIZE,
         "specialty_size": SPECIALTY_SAMPLE_SIZE,
@@ -245,16 +245,7 @@ def _check_request(request: SampleRequest) -> None:
 
 async def _reviewers(db: AsyncSession, practice_id: str, reviewer_ids: tuple[str, ...]) -> list[str]:
     wanted = list(dict.fromkeys(reviewer_ids))
-    found = set(
-        await db.scalars(
-            select(User.id).where(
-                User.id.in_(wanted),
-                User.practice_id == practice_id,
-                User.status == "active",
-                User.role.in_(NOTE_READERS),
-            )
-        )
-    )
+    found = set(await db.scalars(active_members(practice_id, User.id, roles=NOTE_READERS).where(User.id.in_(wanted))))
     missing = [reviewer for reviewer in wanted if reviewer not in found]
     if missing:
         raise Invalid("choose reviewers from the active team")

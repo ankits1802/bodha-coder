@@ -28,7 +28,7 @@ export const TERMS_HEADINGS = {
   "third-party": "Third-party services",
   suspension: "Suspension",
   term: "Term and termination",
-  "export-deletion": "Data export and deletion",
+  "export-deletion": "Data export, retention and deletion",
   warranties: "Warranties and disclaimers",
   liability: "Limitation of liability",
   indemnities: "Indemnities",

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.seal_keys import RecordSigner, Seal
-from app.core.deps import Actor, ProviderActor
+from app.core.deps import Actor, Client, ProviderActor
 from app.models import (
     LEVEL_CHANGE_PURPOSE,
     SEAL_SCHEMA_VERSION,
@@ -71,7 +71,7 @@ class SealedRecord:
 
 def person_signer(actor: Actor, signature: Signature) -> SignedBy:
     user = actor.user
-    identity = SignerIdentity(PERSON, user.id, user.name, user.role, signature.typed_name)
+    identity = SignerIdentity(PERSON, user.id, user.name, actor.role, signature.typed_name)
     return SignedBy(identity, signature, actor.ip, actor.user_agent)
 
 
@@ -80,8 +80,8 @@ def provider_signer(actor: ProviderActor, provider: Provider, signature: Signatu
     return SignedBy(identity, signature, actor.ip, actor.user_agent)
 
 
-def agreement_signer(user: User, ip: str | None, user_agent: str | None) -> SignedBy:
-    return SignedBy(SignerIdentity(PERSON, user.id, user.name, user.role, user.name), None, ip, user_agent)
+def agreement_signer(user: User, role: str, client: Client) -> SignedBy:
+    return SignedBy(SignerIdentity(PERSON, user.id, user.name, role, user.name), None, client.ip, client.agent)
 
 
 def provider_event(purpose: str) -> str:

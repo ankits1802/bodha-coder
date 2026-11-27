@@ -53,6 +53,11 @@ variable "mail_domain" {
   type = string
 }
 
+variable "runtime_password_version" {
+  type    = number
+  default = 1
+}
+
 variable "retention_days" {
   type    = number
   default = 2557

@@ -83,9 +83,107 @@
         "title": "AccessLogEntry",
         "type": "object"
       },
+      "AccessLogExportBody": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          },
+          "patient": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "title": "AccessLogExportBody",
+        "type": "object"
+      },
       "AccessLogPage": {
         "additionalProperties": false,
         "properties": {
+          "actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/AccessLogEntry"
@@ -101,6 +199,13 @@
             "title": "Page Size",
             "type": "integer"
           },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/AccessLogPerson"
+            },
+            "title": "People",
+            "type": "array"
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -110,9 +215,74 @@
           "items",
           "total",
           "offset",
-          "page_size"
+          "page_size",
+          "actions",
+          "people"
         ],
         "title": "AccessLogPage",
+        "type": "object"
+      },
+      "AccessLogPerson": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AccessLogPerson",
+        "type": "object"
+      },
+      "ActivityChange": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "before",
+          "after"
+        ],
+        "title": "ActivityChange",
         "type": "object"
       },
       "AddendumAnswer": {
@@ -279,6 +449,25 @@
           "answered_at"
         ],
         "title": "AddendumRequestView",
+        "type": "object"
+      },
+      "AdminAppointed": {
+        "additionalProperties": false,
+        "properties": {
+          "outcome": {
+            "enum": [
+              "invited",
+              "added",
+              "promoted"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome"
+        ],
+        "title": "AdminAppointed",
         "type": "object"
       },
       "AdminLinkSent": {
@@ -943,6 +1132,109 @@
         "title": "AttestationRecord",
         "type": "object"
       },
+      "AuditChain": {
+        "additionalProperties": false,
+        "properties": {
+          "broken_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Broken Id"
+          },
+          "broken_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Broken Seq"
+          },
+          "chain": {
+            "enum": [
+              "access_log",
+              "activity"
+            ],
+            "title": "Chain",
+            "type": "string"
+          },
+          "checked": {
+            "title": "Checked",
+            "type": "integer"
+          },
+          "head_hash": {
+            "title": "Head Hash",
+            "type": "string"
+          },
+          "head_seq": {
+            "title": "Head Seq",
+            "type": "integer"
+          },
+          "intact": {
+            "title": "Intact",
+            "type": "boolean"
+          },
+          "practice_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Id"
+          },
+          "practice_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Name"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "missing rows",
+                  "broken link",
+                  "changed row"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          }
+        },
+        "required": [
+          "chain",
+          "practice_id",
+          "practice_name",
+          "checked",
+          "head_seq",
+          "head_hash",
+          "intact",
+          "broken_seq",
+          "broken_id",
+          "problem"
+        ],
+        "title": "AuditChain",
+        "type": "object"
+      },
       "AuditOverview": {
         "additionalProperties": false,
         "properties": {
@@ -1022,6 +1314,33 @@
           "cmsCDICompliance"
         ],
         "title": "AuditOverview",
+        "type": "object"
+      },
+      "AuditVerification": {
+        "additionalProperties": false,
+        "properties": {
+          "chains": {
+            "items": {
+              "$ref": "#/components/schemas/AuditChain"
+            },
+            "title": "Chains",
+            "type": "array"
+          },
+          "checked_at": {
+            "title": "Checked At",
+            "type": "string"
+          },
+          "intact": {
+            "title": "Intact",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "checked_at",
+          "intact",
+          "chains"
+        ],
+        "title": "AuditVerification",
         "type": "object"
       },
       "AutoApproveBody": {
@@ -1151,7 +1470,8 @@
                 "ready",
                 "failed",
                 "approved",
-                "exported"
+                "exported",
+                "voided"
               ]
             },
             "title": "Counts",
@@ -2581,7 +2901,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -2799,7 +3120,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -2840,6 +3162,22 @@
           "flagged_by_name"
         ],
         "title": "ComplianceRow",
+        "type": "object"
+      },
+      "ConfirmPracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Confirm Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm_name"
+        ],
+        "title": "ConfirmPracticeBody",
         "type": "object"
       },
       "Created": {
@@ -2982,7 +3320,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -3146,58 +3485,6 @@
           "choices"
         ],
         "title": "DecisionsBody",
-        "type": "object"
-      },
-      "DeleteNotesBody": {
-        "additionalProperties": false,
-        "properties": {
-          "note_ids": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 500,
-            "minItems": 1,
-            "title": "Note Ids",
-            "type": "array"
-          }
-        },
-        "required": [
-          "note_ids"
-        ],
-        "title": "DeleteNotesBody",
-        "type": "object"
-      },
-      "DeletePracticeBody": {
-        "additionalProperties": false,
-        "properties": {
-          "confirm_name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Confirm Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "confirm_name"
-        ],
-        "title": "DeletePracticeBody",
-        "type": "object"
-      },
-      "DeletedNotes": {
-        "additionalProperties": false,
-        "properties": {
-          "deleted": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Deleted",
-            "type": "array"
-          }
-        },
-        "required": [
-          "deleted"
-        ],
-        "title": "DeletedNotes",
         "type": "object"
       },
       "DemoBody": {
@@ -4905,6 +5192,20 @@
             "title": "At",
             "type": "string"
           },
+          "changes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ActivityChange"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changes"
+          },
           "detail": {
             "anyOf": [
               {
@@ -4933,7 +5234,8 @@
           "actor",
           "action",
           "practice_id",
-          "detail"
+          "detail",
+          "changes"
         ],
         "title": "HqActivityEntry",
         "type": "object"
@@ -4976,6 +5278,35 @@
           "actions"
         ],
         "title": "HqActivityPage",
+        "type": "object"
+      },
+      "HqAdminBody": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "reason"
+        ],
+        "title": "HqAdminBody",
         "type": "object"
       },
       "HqInviteBody": {
@@ -5181,6 +5512,17 @@
             ],
             "title": "Billing Status"
           },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
           "failed_24h": {
             "title": "Failed 24H",
             "type": "integer"
@@ -5217,6 +5559,28 @@
           "providers": {
             "title": "Providers",
             "type": "integer"
+          },
+          "purge_after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purge After"
+          },
+          "purged_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purged At"
           },
           "renews_on": {
             "anyOf": [
@@ -5257,7 +5621,9 @@
               "trial",
               "active",
               "ended",
-              "blocked"
+              "blocked",
+              "closed",
+              "purged"
             ],
             "title": "Status",
             "type": "string"
@@ -5285,6 +5651,9 @@
           "providers",
           "waiting",
           "renews_on",
+          "closed_at",
+          "purge_after",
+          "purged_at",
           "time_zone",
           "source",
           "signed_up_on",
@@ -6341,6 +6710,109 @@
         "title": "NcciCoverage",
         "type": "object"
       },
+      "NewPracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "agreed": {
+            "const": true,
+            "title": "Agreed",
+            "type": "boolean"
+          },
+          "practice_name": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "time_zone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "practice_name",
+          "time_zone",
+          "agreed"
+        ],
+        "title": "NewPracticeBody",
+        "type": "object"
+      },
+      "NoteChangeRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "field": {
+            "enum": [
+              "status",
+              "flag",
+              "payer",
+              "assignee",
+              "visit_type"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New"
+          },
+          "old": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "field",
+          "old",
+          "new",
+          "reason",
+          "by",
+          "at"
+        ],
+        "title": "NoteChangeRecord",
+        "type": "object"
+      },
       "NoteComment": {
         "additionalProperties": false,
         "properties": {
@@ -6850,7 +7322,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -6858,6 +7331,16 @@
           "visit_type": {
             "title": "Visit Type",
             "type": "string"
+          },
+          "voided": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VoidInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6880,7 +7363,8 @@
           "assignee_name",
           "patient_age",
           "patient_sex",
-          "provider"
+          "provider",
+          "voided"
         ],
         "title": "NoteHeader",
         "type": "object"
@@ -6900,6 +7384,13 @@
               "$ref": "#/components/schemas/AttestationRecord"
             },
             "title": "Attestations",
+            "type": "array"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/NoteChangeRecord"
+            },
+            "title": "Changes",
             "type": "array"
           },
           "code_sets": {
@@ -6935,6 +7426,7 @@
           "analyses",
           "code_sets",
           "decisions",
+          "changes",
           "snapshots",
           "exports",
           "attestations"
@@ -7000,7 +7492,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -7149,7 +7642,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -7640,6 +8134,10 @@
             "title": "Email",
             "type": "string"
           },
+          "has_account": {
+            "title": "Has Account",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -7657,7 +8155,8 @@
         "required": [
           "email",
           "name",
-          "provider"
+          "provider",
+          "has_account"
         ],
         "title": "PendingIdentity",
         "type": "object"
@@ -8194,6 +8693,57 @@
           "seats"
         ],
         "title": "PracticeBody",
+        "type": "object"
+      },
+      "PracticeChoice": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "title": "PracticeChoice",
+        "type": "object"
+      },
+      "PracticePurged": {
+        "additionalProperties": false,
+        "properties": {
+          "access_log_entries": {
+            "title": "Access Log Entries",
+            "type": "integer"
+          },
+          "access_log_sha256": {
+            "title": "Access Log Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_log_entries",
+          "access_log_sha256"
+        ],
+        "title": "PracticePurged",
         "type": "object"
       },
       "PracticeSetup": {
@@ -9936,7 +10486,8 @@
               "ready",
               "failed",
               "approved",
-              "exported"
+              "exported",
+              "voided"
             ],
             "title": "Status",
             "type": "string"
@@ -10829,6 +11380,22 @@
         "title": "RespondResult",
         "type": "object"
       },
+      "RestoreNoteBody": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "RestoreNoteBody",
+        "type": "object"
+      },
       "RetryBody": {
         "additionalProperties": false,
         "properties": {
@@ -11393,7 +11960,7 @@
             "anyOf": [
               {
                 "maximum": 10.0,
-                "minimum": 6.0,
+                "minimum": 7.0,
                 "type": "integer"
               },
               {
@@ -11426,7 +11993,6 @@
         "properties": {
           "access_log_years": {
             "enum": [
-              6,
               7,
               8,
               9,
@@ -11997,6 +12563,22 @@
         "title": "SwitchBody",
         "type": "object"
       },
+      "SwitchPracticeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "practice_id": {
+            "maxLength": 36,
+            "minLength": 1,
+            "title": "Practice Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "practice_id"
+        ],
+        "title": "SwitchPracticeBody",
+        "type": "object"
+      },
       "TeamList": {
         "additionalProperties": false,
         "properties": {
@@ -12467,7 +13049,8 @@
                 "ready",
                 "failed",
                 "approved",
-                "exported"
+                "exported",
+                "voided"
               ]
             },
             "title": "Counts",
@@ -12544,6 +13127,13 @@
               }
             ]
           },
+          "practices": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeChoice"
+            },
+            "title": "Practices",
+            "type": "array"
+          },
           "role": {
             "enum": [
               "hq",
@@ -12564,7 +13154,8 @@
           "email",
           "role",
           "billing_only",
-          "practice"
+          "practice",
+          "practices"
         ],
         "title": "User",
         "type": "object"
@@ -12584,6 +13175,108 @@
         ],
         "title": "VisitTypeBody",
         "type": "object"
+      },
+      "VoidInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "was": {
+            "anyOf": [
+              {
+                "enum": [
+                  "queued",
+                  "reading",
+                  "ready",
+                  "failed",
+                  "approved",
+                  "exported",
+                  "voided"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Was"
+          }
+        },
+        "required": [
+          "at",
+          "by",
+          "reason",
+          "was"
+        ],
+        "title": "VoidInfo",
+        "type": "object"
+      },
+      "VoidNotesBody": {
+        "additionalProperties": false,
+        "properties": {
+          "note_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Note Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note_ids",
+          "reason"
+        ],
+        "title": "VoidNotesBody",
+        "type": "object"
+      },
+      "VoidedNotes": {
+        "additionalProperties": false,
+        "properties": {
+          "voided": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Voided",
+            "type": "array"
+          }
+        },
+        "required": [
+          "voided"
+        ],
+        "title": "VoidedNotes",
+        "type": "object"
       }
     }
   },
@@ -12599,7 +13292,7 @@
         "parameters": [
           {
             "in": "query",
-            "name": "day",
+            "name": "start",
             "required": false,
             "schema": {
               "anyOf": [
@@ -12611,7 +13304,24 @@
                   "type": "null"
                 }
               ],
-              "title": "Day"
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
             }
           },
           {
@@ -12621,6 +13331,7 @@
             "schema": {
               "anyOf": [
                 {
+                  "maxLength": 36,
                   "type": "string"
                 },
                 {
@@ -12628,6 +13339,74 @@
                 }
               ],
               "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "note_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 36,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Note Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "patient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Patient"
+            }
+          },
+          {
+            "in": "query",
+            "name": "birth_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Birth Date"
             }
           },
           {
@@ -12711,6 +13490,96 @@
           }
         },
         "summary": "Access Log",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/access-log/export": {
+      "post": {
+        "operationId": "export_access_log_api_access_log_export_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessLogExportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A file"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Export Access Log",
         "tags": [
           "practice"
         ]
@@ -13269,6 +14138,283 @@
         "summary": "Set Password",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/auth/practice": {
+      "post": {
+        "operationId": "switch_api_auth_practice_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "bodha_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Refresh"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwitchPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Switch Api Auth Practice Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Switch",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/auth/practices": {
+      "post": {
+        "operationId": "add_practice_api_auth_practices_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "bodha_refresh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Refresh"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Add Practice Api Auth Practices Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Add Practice",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/auth/practices/{practice_id}/leave": {
+      "post": {
+        "operationId": "leave_api_auth_practices__practice_id__leave_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Leave",
+        "tags": [
+          "account"
         ]
       }
     },
@@ -13965,6 +15111,20 @@
             "required": true,
             "schema": {
               "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "intent",
+            "required": false,
+            "schema": {
+              "default": "sign_in",
+              "enum": [
+                "sign_in",
+                "signup"
+              ],
+              "title": "Intent",
               "type": "string"
             }
           }
@@ -15546,6 +16706,75 @@
         ]
       }
     },
+    "/api/hq/audit-log/verify": {
+      "post": {
+        "operationId": "verify_audit_log_api_hq_audit_log_verify_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditVerification"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Verify Audit Log",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
     "/api/hq/demo-requests": {
       "get": {
         "operationId": "demo_requests_api_hq_demo_requests_get",
@@ -16128,95 +17357,6 @@
       }
     },
     "/api/hq/practices/{practice_id}": {
-      "delete": {
-        "operationId": "delete_practice_api_hq_practices__practice_id__delete",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "practice_id",
-            "required": true,
-            "schema": {
-              "title": "Practice Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeletePracticeBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Sign-in is missing or has ended"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "This role cannot do this, or the note is in the reader's blind audit"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "The request is not valid"
-          },
-          "default": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Any other error"
-          }
-        },
-        "summary": "Delete Practice",
-        "tags": [
-          "hq"
-        ]
-      },
       "patch": {
         "operationId": "edit_practice_api_hq_practices__practice_id__patch",
         "parameters": [
@@ -16390,6 +17530,293 @@
           }
         },
         "summary": "Admin Link",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/practices/{practice_id}/admins": {
+      "post": {
+        "operationId": "appoint_admin_api_hq_practices__practice_id__admins_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HqAdminBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAppointed"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Appoint Admin",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/practices/{practice_id}/close": {
+      "post": {
+        "operationId": "close_practice_api_hq_practices__practice_id__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Close Practice",
+        "tags": [
+          "hq"
+        ]
+      }
+    },
+    "/api/hq/practices/{practice_id}/purge": {
+      "post": {
+        "operationId": "purge_practice_api_hq_practices__practice_id__purge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "practice_id",
+            "required": true,
+            "schema": {
+              "title": "Practice Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPracticeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticePurged"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Purge Practice",
         "tags": [
           "hq"
         ]
@@ -17599,95 +19026,6 @@
         ]
       }
     },
-    "/api/notes/delete": {
-      "post": {
-        "operationId": "delete_notes_api_notes_delete_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteNotesBody"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeletedNotes"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Sign-in is missing or has ended"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "This role cannot do this, or the note is in the reader's blind audit"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "The request is not valid"
-          },
-          "default": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Any other error"
-          }
-        },
-        "summary": "Delete Notes",
-        "tags": [
-          "notes"
-        ]
-      }
-    },
     "/api/notes/reopen": {
       "post": {
         "operationId": "reopen_many_api_notes_reopen_post",
@@ -17861,6 +19199,95 @@
           }
         },
         "summary": "Retry Failed",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/api/notes/void": {
+      "post": {
+        "operationId": "void_notes_api_notes_void_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidNotesBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoidedNotes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Void Notes",
         "tags": [
           "notes"
         ]
@@ -19903,6 +21330,104 @@
           }
         },
         "summary": "Reopen",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/api/notes/{note_id}/restore": {
+      "post": {
+        "operationId": "restore_api_notes__note_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreNoteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Restore",
         "tags": [
           "notes"
         ]
@@ -24591,6 +26116,85 @@
       }
     },
     "/api/team/{user_id}": {
+      "delete": {
+        "operationId": "remove_api_team__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Remove",
+        "tags": [
+          "team"
+        ]
+      },
       "patch": {
         "operationId": "update_api_team__user_id__patch",
         "parameters": [

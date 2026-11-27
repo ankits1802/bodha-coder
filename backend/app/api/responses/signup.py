@@ -8,3 +8,4 @@ class PendingIdentity(View):
     email: str
     name: str
     provider: IdentityProviderName
+    has_account: bool

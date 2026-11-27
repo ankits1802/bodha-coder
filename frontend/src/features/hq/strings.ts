@@ -1,7 +1,9 @@
-import type { BillingProvider, BillingStatus, MemberStatus } from "@/lib/api/types";
+import type { AuditChain, BillingProvider, BillingStatus, MemberStatus } from "@/lib/api/types";
 import type { PracticeFilter } from "./practices/practiceFilters";
 import type { SpendPreset } from "./spend/spendModel";
 import type { HqConfirmKind } from "./team/hqTeamModel";
+
+type AuditProblem = NonNullable<AuditChain["problem"]>;
 
 export const HQ_TEXT = {
   retry: "Try again",
@@ -11,6 +13,8 @@ export const HQ_TEXT = {
     ends: (day: string) => `Ends ${day}`,
     ended: (day: string) => `Ended ${day}`,
     noRenewal: "No renewal date",
+    purgeAfter: (day: string) => `Kept until ${day}`,
+    purged: (day: string) => `Records purged ${day}`,
   },
   overview: {
     title: "Overview",
@@ -56,6 +60,7 @@ export const HQ_TEXT = {
       ending: "Ending soon",
       ended: "Ended",
       blocked: "Blocked",
+      closed: "Closed",
     } satisfies Record<PracticeFilter, string>,
     tableLabel: "Practices",
     providers: (count: number) => (count === 1 ? "1 provider" : `${count} providers`),
@@ -86,10 +91,12 @@ export const HQ_TEXT = {
       edit: "Edit",
       adminInvite: "Resend admin invite",
       adminReset: "Send admin password reset",
+      appointAdmin: "Add admin",
       renew: "Renew",
       block: "Block",
       unblock: "Unblock",
-      delete: "Delete",
+      close: "Close practice",
+      purge: "Purge records",
     },
     confirm: {
       cancel: "Cancel",
@@ -102,15 +109,26 @@ export const HQ_TEXT = {
       adminInvite: (name: string) => `Resend the invite to ${name}?`,
       adminReset: (name: string) => `Send ${name} a password reset?`,
       sendAction: "Send",
-      delete: (name: string) => `Delete ${name}?`,
-      deleteDescription: "Its notes, PDFs, people and records are removed for good.",
+      close: (name: string) => `Close ${name}?`,
+      closeDescription: "Everyone is signed out and every record is kept.",
+      closeAction: "Close practice",
+      purge: (name: string) => `Purge ${name}?`,
+      purgeDescription: "Its records and files are removed for good. HQ activity and an access log export are kept.",
+      purgeAction: "Purge records",
       typeName: (name: string) => `Type ${name} to confirm`,
-      deleteAction: "Delete practice",
+    },
+    appoint: {
+      title: (name: string) => `Add an admin to ${name}`,
+      reason: "Reason",
+      reasonError: "Enter a reason",
+      submit: "Add admin",
     },
     notices: {
+      adminAppointed: (name: string) => `Admin added to ${name}`,
       inviteSent: (email: string) => `Invite sent to ${email}`,
       resetSent: (email: string) => `Password reset sent to ${email}`,
-      deleted: (name: string) => `${name} deleted`,
+      closed: (name: string) => `${name} closed`,
+      purged: (name: string, entries: string) => `${name} purged · access log export of ${entries} entries kept`,
     },
     renewal: {
       title: (name: string) => `Renew ${name}`,
@@ -203,8 +221,33 @@ export const HQ_TEXT = {
     allPractices: "All practices",
     tableLabel: "Activity",
     columns: { when: "When", action: "Action", practice: "Practice", detail: "Detail", by: "By" },
-    csvHeader: ["time", "action", "practice", "detail", "by"],
+    csvHeader: ["time", "action", "practice", "detail", "changes", "by"],
     fileName: "bodha-activity.csv",
+    fields: {
+      name: "Name",
+      time_zone: "Time zone",
+      status: "Status",
+      plan: "Plan",
+      seats: "Seats",
+      renews_on: "Renews on",
+    } as Record<string, string>,
+    notSet: "Not set",
+    change: (field: string, before: string, after: string) => `${field}: ${before} → ${after}`,
+    verify: "Verify audit log",
+    check: {
+      label: "Audit log check",
+      intact: (chains: string, entries: string) => `${chains} chains intact · ${entries} entries`,
+      broken: (count: string) => `${count} broken`,
+      checkedAt: (when: string) => `Checked ${when}`,
+      hqActivity: "HQ activity",
+      unknownPractice: "Practice no longer listed",
+      at: (where: string, entry: string, problem: string) => `${where}: entry ${entry} · ${problem}`,
+      problems: {
+        "missing rows": "Entries missing",
+        "broken link": "Link broken",
+        "changed row": "Entry changed",
+      } satisfies Record<AuditProblem, string>,
+    },
   },
   spend: {
     title: "Spend",

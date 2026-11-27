@@ -39,6 +39,9 @@ export type Action =
   | "retry"
   | "flag"
   | "manageNotes"
+  | "voidAnyNote"
+  | "restoreNote"
+  | "readAccessLog"
   | "manageSecurity"
   | "assign"
   | "assignAnyone"
@@ -68,6 +71,9 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   retry: UPLOADERS,
   flag: DECIDERS,
   manageNotes: UPLOADERS,
+  voidAnyNote: ADMINS,
+  restoreNote: ADMINS,
+  readAccessLog: COMPLIANCE,
   manageSecurity: ADMINS,
   assign: ASSIGNERS,
   assignAnyone: ADMINS,

@@ -18,6 +18,7 @@ PRACTICE = "3f1c2a9e-5b7d-4c11-9e2a-000000000001"
 SENDER = "scans@lakeside.example.com"
 RECIPIENT = "lakeside-varga"
 RAW_KEY = f"ses-inbound/{RECIPIENT}/0123456789abcdefghij"
+RETAINED_KEY = f"ses-retained/{RECIPIENT}/0123456789abcdefghij"
 NOTE_PDF = b"%PDF-1.7\n1 0 obj << /Type /Catalog >> endobj\ntrailer << /Root 1 0 R >>\n%%EOF\n"
 SECOND_PDF = b"%PDF-1.4\n% second visit\n%%EOF\n"
 NOT_A_PDF = b"PK\x03\x04 a word file"
@@ -108,11 +109,16 @@ def _run(raw: bytes) -> tuple[FakeS3, list]:
     return s3, outcomes
 
 
-def test_each_pdf_attachment_is_written_to_the_practice_inbox_and_the_message_deleted():
-    s3, outcomes = _run(raw_message())
+def test_each_pdf_attachment_is_written_to_the_practice_inbox_and_the_message_kept():
+    raw = raw_message()
+    s3, outcomes = _run(raw)
 
-    assert s3.objects == {_inbox_key(NOTE_PDF): NOTE_PDF, _inbox_key(SECOND_PDF): SECOND_PDF}
-    assert set(s3.types.values()) == {"application/pdf"}
+    assert s3.objects == {_inbox_key(NOTE_PDF): NOTE_PDF, _inbox_key(SECOND_PDF): SECOND_PDF, RETAINED_KEY: raw}
+    assert s3.types == {
+        _inbox_key(NOTE_PDF): "application/pdf",
+        _inbox_key(SECOND_PDF): "application/pdf",
+        RETAINED_KEY: "message/rfc822",
+    }
     assert [(outcome.result, outcome.practice, outcome.written) for outcome in outcomes] == [("delivered", PRACTICE, 2)]
 
 
@@ -123,6 +129,7 @@ def test_the_lambda_entry_point_reads_the_mapping_from_the_environment(monkeypat
 
     assert ses_intake.handler(_event(), None) == {"messages": 1, "written": 2}
     assert RAW_KEY not in s3.objects
+    assert RETAINED_KEY in s3.objects
 
 
 @pytest.mark.parametrize(
@@ -136,20 +143,21 @@ def test_the_lambda_entry_point_reads_the_mapping_from_the_environment(monkeypat
         (raw_message(subject="Visit notes 2026-02-30"), "no_date"),
     ],
 )
-def test_a_refused_message_writes_nothing_and_is_deleted(raw, result):
+def test_a_refused_message_writes_nothing_to_an_inbox_and_is_kept(raw, result):
     s3, outcomes = _run(raw)
 
-    assert s3.objects == {}
+    assert s3.objects == {RETAINED_KEY: raw}
     assert [(outcome.result, outcome.written) for outcome in outcomes] == [(result, 0)]
 
 
-def test_an_unknown_recipient_writes_nothing_and_the_message_is_deleted():
-    s3 = FakeS3(raw_message(), key="ses-inbound/someone-else/0123456789abcdefghij")
+def test_an_unknown_recipient_writes_nothing_to_an_inbox_and_the_message_is_kept():
+    raw = raw_message()
+    s3 = FakeS3(raw, key="ses-inbound/someone-else/0123456789abcdefghij")
     outcomes = ses_intake.process_event(
         s3, ses_intake.load_inboxes(json.dumps(ADDRESSES)), _event("ses-inbound/someone-else/0123456789abcdefghij")
     )
 
-    assert s3.objects == {}
+    assert s3.objects == {"ses-retained/someone-else/0123456789abcdefghij": raw}
     assert [(outcome.result, outcome.practice) for outcome in outcomes] == [("unknown_recipient", None)]
 
 
@@ -199,3 +207,16 @@ def test_a_mapping_may_name_the_practice_watched_folder():
     assert inboxes["lakeside-varga"].key_for(date(2026, 11, 20), b"%PDF") == (
         f"practices/{PRACTICE}/inbox-a1/varga/2026-11-20/{hashlib.sha256(b'%PDF').hexdigest()}.pdf"
     )
+
+
+def test_a_message_that_cannot_be_delivered_is_kept_before_anything_else(monkeypatch):
+    s3 = FakeS3(raw_message())
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("delivery failed")
+
+    monkeypatch.setattr(ses_intake, "deliver", broken)
+    with pytest.raises(RuntimeError):
+        ses_intake.process_event(s3, ses_intake.load_inboxes(json.dumps(ADDRESSES)), _event())
+
+    assert set(s3.objects) == {RAW_KEY, RETAINED_KEY}

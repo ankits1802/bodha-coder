@@ -42,7 +42,7 @@ function SignUpChoices({ options }: { options: SignInProviders }) {
       <h2 className={TITLE}>{SIGN_UP_TEXT.title}</h2>
       {options.providers.length > 0 ? (
         <>
-          <ProviderButtons providers={options.providers} />
+          <ProviderButtons providers={options.providers} intent="signup" />
           <Divider />
         </>
       ) : null}

@@ -45,7 +45,7 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   setSession({
     access_token: "token",
-    user: { id: "user-1", name: "Cora Coder", email: "cora@example.com", role: "coder", billing_only: false, practice: null },
+    user: { id: "user-1", name: "Cora Coder", email: "cora@example.com", role: "coder", billing_only: false, practice: null, practices: [] },
   });
 });
 

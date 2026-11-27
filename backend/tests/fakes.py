@@ -19,7 +19,7 @@ from app.adapters.billing_contract import (
 )
 from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, provider_label
-from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
+from app.ai.contracts import ModelClient, ModelReply, ModelRequest, ReviewInputs, ReviewOutcome, ReviewReport
 
 PNG_MAGIC = bytes([137, 80, 78, 71, 13, 10, 26, 10])
 INK = bytes([0, 0, 0])
@@ -191,10 +191,12 @@ class FakeBillingProvider:
 class ScriptedReviewer:
     report: ReviewReport
     calls: list[ReviewInputs] = field(default_factory=list)
+    requests: tuple[ModelRequest, ...] = ()
+    replies: tuple[ModelReply, ...] = ()
 
     async def __call__(self, client: ModelClient, inputs: ReviewInputs) -> ReviewOutcome:
         self.calls.append(inputs)
-        return ReviewOutcome(report=self.report, prompt_version="test")
+        return ReviewOutcome(report=self.report, prompt_version="test", replies=self.replies, requests=self.requests)
 
 
 def text_pdf(text: str) -> bytes:

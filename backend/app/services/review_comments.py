@@ -14,8 +14,9 @@ from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Conflict, Forbidden, Invalid, NotFound
 from app.core.roles import ADMINS, COMPLIANCE, NOTE_READERS
-from app.models import ReviewComment, ReviewCommentRemoval, Suggestion, User
+from app.models import PracticeMembership, ReviewComment, ReviewCommentRemoval, Suggestion, User
 from app.services.audit_log import record_access
+from app.services.memberships import active_members, member_names
 from app.services.review_actions import note_for
 
 __all__ = [
@@ -40,12 +41,12 @@ class CommentDraft:
 
 
 async def comment_people(db: AsyncSession, actor: Actor) -> list[dict[str, str]]:
-    return [{"id": user.id, "name": user.name, "role": user.role} for user in await _mentionable(db, actor)]
+    return [{"id": user.id, "name": user.name, "role": role} for user, role in await _mentionable(db, actor)]
 
 
 async def note_comments(db: AsyncSession, actor: Actor, note_id: str, *, include_removed: bool) -> list[dict[str, Any]]:
     note = await note_for(db, actor, note_id)
-    if include_removed and actor.user.role not in COMPLIANCE:
+    if include_removed and actor.role not in COMPLIANCE:
         raise Forbidden("your role cannot see removed comments")
     rows = await note_comment_rows(db, note.id)
     names = await _names(db, actor.practice_id)
@@ -74,7 +75,7 @@ async def post_comment(
         body=body,
         author_id=actor.user.id,
         author_name=actor.user.name,
-        author_role=actor.user.role,
+        author_role=actor.role,
         mentions=[user.id for user in mentioned],
     )
     db.add(comment)
@@ -91,7 +92,7 @@ async def remove_comment(db: AsyncSession, actor: Actor, comment_id: str) -> dic
     comment = await db.get(ReviewComment, comment_id)
     if comment is None or comment.practice_id != actor.practice_id:
         raise NotFound("comment not found")
-    if comment.author_id != actor.user.id and actor.user.role not in ADMINS:
+    if comment.author_id != actor.user.id and actor.role not in ADMINS:
         raise Forbidden("only the author or an admin can remove a comment")
     if await db.scalar(select(ReviewCommentRemoval.id).where(ReviewCommentRemoval.comment_id == comment.id)):
         raise Conflict("this comment was already removed")
@@ -101,7 +102,7 @@ async def remove_comment(db: AsyncSession, actor: Actor, comment_id: str) -> dic
         comment_id=comment.id,
         removed_by=actor.user.id,
         remover_name=actor.user.name,
-        remover_role=actor.user.role,
+        remover_role=actor.role,
     )
     db.add(removal)
     await db.flush()
@@ -128,7 +129,7 @@ def comment_view(
     actor: Actor | None = None,
 ) -> dict[str, Any]:
     removable = actor is not None and removal is None
-    removable = removable and (comment.author_id == actor.user.id or actor.user.role in ADMINS)
+    removable = removable and (comment.author_id == actor.user.id or actor.role in ADMINS)
     return {
         "id": comment.id,
         "finding_key": comment.finding_key,
@@ -149,18 +150,15 @@ def mention_message(practice_name: str, note_id: str) -> tuple[str, str]:
     return f"Mentioned at {practice_name}", f"{practice_name}: you were mentioned in a review comment. Open: {link}"
 
 
-async def _mentionable(db: AsyncSession, actor: Actor) -> list[User]:
-    rows = await db.scalars(
-        select(User)
-        .where(User.practice_id == actor.practice_id, User.status == "active", User.role.in_(NOTE_READERS))
-        .order_by(User.name)
-    )
-    return list(rows.all())
+async def _mentionable(db: AsyncSession, actor: Actor) -> list[tuple[User, str]]:
+    query = active_members(actor.practice_id, User, PracticeMembership.role, roles=NOTE_READERS)
+    rows = await db.execute(query.order_by(User.name))
+    return list(rows.tuples().all())
 
 
 async def _mentioned(db: AsyncSession, actor: Actor, wanted: Sequence[str]) -> list[User]:
     ids = list(dict.fromkeys(wanted))
-    people = {user.id: user for user in await _mentionable(db, actor)}
+    people = {user.id: user for user, _ in await _mentionable(db, actor)}
     unknown = [user_id for user_id in ids if user_id not in people]
     if unknown:
         raise Invalid("mention only active people of this practice who can open notes")
@@ -178,7 +176,7 @@ async def _check_finding(db: AsyncSession, note_id: str, finding_key: str | None
 
 
 async def _names(db: AsyncSession, practice_id: str) -> dict[str, str]:
-    return dict((await db.execute(select(User.id, User.name).where(User.practice_id == practice_id))).all())
+    return await member_names(db, practice_id)
 
 
 async def _send_mentions(messenger: Messenger, actor: Actor, note_id: str, people: list[User]) -> None:

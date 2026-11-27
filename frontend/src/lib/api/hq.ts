@@ -1,6 +1,9 @@
 import { request, requestNothing } from "./client";
 import type {
+  AdminAppointed,
+  AdminAppointment,
   AdminLinkSent,
+  AuditVerification,
   Created,
   DemoRequest,
   DemoRequestRow,
@@ -14,6 +17,7 @@ import type {
   HqPractice,
   HqTeamMember,
   NewPractice,
+  PracticePurged,
   PracticeUpdate,
   Renewal,
   SpendRange,
@@ -41,12 +45,24 @@ export function sendAdminLink(practiceId: string): Promise<AdminLinkSent> {
   return request<AdminLinkSent>(practicePath(practiceId, "/admin-link"), { method: "POST" });
 }
 
+export function appointAdmin(practiceId: string, body: AdminAppointment): Promise<AdminAppointed> {
+  return request<AdminAppointed>(practicePath(practiceId, "/admins"), { body });
+}
+
 export function renewPractice(practiceId: string, until: string | null): Promise<Renewal> {
   return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST", body: { until } });
 }
 
-export function deletePractice(practiceId: string, confirmName: string): Promise<void> {
-  return requestNothing(practicePath(practiceId), { method: "DELETE", body: { confirm_name: confirmName } });
+export function closePractice(practiceId: string, confirmName: string): Promise<void> {
+  return requestNothing(practicePath(practiceId, "/close"), { method: "POST", body: { confirm_name: confirmName } });
+}
+
+export function purgePractice(practiceId: string, confirmName: string): Promise<PracticePurged> {
+  return request<PracticePurged>(practicePath(practiceId, "/purge"), { body: { confirm_name: confirmName } });
+}
+
+export function verifyAuditLog(): Promise<AuditVerification> {
+  return request<AuditVerification>("/api/hq/audit-log/verify", { method: "POST" });
 }
 
 export function getHqPlaces(): Promise<HqPlace[]> {

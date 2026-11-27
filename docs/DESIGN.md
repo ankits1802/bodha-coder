@@ -50,12 +50,13 @@ control uses the action colour.
 | Control | Behaviour |
 |---|---|
 | Select | A field-shaped button with the chosen label and a chevron. It opens a floating list below the field, or above it when there is no room, at most 320 px tall and scrolling, never clipped by a dialog or a table. The chosen option carries a check mark and status options carry their dot. Arrow keys, Home, End and Page keys move; typing jumps to the first matching label; Enter or Space chooses; Escape closes and returns focus; Tab chooses and moves on, like a native select; a click outside closes. Lists of more than twelve options open with a search box that filters by label and says No matches. Forms use the full field, filter bars the compact pill, table rows the borderless inline form. |
+| Practice switcher | At the top of the sidebar, only for a person in two or more practices: the current practice's name with a downward chevron (its initials in a small tile when the sidebar is collapsed) opens a menu of the practice names with the current one checked. Focus starts on the current practice; arrow keys move, Enter chooses, Escape or Tab closes and returns focus. Choosing another practice reloads the app on that practice's home. |
 | Date picker | A text field showing the day as the app writes it (27 Nov 2026) with a calendar button. Typed days are read day first (27/11/2026), as ISO or in the written form; a day that cannot be read or lies outside the allowed range turns the field red when it loses focus and is not passed on. The calendar starts weeks on Monday, rings today, fills the chosen day in dark, disables days outside the range, and offers month and year lists and Today. Arrows move by day and week, Page Up and Page Down by month (with Shift by year), Home and End to the ends of the week, Enter picks, Escape closes; focus returns to the calendar button. A date range keeps its end on or after its start. |
 
 ## Feedback and flow
 
 A reversible action (approve, approve all) happens at once and offers Undo in a toast at the bottom
-for eight seconds; a confirmation dialog is kept for destructive actions only (delete, replace a PDF,
+for eight seconds; a confirmation dialog is kept for destructive actions only (void, close or purge, replace a PDF,
 block). Loads that fill a screen show a skeleton of its layout; small panels keep the spinner. In
 note review the finding that `y` and `n` act on carries a dark bar at its left edge, and focus moves
 to the next finding after each decision, then to Approve. Form fields are checked when they lose

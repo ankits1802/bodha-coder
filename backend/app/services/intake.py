@@ -189,8 +189,7 @@ async def _rename_arrivals(store: ListingStore, inbox: str, keys: Sequence[str])
             continue
         data = await store.get(key)
         target = f"{path.parent}/{arrival_name(path.name, data)}"
-        await store.put(target, data, content_type=_content_type(target))
-        await store.delete([key])
+        await _move(store, inbox, key, target, data)
         arrived.add(target)
     return sorted(arrived)
 
@@ -250,13 +249,20 @@ def _target(stamp: Stamp, folder: str, key: str, data: bytes) -> str:
 
 
 async def _keep(store: ListingStore, stamp: Stamp, key: str, data: bytes) -> None:
-    await store.put(_target(stamp, PROCESSED, key, data), data, content_type=PDF_TYPE)
-    await store.delete([key])
+    await _move(store, stamp.inbox, key, _target(stamp, PROCESSED, key, data), data)
 
 
 async def _reject(store: ListingStore, stamp: Stamp, key: str, data: bytes, reason: str) -> None:
     target = _target(stamp, REJECTED, key, data)
-    await store.put(target, data, content_type=_content_type(key))
     note = f"file: {key[len(stamp.inbox) :]}\nreason: {reason}\nat: {stamp.at.isoformat()}\n"
     await store.put(f"{target}.reason.txt", note.encode("utf-8"), content_type=REASON_TYPE)
+    await _move(store, stamp.inbox, key, target, data)
+
+
+async def _move(store: ListingStore, inbox: str, key: str, target: str, data: bytes) -> None:
+    if _relative(inbox, key) is None or target == key:
+        raise ValueError("intake moves only new arrivals out of the inbox")
+    await store.put(target, data, content_type=_content_type(target))
+    if hashlib.sha256(await store.get(target)).digest() != hashlib.sha256(data).digest():
+        raise OSError("the kept copy of an intake file differs from the arrival; the arrival stays in the inbox")
     await store.delete([key])

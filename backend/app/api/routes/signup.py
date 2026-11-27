@@ -10,19 +10,11 @@ from app.api.bodies import IdentitySignupBody, SignupBody
 from app.api.responses.auth import MfaChallenge, SignedIn
 from app.api.responses.base import ExactRoute
 from app.api.responses.signup import PendingIdentity
-from app.api.wiring import (
-    Mail,
-    Sealer,
-    SignupCookie,
-    challenge_body,
-    clear_signup_cookie,
-    client_of,
-    signed_in_body,
-)
+from app.api.wiring import Mail, Sealer, SignupCookie, clear_signup_cookie, client_of, sign_in_body
 from app.core.db import SessionFactory
-from app.core.deps import Db
+from app.core.deps import Client, Db
 from app.core.realms import CurrentSite
-from app.services import auth, signup
+from app.services import signup
 
 
 def _signups_here(site: CurrentSite) -> None:
@@ -36,23 +28,26 @@ router = APIRouter(prefix="/signup", tags=["signup"], route_class=ExactRoute, de
 async def email_signup(
     body: SignupBody, request: Request, db: Db, mail: Mail, background: BackgroundTasks, *, signer: Sealer
 ) -> None:
-    ip, agent = client_of(request)
+    client = client_of(request)
     form = signup.EmailSignup(body.name, body.practice_name, str(body.email), body.time_zone, body.agreed)
-    await signup.check_email_signup(db, form, ip=ip)
-    background.add_task(_finish_email_signup, mail, signer, form, signup.Visitor(ip, agent))
+    await signup.check_email_signup(db, form, ip=client.ip)
+    background.add_task(_finish_email_signup, mail, signer, form, client)
 
 
-async def _finish_email_signup(
-    mail: Messenger, signer: RecordSigner, form: signup.EmailSignup, visitor: signup.Visitor
-) -> None:
+async def _finish_email_signup(mail: Messenger, signer: RecordSigner, form: signup.EmailSignup, client: Client) -> None:
     async with SessionFactory() as db:
-        await signup.request_email_signup(db, mail, signer, form, ip=visitor.ip, agent=visitor.agent)
+        await signup.request_email_signup(db, mail, signer, form, client)
 
 
 @router.get("/identity", response_model=PendingIdentity)
-async def pending_identity(started: SignupCookie = None) -> dict[str, str]:
+async def pending_identity(db: Db, started: SignupCookie = None) -> dict[str, Any]:
     identity = signup.pending_identity(started)
-    return {"email": identity.email, "name": identity.name, "provider": identity.provider}
+    return {
+        "email": identity.email,
+        "name": identity.name,
+        "provider": identity.provider,
+        "has_account": await signup.has_account(db, identity.email),
+    }
 
 
 @router.post("/identity", response_model=SignedIn | MfaChallenge)
@@ -65,10 +60,7 @@ async def identity_signup(
     signer: Sealer,
     started: SignupCookie = None,
 ) -> dict[str, Any]:
-    ip, agent = client_of(request)
     form = signup.IdentitySignup(body.name, body.practice_name, body.time_zone, body.agreed)
-    result = await signup.complete_identity_signup(db, signer, started, form, signup.Visitor(ip, agent))
+    result = await signup.complete_identity_signup(db, signer, started, form, client_of(request))
     clear_signup_cookie(response)
-    if isinstance(result, auth.MfaChallenge):
-        return challenge_body(result)
-    return await signed_in_body(db, response, result)
+    return await sign_in_body(db, response, result)

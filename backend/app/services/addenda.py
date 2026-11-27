@@ -28,6 +28,7 @@ from app.services.analysis import next_revision, request_analysis
 from app.services.attestations import ADDENDUM_ATTESTATION, Statement, checked_wording, record_attestation
 from app.services.audit_log import record_access, record_provider_access
 from app.services.note_texts import current_texts, note_texts
+from app.services.note_voids import refuse_voided
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.provider_channels import EMAIL, contact_for, require_channel, usable_channel
 from app.services.query_governance import refuse_repeat_queries
@@ -86,6 +87,7 @@ async def create_request(
     hold: bool,
 ) -> AddendumRequest:
     note = await note_for(db, actor, note_id)
+    refuse_voided(note)
     await refuse_repeat_queries(db, note, [edit.key for edit in edits])
     provider = await db.get_one(Provider, note.provider_id)
     questions = await _chosen_questions(db, note, edits)
@@ -227,7 +229,7 @@ async def verify_code(db: AsyncSession, token: str, code: str, client: Client) -
 
 async def _record_code_check(db: AsyncSession, request: AddendumRequest, client: Client, action: str) -> None:
     provider = await db.get_one(Provider, request.provider_id)
-    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client[0], client[1])
+    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client.ip, client.agent)
     record_provider_access(db, actor, provider.name, action, note_id=request.note_id)
 
 
