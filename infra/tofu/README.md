@@ -70,7 +70,8 @@ and no schema rights; migrations connect as the master `bodha_app` through `MIGR
 The migration that creates the role reads `RUNTIME_DATABASE_PASSWORD`, which only the migrate task
 receives. First rollout: apply with `runtime_database = false`, release the migration, then set
 `runtime_database = true`, apply and force a new deployment. Rotate by raising
-`runtime_password_version` (the migration re-sets the role's password on its next run).
+`runtime_password_version`, applying, running `python -m app.scripts.runtime_password` once on the
+migrate task definition (it alters the role to the new password), then forcing a new deployment.
 
 ## Retention
 
