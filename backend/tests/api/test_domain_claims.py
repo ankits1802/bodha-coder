@@ -24,7 +24,7 @@ async def test_public_email_services_and_their_subdomains_can_never_be_claimed(h
     ]
 
     assert [response.status_code for response in refused] == [422, 422, 422, 422]
-    assert refused[0].json()["message"] == "gmail.com is a public email service and cannot be claimed"
+    assert refused[0].json()["message"] == "public email services such as gmail.com cannot be claimed"
     assert await claim_rows("gmail.com") == []
 
 

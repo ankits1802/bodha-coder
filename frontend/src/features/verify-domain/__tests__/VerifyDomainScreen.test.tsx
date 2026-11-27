@@ -28,7 +28,7 @@ describe("VerifyDomainScreen", () => {
     vi.mocked(verifyDomainLink).mockRejectedValue(new ApiError(401, "unauthorized", "this link has expired"));
     openLink("domain-2");
     await userEvent.setup().click(screen.getByRole("button", { name: "Confirm domain" }));
-    expect(await screen.findByText("this link has expired")).toBeInTheDocument();
+    expect(await screen.findByText("This link has expired")).toBeInTheDocument();
   });
 
   it("says when the link carries no token", () => {

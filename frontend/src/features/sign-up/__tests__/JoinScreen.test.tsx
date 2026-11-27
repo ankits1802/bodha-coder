@@ -71,7 +71,7 @@ describe("JoinScreen", () => {
     vi.mocked(chooseJoin).mockRejectedValue(new ApiError(409, "conflict", "this email already has an account; sign in instead"));
     openLink("join-5");
     await userEvent.setup().click(await screen.findByRole("button", { name: "Join Lakeside Primary Care" }));
-    expect(await screen.findByText("this email already has an account; sign in instead")).toBeInTheDocument();
+    expect(await screen.findByText("This email already has an account; sign in instead")).toBeInTheDocument();
   });
 
   it("says when the link has expired", async () => {

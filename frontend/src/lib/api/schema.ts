@@ -11914,7 +11914,7 @@ export interface operations {
     insights_api_organizations__organization_id__insights_get: {
         parameters: {
             query?: {
-                days?: 7 | 14 | 30 | 90;
+                days?: number;
             };
             header?: {
                 authorization?: string | null;

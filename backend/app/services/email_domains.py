@@ -92,7 +92,7 @@ def is_public_domain(domain: str) -> bool:
 def claimable_domain(text: str) -> str:
     domain = normal_domain(text)
     if is_public_domain(domain):
-        raise Invalid(f"{domain} is a public email service and cannot be claimed")
+        raise Invalid(f"public email services such as {domain} cannot be claimed")
     return domain
 
 

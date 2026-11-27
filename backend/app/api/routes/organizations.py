@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.adapters.billing_contract import BillingProvider
 from app.api.bodies import CheckoutBody
@@ -11,9 +11,11 @@ from app.api.organization_bodies import AccessBody, CombinedBillingBody, Locatio
 from app.api.responses.base import Created, ExactRoute
 from app.api.responses.organizations import OrganizationInsights, OrganizationOverview, OrganizationPlan
 from app.api.responses.plan import RedirectLink
+from app.api.routes.billing import INSIGHT_PERIODS
 from app.api.wiring import BillingProviders, Mail
 from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, current_actor, session_actor
+from app.core.errors import Invalid
 from app.models import Organization
 from app.services import (
     organization_insights,
@@ -26,7 +28,6 @@ from app.services import (
 )
 
 router = APIRouter(prefix="/organizations/{organization_id}", tags=["organizations"], route_class=ExactRoute)
-Days = Literal[7, 14, 30, 90]
 
 
 @dataclass(frozen=True)
@@ -102,7 +103,9 @@ async def add_person(body: OrganizationPersonBody, db: Db, mail: Mail, session: 
 
 
 @router.get("/insights", response_model=OrganizationInsights)
-async def insights(db: Db, session: OrganizationAdmin, days: Annotated[Days, Query()] = 30) -> dict[str, Any]:
+async def insights(db: Db, session: OrganizationAdmin, days: int = 30) -> dict[str, Any]:
+    if days not in INSIGHT_PERIODS:
+        raise Invalid(f"days must be one of {', '.join(str(period) for period in INSIGHT_PERIODS)}")
     return await organization_insights.organization_insights(db, session.organization, days=days)
 
 

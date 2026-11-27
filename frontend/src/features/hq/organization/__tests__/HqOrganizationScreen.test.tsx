@@ -56,7 +56,7 @@ describe("HqOrganizationScreen", () => {
     expect(screen.getByRole("link", { name: "Lakeside Primary Care" })).toHaveAttribute("href", "/hq/practices/p1");
     expect(screen.getByRole("switch", { name: "Bill Lakeside Primary Care with the organization" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("switch", { name: "Bill Harbor Pediatrics with the organization" })).toHaveAttribute("aria-checked", "false");
-    expect(within(rowOf("Harbor Pediatrics")).getByText("Trial")).toBeInTheDocument();
+    expect(within(rowOf("Harbor Pediatrics")).getAllByText("Trial")).toHaveLength(2);
   });
 
   it("moves a practice into combined billing and reads the page again", async () => {

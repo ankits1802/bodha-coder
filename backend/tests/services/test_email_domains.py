@@ -20,7 +20,7 @@ def test_text_that_is_not_a_domain_is_refused(text):
 )
 def test_public_email_services_cannot_be_claimed(domain):
     assert is_public_domain(domain)
-    with pytest.raises(Invalid, match="public email service"):
+    with pytest.raises(Invalid, match="public email services"):
         claimable_domain(domain.upper())
 
 

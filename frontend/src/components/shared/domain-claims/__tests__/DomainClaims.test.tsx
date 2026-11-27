@@ -83,13 +83,13 @@ describe("DomainClaims", () => {
   });
 
   it("shows why a public email domain cannot be claimed beside the field", async () => {
-    vi.mocked(claimDomain).mockRejectedValue(new ApiError(422, "invalid", "gmail.com is a public email service and cannot be claimed"));
+    vi.mocked(claimDomain).mockRejectedValue(new ApiError(422, "invalid", "public email services such as gmail.com cannot be claimed"));
     const events = userEvent.setup();
     render(<DomainClaims scope={{ kind: "practice" }} />);
     const field = screen.getByRole("textbox", { name: "Domain" });
     await events.type(field, "gmail.com");
     await events.click(screen.getByRole("button", { name: "Claim" }));
-    expect(await screen.findByText("gmail.com is a public email service and cannot be claimed")).toBeInTheDocument();
+    expect(await screen.findByText("Public email services such as gmail.com cannot be claimed")).toBeInTheDocument();
     expect(field).toHaveAttribute("aria-invalid", "true");
     expect(screen.queryByRole("combobox", { name: "Practice people join" })).not.toBeInTheDocument();
   });
