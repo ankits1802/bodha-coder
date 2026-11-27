@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import type { PlanCatalog } from "@/lib/api/types";
 import { cssVars } from "../motion/cssVars";
@@ -12,9 +13,10 @@ export function PricingTeaser({ catalog }: { catalog: PlanCatalog | null }) {
         <div className="flex min-w-0 flex-col items-start gap-4">
           <h2 id="pricing-teaser-title" data-reveal="" className="m-0 font-display text-hero-sm font-bold tracking-display sm:text-display">
             {words.title.map((line, index) => (
-              <span key={line} className="block">
-                {index > 0 ? ` ${line}` : line}
-              </span>
+              <Fragment key={line}>
+                {index > 0 ? " " : null}
+                <span className="block">{line}</span>
+              </Fragment>
             ))}
           </h2>
           <p data-reveal="" style={cssVars({ "--delay": "80ms" })} className="m-0 max-w-110 text-title3 text-secondary">
