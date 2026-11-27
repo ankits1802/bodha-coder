@@ -2,68 +2,59 @@
 
 import { SHARED_TEXT } from "@/components/shared/strings";
 import { Button } from "@/components/ui/Button";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Pager, offsetFrom } from "@/components/ui/Pager";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
-import { Select } from "@/components/ui/Select";
+import { useAction } from "@/hooks/useAction";
+import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
-import { usePracticeToday } from "@/hooks/usePracticeToday";
-import { getAccessLog } from "@/lib/api/practice";
-import { getTeam } from "@/lib/api/team";
-import { isIsoDate } from "@/lib/dates";
+import { exportAccessLog, getAccessLog } from "@/lib/api/practice";
 import { saveFile } from "@/lib/download";
-import { accessLogCsv } from "./accessLog";
+import { accessLogFilters, filterChanges, filtersKey } from "./accessLog";
+import { AccessLogFilterBar } from "./AccessLogFilterBar";
 import { AccessLogTable } from "./AccessLogTable";
 import { SECURITY_TEXT } from "./strings";
+
+const words = SECURITY_TEXT.log;
 
 export function AccessLogPanel() {
   const query = useQueryParams();
   const today = usePracticeToday();
-  const requested = query.get("day");
-  const day = requested && isIsoDate(requested) ? requested : today;
-  const person = query.get("user");
+  const filters = accessLogFilters(query.get, today);
   const offset = offsetFrom(query.get("offset"));
-  const team = useRemote("security-team", getTeam);
-  const log = useRemote(`access-log:${day}:${person ?? ""}:${offset}`, () => getAccessLog(day, person, offset));
-  const words = SECURITY_TEXT.log;
-  const members = team.state.status === "success" ? team.state.data.members : [];
+  const log = useRemote(filtersKey(filters, offset), () => getAccessLog(filters, offset));
+  const download = useAction(exportAccessLog);
   const page = log.state.status === "success" ? log.state.data : null;
-  const entries = page ? page.items : [];
 
-  function exportCsv(): void {
-    saveFile(new Blob([accessLogCsv(entries)], { type: "text/csv" }), words.fileName(day));
+  async function exportCsv(): Promise<void> {
+    const outcome = await download.run(filters);
+    if (outcome.ok) saveFile(outcome.value.blob, outcome.value.fileName ?? words.fileName(filters.start, filters.end));
   }
-
-  const filters = (
-    <>
-      <Select
-        variant="filter"
-        label={words.person}
-        value={person ?? ""}
-        options={[{ value: "", label: words.anyone }, ...members.map((member) => ({ value: member.id, label: member.name }))]}
-        onChange={(user) => query.update({ user: user || null, offset: null })}
-      />
-      <DatePicker
-        variant="filter"
-        label={words.day}
-        value={day}
-        max={today}
-        today={today}
-        onChange={(value) => {
-          if (value) query.update({ day: value === today ? null : value, offset: null });
-        }}
-      />
-      <Button size="sm" disabled={entries.length === 0} onClick={exportCsv}>
-        {words.export}
-      </Button>
-    </>
-  );
 
   return (
     <Panel aria-label={words.title}>
-      <PanelHeader title={words.title} actions={filters} />
+      <PanelHeader
+        title={words.title}
+        actions={
+          <Button size="sm" disabled={!page || page.total === 0} pending={download.pending} onClick={() => void exportCsv()}>
+            {words.export}
+          </Button>
+        }
+      />
+      <AccessLogFilterBar
+        filters={filters}
+        today={today}
+        people={page?.people ?? []}
+        actions={page?.actions ?? []}
+        onChange={(changes) => query.update(filterChanges(changes))}
+      />
+      {download.error ? (
+        <div className="px-4 pb-3">
+          <InlineAlert tone="bad">{download.error}</InlineAlert>
+        </div>
+      ) : null}
       <RemoteView
         state={log.state}
         text={{ loading: words.loading, empty: words.empty, retry: words.retry }}

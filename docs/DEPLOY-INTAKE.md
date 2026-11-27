@@ -92,8 +92,9 @@ deployment are there).
 4. The practice emails the PDFs with the date of service in the subject (`YYYY-MM-DD`). The function
    refuses a message SES did not pass for spam and viruses, a sender not on the list or a subject
    without a date; otherwise it writes each PDF attachment to
-   `practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<sha256>.pdf`. It deletes the raw
-   message either way and logs outcomes and counts only. Billed codes are not read from attachment
+   `practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<sha256>.pdf`. It keeps every raw
+   message under `ses-retained/<local part>/` before reading it, then removes it from `ses-inbound/`,
+   and logs outcomes and counts only. Billed codes are not read from attachment
    names.
 
 Email between the practice and SES is only as private as the practice's mail server's TLS; prefer

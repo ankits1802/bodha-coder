@@ -55,6 +55,14 @@ describe("HqPracticeScreen", () => {
     expect(within(rowOf("priya@lakeside.example.com")).getByText("On")).toBeInTheDocument();
   });
 
+  it("offers no renewal or new admin for a closed practice", async () => {
+    vi.mocked(getHqPracticePage).mockResolvedValue({ ...PAGE, practice: { ...PAGE.practice, status: "closed", closed_at: "2026-11-27T10:00:00Z" } });
+    render(<HqPracticeScreen practiceId="p1" />);
+    expect(await screen.findByRole("heading", { name: "Lakeside Primary Care" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Renew" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Add admin" })).not.toBeInTheDocument();
+  });
+
   it("keeps the chosen tab in the address", async () => {
     const user = userEvent.setup();
     render(<HqPracticeScreen practiceId="p1" />);

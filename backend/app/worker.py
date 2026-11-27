@@ -35,8 +35,8 @@ from app.services.job_control import queue_counts, requeue_interrupted
 from app.services.plan_notices import notify_plans_ending
 from app.services.quantity_sync import sync_quantities
 from app.services.query_governance import escalate_unanswered
-from app.services.records import purge_access_logs
 from app.services.reminders import expire_requests, send_due_reminders
+from app.services.retention import purge_access_logs
 
 logger = logging.getLogger("bodha.worker")
 RETRY_DELAYS = (timedelta(seconds=30), timedelta(minutes=2), timedelta(minutes=10))

@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import AddendumRequest, Decision, Note, Suggestion
+from app.models import VOIDED, AddendumRequest, Decision, Note, Suggestion
 from app.services.auto_approval import auto_approve, auto_approve_eligible
 from app.services.code_sets import latest_codes
 from app.services.estimates import impact_cents
@@ -11,6 +11,7 @@ from app.services.findings import Finding
 from app.services.routing import choices_for, claim, has_diagnosis_codes, place
 
 SETTLED_STATUSES = ("approved", "exported")
+FROZEN_STATUSES = (*SETTLED_STATUSES, VOIDED)
 
 
 def finding_from(row: Suggestion) -> Finding:
@@ -51,7 +52,7 @@ async def awaiting_provider(db: AsyncSession, note_id: str) -> bool:
 
 
 async def refresh_placement(db: AsyncSession, note: Note) -> None:
-    if note.status in SETTLED_STATUSES or note.current_analysis_id is None:
+    if note.status in FROZEN_STATUSES or note.current_analysis_id is None:
         return
     findings = await current_findings(db, note)
     billed = await latest_codes(db, note.id, "billed")

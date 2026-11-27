@@ -13,6 +13,7 @@ from app.services.claim_snapshots import approver_of, write_snapshot
 from app.services.code_sets import next_revision
 from app.services.findings import Finding
 from app.services.level_changes import ask_level_confirmation
+from app.services.note_change_history import record_note_change
 from app.services.override_reasons import OTHER_REASON, OverrideReason, Reasoned, checked_reason, missing_reasons
 from app.services.placement import current_findings, refresh_placement
 from app.services.review_actions import current_claim, new_decision, note_for, open_note
@@ -69,6 +70,7 @@ async def compliance_decision(
     if note.flagged_by == actor.user.id:
         raise Forbidden("a note can't be cleared by the person who flagged it")
     if decision == "return":
+        record_note_change(db, actor, note, "flag", old=note.flag_reason, new=None, reason=reason)
         note.flag_reason, note.compliance_cleared_by = None, actor.user.id
         await refresh_placement(db, note)
         record_access(db, actor, "returned to coder", note_id=note.id, detail=reason)

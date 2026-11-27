@@ -21,6 +21,9 @@ export const LAKESIDE: HqPractice = {
   billing_provider: "stripe",
   billing_status: "active",
   billing_interval: "monthly",
+  closed_at: null,
+  purge_after: null,
+  purged_at: null,
 };
 
 export const PAGE: HqPracticePage = {
@@ -72,7 +75,7 @@ export const QUIET_SPEND: HqExpenditure = {
 };
 
 export const ACTIVITY: HqActivityPage = {
-  items: [{ at: "2026-11-20T15:00:00Z", actor: "Bodha Admin", action: "practice renewed", practice_id: "p1", detail: "renews 2099-03-01" }],
+  items: [{ at: "2026-11-20T15:00:00Z", actor: "Bodha Admin", action: "practice renewed", practice_id: "p1", detail: "renews 2099-03-01", changes: null }],
   total: 1,
   offset: 0,
   page_size: 100,

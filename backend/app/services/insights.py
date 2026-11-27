@@ -11,7 +11,7 @@ from sqlalchemy import Date, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code, claim_changes
-from app.models import Analysis, Note, Provider, Suggestion, User, utcnow
+from app.models import VOIDED, Analysis, Note, Provider, Suggestion, User, utcnow
 from app.services.billing import AUTO_APPROVER
 from app.services.code_sets import latest_codes_for
 from app.services.estimates import estimate_difference, money
@@ -49,7 +49,12 @@ async def insights(db: AsyncSession, practice_id: str, *, days: int, time_zone: 
     first_runs = (
         select(Analysis)
         .join(Note, Note.id == Analysis.note_id)
-        .where(Note.practice_id == practice_id, Analysis.revision == 1, Analysis.finished_at >= since)
+        .where(
+            Note.practice_id == practice_id,
+            Note.status != VOIDED,
+            Analysis.revision == 1,
+            Analysis.finished_at >= since,
+        )
         .subquery()
     )
     local_day = cast(func.timezone(time_zone, first_runs.c.finished_at), Date)
@@ -57,7 +62,7 @@ async def insights(db: AsyncSession, practice_id: str, *, days: int, time_zone: 
     timing = (
         await db.execute(
             select(func.count(), func.count().filter(Note.approved_at <= Note.due_at)).where(
-                Note.practice_id == practice_id, Note.approved_at >= since
+                Note.practice_id == practice_id, Note.status != VOIDED, Note.approved_at >= since
             )
         )
     ).one()
@@ -151,7 +156,12 @@ async def _outcomes(db: AsyncSession, practice_id: str, since: Any) -> dict[str,
     rows = await db.execute(
         select(Suggestion.kind, Suggestion.action, func.count())
         .join(Note, Note.current_analysis_id == Suggestion.analysis_id)
-        .where(Note.practice_id == practice_id, Note.created_at >= since, Suggestion.kind.in_(("em", "diagnosis")))
+        .where(
+            Note.practice_id == practice_id,
+            Note.status != VOIDED,
+            Note.created_at >= since,
+            Suggestion.kind.in_(("em", "diagnosis")),
+        )
         .group_by(Suggestion.kind, Suggestion.action)
     )
     counts = dict.fromkeys(OUTCOME_BY_ACTION.values(), 0)
@@ -167,7 +177,7 @@ async def _providers(db: AsyncSession, practice_id: str, since: Any) -> list[dic
         select(Provider.name, func.count(Note.id), func.count(Note.id).filter(Suggestion.action == "keep"))
         .join(Note, Note.provider_id == Provider.id)
         .join(Suggestion, (Suggestion.analysis_id == Note.current_analysis_id) & (Suggestion.kind == "em"))
-        .where(Note.practice_id == practice_id, Note.created_at >= since)
+        .where(Note.practice_id == practice_id, Note.status != VOIDED, Note.created_at >= since)
         .group_by(Provider.name)
         .order_by(func.count(Note.id).desc())
         .limit(20)

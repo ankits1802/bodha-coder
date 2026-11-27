@@ -15,7 +15,7 @@ from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.main import app
 from app.models import Base
-from tests.builders import ADMIN_SITE, Harness
+from tests.builders import ADMIN_SITE, Harness, maintenance
 from tests.fakes import FakeBillingProvider, FakeMessenger, FakeProvider, FakeStore
 
 BACKEND = Path(__file__).resolve().parents[2]
@@ -31,6 +31,7 @@ def schema() -> None:
 async def clean_tables() -> None:
     names = ", ".join(table.name for table in Base.metadata.sorted_tables if table.name not in KEPT_TABLES)
     async with SessionFactory() as db:
+        await maintenance(db)
         await db.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))
         await db.commit()
 

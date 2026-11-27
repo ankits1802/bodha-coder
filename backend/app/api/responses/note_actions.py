@@ -6,7 +6,6 @@ __all__ = [
     "ClaimDiagnosis",
     "ClaimPointers",
     "ComplianceOutcome",
-    "DeletedNotes",
     "NoteLane",
     "NotePayer",
     "NoteState",
@@ -15,6 +14,7 @@ __all__ = [
     "ReopenedNotes",
     "RequestCancelled",
     "RequestCreated",
+    "VoidedNotes",
 ]
 
 
@@ -51,8 +51,8 @@ class AssignedNotes(View):
     assigned: list[str]
 
 
-class DeletedNotes(View):
-    deleted: list[str]
+class VoidedNotes(View):
+    voided: list[str]
 
 
 class QueuedNotes(View):

@@ -8,7 +8,7 @@ from app.core.db import SessionFactory
 from app.models import RemittanceLine
 from app.services.remittance_outcomes import DEFAULT_APPEAL_DAYS, line_appeal_by
 from tests.api.remittance_helpers import era, post_era, three_notes
-from tests.builders import practice_with_provider
+from tests.builders import maintenance, practice_with_provider
 
 PAID_ON = date(2026, 11, 24)
 
@@ -78,6 +78,7 @@ async def test_a_line_keeps_the_plan_type_and_no_stored_date(harness):
 async def test_a_line_stored_before_plan_types_keeps_its_stored_date(harness):
     practice, remittance_id = await _uploaded(harness)
     async with SessionFactory() as db:
+        await maintenance(db)
         await db.execute(
             update(RemittanceLine)
             .where(RemittanceLine.status == "denied")

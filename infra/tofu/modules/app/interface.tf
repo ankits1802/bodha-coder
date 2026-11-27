@@ -42,6 +42,10 @@ variable "bucket_arn" {
   type = string
 }
 
+variable "runtime_database" {
+  type = bool
+}
+
 variable "signing_key_arn" {
   type = string
 }

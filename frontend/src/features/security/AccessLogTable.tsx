@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { AccessLogEntry } from "@/lib/api/types";
-import { FORMAT_WORDS, formatTime } from "@/lib/format";
+import { FORMAT_WORDS, formatDateTime } from "@/lib/format";
 import { deviceOf } from "./accessLog";
 import { SECURITY_TEXT } from "./strings";
 
@@ -24,7 +24,7 @@ export function AccessLogTable({ entries }: { entries: AccessLogEntry[] }) {
         {entries.map((entry, index) => (
           <Tr key={`${entry.at}-${index}`}>
             <Td className="text-secondary tabular-nums">
-              <time dateTime={entry.at}>{formatTime(entry.at)}</time>
+              <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
             </Td>
             <Td>
               {entry.actor}

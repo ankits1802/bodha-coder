@@ -13,7 +13,7 @@ from app.codes.billing_codes import FilenameFacts, parse_note_filename
 from app.core.calendar import today_in
 from app.core.deps import Actor
 from app.core.errors import Invalid
-from app.models import Note, PlaceOfService, Provider
+from app.models import VOIDED, Note, PlaceOfService, Provider
 from app.services.audit_log import record_access
 from app.services.upload_matching import FileMatch, ProviderRef, match_file
 from app.services.uploads import check_pdf
@@ -76,7 +76,9 @@ async def _active_providers(db: AsyncSession, practice_id: str) -> list[Provider
 
 async def _held(db: AsyncSession, practice_id: str, digests: list[str]) -> set[str]:
     rows = await db.scalars(
-        select(Note.file_sha256).where(Note.practice_id == practice_id, Note.file_sha256.in_(digests))
+        select(Note.file_sha256).where(
+            Note.practice_id == practice_id, Note.file_sha256.in_(digests), Note.status != VOIDED
+        )
     )
     return set(rows.all())
 

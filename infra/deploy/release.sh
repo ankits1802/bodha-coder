@@ -3,7 +3,8 @@ set -euo pipefail
 register() {
   local name="$1" image="$2"
   aws ecs describe-task-definition --task-definition "${TASK_FAMILY_PREFIX}${name}" --query taskDefinition --output json \
-    | jq --arg image "$image" '.containerDefinitions[0].image = $image
+    | jq --arg image "$image" --arg tag "$TAG" '.containerDefinitions[0].image = $image
+        | .containerDefinitions[0].environment = ([.containerDefinitions[0].environment[] | select(.name != "APP_VERSION")] + [{name: "APP_VERSION", value: $tag}])
         | {family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions, requiresCompatibilities, cpu, memory, runtimePlatform}' \
     > "${RUNNER_TEMP:-/tmp}/${name}.json"
   aws ecs register-task-definition --cli-input-json "file://${RUNNER_TEMP:-/tmp}/${name}.json" \

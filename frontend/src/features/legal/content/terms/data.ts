@@ -27,7 +27,7 @@ export const TERMS_DATA = [
       "Output is produced by probabilistic models and automated rules. It may be incomplete, inaccurate or out of date, even when it quotes evidence from the note. The Service checks suggested codes against official code sets and shows its evidence to make review easier, but those checks do not guarantee that a code is correct for a particular claim. A qualified person must review Output before relying on it.",
     ),
     paragraph(
-      "Similar inputs may produce different Output, and Output for you may resemble Output generated for others. We may change the model, model version or instructions the Service uses in order to maintain or improve quality; each analysis records the model and prompt version it used.",
+      "Similar inputs may produce different Output, and Output for you may resemble Output generated for others. We may change the model, model version or instructions the Service uses in order to maintain or improve quality; each analysis records the model, the prompt version and the full prompt it used, together with the model’s raw reply.",
     ),
     paragraph(
       "Accuracy features, such as blind audits and evaluation runs, report agreement on the samples you choose. They describe past results and are not a promise about future performance.",

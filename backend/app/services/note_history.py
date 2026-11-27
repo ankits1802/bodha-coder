@@ -11,6 +11,7 @@ from app.services.attestations import attestation_view, note_attestations
 from app.services.claim_exports import export_view, note_exports
 from app.services.claim_snapshots import note_snapshots, snapshot_view
 from app.services.memberships import member_names
+from app.services.note_change_history import note_change_rows
 from app.services.pointer_decisions import read_pointer_key
 
 __all__ = ["note_history"]
@@ -31,6 +32,7 @@ async def note_history(db: AsyncSession, note_id: str, practice_id: str) -> dict
             for export, item in await note_exports(db, note_id)
         ],
         "attestations": await _attestations(db, note_id),
+        "changes": await note_change_rows(db, note_id, practice_id),
     }
 
 

@@ -12,6 +12,8 @@ const NPI_PATTERN = /^\d{10}$/;
 
 export const PASSWORD_MIN_LENGTH = 10;
 export const COMPLIANCE_REASON_MAX = 300;
+export const VOID_REASON_MIN = 3;
+export const VOID_REASON_MAX = 2000;
 
 export interface ParsedCodes {
   codes: string[];

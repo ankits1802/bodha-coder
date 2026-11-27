@@ -80,8 +80,10 @@ left out practices with no priced use; and that billers saw two exports that pro
 
 ## Follows
 
-- Migration 0018 (to be renumbered after the migrations in flight) adds `inbox_items`, `queue_views` and
-  `notes.impact_cents`. Both tables are deleted with their practice and with a person deleted with it.
+- Migration 0016 adds `inbox_items`, `queue_views` and `notes.impact_cents`, adds both tables to
+  `bodha_purge_practice` (decision [0038](0038-seven-year-retention-and-tamper-evidence.md)) before the people leaving with the practice, and gives the
+  runtime role `UPDATE` on both tables and on `notes.impact_cents` and `DELETE` on `queue_views` (a saved
+  view is a preference, not a record) when the role exists.
 - A later "compliance returned" writer calls `notify` with kind `compliance_returned` and a `reason`
   payload; no migration is needed.
 - Matching is rules over page 1 text only: a scanned PDF without a text layer, a note that names its

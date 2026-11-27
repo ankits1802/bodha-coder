@@ -84,3 +84,9 @@ It deletes only keys whose shape it knows and leaves the intake folders to the p
 practice with no row is emptied only when HQ activity records its deletion, so a database that
 lacks a practice never empties that practice's folder. Twenty-four hours is longer than any read
 or upload takes, so a file stored a moment before its row is committed is never taken for an orphan.
+
+## Superseded 2026-11-28
+
+Deleting notes and practices, the six-year access log and the sweep of deleted practices' folders
+are replaced by voiding, closing, a purge allowed only 2557 days after closing, a seven-year minimum
+and a sweep that keeps every file a record holds: [0038](0038-seven-year-retention-and-tamper-evidence.md).

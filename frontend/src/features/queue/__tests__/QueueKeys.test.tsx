@@ -28,7 +28,7 @@ vi.mock("@/lib/api/uploads", () => ({ getProviders: vi.fn() }));
 vi.mock("@/lib/api/notes", () => ({
   approveNotes: vi.fn(),
   assignNotes: vi.fn(),
-  deleteNotes: vi.fn(),
+  voidNotes: vi.fn(),
   remindProvider: vi.fn(),
   reopenNotes: vi.fn(),
   retryFailedNotes: vi.fn(),

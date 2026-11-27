@@ -2,15 +2,17 @@ from typing import Literal
 
 from app.api.responses.base import PracticeRole, View
 from app.api.responses.team import MemberStatus
-from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, SUBSCRIPTION_STATUSES
-from app.services.hq import STATUSES
+from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, PRACTICE_STATUSES, SUBSCRIPTION_STATUSES
 from app.services.hq_admins import OUTCOMES
 from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import SIGNUP_SOURCES
 
 __all__ = [
+    "ActivityChange",
     "AdminAppointed",
     "AdminLinkSent",
+    "AuditChain",
+    "AuditVerification",
     "DemoRequestRow",
     "HqActivityEntry",
     "HqActivityPage",
@@ -25,6 +27,7 @@ __all__ = [
     "HqSearchPerson",
     "HqSearchResults",
     "HqTeamMember",
+    "PracticePurged",
     "Renewal",
 ]
 
@@ -44,13 +47,16 @@ class HqOverview(View):
 class HqPractice(View):
     id: str
     name: str
-    status: Literal[STATUSES]
+    status: Literal[PRACTICE_STATUSES]
     plan: Literal[PLAN_KEYS]
     seats: int
     users: int
     providers: int
     waiting: int
     renews_on: str | None
+    closed_at: str | None
+    purge_after: str | None
+    purged_at: str | None
     time_zone: str
     source: Literal[SIGNUP_SOURCES] | None
     signed_up_on: str
@@ -91,12 +97,43 @@ class HqPlace(View):
     active: bool
 
 
+class ActivityChange(View):
+    field: str
+    before: str | int | None
+    after: str | int | None
+
+
 class HqActivityEntry(View):
     at: str
     actor: str
     action: str
     practice_id: str | None
     detail: str | None
+    changes: list[ActivityChange] | None
+
+
+class AuditChain(View):
+    chain: Literal["access_log", "activity"]
+    practice_id: str | None
+    practice_name: str | None
+    checked: int
+    head_seq: int
+    head_hash: str
+    intact: bool
+    broken_seq: int | None
+    broken_id: str | None
+    problem: Literal["missing rows", "broken link", "changed row"] | None
+
+
+class AuditVerification(View):
+    checked_at: str
+    intact: bool
+    chains: list[AuditChain]
+
+
+class PracticePurged(View):
+    access_log_entries: int
+    access_log_sha256: str
 
 
 class HqActivityPage(View):
@@ -142,7 +179,7 @@ class HqPerson(View):
 class HqPracticeHit(View):
     id: str
     name: str
-    status: Literal[STATUSES]
+    status: Literal[PRACTICE_STATUSES]
 
 
 class HqPersonPractice(View):

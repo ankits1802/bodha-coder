@@ -82,6 +82,11 @@ variable "billing" {
   }
 }
 
+variable "runtime_database" {
+  type    = bool
+  default = false
+}
+
 variable "admin_subdomain" {
   type    = string
   default = ""

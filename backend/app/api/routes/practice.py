@@ -5,10 +5,12 @@ from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy import select
 
 from app.adapters.billing_contract import BillingProvider
 from app.api.bodies import (
+    AccessLogExportBody,
     ChecksBody,
     ImportBody,
     MipsBody,
@@ -18,7 +20,7 @@ from app.api.bodies import (
     SectionBody,
     SecurityBody,
 )
-from app.api.responses.base import Created, ExactRoute
+from app.api.responses.base import Created, ExactRoute, file_download
 from app.api.responses.practice import (
     AccessLogPage,
     ImportedProviders,
@@ -31,16 +33,17 @@ from app.api.responses.practice import (
 from app.api.responses.practice import Provider as ProviderView
 from app.api.responses.review_records import ReviewSettings
 from app.api.wiring import BillingProviders
-from app.core.calendar import today_in
 from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
-from app.core.roles import ADMINS, PRACTICE_ROLES
-from app.models import PlaceOfService, Provider
-from app.services import payers, practice_setup, quantity_sync, records
+from app.core.roles import ADMINS, COMPLIANCE, PRACTICE_ROLES
+from app.models import PlaceOfService, Provider, utcnow
+from app.services import access_log_reports, payers, practice_setup, quantity_sync
+from app.services.access_log_reports import AccessLogFilter
 from app.services.provider_details import details_view
 
 router = APIRouter(tags=["practice"], route_class=ExactRoute)
 Admin = Annotated[Actor, Depends(require(*ADMINS))]
+Auditor = Annotated[Actor, Depends(require(*COMPLIANCE))]
 
 
 @router.get("/practice/setup", response_model=PracticeSetup)
@@ -185,10 +188,24 @@ async def save_mips(body: MipsBody, db: Db, actor: Admin) -> dict[str, list[str]
 
 @router.get("/access-log", response_model=AccessLogPage)
 async def access_log(
+    *,
     db: Db,
-    actor: Admin,
-    day: date | None = None,
-    user_id: str | None = None,
+    actor: Auditor,
+    start: date | None = None,
+    end: date | None = None,
+    user_id: Annotated[str | None, Query(max_length=36)] = None,
+    action: Annotated[str | None, Query(max_length=40)] = None,
+    note_id: Annotated[str | None, Query(max_length=36)] = None,
+    patient: Annotated[str | None, Query(max_length=200)] = None,
+    birth_date: date | None = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    return await records.access_log_page(db, actor, day=day or today_in(actor.zone), user_id=user_id, offset=offset)
+    chosen = AccessLogFilter(start, end, user_id, action, note_id, patient, birth_date)
+    return await access_log_reports.access_log_page(db, actor, chosen, offset=offset)
+
+
+@router.post("/access-log/export", **file_download("text/csv"))
+async def export_access_log(body: AccessLogExportBody, db: Db, actor: Auditor) -> Response:
+    content = await access_log_reports.access_log_csv(db, actor, AccessLogFilter(**body.model_dump()))
+    name = f"bodha-access-log-{utcnow():%Y%m%d-%H%M}.csv"
+    return Response(content, media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{name}"'})

@@ -7,11 +7,11 @@ from fastapi import APIRouter, Depends
 from app.api.bodies import TourBody
 from app.api.responses.base import ExactRoute
 from app.api.responses.tours import Tour, TourRecord
-from app.core.deps import Actor, Db, session_actor
+from app.core.deps import Actor, Db, current_actor
 from app.services import tours
 
 router = APIRouter(prefix="/account/tours", tags=["account"], route_class=ExactRoute)
-Me = Annotated[Actor, Depends(session_actor)]
+Me = Annotated[Actor, Depends(current_actor)]
 
 
 @router.get("", response_model=list[TourRecord])

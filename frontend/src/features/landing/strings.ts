@@ -182,7 +182,7 @@ export const LANDING_TEXT = {
       settings: [
         { label: "Two-step", value: "Admin, Compliance" },
         { label: "Sign out after", value: "15 min" },
-        { label: "Access log kept", value: "6 years" },
+        { label: "Access log kept", value: "7 years" },
       ],
       autonomy: "Auto-approve",
       off: "Off",
@@ -273,7 +273,7 @@ export const LANDING_TEXT = {
     lead: "Patient details stay where they belong.",
     items: [
       { title: "Two-step verification", body: "On for admins and compliance by default. Add any role." },
-      { title: "Access log", body: "Every record opened, changed or exported, kept six years or more." },
+      { title: "Access log", body: "Every record opened, changed or exported, kept seven years or more." },
       { title: "Encryption", body: "Documents encrypted at rest with AWS KMS, TLS in transit." },
       { title: "Signed, short-lived links", body: "Documents open only through links that expire quickly." },
       { title: "Automatic sign-out", body: "After 5 to 30 quiet minutes, as the practice chooses." },

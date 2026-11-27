@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.model_prices import ModelPrice
 
 WEB_SCHEMES = ("https://", "http://")
+RETENTION_FLOOR_DAYS = 2557
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 DEFAULT_MODEL_PRICES = {DEFAULT_GEMINI_MODEL: ModelPrice(input=Decimal("0.50"), output=Decimal("3.00"))}
 BILLING_SETTINGS = (
@@ -41,6 +42,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     database_url: str = "postgresql+asyncpg://bodha:bodha@localhost:5432/bodha"
+    migration_database_url: str | None = None
+    app_version: str = Field(default="unversioned", min_length=1, max_length=64)
+    retention_days: int = Field(default=RETENTION_FLOOR_DAYS, ge=RETENTION_FLOOR_DAYS)
     secret_key: str = Field(min_length=32)
     app_url: str = "http://localhost:3000"
     admin_url: str = ""
@@ -135,6 +139,11 @@ class Settings(BaseSettings):
             return None
         return value.strip() if isinstance(value, str) else value
 
+    @field_validator("migration_database_url", mode="before")
+    @classmethod
+    def _blank_url_is_unset(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
+
     @field_validator("terms_url", "baa_url", "privacy_url", mode="before")
     @classmethod
     def _web_address_or_none(cls, value: object) -> object:
@@ -170,6 +179,10 @@ class Settings(BaseSettings):
         if self.gemini_backend == "demo" and self.app_environment == "production":
             raise ValueError("GEMINI_BACKEND=demo is refused when APP_ENVIRONMENT is production")
         return self
+
+    @property
+    def migration_url(self) -> str:
+        return self.migration_database_url or self.database_url
 
     @property
     def can_send_texts(self) -> bool:

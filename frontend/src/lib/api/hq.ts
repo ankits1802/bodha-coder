@@ -3,6 +3,7 @@ import type {
   AdminAppointed,
   AdminAppointment,
   AdminLinkSent,
+  AuditVerification,
   Created,
   DemoRequest,
   DemoRequestRow,
@@ -19,6 +20,7 @@ import type {
   HqSearchResults,
   HqTeamMember,
   NewPractice,
+  PracticePurged,
   PracticeUpdate,
   Renewal,
   SpendRange,
@@ -66,8 +68,16 @@ export function renewPractice(practiceId: string, until: string | null): Promise
   return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST", body: { until } });
 }
 
-export function deletePractice(practiceId: string, confirmName: string): Promise<void> {
-  return requestNothing(practicePath(practiceId), { method: "DELETE", body: { confirm_name: confirmName } });
+export function closePractice(practiceId: string, confirmName: string): Promise<void> {
+  return requestNothing(practicePath(practiceId, "/close"), { method: "POST", body: { confirm_name: confirmName } });
+}
+
+export function purgePractice(practiceId: string, confirmName: string): Promise<PracticePurged> {
+  return request<PracticePurged>(practicePath(practiceId, "/purge"), { body: { confirm_name: confirmName } });
+}
+
+export function verifyAuditLog(): Promise<AuditVerification> {
+  return request<AuditVerification>("/api/hq/audit-log/verify", { method: "POST" });
 }
 
 export function getHqPlaces(): Promise<HqPlace[]> {

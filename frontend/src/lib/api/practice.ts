@@ -1,5 +1,6 @@
-import { request, requestNothing } from "./client";
+import { request, requestFile, requestNothing, type DownloadedFile } from "./client";
 import type {
+  AccessLogFilters,
   AccessLogPage,
   Checks,
   Created,
@@ -57,8 +58,12 @@ export function saveMips(measureIds: string[], expectedMeasureIds: string[]): Pr
   });
 }
 
-export function getAccessLog(day: string | null, userId: string | null, offset: number): Promise<AccessLogPage> {
-  return request<AccessLogPage>("/api/access-log", { query: { day, user_id: userId, offset } });
+export function getAccessLog(filters: AccessLogFilters, offset: number): Promise<AccessLogPage> {
+  return request<AccessLogPage>("/api/access-log", { query: { ...filters, offset } });
+}
+
+export function exportAccessLog(filters: AccessLogFilters): Promise<DownloadedFile> {
+  return requestFile("/api/access-log/export", { method: "POST", body: filters });
 }
 
 const payerPath = (payerId: string): string => `/api/practice/payers/${encodeURIComponent(payerId)}`;

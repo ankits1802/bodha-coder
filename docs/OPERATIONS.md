@@ -36,8 +36,9 @@ filter level = "ERROR"
 ```
 
 For SQL, start a break-glass task from `postgres:17.12-trixie` in the private subnets with the
-worker's security group and ECS Exec on, run `psql` with the `bodha_app` credentials from the
-`database-url` secret, and stop the task when done.
+worker's security group and ECS Exec on, run `psql` with the `bodha_runtime` credentials from the
+`database-url` secret, and stop the task when done. Use the schema owner (`migration-database-url`)
+only for the maintenance runbook below.
 
 ## Gemini is out of credits or over quota
 
@@ -122,7 +123,9 @@ rotates without an outage.
 The worker's daily orphan sweep writes one `orphan file sweep` line to the worker log with counts only:
 `deleted`, `kept`, `recent` (younger than 24 hours), `intake` (left in the inbox folders), `unknown`
 (a key of a shape the sweep does not know, left alone) and `unknown_folders` (a practice folder with
-no practice row and no `practice deleted` entry, left alone).
+no practice row, left alone). It deletes only objects whose owner row does not exist (a note, a
+remittance or an evaluation run), such as an upload whose database transaction failed, or what a purge
+failed to remove.
 
 ```
 filter message = "orphan file sweep"
@@ -131,9 +134,9 @@ filter message = "orphan file sweep"
 ```
 
 `unknown` or `unknown_folders` above zero means objects nothing in Bodha accounts for: list them with
-`aws s3 ls --recursive s3://<bucket>/practices/<practice id>/` (keys hold ids only), find their source,
-and delete them by hand only once that is understood. A deleted object stays recoverable for 30 days
-as a noncurrent version (Restore from backup, Documents).
+`aws s3 ls --recursive s3://<bucket>/practices/<practice id>/` (keys hold ids only) and find their source.
+Do not delete them by hand while they may belong to a record; Object Lock keeps every version for seven
+years in any case.
 
 ## Restore from backup
 
@@ -146,7 +149,8 @@ Database to a point in time:
    instance with the same parameter group, subnet group, security group and KMS key.
 2. Scale `worker` to zero and put the app in maintenance (ALB fixed response on the HTTPS
    listener) so nothing writes to the old instance.
-3. Update `bodha/<env>/database-url` to the new endpoint, run the `migrate` task (it should be a
+3. Update `bodha/<env>/database-url` and `bodha/<env>/migration-database-url` to the new endpoint (the
+   restored instance keeps both roles), run the `migrate` task (it should be a
    no-op), then redeploy `api` and `worker` and remove the maintenance rule.
 4. Check readiness, then rename the instances so the restored one carries the production name;
    keep the old one stopped until the incident is closed, then delete it.
@@ -154,36 +158,67 @@ Database to a point in time:
 A partial repair (one practice's rows) is done by restoring to a separate instance and copying
 only the affected rows back, reviewed by two people.
 
-Documents: the bucket is versioned, so a deleted or overwritten PDF is recovered by deleting its
-delete marker or copying the earlier version back, for 30 days:
+Documents: the bucket is versioned and under Object Lock, so a deleted or overwritten PDF is
+recovered by deleting its delete marker or copying the earlier version back, for seven years:
 
 ```
 aws s3api list-object-versions --bucket <bucket> --prefix practices/<practice id>/notes/<note id>/
 aws s3api delete-object --bucket <bucket> --key <key> --version-id <delete marker version id>
 ```
 
-## Purge a practice
+## Close and purge a practice
 
-When a practice leaves and its data must be deleted (end of contract, at the practice's written
-request, after its records have been returned):
+Records are kept at least seven years from creation and seven years after a practice closes
+([0038](decisions/0038-seven-year-retention-and-tamper-evidence.md)). A practice that leaves is closed,
+not deleted; its records are purged only once that period has passed.
 
-1. Export what the practice is owed first (approved codes, and the access log while its retention
-   period runs) and record the handover.
-2. In HQ, end or block the practice, then delete it and type its name to confirm. This deletes
-   every row that belongs to the practice (its people, providers, notes and their history, provider
-   requests and access log), records "practice deleted" in HQ activity, and deletes every object
-   under `practices/<practice id>/`.
-3. If the HQ log shows "stored files of deleted practice … were not removed", the daily orphan sweep
-   deletes them once they are 24 hours old. To remove them at once, delete them by hand:
-   `aws s3 rm s3://<bucket>/practices/<practice id>/ --recursive`.
-4. Earlier object versions stay recoverable for 30 days and then expire. To remove them at once:
+1. Export what the practice is owed first (approved codes, and the access log from Security, which is
+   itself logged) and record the handover.
+2. In HQ, end or block the practice, cancel any live subscription, then Close it and type its name. Every
+   user is signed out, open provider requests are cancelled, queued reads stop, and HQ activity records
+   `practice closed`. Nothing is deleted; HQ shows the date after which it may be purged
+   (`closed_at` + `RETENTION_DAYS`, at least 2557 days).
+3. After that date, and only if no legal hold, audit or investigation needs the records, Purge it in HQ
+   and type its name. Bodha writes the practice's access log, with its chain columns, to
+   `archives/practices/<practice id>/access-log.csv`, deletes the practice's rows (the practice row stays
+   as `purged`, HQ activity stays), records `practice purged` with the rows removed and the archive's
+   entry count and SHA-256, and deletes the objects under `practices/<practice id>/`. Postgres refuses the
+   purge before 2557 days whatever the request says.
+4. If the worker log shows "stored files of purged practice … were not removed", the next orphan sweep
+   deletes them once they are 24 hours old.
+5. Object versions stay until their seven-year Object Lock retention and the lifecycle rule end them;
+   monthly backups taken while the practice was open age out seven years after each was taken. Tell the
+   practice the date by which every copy is gone, and record it.
 
-   ```
-   aws s3api list-object-versions --bucket <bucket> --prefix practices/<practice id>/ \
-     --query "{Objects: [Versions, DeleteMarkers][][].{Key: Key, VersionId: VersionId}}" --output json > versions.json
-   aws s3api delete-objects --bucket <bucket> --delete file://versions.json
-   ```
+## Verify the audit log
 
-   (`delete-objects` takes up to 1,000 entries per call.)
-5. Database backups keep the rows until they age out (35 days for point-in-time restore, longer for
-   vault copies). Tell the practice the date by which every copy is gone, and record it.
+The access log (one chain per practice) and HQ activity (one chain) are hash-chained by Postgres.
+
+1. In HQ, Activity, choose Verify audit log (`POST /api/hq/audit-log/verify`). Each run is itself recorded
+   as `audit log verified` with its result, which leaves a dated checkpoint in the activity chain.
+2. Every chain intact: nothing to do. Keep the head sequence and hash if an auditor asks for a checkpoint
+   outside Bodha.
+3. A broken chain names the practice (or HQ activity), the first entry number and the problem:
+   `missing rows` (an entry was removed), `broken link` (an entry's link does not match the one before) or
+   `changed row` (an entry's content no longer matches its hash). Treat it as a security incident: do not
+   change anything, record the result, compare with the latest backup taken before the reported entry
+   (restore it to a separate instance and run `select * from bodha_verify_audit_log()` there), and review
+   CloudTrail and the database logs for who connected as the schema owner. The runtime role cannot change
+   or delete these rows, so a break means the schema owner, a superuser or a restore did.
+
+## Change protected rows
+
+Append-only tables, written-once columns, closed practices and every retained row are guarded by
+triggers. A correction that truly needs one (for example a migration's data fix) is done only by the
+schema owner, reviewed by two people and recorded in the incident or change record:
+
+```
+begin;
+set local bodha.maintenance = 'on';
+update ...;
+commit;
+```
+
+The setting is ignored for any role that does not own the tables, so `bodha_runtime` cannot use it. A
+change to `access_log` or `activity` breaks their hash chain at that entry, which the next verification
+reports; record why beforehand.

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_store import ObjectStore
 from app.core.config import get_settings
 from app.core.deps import Actor
-from app.models import AddendumRequest, Analysis, Decision, NoteText, Provider
+from app.models import AddendumRequest, Analysis, Decision, Note, NoteText, Provider, User
 from app.services.audit_log import record_access
 from app.services.estimates import note_estimate
 from app.services.finding import Finding
@@ -19,6 +19,8 @@ from app.services.placement import current_findings
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
 from app.services.worklists import assignee_name, summary
+
+PROVIDER_FIELDS = ("id", "name", "credential", "specialty", "channel")
 
 
 async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str, Any]:
@@ -37,13 +39,8 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
             "assignee_name": await assignee_name(db, note),
             "patient_age": note.patient_age,
             "patient_sex": note.patient_sex,
-            "provider": {
-                "id": provider.id,
-                "name": provider.name,
-                "credential": provider.credential,
-                "specialty": provider.specialty,
-                "channel": provider.channel,
-            },
+            "provider": {key: getattr(provider, key) for key in PROVIDER_FIELDS},
+            "voided": await _voided(db, note),
         },
         "failure": await _latest_failure(db, note.id) if note.status == "failed" else None,
         "texts": await _texts(db, note.id),
@@ -73,6 +70,13 @@ def _finding(finding: Finding, choice: str, decided: Decision | None) -> dict[st
         "override": {"reason": decided.override_reason, "note": decided.override_note} if reasoned else None,
         "override_needed": decided is not None and not reasoned and departs_from_bodha(finding, decided.choice),
     }
+
+
+async def _voided(db: AsyncSession, note: Note) -> dict[str, Any] | None:
+    if note.voided_at is None:
+        return None
+    by = await db.scalar(select(User.name).where(User.id == note.voided_by)) if note.voided_by else None
+    return {"at": note.voided_at.isoformat(), "by": by, "reason": note.void_reason, "was": note.status_before_void}
 
 
 async def _latest_failure(db: AsyncSession, note_id: str) -> str | None:

@@ -15,6 +15,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/access-log/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["export_access_log_api_access_log_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/account/tours": {
         parameters: {
             query?: never;
@@ -671,6 +687,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hq/audit-log/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify_audit_log_api_hq_audit_log_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hq/demo-requests": {
         parameters: {
             query?: never;
@@ -777,7 +809,7 @@ export interface paths {
         get: operations["practice_page_api_hq_practices__practice_id__get"];
         put?: never;
         post?: never;
-        delete: operations["delete_practice_api_hq_practices__practice_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["edit_practice_api_hq_practices__practice_id__patch"];
@@ -815,6 +847,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hq/practices/{practice_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["close_practice_api_hq_practices__practice_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hq/practices/{practice_id}/people": {
         parameters: {
             query?: never;
@@ -825,6 +873,22 @@ export interface paths {
         get: operations["practice_people_api_hq_practices__practice_id__people_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hq/practices/{practice_id}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["purge_practice_api_hq_practices__practice_id__purge_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1071,22 +1135,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/notes/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["delete_notes_api_notes_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/notes/reopen": {
         parameters: {
             query?: never;
@@ -1113,6 +1161,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["retry_failed_api_notes_retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["void_notes_api_notes_void_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1417,6 +1481,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["reopen_api_notes__note_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notes/{note_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["restore_api_notes__note_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2349,11 +2429,31 @@ export interface components {
             note_id: string | null;
             user_agent: string | null;
         };
+        AccessLogExportBody: {
+            action?: string | null;
+            birth_date?: string | null;
+            end?: string | null;
+            note_id?: string | null;
+            patient?: string | null;
+            start?: string | null;
+            user_id?: string | null;
+        };
         AccessLogPage: {
+            actions: string[];
             items: components["schemas"]["AccessLogEntry"][];
             offset: number;
             page_size: number;
+            people: components["schemas"]["AccessLogPerson"][];
             total: number;
+        };
+        AccessLogPerson: {
+            id: string;
+            name: string;
+        };
+        ActivityChange: {
+            after: string | number | null;
+            before: string | number | null;
+            field: string;
         };
         AddendumAnswer: {
             choice: string;
@@ -2485,12 +2585,29 @@ export interface components {
             user_agent: string | null;
             wording: string;
         };
+        AuditChain: {
+            broken_id: string | null;
+            broken_seq: number | null;
+            chain: "access_log" | "activity";
+            checked: number;
+            head_hash: string;
+            head_seq: number;
+            intact: boolean;
+            practice_id: string | null;
+            practice_name: string | null;
+            problem: ("missing rows" | "broken link" | "changed row") | null;
+        };
         AuditOverview: {
             auditSummary: string | null;
             cmsCDICompliance: components["schemas"]["CmsCdiCompliance"][] | null;
             codingCompliance: components["schemas"]["CodingComplianceCheck"][] | null;
             overallComplianceScore: number | null;
             requiredElements: components["schemas"]["RequiredElement"][] | null;
+        };
+        AuditVerification: {
+            chains: components["schemas"]["AuditChain"][];
+            checked_at: string;
+            intact: boolean;
         };
         AutoApproveBody: {
             on: boolean;
@@ -2748,7 +2865,7 @@ export interface components {
         };
         ComplianceOutcome: {
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
         };
         CompliancePattern: {
             count: number;
@@ -2774,9 +2891,12 @@ export interface components {
             place_code: string;
             provider_name: string;
             service_date: string;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             suggested: string[];
             visit_type: string;
+        };
+        ConfirmPracticeBody: {
+            confirm_name: string;
         };
         Created: {
             id: string;
@@ -2800,7 +2920,7 @@ export interface components {
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
             minutes: number | null;
             patient_name: string | null;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
         };
         DayProvider: {
             id: string;
@@ -2823,15 +2943,6 @@ export interface components {
             reasons?: {
                 [key: string]: components["schemas"]["OverrideBody"];
             };
-        };
-        DeleteNotesBody: {
-            note_ids: string[];
-        };
-        DeletePracticeBody: {
-            confirm_name: string;
-        };
-        DeletedNotes: {
-            deleted: string[];
         };
         DemoBody: {
             email: string;
@@ -3111,6 +3222,7 @@ export interface components {
             action: string;
             actor: string;
             at: string;
+            changes: components["schemas"]["ActivityChange"][] | null;
             detail: string | null;
             practice_id: string | null;
         };
@@ -3170,17 +3282,20 @@ export interface components {
             billing_interval: ("monthly" | "annual") | null;
             billing_provider: ("stripe" | "paypal") | null;
             billing_status: ("pending" | "active" | "past_due" | "canceled" | "expired") | null;
+            closed_at: string | null;
             failed_24h: number;
             id: string;
             last_failure: string | null;
             name: string;
             plan: "trial" | "essentials" | "professional" | "enterprise";
             providers: number;
+            purge_after: string | null;
+            purged_at: string | null;
             renews_on: string | null;
             seats: number;
             signed_up_on: string;
             source: ("self" | "hq") | null;
-            status: "trial" | "active" | "ended" | "blocked";
+            status: "trial" | "active" | "ended" | "blocked" | "closed" | "purged";
             time_zone: string;
             users: number;
             waiting: number;
@@ -3188,7 +3303,7 @@ export interface components {
         HqPracticeHit: {
             id: string;
             name: string;
-            status: "trial" | "active" | "ended" | "blocked";
+            status: "trial" | "active" | "ended" | "blocked" | "closed" | "purged";
         };
         HqPracticePage: {
             places: components["schemas"]["HqPracticePlace"][];
@@ -3439,6 +3554,14 @@ export interface components {
             practice_name: string;
             time_zone: string;
         };
+        NoteChangeRecord: {
+            at: string;
+            by: string | null;
+            field: "status" | "flag" | "payer" | "assignee" | "visit_type";
+            new: string | null;
+            old: string | null;
+            reason: string | null;
+        };
         NoteComment: {
             at: string;
             author_name: string;
@@ -3511,12 +3634,14 @@ export interface components {
             provider: components["schemas"]["ProviderRef"];
             provider_name: string;
             service_date: string;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             visit_type: string;
+            voided: components["schemas"]["VoidInfo"] | null;
         };
         NoteHistory: {
             analyses: components["schemas"]["AnalysisRevision"][];
             attestations: components["schemas"]["AttestationRecord"][];
+            changes: components["schemas"]["NoteChangeRecord"][];
             code_sets: components["schemas"]["CodeSetRevision"][];
             decisions: components["schemas"]["DecisionRecord"][];
             exports: components["schemas"]["NoteExportRecord"][];
@@ -3529,7 +3654,7 @@ export interface components {
             payer: string | null;
         };
         NoteState: {
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
         };
         NoteSummary: {
             assigned_to: string | null;
@@ -3546,7 +3671,7 @@ export interface components {
             place_code: string;
             provider_name: string;
             service_date: string;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             visit_type: string;
         };
         NoteText: {
@@ -3703,6 +3828,10 @@ export interface components {
             id: string;
             name: string;
             role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
+        };
+        PracticePurged: {
+            access_log_entries: number;
+            access_log_sha256: string;
         };
         PracticeSetup: {
             checks: components["schemas"]["Checks"];
@@ -3952,7 +4081,7 @@ export interface components {
             place_code: string;
             provider_name: string;
             service_date: string;
-            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
+            status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             suggested: string[];
             visit_type: string;
         };
@@ -4105,6 +4234,9 @@ export interface components {
             addendum_text: string;
             status: "sent" | "answered" | "expired" | "cancelled";
         };
+        RestoreNoteBody: {
+            reason: string;
+        };
         RetryBody: {
             note_ids?: string[] | null;
         };
@@ -4185,7 +4317,7 @@ export interface components {
             mfa_roles: string[];
         };
         SecuritySettings: {
-            access_log_years: 6 | 7 | 8 | 9 | 10;
+            access_log_years: 7 | 8 | 9 | 10;
             idle_minutes: 5 | 10 | 15 | 30;
             mfa_roles: ("admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer")[];
         };
@@ -4367,6 +4499,19 @@ export interface components {
         VisitTypeBody: {
             visit_type: string;
         };
+        VoidInfo: {
+            at: string;
+            by: string | null;
+            reason: string | null;
+            was: ("queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided") | null;
+        };
+        VoidNotesBody: {
+            note_ids: string[];
+            reason: string;
+        };
+        VoidedNotes: {
+            voided: string[];
+        };
     };
     responses: never;
     parameters: never;
@@ -4379,8 +4524,13 @@ export interface operations {
     access_log_api_access_log_get: {
         parameters: {
             query?: {
-                day?: string | null;
+                start?: string | null;
+                end?: string | null;
                 user_id?: string | null;
+                action?: string | null;
+                note_id?: string | null;
+                patient?: string | null;
+                birth_date?: string | null;
                 offset?: number;
             };
             header?: {
@@ -4397,6 +4547,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccessLogPage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    export_access_log_api_access_log_export_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessLogExportBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
             401: {
@@ -6356,6 +6563,51 @@ export interface operations {
             };
         };
     };
+    verify_audit_log_api_hq_audit_log_verify_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditVerification"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     demo_requests_api_hq_demo_requests_get: {
         parameters: {
             query?: never;
@@ -6762,63 +7014,6 @@ export interface operations {
             };
         };
     };
-    delete_practice_api_hq_practices__practice_id__delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                practice_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeletePracticeBody"];
-            };
-        };
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     edit_practice_api_hq_practices__practice_id__patch: {
         parameters: {
             query?: never;
@@ -6990,6 +7185,63 @@ export interface operations {
             };
         };
     };
+    close_practice_api_hq_practices__practice_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPracticeBody"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     practice_people_api_hq_practices__practice_id__people_get: {
         parameters: {
             query?: never;
@@ -7009,6 +7261,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HqPerson"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    purge_practice_api_hq_practices__practice_id__purge_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPracticeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticePurged"];
                 };
             };
             401: {
@@ -7972,63 +8283,6 @@ export interface operations {
             };
         };
     };
-    delete_notes_api_notes_delete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteNotesBody"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeletedNotes"];
-                };
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
     reopen_many_api_notes_reopen_post: {
         parameters: {
             query?: never;
@@ -8107,6 +8361,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueuedNotes"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    void_notes_api_notes_void_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidNotesBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoidedNotes"];
                 };
             };
             401: {
@@ -9348,6 +9659,65 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteState"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    restore_api_notes__note_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreNoteBody"];
+            };
+        };
         responses: {
             200: {
                 headers: {

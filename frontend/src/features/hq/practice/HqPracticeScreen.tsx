@@ -11,7 +11,7 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import { getHqPracticePage } from "@/lib/api/hq";
 import type { HqPractice, HqPracticePage } from "@/lib/api/types";
-import { practiceStatusView } from "../practiceStatus";
+import { isClosed, practiceStatusView } from "../practiceStatus";
 import { AppointAdminDialog } from "../practices/AppointAdminDialog";
 import { RenewDialog } from "../practices/RenewDialog";
 import { HQ_TEXT } from "../strings";
@@ -75,7 +75,7 @@ export function HqPracticeScreen({ practiceId }: { practiceId: string }) {
       <PageHeader
         title={practice?.name ?? words.title}
         subtitle={practice ? <StatusLine practice={practice} /> : undefined}
-        actions={practice ? <HeaderActions onOpen={open} /> : null}
+        actions={practice && !isClosed(practice) ? <HeaderActions onOpen={open} /> : null}
       />
       {notice ? <InlineAlert tone="ok">{notice}</InlineAlert> : null}
       <SegmentedControl<PracticeTab>

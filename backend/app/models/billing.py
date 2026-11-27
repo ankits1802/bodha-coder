@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
@@ -36,7 +36,8 @@ class Subscription(IdMixin, Base):
 class BillingEvent(Base):
     __tablename__ = "billing_events"
     __table_args__ = (one_of("provider", BILLING_PROVIDERS),)
+    __mapper_args__ = {"eager_defaults": True}
     provider: Mapped[str] = mapped_column(String(8), primary_key=True)
     event_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     kind: Mapped[str] = mapped_column(String(80))
-    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.clock_timestamp())

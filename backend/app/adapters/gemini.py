@@ -107,21 +107,22 @@ class GeminiClient:
     ) -> ModelReply:
         async with self._pdf_part(pdf) as document:
             contents: list[Any] = [prompt] if document is None else [document, prompt]
-            response = await self._answer(contents, schema=schema, system=system)
-        return self._reply(response)
+            response, schema_applied = await self._answer(contents, schema=schema, system=system)
+        return self._reply(response, schema_applied=schema_applied)
 
     async def _answer(
         self, contents: list[Any], *, schema: dict[str, Any] | None, system: str | None
-    ) -> types.GenerateContentResponse:
+    ) -> tuple[types.GenerateContentResponse, bool]:
         if schema is None:
-            return await self._generate(contents, _generation_config(system))
+            return await self._generate(contents, _generation_config(system)), False
         try:
-            return await self._generate(contents, _generation_config(system, mime_type=JSON_MIME_TYPE, schema=schema))
+            config = _generation_config(system, mime_type=JSON_MIME_TYPE, schema=schema)
+            return await self._generate(contents, config), True
         except (ModelRequestRejected, ModelUnavailable) as error:
             if not _schema_may_be_at_fault(error):
                 raise
             logger.warning("Gemini schema-constrained call failed (%s); retrying once without the schema", error)
-        return await self._generate(contents, _generation_config(system, mime_type=JSON_MIME_TYPE))
+        return await self._generate(contents, _generation_config(system, mime_type=JSON_MIME_TYPE)), False
 
     async def _generate(
         self, contents: list[Any], config: types.GenerateContentConfig
@@ -191,7 +192,7 @@ class GeminiClient:
         except ModelError as error:
             logger.warning("Gemini did not delete an uploaded PDF (%s); the service expires it after 48 hours", error)
 
-    def _reply(self, response: types.GenerateContentResponse) -> ModelReply:
+    def _reply(self, response: types.GenerateContentResponse, *, schema_applied: bool) -> ModelReply:
         _raise_if_refused(response)
         text = response.text
         if text is None or not text.strip():
@@ -204,6 +205,8 @@ class GeminiClient:
             model=response.model_version or self._model,
             input_tokens=_tokens(usage, "prompt_token_count"),
             output_tokens=_tokens(usage, "candidates_token_count") + _tokens(usage, "thoughts_token_count"),
+            temperature=TEMPERATURE,
+            schema_applied=schema_applied,
         )
 
 
