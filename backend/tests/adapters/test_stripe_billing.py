@@ -190,7 +190,7 @@ async def test_cancelling_keeps_access_to_the_end_of_the_period():
 
 async def test_the_billing_portal_opens_with_bodha_s_own_configuration_when_one_is_set() -> None:
     api = RecordingStripe()
-    ref = SubscriptionRef(customer_id="cus_9", subscription_id="sub_9")
+    ref = SubscriptionRef("sub_9", "cus_9", "price_ess_m")
 
     await StripeBilling(api, webhook_secret=SECRET, portal_configuration="bpc_bodha").manage_url(
         ref, return_url="https://x/plan"
