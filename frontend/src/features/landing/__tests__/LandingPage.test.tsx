@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { generateStaticParams } from "@/app/(marketing)/legal/[document]/page";
 import { haptic } from "@/lib/haptics";
 import { FOOTER_SECTIONS, NAV_SECTIONS, SECTION_IDS } from "../anchors";
 import { LandingPage } from "../LandingPage";
@@ -69,6 +70,21 @@ describe("LandingPage", () => {
       for (const link of links) expect(link).toHaveAttribute("href", `#${SECTION_IDS[key]}`);
       expect(document.getElementById(SECTION_IDS[key])).not.toBeNull();
     }
+  });
+
+  it("links the footer to the legal documents, each a route that exists", () => {
+    render(<LandingPage />);
+    const legal = screen.getByRole("navigation", { name: "Legal" });
+    const links = within(legal).getAllByRole("link");
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Terms", "/legal/terms"],
+      ["Privacy", "/legal/privacy"],
+      ["BAA", "/legal/baa"],
+      ["Security overview", "/legal/security"],
+      ["Subprocessors", "/legal/subprocessors"],
+    ]);
+    const routes = generateStaticParams().map(({ document }) => `/legal/${document}`);
+    for (const link of links) expect(routes).toContain(link.getAttribute("href"));
   });
 
   it("opens the section menu and closes it with Escape, back on its button", async () => {

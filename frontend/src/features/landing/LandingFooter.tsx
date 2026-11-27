@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { FOOTER_LEGAL_SLUGS, LEGAL_LINK_TEXT, legalPath } from "@/components/shared/legal/legalLinks";
 import { SHARED_TEXT } from "@/components/shared/strings";
 import { SIGN_UP_PATH } from "@/lib/api/auth";
 import { FOOTER_SECTIONS, sectionHref } from "./anchors";
@@ -23,8 +24,8 @@ export function LandingFooter() {
   const { footer, sections } = LANDING_TEXT;
   return (
     <footer className="border-t border-separator bg-muted-panel">
-      <div className="mx-auto grid max-w-landing grid-cols-2 gap-x-6 gap-y-10 px-6 pt-14 pb-10 text-callout sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="col-span-2 sm:col-span-1">
+      <div className="mx-auto grid max-w-landing grid-cols-2 gap-x-6 gap-y-10 px-6 pt-14 pb-10 text-callout sm:grid-cols-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="col-span-2 sm:col-span-3 lg:col-span-1">
           <Link href="/" className="text-input font-semibold tracking-snug text-label">
             {SHARED_TEXT.brand}
           </Link>
@@ -53,6 +54,15 @@ export function LandingFooter() {
               {footer.signIn}
             </Link>
           </li>
+        </FooterNav>
+        <FooterNav id="footer-legal" title={LEGAL_LINK_TEXT.heading}>
+          {FOOTER_LEGAL_SLUGS.map((slug) => (
+            <li key={slug}>
+              <Link href={legalPath(slug)} className={LINK}>
+                {LEGAL_LINK_TEXT.links[slug]}
+              </Link>
+            </li>
+          ))}
         </FooterNav>
       </div>
       <div className="mx-auto max-w-landing px-6">

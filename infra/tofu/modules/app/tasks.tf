@@ -104,7 +104,7 @@ locals {
 resource "aws_cloudwatch_log_group" "this" {
   for_each          = local.tasks
   name              = "/${var.name}/${each.key}"
-  retention_in_days = 30
+  retention_in_days = 400
 }
 
 resource "aws_ecs_task_definition" "this" {
