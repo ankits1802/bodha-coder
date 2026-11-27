@@ -18,6 +18,7 @@ from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_provider_access
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import current_decisions, current_findings, refresh_placement
+from app.services.query_governance import refuse_repeat_queries
 from app.services.rate_limits import PROVIDER_CODE_PER_REQUEST, hit
 from app.services.review_actions import note_for
 from app.services.routing import choices_for, open_questions
@@ -61,6 +62,7 @@ async def create_request(
     hold: bool,
 ) -> AddendumRequest:
     note = await note_for(db, actor, note_id)
+    await refuse_repeat_queries(db, note, [edit.key for edit in edits])
     provider = await db.get_one(Provider, note.provider_id)
     questions = await _chosen_questions(db, note, edits)
     destination = provider.email if channel == "email" else provider.phone

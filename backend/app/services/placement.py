@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code
 from app.models import AddendumRequest, CodeSet, Decision, Note, Suggestion
+from app.services.auto_approval import auto_approve, auto_approve_eligible
 from app.services.findings import Finding
 from app.services.routing import has_diagnosis_codes, place
 
@@ -71,3 +72,5 @@ async def refresh_placement(db: AsyncSession, note: Note) -> None:
     )
     note.lane, note.lane_reason, note.headline = placement.lane, placement.reason, placement.headline
     note.status = "ready"
+    if await auto_approve_eligible(db, note):
+        await auto_approve(db, note)

@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "program": "Medicare NCCI, practitioner services",
+  "quarter": "2026Q4",
+  "retrievedOn": "2026-11-27",
+  "servesFrom": "2025-10-01",
+  "servesThrough": "2026-12-31",
+  "deletionDate": "the last date of service the edit applies to",
+  "policyManual": "https://www.cms.gov/files/document/01-chapter1-ncci-medicare-policy-manual-2026-final.pdf",
+  "license": "CPT codes only, copyright American Medical Association; distributed by CMS under the AMA license",
+  "ptp": {
+    "version": "v323r0",
+    "effectiveFrom": "2026-10-01",
+    "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-procedure-procedure-ptp-edits",
+    "sources": [
+      {
+        "url": "https://www.cms.gov/files/zip/medicare-ncci-2026q4-practitioner-ptp-edits-ccipra-v323r0-f1.zip",
+        "zipBytes": 20238121,
+        "zipSha256": "40adc15de0b5cf9470f874b4a0183a2edb285783f2c1c3db35ab27e1a0b032e2",
+        "file": "ccipra-v323r0-f1.TXT",
+        "fileSha256": "7793c0b6686c1e2285b160befa1dd189d5896ac8f25a67f53d75a88c6cf77a7d",
+        "records": 675157
+      },
+      {
+        "url": "https://www.cms.gov/files/zip/medicare-ncci-2026q4-practitioner-ptp-edits-ccipra-v323r0-f2.zip",
+        "zipBytes": 19186336,
+        "zipSha256": "e0c916cc5b0bf1b7d1dea454a02f024fa1f8b8c819da0f86f144ab1d6ff5343d",
+        "file": "ccipra-v323r0-f2.TXT",
+        "fileSha256": "6d71d935ad87a762ae02e85912964d4c7e3d333fc326bad05a07d188500c1188",
+        "records": 674914
+      },
+      {
+        "url": "https://www.cms.gov/files/zip/medicare-ncci-2026q4-practitioner-ptp-edits-ccipra-v323r0-f3.zip",
+        "zipBytes": 19812296,
+        "zipSha256": "79024324e5f2ac9666a5183c9b256a79cd217f1c495d0f69d53c2a1b9d98b208",
+        "file": "ccipra-v323r0-f3.txt",
+        "fileSha256": "34a66d80a16dd1be512b37146a732b4ca4770e230f81469cc2e40b07e12613bf",
+        "records": 675035
+      },
+      {
+        "url": "https://www.cms.gov/files/zip/medicare-ncci-2026q4-practitioner-ptp-edits-ccipra-v323r0-f4.zip",
+        "zipBytes": 17884951,
+        "zipSha256": "028a6d91e27ab177a70f125db22f3f3e898f66345852e7f5470e2065796ef545",
+        "file": "ccipra-v323r0-f4.txt",
+        "fileSha256": "c895e787d3e1f896fd0ccd16b6b91ea61309e40c7dce1892201162eefa43557b",
+        "records": 612539
+      }
+    ],
+    "sourceRecords": 2637645,
+    "transform": "practitioner PTP edits of all parts combined; column 1, column 2, effective date, deletion date (blank when CMS shows *) and modifier indicator; edits with indicator 9 dropped (never active); edits deleted before 2025-10-01 dropped; sorted by column 1, column 2, effective date",
+    "artefact": "ncci_ptp_2026q4.tsv.gz",
+    "artefactSha256": "4dab90909358e6655fd57512fa5b8982ba24ced4f295390d2dc903ab92c9ab59",
+    "contentSha256": "1ae52a61c760843436ffe5ebbb0219f8d2d4e169ff8b5c394a1083661aebaeee",
+    "rows": 1749750
+  },
+  "aoc": {
+    "effectiveFrom": "2026-10-01",
+    "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-add-code-edits",
+    "url": "https://www.cms.gov/files/zip/add-code-edits-medicare-effective-10012026.zip",
+    "zipBytes": 234623,
+    "zipSha256": "5db57504bfb8c1c4d45b901506ba4ac6a9c8990523cfec42ae253e095c041465",
+    "file": "AOC_V2026Q4-F-MCR.txt",
+    "fileSha256": "3c92860fb5001967e5d0aa6193ac17b2f8f1505be7bc03f1e49f113414cc0a68",
+    "records": 9003,
+    "contractorPrimary": "CCCCC",
+    "transform": "add-on code, primary code (CCCCC where the contractor defines the primaries), edit type, effective and deletion dates converted from year and day of year; edits deleted on their effective date dropped (never active); edits deleted before 2025-10-01 dropped; sorted by add-on, primary",
+    "artefact": "ncci_aoc_2026q4.tsv.gz",
+    "artefactSha256": "be6babec31f79ce999ce6a9fbae4f1d7d51d09e637e4d520d4907d28e65de579",
+    "contentSha256": "b509e10d7578dca663d54678c7de6faf4ccbcff69325e7f6f6e5b72b67f452f6",
+    "rows": 7916
+  },
+  "mue": [
+    {
+      "quarter": "2025Q4",
+      "effectiveFrom": "2025-10-01",
+      "effectiveThrough": "2025-12-31",
+      "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edit-mue-archive",
+      "url": "https://www.cms.gov/files/zip/medicare-ncci-2025-q4-practitioner-services-mue-table.zip",
+      "zipBytes": 400625,
+      "zipSha256": "1d293e6c1f19cc47169464816de8614302988f6693f54cd12ba26302f845f0b7",
+      "file": "MCR_MUE_PractitionerServices_Eff_10-01-2025.csv",
+      "fileSha256": "b3d28e5ee9228cad24057ba2d7cbe5d46e60538fdf015c063644f50190823039",
+      "artefact": "ncci_mue_2025q4.tsv.gz",
+      "artefactSha256": "3ad32ddeb1209f64236f089258deb7da5a24ba8315ddba6216af2462f1776ad1",
+      "contentSha256": "6beacf9f59b0f72a4f4547a0fdee0c7ceb50582a5408a8b879b93e453f059add",
+      "rows": 14957
+    },
+    {
+      "quarter": "2026Q1",
+      "effectiveFrom": "2026-01-01",
+      "effectiveThrough": "2026-03-31",
+      "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edit-mue-archive",
+      "url": "https://www.cms.gov/files/zip/medicare-ncci-2026-q1-practitioner-services-mue-table.zip",
+      "zipBytes": 403260,
+      "zipSha256": "e8d68e1fd9838db169771e9621e89f5cf2f781e9f562eed9e2af10ec8a3a4ccf",
+      "file": "MCR_MUE_PractitionerServices_Eff_01-01-2026.csv",
+      "fileSha256": "f22fbffad5e434331594c5fea310c9a8b90324f511f11ca578b032495711c057",
+      "artefact": "ncci_mue_2026q1.tsv.gz",
+      "artefactSha256": "fcd5bb475bc678317a16524f606da60e3e4979247edd6827284dff69bd1d48de",
+      "contentSha256": "adf94081cf94f1a01219ebda6630d63cc22518c6ce39aa9b321b91109188c604",
+      "rows": 15060
+    },
+    {
+      "quarter": "2026Q2",
+      "effectiveFrom": "2026-04-01",
+      "effectiveThrough": "2026-06-30",
+      "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edit-mue-archive",
+      "url": "https://www.cms.gov/files/zip/medicare-ncci-2026-q2-practitioner-services-mue-table.zip",
+      "zipBytes": 404835,
+      "zipSha256": "76a94f1fe345ade25d0ccca8f83db9813236316d158097e03308d1e35f5e3011",
+      "file": "MCR_MUE_PractitionerServices_Eff_04-01-2026.csv",
+      "fileSha256": "f7aa46ee10cd9bd2c53ed045b510fb14a204953b4ebdbec708659096f546c72b",
+      "artefact": "ncci_mue_2026q2.tsv.gz",
+      "artefactSha256": "c0ed9e6620b82b0cc53b9d5b505b1ce14f9ae9ab198fbd23bd362e295082eaa7",
+      "contentSha256": "0a53089c739f418bf40c1b380cb6d2f1651433a0c179459e0c27f6d42f181604",
+      "rows": 15095
+    },
+    {
+      "quarter": "2026Q3",
+      "effectiveFrom": "2026-07-01",
+      "effectiveThrough": "2026-09-30",
+      "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edit-mue-archive",
+      "url": "https://www.cms.gov/files/zip/medicare-ncci-2026-q3-practitioner-services-mue-table.zip",
+      "zipBytes": 405262,
+      "zipSha256": "8b288fb8ba11c81cf8e4c47f8437d1a4919e9beca60d131fa660d5b6afd1f744",
+      "file": "MCR_MUE_PractitionerServices_Eff_07-01-2026.csv",
+      "fileSha256": "4476a77c803265cffe191fa9ab5e5120076ca9243a7ae89d1ca0fa6e53c12e0c",
+      "artefact": "ncci_mue_2026q3.tsv.gz",
+      "artefactSha256": "e7cd8d922fc04715b33eb97cc7cf67f5a9c174627f8f0b03cd65b087cdc7ce5f",
+      "contentSha256": "7fd470022fcb166d983971e492b6303cadd95b360306232d3da863b28e0738e3",
+      "rows": 15162
+    },
+    {
+      "quarter": "2026Q4",
+      "effectiveFrom": "2026-10-01",
+      "effectiveThrough": "2026-12-31",
+      "sourcePage": "https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edits-mues",
+      "url": "https://www.cms.gov/files/zip/medicare-ncci-2026-q4-practitioner-services-mue-table.zip",
+      "zipBytes": 407831,
+      "zipSha256": "4574336755ba4e49b7c8ec07de5b74d3f0b8593e3e6192013631724981180d00",
+      "file": "MCR_MUE_PractitionerServices_Eff_10-01-2026.csv",
+      "fileSha256": "ef038efaf902b7bd41b8d43318ead2944e712806f903358eb2f8ab5df98711b3",
+      "artefact": "ncci_mue_2026q4.tsv.gz",
+      "artefactSha256": "d131adc2f183836e5a6c3b6c8f23e061ebd596847d4cd08a9fa025e67bc1f1eb",
+      "contentSha256": "8bf5f875417d7acc89806f1e72b929c21077de98f6955ca7807677ed7886d586",
+      "rows": 15212
+    }
+  ]
+}

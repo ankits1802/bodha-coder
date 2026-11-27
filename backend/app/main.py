@@ -12,6 +12,13 @@ from app.adapters.google_oidc import build_google_sign_in
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.api.routes import account, auth, billing, google, health, hq, notes, practice, respond, team, uploads, work
+from app.api.routes.blind_review import router as blind_review_router
+from app.api.routes.claims import router as claims_router
+from app.api.routes.defensibility import router as defensibility_router
+from app.api.routes.intake import router as intake_router
+from app.api.routes.quality import router as quality_router
+from app.api.routes.query_governance import router as query_governance_router
+from app.api.routes.remittances import router as remittances_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import AppError, Invalid
@@ -36,6 +43,13 @@ app = FastAPI(
 
 for module in (health, auth, google, account, work, notes, uploads, billing, practice, team, respond, hq):
     app.include_router(module.router, prefix="/api")
+app.include_router(defensibility_router, prefix="/api")
+app.include_router(quality_router, prefix="/api")
+app.include_router(blind_review_router, prefix="/api")
+app.include_router(remittances_router, prefix="/api")
+app.include_router(intake_router, prefix="/api")
+app.include_router(query_governance_router, prefix="/api")
+app.include_router(claims_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

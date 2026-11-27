@@ -5,10 +5,12 @@ import type { AddendumRequestView, RequestStatus } from "@/lib/api/types";
 import { formatDateTime } from "@/lib/format";
 import { CHANNEL_LABELS } from "@/lib/labels";
 import { REVIEW_TEXT } from "../strings";
+import { ExportAddendumLink } from "@/components/shared/query-governance/ExportAddendumLink";
 
 const TONES: Record<RequestStatus, StatusTone> = { sent: "warn", answered: "ok", expired: "bad", cancelled: "neutral" };
 
 interface RequestListProps {
+  noteId: string;
   requests: AddendumRequestView[];
   onRemind: (() => void) | null;
   remindPending: boolean;
@@ -23,7 +25,7 @@ function answerFor(request: AddendumRequestView, key: string): string | null {
   return [answer.choice === REVIEW_TEXT.questions.other ? null : answer.choice, answer.comment].filter(Boolean).join(" · ");
 }
 
-function RequestItem({ request, remind }: { request: AddendumRequestView; remind: ReactNode }) {
+function RequestItem({ noteId, request, remind }: { noteId: string; request: AddendumRequestView; remind: ReactNode }) {
   const words = REVIEW_TEXT.questions;
   return (
     <li className="flex flex-col gap-2 border-t border-hairline px-5 py-4 first:border-t-0">
@@ -45,11 +47,13 @@ function RequestItem({ request, remind }: { request: AddendumRequestView; remind
       </ol>
       {request.addendum_text ? <p className="m-0 rounded-field bg-chip px-3.5 py-2.5 whitespace-pre-wrap">{request.addendum_text}</p> : null}
       {request.status === "sent" ? remind : null}
+      {request.status === "answered" ? <ExportAddendumLink noteId={noteId} requestId={request.id} /> : null}
     </li>
   );
 }
 
-export function RequestList({ requests, onRemind, remindPending, remindMessage, onCancel, cancelPending }: RequestListProps) {
+export function RequestList(props: RequestListProps) {
+  const { noteId, requests, onRemind, remindPending, remindMessage, onCancel, cancelPending } = props;
   if (requests.length === 0) return null;
   const remind = onRemind || onCancel ? (
     <span className="flex flex-wrap items-center gap-3">
@@ -71,7 +75,7 @@ export function RequestList({ requests, onRemind, remindPending, remindMessage, 
       <h3 className="m-0 px-5 pt-4 font-sans text-subhead font-semibold text-secondary">{REVIEW_TEXT.questions.requests}</h3>
       <ul className="m-0 list-none p-0">
         {requests.map((request) => (
-          <RequestItem key={request.id} request={request} remind={remind} />
+          <RequestItem key={request.id} noteId={noteId} request={request} remind={remind} />
         ))}
       </ul>
     </section>

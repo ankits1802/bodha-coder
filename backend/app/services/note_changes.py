@@ -2,22 +2,35 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import delete, exists, select
+from sqlalchemy import delete, exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, note_prefix
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
-from app.models import AddendumRequest, Analysis, Batch, CodeSet, Decision, Note, NoteText, Suggestion
+from app.models import (
+    AddendumRequest,
+    Analysis,
+    AuditSample,
+    Batch,
+    CodeSet,
+    Decision,
+    EvalCase,
+    Note,
+    NoteText,
+    RemittanceLine,
+    Suggestion,
+)
 from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
+from app.services.payers import payer_list
 from app.services.placement import refresh_placement
 from app.services.review_actions import note_for
 
 logger = logging.getLogger("bodha.notes")
 DELETABLE = ("queued", "ready", "failed", "approved")
 EDITABLE = ("queued", "ready", "failed")
-CHILD_TABLES = (Decision, Suggestion, NoteText, AddendumRequest, Analysis, CodeSet)
+CHILD_TABLES = (Decision, Suggestion, AuditSample, EvalCase, NoteText, AddendumRequest, Analysis, CodeSet)
 
 
 async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_ids: list[str]) -> list[str]:
@@ -35,6 +48,7 @@ async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_
         raise Conflict("exported notes and notes being read cannot be deleted")
     ids = [note.id for note in notes]
     folders = [note_prefix(note.practice_id, note.id) for note in notes]
+    await db.execute(update(RemittanceLine).where(RemittanceLine.note_id.in_(ids)).values(note_id=None))
     for table in CHILD_TABLES:
         await db.execute(delete(table).where(table.note_id.in_(ids)))
     await db.execute(delete(Note).where(Note.id.in_(ids)))
@@ -81,5 +95,18 @@ async def cancel_request(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     await db.flush()
     await refresh_placement(db, note)
     record_access(db, actor, "cancelled provider request", note_id=note.id)
+    await db.commit()
+    return note
+
+
+async def set_payer(db: AsyncSession, actor: Actor, note_id: str, payer_id: str | None) -> Note:
+    note = await note_for(db, actor, note_id)
+    if note.status == "exported":
+        raise Conflict("an exported note keeps its payer")
+    known = actor.practice is not None and any(payer.get("id") == payer_id for payer in payer_list(actor.practice))
+    if payer_id is not None and not known:
+        raise NotFound("payer not found")
+    note.payer = payer_id
+    record_access(db, actor, "set payer", note_id=note.id)
     await db.commit()
     return note

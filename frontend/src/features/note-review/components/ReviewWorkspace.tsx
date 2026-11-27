@@ -15,6 +15,7 @@ import { ReviewDialogs, type OpenDialog } from "./ReviewDialogs";
 import { ReviewPanel } from "./ReviewPanel";
 import { StatusBanner } from "./StatusBanner";
 import { SummaryPanel } from "./SummaryPanel";
+import { DayBanner } from "@/components/shared/day-checks/DayBanner";
 
 interface ReviewWorkspaceProps {
   detail: NoteDetail;
@@ -46,7 +47,12 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
     <>
       <div className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
         <NoteHeading note={detail.note} placeLabel={placeLabel} />
-        <NoteTools note={detail.note} permissions={permissions} onVisitType={(visitType) => void actions.changeVisitType(visitType)} />
+        <NoteTools
+          note={detail.note}
+          permissions={permissions}
+          onVisitType={(visitType) => void actions.changeVisitType(visitType)}
+          onChanged={onReload}
+        />
         <StatusBanner
           note={detail.note}
           reason={detail.failure}
@@ -54,6 +60,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
           onReopen={permissions.reopen ? () => void actions.reopen() : null}
           retryPending={actions.pending}
         />
+        <DayBanner noteId={detail.note.id} />
         <SummaryPanel detail={detail} />
         <div className="flex flex-wrap items-start gap-6">
           <NotePanel texts={detail.texts} findings={detail.findings} />

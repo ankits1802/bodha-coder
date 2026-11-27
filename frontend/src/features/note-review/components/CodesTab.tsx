@@ -4,6 +4,7 @@ import { REVIEW_TEXT } from "../strings";
 import { BilledCodesEditor } from "./BilledCodesEditor";
 import { DecisionControl } from "./DecisionControl";
 import { FindingRow } from "./FindingRow";
+import { ClaimChecksPanel } from "@/components/shared/claim-checks/ClaimChecksPanel";
 
 interface CodesTabProps {
   detail: NoteDetail;
@@ -38,6 +39,7 @@ export function CodesTab({ detail, editable, busyKey, onChoose, onSaved }: Codes
         editable={editable}
         onSaved={onSaved}
       />
+      <ClaimChecksPanel noteId={detail.note.id} claim={detail.claim} />
     </>
   );
 }

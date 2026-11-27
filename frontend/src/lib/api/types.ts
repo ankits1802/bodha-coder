@@ -180,6 +180,7 @@ export interface ProviderRef {
 
 export interface NoteHeader extends NoteSummary {
   assignee_name: string | null;
+  payer: string | null;
   patient_age: number | null;
   patient_sex: string | null;
   provider: ProviderRef;
@@ -592,7 +593,7 @@ export interface SecuritySettings {
   access_log_years: AccessLogYears;
 }
 
-export type PlanType = "commercial" | "medicare" | "medicaid" | "other";
+export type PlanType = "commercial" | "medicare" | "medicare_advantage" | "medicaid" | "other";
 
 export interface PayerInput {
   name: string;
@@ -786,4 +787,483 @@ export interface DemoRequest {
   email: string;
   organization: string;
   message: string | null;
+}
+
+export type DayFlag = "time_over_day" | "cloned_text" | "high_level_share";
+
+export interface DayNote {
+  id: string;
+  patient_name: string | null;
+  status: NoteStatus;
+  lane: Lane | null;
+  em_code: string | null;
+  minutes: number | null;
+}
+
+export interface DayDuplicate {
+  first: string;
+  second: string;
+  similarity: number;
+}
+
+export interface DayLevelCount {
+  code: string;
+  count: number;
+}
+
+export interface ProviderDay {
+  provider: { id: string; name: string };
+  service_date: string;
+  notes: DayNote[];
+  total_minutes: number;
+  timed_notes: number;
+  visits: number;
+  levels: DayLevelCount[];
+  high_level_visits: number;
+  high_level_share: number | null;
+  compared: number;
+  duplicates: DayDuplicate[];
+  flags: DayFlag[];
+}
+
+export interface NoteDay extends ProviderDay {
+  note_id: string;
+}
+
+export interface FlaggedDays {
+  from: string;
+  to: string;
+  days: ProviderDay[];
+}
+
+export type EmMixDirection = "above" | "below";
+export type EmMixLean = "higher" | "lower";
+
+export interface EmMixLevel {
+  code: string;
+  count: number;
+  share: number;
+  benchmark: number | null;
+  points: number | null;
+  direction: EmMixDirection | null;
+}
+
+export interface EmMixFamily {
+  family: string;
+  label: string;
+  visits: number;
+  has_benchmark: boolean;
+  levels: EmMixLevel[];
+  chi_square: number | null;
+  degrees_of_freedom: number | null;
+  p_value: number | null;
+  outlier: boolean;
+  reasons: ("points" | "chi_square")[];
+  lean: EmMixLean | null;
+}
+
+export interface EmMixProvider {
+  id: string;
+  name: string;
+  specialty: string | null;
+  cms_specialty: string | null;
+  visits: number;
+  families: EmMixFamily[];
+}
+
+export interface EmMix {
+  start: string;
+  end: string;
+  benchmark: { dataset: string; year: string; source_url: string };
+  providers: EmMixProvider[];
+}
+
+export type RemittanceLineStatus = "paid_as_billed" | "downcoded" | "denied" | "matched" | "unmatched";
+export type RemittanceFilter = "all" | "downcoded" | "denied" | "unmatched";
+export type RemittanceCounts = Partial<Record<RemittanceLineStatus, number>>;
+
+export interface RemittanceSummary {
+  id: string;
+  file_name: string;
+  payer: string | null;
+  paid_on: string | null;
+  uploaded_by: string;
+  uploaded_at: string;
+  counts: RemittanceCounts;
+}
+
+export interface RemittanceListItem extends RemittanceSummary {
+  next_appeal_by: string | null;
+}
+
+export interface RemittanceAdjustment {
+  group: string;
+  reason: string;
+  cents: number;
+}
+
+export interface RemittanceLine {
+  id: string;
+  note_id: string | null;
+  claim_ref: string | null;
+  patient_name: string | null;
+  service_date: string | null;
+  billed_code: string | null;
+  paid_code: string | null;
+  billed_amount: number | null;
+  paid_amount: number | null;
+  adjustments: RemittanceAdjustment[];
+  status: RemittanceLineStatus;
+  appeal_by: string | null;
+}
+
+export interface RemittanceDetail {
+  remittance: RemittanceSummary;
+  lines: RemittanceLine[];
+}
+
+export interface RemittanceUpload {
+  ids: string[];
+  counts: RemittanceCounts;
+}
+
+export interface AppealDraft {
+  line_id: string;
+  note_id: string | null;
+  appeal_by: string;
+  text: string;
+  file_name: string;
+  defense_packet: string | null;
+}
+
+export type AppealDays = Record<PlanType, number>;
+
+export interface IntakeSettings {
+  enabled: boolean;
+  prefix: string;
+  provider_by_folder: Record<string, string>;
+  place_code: string | null;
+  visit_type: string;
+}
+
+export interface IntakeView extends IntakeSettings {
+  watched_prefix: string;
+}
+
+export interface QueryMetrics {
+  notes: number;
+  queries: number;
+  per_100_notes: number | null;
+  response_rate: number | null;
+  median_hours: number | null;
+  agree_rate: number | null;
+  repeat_rate: number | null;
+}
+
+export interface ProviderQueryMetrics extends QueryMetrics {
+  provider_id: string;
+  provider_name: string;
+}
+
+export interface QueryMetricsReport {
+  days: number;
+  total: QueryMetrics;
+  providers: ProviderQueryMetrics[];
+}
+
+export interface WilsonRate {
+  successes: number;
+  trials: number;
+  value: number | null;
+  low: number | null;
+  high: number | null;
+}
+
+export interface AgreementSummary {
+  notes: number;
+  em: WilsonRate;
+  em_higher: WilsonRate;
+  em_lower: WilsonRate;
+  em_other: number;
+  icd_precision: WilsonRate;
+  icd_recall: WilsonRate;
+  icd_f1: number | null;
+  icd_exact: WilsonRate;
+  modifiers: WilsonRate;
+}
+
+export type EmDirection = "match" | "higher" | "lower" | "family" | "absent";
+
+export interface ElementComparison {
+  em: { reference: string | null; compared: string | null; match: boolean; direction: EmDirection };
+  icd: { matched: number; compared: number; reference: number; missing: string[]; extra: string[]; match: boolean };
+  modifiers: { reference: string[]; compared: string[]; match: boolean };
+}
+
+export interface ClaimElements {
+  em: string | null;
+  icd: string[];
+  modifiers: string[];
+}
+
+export type AgreementSide = "bodha" | "claim";
+export type SampleScope = "practice" | "provider" | "specialty";
+export type SamplePurpose = "audit" | "training";
+
+export interface SampleOverview {
+  id: string;
+  purpose: SamplePurpose;
+  scope: SampleScope;
+  provider_name: string | null;
+  specialty: string | null;
+  start: string;
+  end: string;
+  requested: number;
+  notes: number;
+  done: number;
+  status: "open" | "done";
+  reviewers: string[];
+  started_at: string;
+  completed_at: string | null;
+  em: WilsonRate;
+  em_claim: WilsonRate;
+}
+
+export interface SampleItemRow {
+  id: string;
+  position: number;
+  provider_name: string;
+  service_date: string;
+  reviewer_name: string;
+  status: "open" | "done";
+  answer: ClaimElements | null;
+  bodha: ClaimElements | null;
+  claim: ClaimElements | null;
+  agreement: Record<AgreementSide, ElementComparison> | null;
+}
+
+export interface ProviderAgreement extends Record<AgreementSide, AgreementSummary> {
+  provider_id: string;
+  provider_name: string;
+}
+
+export interface SampleResults {
+  sample: SampleOverview;
+  summary: Record<AgreementSide, AgreementSummary>;
+  providers: ProviderAgreement[];
+  items: SampleItemRow[];
+}
+
+export interface QualityOptions {
+  providers: { id: string; name: string; specialty: string | null }[];
+  reviewers: { id: string; name: string; role: Role }[];
+  specialties: string[];
+  default_size: number;
+  specialty_size: number;
+}
+
+export interface SampleInput {
+  scope: SampleScope;
+  start: string;
+  end: string;
+  reviewer_ids: string[];
+  size: number | null;
+  provider_id: string | null;
+  specialty: string | null;
+}
+
+export interface BlindText {
+  revision: number;
+  source: "document" | "addendum";
+  text: string;
+}
+
+export interface BlindItem {
+  id: string;
+  position: number;
+  texts: BlindText[];
+}
+
+export interface BlindStep {
+  sample: { id: string; purpose: SamplePurpose; total: number; done: number };
+  item: BlindItem | null;
+}
+
+export interface BlindAnswer {
+  em: string | null;
+  icd: string[];
+  modifiers: string[];
+}
+
+export interface BlindSubmitted {
+  id: string;
+  status: "open" | "done";
+  purpose: SamplePurpose;
+}
+
+export type EligibilityReason = "eligible" | "no_audit" | "too_few_notes" | "agreement_low" | "too_many_higher";
+
+export interface AutonomyEligibility {
+  eligible: boolean;
+  reason: EligibilityReason;
+  sample_id: string | null;
+  notes: number;
+  em_low: number | null;
+  higher_share: number | null;
+}
+
+export interface ProviderAutonomy {
+  id: string;
+  name: string;
+  credential: string;
+  specialty: string | null;
+  auto_approve: boolean;
+  eligibility: AutonomyEligibility;
+}
+
+export type LevelMixStatus = "steady" | "shifted" | "not_enough";
+
+export interface LevelMixWindow {
+  start: string;
+  end: string;
+  notes: number;
+}
+
+export interface LevelMix {
+  recent: LevelMixWindow;
+  prior: LevelMixWindow;
+  levels: { level: string; recent: number; prior: number }[];
+  test: { statistic: number; degrees_of_freedom: number; p_value: number } | null;
+  status: LevelMixStatus;
+}
+
+export type EvalMetric = "em" | "icd_f1" | "modifiers";
+export type EvalRunStatus = "queued" | "running" | "done" | "failed";
+
+export interface EvalSummary {
+  cases: number;
+  scored: number;
+  failed: number;
+  em: WilsonRate;
+  em_higher: WilsonRate;
+  em_lower: WilsonRate;
+  icd_precision: WilsonRate;
+  icd_recall: WilsonRate;
+  icd_f1: number | null;
+  modifiers: WilsonRate;
+  consistency: Record<"em" | "icd" | "modifiers" | "all", WilsonRate>;
+  error?: string;
+}
+
+export interface EvalRunChange {
+  deltas: Partial<Record<EvalMetric, number>>;
+  dropped: EvalMetric[];
+  status: "dropped" | "holding";
+}
+
+export interface EvalRunView {
+  id: string;
+  status: EvalRunStatus;
+  model: string;
+  prompt_version: string;
+  requested_at: string | null;
+  finished_at: string | null;
+  summary: Partial<EvalSummary>;
+  change: EvalRunChange | null;
+}
+
+export interface EvalRuns {
+  cases: number;
+  runs: EvalRunView[];
+}
+
+export interface EvalCaseRow {
+  note_id: string;
+  provider_name: string;
+  service_date: string;
+  em: string | null;
+  level: string | null;
+  icd: string[];
+  modifiers: string[];
+  added_at: string;
+}
+
+export interface EvalCandidate {
+  note_id: string;
+  provider_name: string;
+  service_date: string;
+  codes: string[];
+}
+
+export interface AssignedSample {
+  id: string;
+  purpose: SamplePurpose;
+  total: number;
+  done: number;
+  started_at: string;
+}
+
+export interface TrainingOverview {
+  sets: AssignedSample[];
+  scores: Record<AgreementSide, AgreementSummary>;
+}
+
+export interface TrainingSuggestion {
+  key: string;
+  kind: string;
+  action: string;
+  title: string;
+  reasoning: string;
+  code_before: string | null;
+  code_after: string | null;
+  evidence: string[];
+}
+
+export interface TrainingFeedback {
+  item_id: string;
+  sample_id: string;
+  answer: ClaimElements;
+  bodha: ClaimElements;
+  claim: ClaimElements;
+  agreement: Record<AgreementSide, ElementComparison>;
+  suggestions: TrainingSuggestion[];
+}
+
+export interface TrainingInput {
+  trainee_id: string;
+  start: string;
+  end: string;
+  size: number;
+  provider_id: string | null;
+}
+
+export type ClaimEdit =
+  | { kind: "ptp"; column1: string; column2: string; modifier_allowed: boolean; bypassed_by: string | null }
+  | { kind: "mue"; code: string; units: number; limit: number; mai: number }
+  | { kind: "aoc"; code: string; primaries: string[] };
+
+export type PayerFlagRule =
+  | "telehealth_place"
+  | "audio_only_place"
+  | "home_telehealth_ended"
+  | "complexity_with_25"
+  | "g2211_replaced"
+  | "level_downcode_risk"
+  | "audio_only_risk_adjustment"
+  | "nursing_initial_once"
+  | "nursing_incident_to";
+
+export type PayerFlagSeverity = "denial" | "risk" | "reminder";
+
+export interface PayerFlag {
+  rule: PayerFlagRule;
+  severity: PayerFlagSeverity;
+  codes: string[];
+}
+
+export interface ClaimChecks {
+  ncci: { quarter: string; covers: boolean };
+  edits: ClaimEdit[];
+  payer: { name: string; plan_type: string | null } | null;
+  payer_flags: PayerFlag[];
 }

@@ -45,6 +45,7 @@ export function QuestionsTab(props: QuestionsTabProps) {
         </div>
       ) : null}
       <RequestList
+        noteId={detail.note.id}
         requests={detail.requests}
         onRemind={onRemind}
         remindPending={remindPending}

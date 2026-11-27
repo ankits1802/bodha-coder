@@ -156,7 +156,7 @@ export const PAYER_TEXT = {
   empty: "No payers yet",
   tableLabel: "Payers",
   columns: { name: "Payer", payerId: "Payer ID", planType: "Plan type", status: "Status", actions: "Actions" },
-  planTypes: { commercial: "Commercial", medicare: "Medicare", medicaid: "Medicaid", other: "Other" },
+  planTypes: { commercial: "Commercial", medicare: "Medicare", medicare_advantage: "Medicare Advantage", medicaid: "Medicaid", other: "Other" },
   active: "Active",
   inactive: "Inactive",
   edit: "Edit",

@@ -32,3 +32,30 @@ whole folder (`ObjectStore.delete_prefix`).
 `eslint-plugin-react`, `-import` and `-jsx-a11y` (through `eslint-config-next`) still declare
 ESLint 9 as their peer, so ESLint 10 installs with peer overrides. Lint runs and reports correctly.
 Clear it when the plugins declare ESLint 10.
+
+### Audit samples are grouped through JSON
+
+Blind-audit samples are tied together by an id stored in `audit_samples.result`, not by a samples table, so
+listing samples scans that JSON. Clear it with an `audit_runs` table that audit samples reference.
+
+### ICD-10 agreement intervals pool codes
+
+The Wilson intervals for ICD-10 precision and recall treat every code as independent, which understates the
+uncertainty when one note contributes many codes. Clear it with a per-note bootstrap.
+
+### Remittance appeal dates do not follow setting changes
+
+Changing a practice's appeal window does not recompute appeal-by dates already stored on remittance lines.
+Clear it by computing the date when the line is read.
+
+### Email intake needs a small Lambda
+
+Practices that send notes by email need an SES receipt rule and a small function that saves attachments into
+their inbox folder; the repository documents it in `docs/DEPLOY-INTAKE.md` but does not include the function.
+Clear it by adding the function and its deployment.
+
+### Diagnosis pointers are positional
+
+Claim lines point to the first four diagnoses because Bodha does not record which diagnosis supports which
+procedure. Clear it by letting the coder link diagnoses to lines in note review.
+

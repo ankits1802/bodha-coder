@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code, claim_changes
 from app.models import Analysis, CodeSet, Note, Provider, Suggestion, User, utcnow
+from app.services.billing import AUTO_APPROVER
 from app.services.estimates import estimate_difference, money
 from app.services.placement import SETTLED_STATUSES
 
@@ -121,7 +122,7 @@ async def _approved_notes(db: AsyncSession, practice_id: str, since: datetime) -
         await db.execute(
             select(Note, Provider.name, User.id, User.name, Analysis.finished_at)
             .join(Provider, Provider.id == Note.provider_id)
-            .join(User, User.id == Note.approved_by)
+            .outerjoin(User, User.id == Note.approved_by)
             .outerjoin(Analysis, Analysis.id == Note.current_analysis_id)
             .where(Note.practice_id == practice_id, Note.approved_at >= since, Note.status.in_(SETTLED_STATUSES))
         )
@@ -132,8 +133,8 @@ async def _approved_notes(db: AsyncSession, practice_id: str, since: datetime) -
         ApprovedNote(
             note_id=note.id,
             provider_name=provider_name,
-            approver_id=approver_id,
-            approver_name=approver_name,
+            approver_id=approver_id or AUTO_APPROVER,
+            approver_name=approver_name or AUTO_APPROVER,
             place_code=note.place_code,
             service_date=note.service_date,
             ready_at=ready_at,

@@ -7,11 +7,24 @@ const keysFor = (role: Role): string[] => navFor(role).map((item) => item.key);
 
 describe("role-based navigation", () => {
   it("shows each role only the screens its routes allow", () => {
-    expect(keysFor("admin")).toEqual(["today", "upload", "queue", "compliance", "billing", "insights", "setup", "team", "security"]);
-    expect(keysFor("coder")).toEqual(["today", "upload", "queue", "security"]);
-    expect(keysFor("cdi")).toEqual(["today", "queue", "security"]);
-    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "insights", "security"]);
-    expect(keysFor("biller")).toEqual(["today", "queue", "billing", "security"]);
+    expect(keysFor("admin")).toEqual([
+      "today",
+      "upload",
+      "queue",
+      "compliance",
+      "billing",
+      "remittances",
+      "training",
+      "insights",
+      "quality",
+      "setup",
+      "team",
+      "security",
+    ]);
+    expect(keysFor("coder")).toEqual(["today", "upload", "queue", "training", "security"]);
+    expect(keysFor("cdi")).toEqual(["today", "queue", "training", "security"]);
+    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "training", "insights", "quality", "security"]);
+    expect(keysFor("biller")).toEqual(["today", "queue", "billing", "remittances", "training", "security"]);
     expect(keysFor("viewer")).toEqual(["today", "insights", "security"]);
     expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqActivity", "hqDemos", "hqSecurity"]);
   });

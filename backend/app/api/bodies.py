@@ -91,6 +91,10 @@ class AssignBody(Body):
     user_id: str | None = Field(max_length=36)
 
 
+class PayerChoiceBody(Body):
+    payer: str | None = Field(default=None, max_length=64)
+
+
 class VisitTypeBody(Body):
     visit_type: str = Field(min_length=1, max_length=40)
 
@@ -145,7 +149,7 @@ class ProviderBody(Body):
 class PayerBody(Body):
     name: str = Field(min_length=1, max_length=120)
     payer_id: str | None = Field(default=None, max_length=15)
-    plan_type: Literal["commercial", "medicare", "medicaid", "other"]
+    plan_type: Literal["commercial", "medicare", "medicare_advantage", "medicaid", "other"]
     active: bool = True
 
 

@@ -3,11 +3,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
 from app.adapters.gemini import GeminiClient
 from app.adapters.messenger import Messenger, build_messenger
+from app.adapters.object_listing import S3ListingStore
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.pdf_text import DocumentUnreadable
 from app.ai.errors import ModelRefused, ModelRequestRejected, ModelUnavailable
@@ -19,7 +21,10 @@ from app.core.logging import configure_logging, log_queue_metrics
 from app.models import Analysis, utcnow
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
 from app.services.digests import send_due_digests
+from app.services.evaluation_runs import fail_evaluation, fail_stale_evaluations, next_queued_evaluation, run_evaluation
+from app.services.intake import poll_intake
 from app.services.job_control import queue_counts, requeue_interrupted
+from app.services.query_governance import escalate_unanswered
 from app.services.records import purge_access_logs
 from app.services.reminders import expire_requests, send_due_reminders
 
@@ -29,6 +34,10 @@ RECOVERY_INTERVAL_SECONDS = 60
 REMINDER_INTERVAL_SECONDS = 300
 METRICS_INTERVAL_SECONDS = 60
 PURGE_INTERVAL_SECONDS = 86_400
+INTAKE_INTERVAL_SECONDS = 60
+EVALUATION_INTERVAL_SECONDS = 60
+ESCALATION_INTERVAL_SECONDS = 3_600
+STALE_EVALUATION = timedelta(hours=6)
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
 
@@ -118,6 +127,39 @@ async def metrics_loop() -> None:
         await asyncio.sleep(METRICS_INTERVAL_SECONDS)
 
 
+async def every(seconds: float, name: str, job: Callable[[], Awaitable[object]]) -> None:
+    while True:
+        try:
+            await job()
+        except Exception:
+            logger.exception("%s failed", name)
+        await asyncio.sleep(seconds)
+
+
+async def poll_intake_once(store: S3ListingStore) -> None:
+    async with SessionFactory() as db:
+        await poll_intake(db, store, utcnow())
+
+
+async def escalate_once(messenger: Messenger) -> None:
+    async with SessionFactory() as db:
+        await escalate_unanswered(db, messenger, utcnow())
+
+
+async def evaluate_once(deps: AnalysisDeps) -> None:
+    async with SessionFactory() as db:
+        await fail_stale_evaluations(db, older_than=STALE_EVALUATION)
+        run_id = await next_queued_evaluation(db)
+        if run_id is None:
+            return
+        try:
+            await run_evaluation(db, run_id, deps)
+        except Exception as error:
+            await db.rollback()
+            await fail_evaluation(db, run_id, failure_reason(error))
+            raise
+
+
 async def purge_loop() -> None:
     while True:
         try:
@@ -134,8 +176,16 @@ async def run() -> None:
         review_note, GeminiClient(settings), S3ObjectStore(settings), await asyncio.to_thread(load_catalog)
     )
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
+    messenger, listing = build_messenger(settings), S3ListingStore(settings)
     everything = asyncio.gather(
-        *loops, recovery_loop(settings), reminder_loop(build_messenger(settings)), metrics_loop(), purge_loop()
+        *loops,
+        recovery_loop(settings),
+        reminder_loop(messenger),
+        metrics_loop(),
+        purge_loop(),
+        every(INTAKE_INTERVAL_SECONDS, "intake", lambda: poll_intake_once(listing)),
+        every(EVALUATION_INTERVAL_SECONDS, "evaluation", lambda: evaluate_once(deps)),
+        every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
     )
     with suppress(NotImplementedError):
         asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, everything.cancel)

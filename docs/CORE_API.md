@@ -13,6 +13,8 @@ Check here before writing a helper.
 | `roles.py` | role groups used by every route guard |
 | `calendar.py` | `zone_named`, `day_bounds`, `today_in` (practice calendar days), `shift_years(day, years)` (29 February becomes the 28th in a common year) |
 | `deps.py` | `Db`, `Actor`, `current_actor`, `require(*roles)`, `ProviderActor`, `current_provider`, `ensure_practice_open`, `PlanEnded` |
+| `chi_square.py` | `chi_square_sf(statistic, degrees_of_freedom)` (closed forms for whole degrees of freedom), `pooled_cells(observed, expected, minimum=5)`, `goodness_of_fit(observed, expected) -> GoodnessOfFit \| None` (None when fewer than two pooled cells) |
+| `statistics.py` | `wilson(successes, trials) -> Rate` (Wilson score 95% interval; `Rate.value/low/high` are None with no trials), `f1_score(precision, recall)`, `chi_square_homogeneity(first, second) -> ChiSquare \| None` (two periods over ordered levels, sparse levels pooled through `chi_square.pooled_cells`), `Z_95` |
 | `logging.py` | `configure_logging()` (JSON lines on stdout for every process, uvicorn's access log off), `JsonFormatter` (adds the request id; exceptions as type, frames and cause types, never their message), `RequestLog` (ASGI middleware: one `bodha.access` line per request with method, route template, status, duration and request id; `X-Request-ID` in and out), `log_queue_metrics(logger, *, queued, running, at)` (CloudWatch Embedded Metric Format line, namespace `BodhaCoder`) |
 
 ## backend/app/codes
@@ -25,6 +27,10 @@ Check here before writing a helper.
 | `hcc.py` | `load_hcc_model(payment_year)`, `hcc_model_for(payment_year)` (None when not vendored), `HccModel.hccs_for / payment_hccs / score / label / factor / is_trumped`, `HccPatient`, `payment_year_for(service_date)`, `segment_for(age)`, `sex_code`, `HccDataCorrupt` (CMS-HCC V28, checksummed manifest) |
 | `billing_codes.py` | `Code` (`units`, `label()` `96127 ×2`, `as_text()` `96127x2`, `as_json` / `from_json`), `InvalidUnits`, `parse_code_list` (reads units), `claim_changes(final, billed)`, `parse_note_filename`, `is_known_cpt` |
 | `fees.py` | `fee_schedule_for(service_date)` (None for a year not vendored), `load_fee_schedule(year)`, `FeeSchedule.unit_amount / line / estimate`, `ClaimEstimate` (`total`, `unpriced`), `rate_setting_for(place_code)`, `FeeDataCorrupt` (CMS CY 2026 PFS RVU26D, checksummed manifest) |
+| `em_benchmarks.py` | `default_em_benchmarks()`, `load_em_benchmarks(year)`, `EmBenchmarks.shares(specialty, family) / specialty_for(text) / specialties()`, `BENCHMARK_FAMILIES`, `benchmark_family`, `cms_specialty_for`, `EmBenchmarkCorrupt` (CMS CY 2025 E/M Codes by Specialty, checksummed manifest; rebuilt by `tools/vendor_em_specialty.py`) |
+| `ncci.py` | `claim_edits(codes, service_date)` (PTP pairs with `modifier_allowed` and `bypassed_by`, add-ons without a listed primary, units over the MUE), `ncci_tables()` (cached), `load_ncci(data_dir=)`, `NcciTables.covers / ptp_edit / add_on_primaries / mue_limit / claim_edits`, `PairEdit`, `UnitsEdit`, `AddOnEdit`, `NcciUnavailable` (date of service outside the loaded quarters), `NcciDataCorrupt` (CMS Medicare NCCI practitioner PTP, add-on and MUE tables, checksummed manifest; rebuilt by `tools/fetch_ncci.py`) |
+| `payer_rules.py` | `payer_flags(claim, payer_type, place_code, service_date)` (advisory `PayerFlag`s: rule, severity `denial` / `risk` / `reminder`, codes), `payer_for(plan_type, name)` (`Payer` plan and family), `PayerClaim`, `PLAN_TYPES` |
+| `adjustment_reasons.py` | `ADJUSTMENT_GROUPS` (CAS group codes), `DOWNCODE_REASONS` (CARC 150, 152), `CONTRACTUAL`, `PATIENT_RESPONSIBILITY`, `describe_adjustment(group, reason)` |
 | `places.py` | `setting_for(place_code)` |
 | `npi.py` | `is_valid_npi` |
 | `credentials.py` | `is_taxonomy_code` (NUCC: 10 characters ending in X), `is_valid_dea` (DEA shape and check digit), `LICENSE_STATES` (50 states, DC and five territories) |
@@ -50,10 +56,12 @@ Check here before writing a helper.
 | Module | Provides |
 |---|---|
 | `object_store.py` | `ObjectStore` protocol (`put`, `get`, `signed_url`, `delete`, `delete_prefix` refusing anything that is not a folder), `S3ObjectStore` (S3 and R2; `client=` for a stubbed client), key builders `note_document_key`, `note_document_revision_key`, `analysis_response_key`, `practice_prefix` |
+| `object_listing.py` | `ListingStore` protocol (an `ObjectStore` with `list_keys(prefix)`, folders only), `S3ListingStore` (an `S3ObjectStore` that also lists) |
 | `messenger.py` | `Messenger` protocol, `build_messenger` (email: SES, SMTP or outbox; texts: SNS, Twilio or outbox), `OutboxMessenger` |
 | `email_senders.py`, `sms_senders.py` | `SesEmail`, `SmtpEmail`, `SnsSms`, `TwilioSms` |
 | `mail_layout.py` | `html_from_text` (the HTML version of every email) |
 | `pdf_text.py` | `read_pdf_text`, `DocumentUnreadable` |
+| `pdf_writer.py` | `render_pdf(PdfDocument) -> bytes` (reportlab, Helvetica, page footer), blocks `PdfHeading`, `PdfText` (`body`, `secondary`, `quote`, `label`), `PdfFacts`, `PdfTable` (`weights`), `PdfPageBreak` |
 | `gemini.py` | `GeminiClient` (the `ModelClient` for Gemini on the Developer API or Vertex AI, `GEMINI_BACKEND`), `VERTEX_PDF_TOO_LARGE` |
 | `google_oidc.py` | `GoogleSignIn` protocol, `GoogleOidc`, `build_google_sign_in`, `GoogleIdentity`, `GoogleRefused`, `GoogleUnreachable`, `pkce_challenge` |
 
@@ -84,7 +92,24 @@ Check here before writing a helper.
 | `assignment.py` | `assign_notes(db, actor, note_ids, user_id)` (the assignment rules; records `assigned`) |
 | `digests.py` | `send_due_digests(db, messenger, now)`, `digest_text`, `set_digest_preference` |
 | `search.py` | `search_notes(db, actor, text)`, `code_forms(term)` |
+| `x12.py` | `read_transactions(text, code=)` (strict X12 envelope: separators from ISA, nesting, control numbers and counts), `Segment.get / required / parts`, `Transaction`, `X12Invalid` (422) |
+| `remittance_835.py` | `parse_835(data) -> list[PaymentAdvice]` (balanced lines and payments), `PaymentAdvice`, `ClaimPayment.payments()`, `ServicePayment`, `Adjustment` (`as_json` / `from_json`) |
+| `remittance_outcomes.py` | `line_outcome(line, claim_status)`, `is_downcode(billed, paid)`, `plan_type_for(filing_indicator, listed)`, `appeal_days(stored)`, `appeal_deadline(remitted_on, plan_type, days)`, `validated_appeal_days`, `DEFAULT_APPEAL_DAYS`, `APPEALABLE`, the status names |
+| `remittance_matching.py` | `matching_note(db, practice_id, claim, line)`, `same_person(a, b)`, `name_tokens` |
+| `appeal_letters.py` | `appeal_letter(AppealFacts) -> str`, `money_text(cents)` |
+| `remittances.py`, `remittance_views.py` | `upload_remittance`, `remittance_key`, `listed_plan_type`; `remittance_page`, `remittance_detail`, `appeal_draft`, `stored_appeal_days`, `save_appeal_days`, `defense_packet_path` |
+| `intake_settings.py`, `intake.py` | `intake_config`, `intake_view`, `save_intake`, `inbox_prefix`, `IntakeConfig`; `poll_intake(db, store, now) -> int`, `sort_inbox(inbox, keys, config, today)` |
+| `query_governance.py` | `repeat_query_blocked(db, note, keys)`, `refuse_repeat_queries`, `escalate_unanswered(db, messenger, now) -> int`, `escalation_text`, `addendum_export`, `labelled_addendum`, `ASKED_STATUSES` (no import of `addenda`, which calls it) |
+| `query_metrics.py` | `query_metrics(db, practice_id, days=, now=)`, `metrics_for(notes, requests)`, `AskedRequest`, `QueryMetrics`, `NOT_AGREED` |
 | `addenda.py` | `create_request`, `send_link`, `send_code`, `verify_code`, `provider_request`, `other_requests`, `switch_request`, `answer`, `addendum_text` |
+| `visit_levels.py` | `visit_codes(db, note_ids)` (the E/M code of the final code set once approved, otherwise of the latest billed set), `visit_code(codes)`, `is_leveled(code)` (families of three or more levels), `is_top_level(code)` (the two highest levels) |
+| `claim_checks.py` | `claim_checks(db, actor, note_id)` (NCCI edits and payer flags for the note's current claim; records `checked claim edits`), `edits_for(tables, codes, note)` |
+| `claim_lines.py` | `claim_lines(db, actor, note_ids)` (approved, not exported; records `built claim lines`), `build_claim(party, codes)` (diagnosis letters A to L, at most 12; every line points to the first four), `claims_json`, `claims_csv` (formula-safe), `billing_npi(npi, details)`, `CLAIM_LINE_COLUMNS` |
+| `agreement.py` | `ClaimElements` (E/M code, ICD-10 set, modifier set), `elements_of(codes)`, `elements_from_json`, `em_level(code)` (MDM level or `Time`), `em_direction`, `compare_elements(reference, compared)` (one note), `summarize(comparisons)` (Wilson rates per element) |
+| `code_sets.py` | `latest_codes(db, note_id, kind)`, `next_revision(db, model, note_id, **filters)` (the same queries as `analysis.py`, which should import them from here) |
+| `samples.py` | `SAMPLE_ID_PATH`, `sample_id_of(item)` (audit and training samples are grouped by `result.sample.id`) |
+| `autonomy.py` | `provider_eligibility(db, provider) -> Eligibility`, `MIN_AUDIT_NOTES`, `MIN_EM_LOWER_BOUND`, `MAX_BODHA_HIGHER_SHARE` |
+| `auto_approval.py` | `auto_approve_eligible(db, note)`, `auto_approve(db, note)` (caller commits), `held_for_quality_check(note_id)`; imports only `placement` as a module and lower layers, so `placement`, `analysis` and `review_actions` can call it |
 
 ## frontend/src (shared)
 
@@ -98,3 +123,5 @@ Check here before writing a helper.
 | `hooks/useAssignees.ts` | `useAssignees(user)` (who the user may assign notes to) |
 | `components/ui/Pager.tsx` | `Pager` (offset pages with a total; text from `SHARED_TEXT.pager`), `offsetFrom(param)` |
 | `components/shared/batchProgress.ts` | `batchCounts(batch)` (total, finished, pending, failed from counts by status) |
+| `components/shared/blind-coding/` | `BlindCodingPanel` (note text, PDF button and the blind form; renders nothing else of the note), `BlindCodingForm`, `parseAnswer`, `splitCodes`, `useBlindSession(sampleId)` (audits and training) |
+| `components/shared/rates.ts` | `formatRate` (`50% (9.5%–90.5%)`), `formatInterval`, `formatCounted` for Wilson rates |

@@ -11,8 +11,9 @@ management level with its decision-making or time basis, diagnoses with their st
 each billed code, modifiers and add-on codes, documentation gaps with compliant provider questions, an
 audit checklist, quality measures and, when switched on, risk-adjustment conditions.
 
-The model proposes; people decide. No claim leaves Bodha without a person approving it, and nothing is
-submitted to a payer by Bodha.
+The model proposes; people decide. A claim leaves Bodha only after a person approves it, unless an admin
+has switched on earned autonomy for that provider after a passing blind audit (see below); even then one
+in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 
 ## Controls around the model
 
@@ -23,9 +24,12 @@ submitted to a payer by Bodha.
 | Evidence | Every suggestion carries verbatim quotes from the note; the screen shows whether each quote is found in the note. |
 | Provider questions | Questions follow the AHIMA/ACDIS query practice: multiple choice with clinically reasonable options, an "other" option, no mention of payment or risk scores. The provider's own answers become the signed addendum. |
 | Routing | E/M billed two or more levels above the documentation, critical audit risks and flagged notes go to compliance; the person who flagged a note cannot clear it. |
-| Human approval | Approval needs a person with an approving role; held claims cannot be approved until the provider answers. |
+| Human approval | Approval needs a person with an approving role, except notes auto-approved under earned autonomy, which are recorded as Bodha (auto); held claims cannot be approved until the provider answers. |
 | Record | Every model run (inputs, model, prompt version, tokens, raw reply in storage), every suggestion with its reasoning and evidence, every decision, code-set revision and note-text revision is kept. Access to patient information is logged. |
 | Failure | A read that fails is marked with its reason and retried; it never produces a partial claim. |
+| Measured accuracy | Admins or compliance draw random samples of approved notes (30 by default, 150 for a specialty) and assign them to reviewers who did not approve them. Reviewers code each note blind, seeing only its text and PDF. Agreement with Bodha's suggestion and with the final claim is reported per element (E/M exact and its direction, ICD-10 precision, recall and exact set, modifiers) with Wilson 95% intervals, per provider and per note. |
+| Validation and drift | Approved notes chosen by an admin form an evaluation set. Each evaluation run reads every case twice with the current model and prompt without changing the note, records agreement with the approved claim and between the two reads, and keeps the raw replies. A run whose E/M, ICD-10 F1 or modifier agreement is more than five points below the previous run is marked dropped. The mix of suggested E/M levels in the last 30 days is compared with the 90 days before (chi-square, p below 0.05 marked shifted). |
+| Earned autonomy | Auto-approval is off for every provider. An admin can switch it on only when the provider's latest completed blind audit has at least 30 of their notes, the Wilson 95% lower bound of E/M exact agreement is at least 90% and Bodha coded higher than the auditor on at most 5%; the check is repeated for every note. Only notes Bodha found to match, with no questions, flags, compliance history or review items, are approved as Bodha (auto) with reason auto in the record, and one in ten of them is held for a person. |
 
 ## Model and change control
 

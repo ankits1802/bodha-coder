@@ -167,6 +167,8 @@ export const REVIEW_TEXT = {
   tools: {
     label: "Note",
     visitType: "Visit type",
+    payer: "Payer",
+    noPayer: "Payer not set",
     delete: "Delete note",
     deleteTitle: "Delete this note?",
     deleteDescription: "Its PDF, reads and decisions are removed.",

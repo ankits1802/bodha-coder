@@ -11,6 +11,7 @@ import { SectionContent } from "./SectionContent";
 import { SetupNav } from "./SetupNav";
 import { isNavKey } from "./setupModel";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
+import { IntakeSettings } from "@/components/shared/intake/IntakeSettings";
 
 export function SetupScreen() {
   const remote = useRemote("practice-setup", getSetup);
@@ -44,6 +45,7 @@ export function SetupScreen() {
             <div className="flex min-w-0 flex-[999_1_32rem] flex-col gap-5">
               <SectionContent key={selected} navKey={selected} setup={data} onSaved={remote.reload} />
               <ChecksPanel checks={data.checks} onSaved={remote.reload} />
+              <IntakeSettings />
             </div>
           </div>
         )}

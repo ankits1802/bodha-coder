@@ -34,7 +34,13 @@ UNMATCHED = "unmatched"
 APPEALABLE = (DOWNCODED, DENIED)
 DENIED_CLAIM = "4"
 COMMERCIAL = "commercial"
-DEFAULT_APPEAL_DAYS: dict[str, int] = {"commercial": 180, "medicare": 120, "medicaid": 180, "other": 180}
+DEFAULT_APPEAL_DAYS: dict[str, int] = {
+    "commercial": 180,
+    "medicare": 120,
+    "medicare_advantage": 60,
+    "medicaid": 180,
+    "other": 180,
+}
 FILING_PLAN_TYPES = {"MA": "medicare", "MB": "medicare", "MC": "medicaid"}
 MAX_APPEAL_DAYS = 730
 

@@ -1,0 +1,28 @@
+{
+  "dataset": "Evaluation and Management (E/M) Codes by Specialty",
+  "publisher": "CMS, Medicare Part B Physician/Supplier National Data",
+  "calendarYear": "2025",
+  "sourcePage": "https://www.cms.gov/data-research/statistics-trends-reports/medicare-fee-service-parts-b/medicare-utilization-part-b/evaluation-management-em-codes-specialty-reports",
+  "sourcePageModified": "2026-08-28",
+  "sourceUrl": "https://www.cms.gov/files/document/cy-2025-evaluation-management-em-codes-specialty.xlsx-1",
+  "retrievedOn": "2026-11-27",
+  "sourceFileBytes": 161197,
+  "sourceFileSha256": "45e7d780c09cdecfa2fcab97ecc31f6deeff93c4e281f7906340a4d029fa8d10",
+  "privacyScreen": "CMS leaves out rows with fewer than 11 allowed services",
+  "families": [
+    "office_new",
+    "office_established",
+    "nursing_initial",
+    "nursing_subsequent",
+    "home_new",
+    "home_established",
+    "inpatient_initial",
+    "inpatient_subsequent"
+  ],
+  "transform": "Rows of the benchmarked E/M families (office new and established, nursing facility initial and subsequent, home new and established, hospital inpatient or observation initial and subsequent) with a specialty; allowed services kept as published; rows without a specialty dropped; sorted by specialty, family and level",
+  "artefact": "em_specialty_2025.tsv.gz",
+  "artefactSha256": "7f24455aa7114620666d1dc750d6d4a0c86a98eae2081c7689644e57f42807ec",
+  "rows": 2001,
+  "specialties": 98,
+  "rowsWithoutSpecialty": 1
+}

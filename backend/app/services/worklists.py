@@ -107,6 +107,7 @@ def summary(note: Note, provider_name: str) -> dict[str, Any]:
         "due_at": note.due_at.isoformat(),
         "file_name": note.file_name,
         "assigned_to": note.assigned_to,
+        "payer": note.payer,
     }
 
 

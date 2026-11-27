@@ -20,6 +20,7 @@ import { FeaturedCase } from "./components/FeaturedCase";
 import { PatternBanner } from "./components/PatternBanner";
 import { COMPLIANCE_KINDS, countByKind, inKind, isComplianceKind, type ComplianceKind } from "./complianceKinds";
 import { COMPLIANCE_TEXT } from "./strings";
+import { DayChecksPanel } from "@/components/shared/day-checks/DayChecksPanel";
 
 const REMOTE_TEXT = { loading: COMPLIANCE_TEXT.loading, empty: COMPLIANCE_TEXT.empty, retry: COMPLIANCE_TEXT.retry };
 
@@ -75,6 +76,7 @@ function ComplianceContent({ role }: { role: Role }) {
       <RemoteView state={list.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0} onRetry={list.reload}>
         {(data) => <ComplianceBody data={data} kind={kind} canDecide={canDo(role, "complianceDecision")} onDecided={onDecided} />}
       </RemoteView>
+      <DayChecksPanel />
     </>
   );
 }

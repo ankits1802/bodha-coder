@@ -20,15 +20,20 @@ from app.models import (
     Activity,
     AddendumRequest,
     Analysis,
+    AuditSample,
     Batch,
     CodeSet,
     Decision,
+    EvalCase,
+    EvalRun,
     MipsList,
     Note,
     NoteText,
     Practice,
     Provider,
     RecoveryCode,
+    Remittance,
+    RemittanceLine,
     Session,
     Suggestion,
     User,
@@ -54,6 +59,7 @@ ACCESS_LOG_PAGE = 200
 FIXED_DOCUMENT_STATUSES = ("exported", "reading")
 DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
+QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
 PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity)
 USER_CHILDREN = (UserToken, Session, RecoveryCode)
 
@@ -195,6 +201,10 @@ async def delete_practice(
 async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
     notes = select(Note.id).where(Note.practice_id == practice_id)
     users = select(User.id).where(User.practice_id == practice_id)
+    remittances = select(Remittance.id).where(Remittance.practice_id == practice_id)
+    await db.execute(delete(RemittanceLine).where(RemittanceLine.remittance_id.in_(remittances)))
+    for table in QUALITY_AND_REMITTANCE_TABLES:
+        await db.execute(delete(table).where(table.practice_id == practice_id))
     for table in NOTE_CHILDREN:
         await db.execute(delete(table).where(table.note_id.in_(notes)))
     await db.execute(delete(AddendumRequest).where(AddendumRequest.practice_id == practice_id))

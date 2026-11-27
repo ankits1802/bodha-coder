@@ -18,6 +18,7 @@ from app.services.estimates import claim_amount
 from app.services.worklists import count_of
 
 ROW_LIMIT = 500
+AUTO_APPROVER = "Bodha (auto)"
 PAGE_SIZE = 100
 FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 EXPORT_COLUMNS = (
@@ -64,7 +65,7 @@ def _billing_query(practice_id: str, *, exported: bool | None) -> Select[Any]:
     query = (
         select(Note, Provider, User.name, final_set.c.codes, billed_set.c.codes)
         .join(Provider, Provider.id == Note.provider_id)
-        .join(User, User.id == Note.approved_by)
+        .outerjoin(User, User.id == Note.approved_by)
         .join(final, final.c.note_id == Note.id)
         .join(
             final_set,
@@ -119,7 +120,7 @@ def _row(
         "codes": [code.label() for code in final],
         "changed": claim_changes(final, billed),
         "estimate": claim_amount(final, note.place_code, note.service_date),
-        "approved_by": approver,
+        "approved_by": approver or AUTO_APPROVER,
         "approved_at": note.approved_at.isoformat() if note.approved_at else None,
         "exported_at": note.exported_at.isoformat() if note.exported_at else None,
         "cpt": [code.as_text() for code in final if code.type == "CPT"],

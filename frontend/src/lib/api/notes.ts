@@ -45,6 +45,20 @@ export function decideCompliance(
   return request<{ status: NoteStatus; lane: Lane | null }>(notePath(noteId, "/compliance"), { body: { decision, reason } });
 }
 
+export interface PayerOption {
+  id: string;
+  name: string;
+  plan_type: string | null;
+}
+
+export function getPayers(): Promise<PayerOption[]> {
+  return request<PayerOption[]>("/api/payers");
+}
+
+export function setNotePayer(noteId: string, payer: string | null): Promise<{ payer: string | null }> {
+  return request<{ payer: string | null }>(notePath(noteId, "/payer"), { method: "PUT", body: { payer } });
+}
+
 export function deleteNotes(noteIds: string[]): Promise<{ deleted: string[] }> {
   return request<{ deleted: string[] }>("/api/notes/delete", { body: { note_ids: noteIds } });
 }

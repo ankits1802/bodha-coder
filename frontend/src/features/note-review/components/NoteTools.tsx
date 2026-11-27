@@ -13,14 +13,17 @@ import { VISIT_TYPES } from "@/lib/labels";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import { AssigneeControl } from "./AssigneeControl";
+import { DefensePacketButton } from "@/components/shared/defense/DefensePacketButton";
+import { PayerSelect } from "./PayerSelect";
 
 interface NoteToolsProps {
   note: NoteHeader;
   permissions: ReviewPermissions;
   onVisitType: (visitType: string) => void;
+  onChanged: () => void;
 }
 
-export function NoteTools({ note, permissions, onVisitType }: NoteToolsProps) {
+export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToolsProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const remove = useAction(() => deleteNotes([note.id]));
@@ -45,6 +48,8 @@ export function NoteTools({ note, permissions, onVisitType }: NoteToolsProps) {
           ))}
         </FilterSelect>
       ) : null}
+      {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
+      <DefensePacketButton noteId={note.id} size="sm" />
       {permissions.deleteNote ? (
         <Button size="sm" variant="plain" onClick={() => setConfirming(true)}>
           {words.delete}

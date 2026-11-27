@@ -12,3 +12,7 @@ export function exportClaims(noteIds: string[] | null, again = false): Promise<D
 export function getInsights(days: InsightDays): Promise<Insights> {
   return request<Insights>("/api/insights", { query: { days } });
 }
+
+export function downloadClaimLines(): Promise<DownloadedFile> {
+  return requestFile("/api/billing/claim-lines", { method: "POST", body: { format: "csv" } });
+}

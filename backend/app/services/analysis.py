@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, analysis_response_key
@@ -16,7 +16,8 @@ from app.codes.billing_codes import Code
 from app.codes.icd import IcdCatalog
 from app.codes.mips_scope import practice_scope
 from app.codes.places import setting_for
-from app.models import Analysis, CodeSet, MipsList, Note, NoteText, Practice, Suggestion, utcnow
+from app.models import Analysis, MipsList, Note, NoteText, Practice, Suggestion, utcnow
+from app.services.code_sets import latest_codes, next_revision
 from app.services.findings import Finding, build_findings
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import refresh_placement
@@ -31,23 +32,6 @@ class AnalysisDeps:
     client: ModelClient
     store: ObjectStore
     icd: IcdCatalog
-
-
-async def next_revision(db: AsyncSession, model: type[Any], note_id: str, **filters: str) -> int:
-    query = select(func.max(model.revision)).where(model.note_id == note_id)
-    for column, value in filters.items():
-        query = query.where(getattr(model, column) == value)
-    return ((await db.scalar(query)) or 0) + 1
-
-
-async def latest_codes(db: AsyncSession, note_id: str, kind: str) -> tuple[Code, ...]:
-    row = await db.scalar(
-        select(CodeSet)
-        .where(CodeSet.note_id == note_id, CodeSet.kind == kind)
-        .order_by(CodeSet.revision.desc())
-        .limit(1)
-    )
-    return tuple(Code.from_json(item) for item in (row.codes if row else []))
 
 
 async def request_analysis(db: AsyncSession, note: Note, *, reason: str) -> Analysis:

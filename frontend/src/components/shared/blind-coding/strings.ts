@@ -1,0 +1,20 @@
+export const BLIND_TEXT = {
+  formLabel: "Blind coding",
+  noteLabel: "Visit note",
+  progress: (position: number, total: number) => `Note ${position} of ${total}`,
+  openPdf: "Open PDF",
+  document: "Document",
+  addendum: (revision: number) => `Addendum ${revision}`,
+  emLabel: "E/M code",
+  icdLabel: "ICD-10-CM codes",
+  modifiersLabel: "Modifiers",
+  optional: "Optional",
+  submit: "Submit",
+  noText: "No text layer",
+  errors: {
+    empty: "Enter the E/M code or a diagnosis",
+    em: "Enter a five-digit E/M code",
+    icd: (codes: string) => `Not ICD-10-CM codes: ${codes}`,
+    modifiers: (codes: string) => `Not modifiers: ${codes}`,
+  },
+} as const;

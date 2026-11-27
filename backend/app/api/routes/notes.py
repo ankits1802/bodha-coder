@@ -13,6 +13,7 @@ from app.api.bodies import (
     DecisionsBody,
     DeleteNotesBody,
     FlagBody,
+    PayerChoiceBody,
     RetryBody,
     VisitTypeBody,
 )
@@ -108,6 +109,14 @@ async def change_visit_type(
 ) -> dict[str, str]:
     note = await note_changes.change_visit_type(db, actor, note_id, body.visit_type)
     return {"status": note.status}
+
+
+@router.put("/{note_id}/payer")
+async def set_payer(
+    note_id: str, body: PayerChoiceBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+) -> dict[str, str | None]:
+    note = await note_changes.set_payer(db, actor, note_id, body.payer)
+    return {"payer": note.payer}
 
 
 @router.post("/{note_id}/cancel-request")

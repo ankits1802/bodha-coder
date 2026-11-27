@@ -11,6 +11,7 @@ import { localIsoDate } from "@/lib/dates";
 import { formatCalendarDay, formatCount, formatMoney } from "@/lib/format";
 import { groupByServiceDate, momentLabel } from "../billingRows";
 import { BILLING_TEXT } from "../strings";
+import { DefensePacketButton } from "@/components/shared/defense/DefensePacketButton";
 
 function ReviewCell({ changed }: { changed: number }) {
   if (changed > 0) return <StatusDot tone="low">{BILLING_TEXT.changed(formatCount(changed))}</StatusDot>;
@@ -48,6 +49,9 @@ function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
       <Td>
         <ApprovedCell row={row} today={today} />
       </Td>
+      <Td>
+        <DefensePacketButton noteId={row.id} size="sm" />
+      </Td>
     </Tr>
   );
 }
@@ -66,11 +70,12 @@ export function BillingTable({ rows }: { rows: BillingRow[] }) {
             <Th className="text-right">{words.estimate}</Th>
             <Th>{words.review}</Th>
             <Th>{words.approvedBy}</Th>
+            <Th>{words.packet}</Th>
           </tr>
         </thead>
         {groupByServiceDate(rows).map((group) => (
           <tbody key={group.day}>
-            <GroupRow colSpan={6}>
+            <GroupRow colSpan={7}>
               {BILLING_TEXT.seenGroup(formatCalendarDay(group.day), formatCount(group.rows.length))}
             </GroupRow>
             {group.rows.map((row) => (

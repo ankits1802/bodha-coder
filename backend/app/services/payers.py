@@ -15,7 +15,7 @@ __all__ = ["PLAN_TYPES", "add_payer", "change_payer", "has_active_payer", "payer
 
 SECTION = "payers"
 LIST_KEY = "list"
-PLAN_TYPES = ("commercial", "medicare", "medicaid", "other")
+PLAN_TYPES = ("commercial", "medicare", "medicare_advantage", "medicaid", "other")
 PAYER_ID = re.compile(r"^[A-Z0-9-]{2,15}$")
 MAX_PAYERS = 200
 

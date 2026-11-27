@@ -19,11 +19,20 @@ import { PeopleTable } from "./components/PeopleTable";
 import { ProviderTable } from "./components/ProviderTable";
 import { DEFAULT_DAYS, INSIGHT_DAYS, dailyBars, isQuiet, parseDays, rangeStart } from "./insightMath";
 import { INSIGHTS_TEXT } from "./strings";
+import { EmMixPanel } from "@/components/shared/em-mix/EmMixPanel";
+import { QueryMetricsPanel } from "@/components/shared/query-governance/QueryMetricsPanel";
 
 const REMOTE_TEXT = { loading: INSIGHTS_TEXT.loading, empty: INSIGHTS_TEXT.empty, retry: INSIGHTS_TEXT.retry };
 const SEGMENTS = INSIGHT_DAYS.map((days) => ({ value: String(days), label: INSIGHTS_TEXT.periods[days] }));
 
-function InsightsBody({ insights, start, today }: { insights: Insights; start: string; today: string }) {
+interface InsightsBodyProps {
+  insights: Insights;
+  days: InsightDays;
+  start: string;
+  today: string;
+}
+
+function InsightsBody({ insights, days, start, today }: InsightsBodyProps) {
   return (
     <>
       <InsightStats insights={insights} />
@@ -32,6 +41,8 @@ function InsightsBody({ insights, start, today }: { insights: Insights; start: s
       <ProviderTable providers={insights.providers} />
       <EstimateTable estimates={insights.estimates} />
       <PeopleTable people={insights.people} />
+      <EmMixPanel days={days} />
+      <QueryMetricsPanel days={days} />
     </>
   );
 }
@@ -58,7 +69,7 @@ function InsightsContent() {
         actions={period}
       />
       <RemoteView state={insights.state} text={REMOTE_TEXT} isEmpty={isQuiet} onRetry={insights.reload}>
-        {(data) => <InsightsBody insights={data} start={start} today={today} />}
+        {(data) => <InsightsBody insights={data} days={days} start={start} today={today} />}
       </RemoteView>
     </>
   );

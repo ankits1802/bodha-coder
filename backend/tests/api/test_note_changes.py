@@ -46,3 +46,21 @@ async def test_cancelling_a_request_releases_the_held_claim(harness, icd_catalog
     detail = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()
     assert detail["requests"][0]["status"] == "cancelled"
     assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
+
+
+async def test_a_note_takes_one_of_the_practice_payers(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    added = await harness.client.post(
+        "/api/practice/payers",
+        headers=practice.admin,
+        json={"name": "Medicare Part B", "payer_id": "00882", "plan_type": "medicare", "active": True},
+    )
+    assert added.status_code == 200, added.text
+    payer_id = (await harness.client.get("/api/payers", headers=practice.admin)).json()[0]["id"]
+
+    chosen = await harness.client.put(f"/api/notes/{note_id}/payer", headers=practice.admin, json={"payer": payer_id})
+    assert chosen.json() == {"payer": payer_id}
+    detail = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()
+    assert detail["note"]["payer"] == payer_id
+    unknown = await harness.client.put(f"/api/notes/{note_id}/payer", headers=practice.admin, json={"payer": "nope"})
+    assert unknown.status_code == 404

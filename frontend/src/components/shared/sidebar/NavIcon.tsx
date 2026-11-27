@@ -14,7 +14,8 @@ export type NavIconName =
   | "clock"
   | "inbox"
   | "search"
-  | "help";
+  | "help"
+  | "book";
 
 const STROKE = { fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
@@ -89,6 +90,12 @@ const PATHS: Record<NavIconName, ReactNode> = {
       <circle cx="8" cy="8" r="6" {...STROKE} />
       <path d="M6.2 6.3a1.9 1.9 0 0 1 3.6.7c0 1.2-1.8 1.5-1.8 2.6" {...STROKE} />
       <circle cx="8" cy="11.6" r=".8" fill="currentColor" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M8 4.2C6.6 3.2 4.6 2.8 2.5 3v9.6c2.1-.2 4.1.2 5.5 1.2 1.4-1 3.4-1.4 5.5-1.2V3c-2.1-.2-4.1.2-5.5 1.2z" {...STROKE} />
+      <path d="M8 4.2v9.6" {...STROKE} />
     </>
   ),
 };

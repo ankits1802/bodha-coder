@@ -51,6 +51,17 @@ async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
     )
 
 
+@router.get("/payers")
+async def active_payers(actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES))]) -> list[dict[str, Any]]:
+    practice = actor.practice
+    listed = payers.payer_list(practice) if practice is not None else []
+    return [
+        {"id": payer["id"], "name": payer["name"], "plan_type": payer.get("plan_type")}
+        for payer in listed
+        if payer.get("active")
+    ]
+
+
 @router.post("/practice/payers")
 async def add_payer(body: PayerBody, db: Db, actor: Admin) -> dict[str, str]:
     payer = await payers.add_payer(db, actor, body.model_dump())

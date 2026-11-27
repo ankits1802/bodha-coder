@@ -1,7 +1,7 @@
 import type { Payer, PayerInput, PlanType } from "@/lib/api/types";
 import { PAYER_TEXT } from "./strings";
 
-export const PLAN_TYPES: readonly PlanType[] = ["commercial", "medicare", "medicaid", "other"];
+export const PLAN_TYPES: readonly PlanType[] = ["commercial", "medicare", "medicare_advantage", "medicaid", "other"];
 
 export interface PayerDraft {
   name: string;
