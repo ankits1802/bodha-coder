@@ -26,6 +26,7 @@ export const TOUR_TEXT = {
     settings: "Providers, payers, checks, team, plan and security.",
     hqOverview: "Practices that need attention.",
     hqPractices: "Add, renew, block or remove practices.",
+    hqOrganizations: "Groups of practices, their admins and combined billing.",
     hqSpend: "AI cost per practice and provider.",
     hqActivity: "Every HQ action, by person and day.",
     hqDemos: "Demo requests from the website.",

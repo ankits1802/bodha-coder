@@ -39,7 +39,7 @@ describe("role-based navigation", () => {
     expect(keysFor("compliance")).toEqual(["today", "inbox", "queue", "compliance", "insights"]);
     expect(keysFor("biller")).toEqual(["today", "inbox", "billing"]);
     expect(keysFor("viewer")).toEqual(["today", "insights"]);
-    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
+    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqOrganizations", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
   });
 
   it("keeps the review queue open to billers although their sidebar leaves it out", () => {

@@ -7,7 +7,7 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import type { BillingInterval, CheckoutPlan, Plan, PlanTerms } from "@/lib/api/types";
 import { PLAN_LABELS } from "@/lib/labels";
 import { ContactSales } from "./ContactSales";
-import { PLAN_TEXT } from "./strings";
+import { PLAN_CHOOSER_TEXT } from "./strings";
 
 interface PlanOptionsProps {
   plans: readonly PlanTerms[];
@@ -49,7 +49,7 @@ function Choice({ terms, interval, trialDays, group, checked, current, onChoose 
         aria-describedby={`${id}-details`}
         className="sr-only"
       />
-      {current ? <StatusDot tone="ok">{PLAN_TEXT.current}</StatusDot> : null}
+      {current ? <StatusDot tone="ok">{PLAN_CHOOSER_TEXT.current}</StatusDot> : null}
     </PlanCard>
   );
 }
@@ -78,7 +78,7 @@ export function PlanOptions({ plans, interval, trialDays, current, chosen, onCho
     }
     return (
       <PlanCard key={key} terms={terms} interval={interval} trialDays={trialDays}>
-        {current === key ? <StatusDot tone="ok">{PLAN_TEXT.current}</StatusDot> : null}
+        {current === key ? <StatusDot tone="ok">{PLAN_CHOOSER_TEXT.current}</StatusDot> : null}
         {terms.pricing === "custom" ? <ContactSales /> : null}
       </PlanCard>
     );
@@ -86,7 +86,7 @@ export function PlanOptions({ plans, interval, trialDays, current, chosen, onCho
   if (chosen === null) return <div className={GRID}>{cards}</div>;
   return (
     <fieldset className={`m-0 border-0 p-0 ${GRID}`}>
-      <legend className="sr-only">{PLAN_TEXT.plansLabel}</legend>
+      <legend className="sr-only">{PLAN_CHOOSER_TEXT.plansLabel}</legend>
       {cards}
     </fieldset>
   );

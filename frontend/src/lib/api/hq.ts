@@ -92,8 +92,13 @@ export function getHqActivity(query: HqActivityQuery): Promise<HqActivityPage> {
   return request<HqActivityPage>("/api/hq/activity", { query: { ...query } });
 }
 
-export function getHqExpenditure(range: SpendRange, practiceId?: string): Promise<HqExpenditure> {
-  return request<HqExpenditure>("/api/hq/expenditure", { query: { from: range.from, to: range.to, practice_id: practiceId } });
+export interface SpendScope {
+  practice_id?: string;
+  organization_id?: string;
+}
+
+export function getHqExpenditure(range: SpendRange, scope: SpendScope = {}): Promise<HqExpenditure> {
+  return request<HqExpenditure>("/api/hq/expenditure", { query: { from: range.from, to: range.to, ...scope } });
 }
 
 const teamPath = (userId: string, suffix = ""): string => `/api/hq/team/${encodeURIComponent(userId)}${suffix}`;

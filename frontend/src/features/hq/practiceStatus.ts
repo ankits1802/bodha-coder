@@ -8,7 +8,7 @@ import { HQ_TEXT } from "./strings";
 export const ENDING_SOON_DAYS = 14;
 const DAY = 86_400_000;
 
-const STATUS_TONES: Record<PracticeStatus, StatusTone> = {
+export const PRACTICE_STATUS_TONES: Record<PracticeStatus, StatusTone> = {
   active: "ok",
   trial: "low",
   ended: "bad",
@@ -50,7 +50,7 @@ export function isEndingSoon(practice: Pick<HqPractice, "status"> & Renewal, tod
 
 export function practiceStatusView(practice: HqPractice, today?: string): { tone: StatusTone; label: string } {
   if (isEndingSoon(practice, today)) return { tone: "warn", label: HQ_TEXT.status.endingSoon };
-  return { tone: STATUS_TONES[practice.status], label: PRACTICE_STATUS_LABELS[practice.status] };
+  return { tone: PRACTICE_STATUS_TONES[practice.status], label: PRACTICE_STATUS_LABELS[practice.status] };
 }
 
 export function renewalLine(practice: HqPractice, today?: string): string {

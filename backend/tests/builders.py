@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from urllib.parse import parse_qs, urlsplit
 
 import pyotp
@@ -25,6 +25,7 @@ from tests.fakes import (
     FakeMessenger,
     FakeProvider,
     FakeStore,
+    FakeTxtResolver,
     ScriptedReviewer,
     signature_data_url,
     text_pdf,
@@ -45,6 +46,7 @@ class Harness:
     providers: dict[str, FakeProvider]
     billing: dict[str, FakeBillingProvider]
     image_model: FakeImageModel
+    dns: FakeTxtResolver = field(default_factory=FakeTxtResolver)
 
     @property
     def google(self) -> FakeProvider:

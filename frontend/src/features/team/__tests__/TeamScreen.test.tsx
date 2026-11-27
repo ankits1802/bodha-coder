@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { forgetRemote } from "@/hooks/remoteCache";
+import { getDomainClaims, getJoinRequests } from "@/lib/api/domains";
 import { ApiError } from "@/lib/api/errors";
 import { getTeam, inviteMember, removeMember, updateMember } from "@/lib/api/team";
 import type { TeamList, TeamMember } from "@/lib/api/types";
@@ -14,6 +15,14 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/settings/team",
   useRouter: () => navigation,
   useSearchParams: () => new URLSearchParams(),
+}));
+vi.mock("@/lib/api/domains", () => ({
+  PRACTICE_DOMAINS: { kind: "practice" },
+  domainScopeKey: () => "domains:practice",
+  getDomainClaims: vi.fn(),
+  getJoinRequests: vi.fn(),
+  approveJoinRequest: vi.fn(),
+  declineJoinRequest: vi.fn(),
 }));
 vi.mock("@/lib/api/team", () => ({
   getTeam: vi.fn(),
@@ -50,6 +59,8 @@ describe("TeamScreen", () => {
     forgetRemote("team");
     setSession({ access_token: "token", user: { ...CODER, id: ADMIN.id, name: ADMIN.name, role: "admin" } });
     vi.mocked(getTeam).mockResolvedValue(TEAM);
+    vi.mocked(getDomainClaims).mockResolvedValue([]);
+    vi.mocked(getJoinRequests).mockResolvedValue([]);
     vi.mocked(removeMember).mockResolvedValue(undefined);
     vi.mocked(updateMember).mockResolvedValue(undefined);
   });

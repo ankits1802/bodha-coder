@@ -22,13 +22,13 @@ export function PracticeActionDialog({ action, onDone, onClose }: PracticeAction
   }
 
   if (action.kind === "renew") {
-    return <RenewDialog practice={action.practice} onDone={onDone} onClose={onClose} />;
+    return <RenewDialog subject={action.practice} onDone={onDone} onClose={onClose} />;
   }
   if (isTypedAction(action.kind)) {
     return (
       <TypedNameDialog
         kind={action.kind}
-        practice={action.practice}
+        subject={action.practice}
         pending={run.pending}
         error={run.error}
         onConfirm={(typedName) => void confirm(typedName)}

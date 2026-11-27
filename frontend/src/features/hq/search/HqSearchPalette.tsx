@@ -54,13 +54,13 @@ function SearchBox({ onOpen }: { onOpen: (option: SearchOption) => void }) {
         <RemoteView
           state={state}
           text={REMOTE_TEXT}
-          isEmpty={(data) => data.practices.length + data.people.length === 0}
+          isEmpty={(data) => data.organizations.length + data.practices.length + data.people.length === 0}
           onRetry={search.remote.reload}
         >
           {(data) => (
             <>
               <HqSearchList listId={listId} options={options} active={current} onActive={setActive} onOpen={onOpen} />
-              {data.practices.length >= data.limit || data.people.length >= data.limit ? (
+              {[data.organizations, data.practices, data.people].some((group) => group.length >= data.limit) ? (
                 <p className="m-0 text-caption text-secondary">{words.firstResults(formatCount(data.limit))}</p>
               ) : null}
             </>

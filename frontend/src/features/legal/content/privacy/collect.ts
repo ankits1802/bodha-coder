@@ -29,6 +29,8 @@ export const PRIVACY_COLLECT = [
       ["Provider contact details:", "for providers who answer documentation questions, the email address or mobile number the practice enters, used to send secure links and one-time codes."],
       ["Agreement records:", "when an organization signs up, the version of the Terms and BAA accepted, when, by which account and through which sign-in method."],
       ["Billing contact information:", "the billing contact’s name, email address and address, and the organization name, when you subscribe. Card and bank details are collected by our payment processors, Stripe and PayPal, and are not stored by us."],
+      ["Email domains:", "the email domain a practice or organization claims so that colleagues can join it, how and when it was verified, and the admin mailbox at that domain a verification link was sent to."],
+      ["Join requests:", "when you sign up with an email address at a claimed domain and ask to join that practice, your name and work email address, kept with the request so that its admins can decide."],
       ["Demo requests:", "your name, work email address, organization and message when you ask for a demonstration."],
       ["Correspondence:", "what you send us when you contact us for support or otherwise."],
     ),

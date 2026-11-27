@@ -47,6 +47,10 @@ BILLING_SESSION_ROUTES = {
     ("POST", "/api/auth/practice"),
     ("POST", "/api/auth/practices"),
     ("POST", "/api/auth/practices/{practice_id}/leave"),
+    ("GET", "/api/organizations/{organization_id}/plan"),
+    ("POST", "/api/organizations/{organization_id}/plan/checkout"),
+    ("POST", "/api/organizations/{organization_id}/plan/portal"),
+    ("POST", "/api/organizations/{organization_id}/plan/cancel"),
 }
 REFUSED_ROUTES = (
     ("GET", "/api/today"),

@@ -9,9 +9,9 @@ import { TextArea } from "@/components/ui/Input";
 import { useAction } from "@/hooks/useAction";
 import { requestDemo } from "@/lib/api/hq";
 import { useSession } from "@/lib/session/useSession";
-import { PLAN_TEXT } from "./strings";
+import { PLAN_CHOOSER_TEXT } from "./strings";
 
-const words = PLAN_TEXT.sales;
+const words = PLAN_CHOOSER_TEXT.sales;
 const MESSAGE_LIMIT = 2000;
 
 export function ContactSales() {

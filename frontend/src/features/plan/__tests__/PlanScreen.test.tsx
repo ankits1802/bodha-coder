@@ -6,7 +6,7 @@ import { forgetRemote } from "@/hooks/remoteCache";
 import { PLAN_CATALOG_KEY } from "@/hooks/usePlanCatalog";
 import { PLAN_STATUS_KEY } from "@/hooks/usePlanStatus";
 import { cancelSubscription, getPlanCatalog, getPlanStatus, openBillingPortal, startCheckout } from "@/lib/api/plan";
-import { leaveFor } from "../leaveFor";
+import { leaveFor } from "@/components/shared/plan-chooser/leaveFor";
 import { PlanScreen } from "../PlanScreen";
 
 vi.mock("next/navigation", () => ({
@@ -21,7 +21,7 @@ vi.mock("@/lib/api/plan", () => ({
   openBillingPortal: vi.fn(),
   cancelSubscription: vi.fn(),
 }));
-vi.mock("../leaveFor", () => ({ leaveFor: vi.fn() }));
+vi.mock("@/components/shared/plan-chooser/leaveFor", () => ({ leaveFor: vi.fn() }));
 
 const CHECKOUT_URL = "https://checkout.stripe.com/c/pay/cs_test_1";
 

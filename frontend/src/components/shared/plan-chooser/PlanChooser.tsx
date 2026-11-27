@@ -6,30 +6,31 @@ import { mostMonthsFree } from "@/components/shared/plan-cards/planPrice";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
-import { startCheckout } from "@/lib/api/plan";
-import type { BillingInterval, BillingProvider, CheckoutPlan, PlanCatalog, PlanStatus } from "@/lib/api/types";
+import type { BillingInterval, BillingProvider, CheckoutPlan, PlanCatalog } from "@/lib/api/types";
+import type { BillingActions } from "./billingActions";
+import { initialPlan, isSubscribed, paidPlans, type ChooserStatus } from "./chooserModel";
 import { leaveFor } from "./leaveFor";
 import { ManageBilling } from "./ManageBilling";
 import { PaymentDialog } from "./PaymentDialog";
-import { initialPlan, isSubscribed, paidPlans } from "./planModel";
 import { PlanOptions } from "./PlanOptions";
-import { PLAN_TEXT } from "./strings";
+import { PLAN_CHOOSER_TEXT } from "./strings";
 
 interface PlanChooserProps {
-  status: PlanStatus;
+  status: ChooserStatus;
   catalog: PlanCatalog;
+  actions: BillingActions;
   onChanged: () => void;
 }
 
-const words = PLAN_TEXT;
+const words = PLAN_CHOOSER_TEXT;
 
-export function PlanChooser({ status, catalog, onChanged }: PlanChooserProps) {
+export function PlanChooser({ status, catalog, actions, onChanged }: PlanChooserProps) {
   const subscription = isSubscribed(status) ? status.subscription : null;
   const [plan, setPlan] = useState<CheckoutPlan>(() => initialPlan(status));
   const [period, setPeriod] = useState<BillingInterval>(status.subscription?.interval ?? "monthly");
   const [paying, setPaying] = useState(false);
   const checkout = useAction(async (provider: BillingProvider) => {
-    leaveFor((await startCheckout({ plan, interval: period, provider })).url);
+    leaveFor((await actions.checkout({ plan, interval: period, provider })).url);
   });
   const providers = catalog.providers;
   const shown = catalog.plans.filter((terms) => terms.pricing !== "free");
@@ -56,7 +57,7 @@ export function PlanChooser({ status, catalog, onChanged }: PlanChooserProps) {
         chosen={subscription ? null : plan}
         onChoose={setPlan}
       />
-      {subscription ? <ManageBilling subscription={subscription} onChanged={onChanged} /> : null}
+      {subscription ? <ManageBilling subscription={subscription} actions={actions} onChanged={onChanged} /> : null}
       {!subscription && checkout.error && !paying ? <InlineAlert tone="bad">{checkout.error}</InlineAlert> : null}
       {!subscription ? (
         <div className="flex flex-wrap items-center gap-3">

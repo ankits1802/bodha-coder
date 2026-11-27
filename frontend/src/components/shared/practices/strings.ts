@@ -6,4 +6,5 @@ export const PRACTICE_TEXT = {
   cancel: "Cancel",
   newPractice: "New practice",
   choice: (name: string, role: string) => `${name} · ${role}`,
+  organization: (name: string) => `${name} · Organization`,
 } as const;

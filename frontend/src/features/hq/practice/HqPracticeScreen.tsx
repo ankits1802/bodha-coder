@@ -29,7 +29,7 @@ const SEGMENTS = PRACTICE_TABS.map((value) => ({ value, label: words.tabs[value]
 
 function TabBody({ tab, page }: { tab: PracticeTab; page: HqPracticePage }) {
   if (tab === "plan") return <PlanTab practice={page.practice} />;
-  if (tab === "spend") return <SpendTab practiceId={page.practice.id} />;
+  if (tab === "spend") return <SpendTab scope={{ practice_id: page.practice.id }} />;
   if (tab === "activity") return <ActivityTab practice={page.practice} />;
   if (tab === "places") return <PlacesTab places={page.places} />;
   return <PeopleTab practiceId={page.practice.id} />;
@@ -87,7 +87,7 @@ export function HqPracticeScreen({ practiceId }: { practiceId: string }) {
       <RemoteView state={remote.state} text={{ loading: words.loading, empty: words.loading, retry: HQ_TEXT.retry }} onRetry={remote.reload}>
         {(data) => <TabBody tab={tab} page={data} />}
       </RemoteView>
-      {practice && dialog === "renew" ? <RenewDialog practice={practice} onDone={finished} onClose={() => setDialog(null)} /> : null}
+      {practice && dialog === "renew" ? <RenewDialog subject={practice} onDone={finished} onClose={() => setDialog(null)} /> : null}
       {practice && dialog === "appoint" ? (
         <AppointAdminDialog
           practice={practice}

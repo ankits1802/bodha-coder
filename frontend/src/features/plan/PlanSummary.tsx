@@ -1,10 +1,10 @@
 import { PLAN_CARD_TEXT } from "@/components/shared/plan-cards/strings";
+import { dateFact, standingView } from "@/components/shared/plan-chooser/chooserModel";
 import { StatCell, StatGrid } from "@/components/ui/StatGrid";
 import { StatusDot } from "@/components/ui/StatusDot";
 import type { PlanStatus } from "@/lib/api/types";
 import { FORMAT_WORDS } from "@/lib/format";
 import { PLAN_LABELS } from "@/lib/labels";
-import { dateFact, standingView } from "./planModel";
 import { PLAN_TEXT } from "./strings";
 
 export function PlanSummary({ status }: { status: PlanStatus }) {

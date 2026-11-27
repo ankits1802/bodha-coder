@@ -17,7 +17,14 @@ from app.core.db import SessionFactory
 from app.main import app
 from app.models import Base
 from tests.builders import ADMIN_SITE, Harness, maintenance
-from tests.fakes import FakeBillingProvider, FakeImageModel, FakeMessenger, FakeProvider, FakeStore
+from tests.fakes import (
+    FakeBillingProvider,
+    FakeImageModel,
+    FakeMessenger,
+    FakeProvider,
+    FakeStore,
+    FakeTxtResolver,
+)
 
 BACKEND = Path(__file__).resolve().parents[2]
 KEPT_TABLES = ("places_of_service",)
@@ -52,5 +59,7 @@ async def harness(icd_catalog) -> AsyncIterator[Harness]:
     app.state.identity_providers = providers
     billing = {name: FakeBillingProvider(name) for name in BILLING_NAMES}
     app.state.billing_providers = billing
+    dns = FakeTxtResolver()
+    app.state.txt_resolver = dns
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://app.test") as client:
-        yield Harness(client, store, messenger, providers, billing, image_model)
+        yield Harness(client, store, messenger, providers, billing, image_model, dns)

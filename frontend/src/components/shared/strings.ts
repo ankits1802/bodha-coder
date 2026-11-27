@@ -73,6 +73,7 @@ export const SHARED_TEXT = {
     settings: "Settings",
     hqOverview: "Overview",
     hqPractices: "Practices",
+    hqOrganizations: "Organizations",
     hqSpend: "Spend",
     hqActivity: "Activity log",
     hqDemos: "Demo requests",

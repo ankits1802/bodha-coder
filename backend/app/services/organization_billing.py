@@ -146,7 +146,8 @@ async def apply_organization_subscription(
     if organization.status == ACTIVE:
         _grant_organization(organization, row, was_live=was_live)
         for practice in practices:
-            grant_access(practice, row, was_live=was_live, grace_days=get_settings().billing_grace_days)
+            if practice.status not in HQ_DECIDED_STATUSES:
+                grant_access(practice, row, was_live=was_live, grace_days=get_settings().billing_grace_days)
     if snapshot(row) != previous:
         detail = f"{organization.name}: {change_detail(row)}"
         record_activity(db, None, SUBSCRIPTION_CHANGED, practice_id=None, detail=detail)

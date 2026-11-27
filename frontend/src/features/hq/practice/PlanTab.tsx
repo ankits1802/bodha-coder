@@ -1,9 +1,11 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/StatusDot";
 import type { HqPractice } from "@/lib/api/types";
 import { FORMAT_WORDS, formatCalendarDay, formatCount } from "@/lib/format";
 import { PLAN_LABELS } from "@/lib/labels";
+import { organizationHref } from "../organization/organizationTabs";
 import { renewalLine } from "../practiceStatus";
 import { billingView } from "../practices/practiceBilling";
 import { HQ_TEXT } from "../strings";
@@ -25,6 +27,20 @@ function Billing({ practice }: { practice: HqPractice }) {
   return <StatusDot tone={view.tone}>{view.label}</StatusDot>;
 }
 
+function Organization({ practice }: { practice: HqPractice }) {
+  if (!practice.organization_id) return null;
+  return (
+    <Fact label={words.organization}>
+      <span className="flex flex-col">
+        <Link href={organizationHref(practice.organization_id)} className="font-medium text-label hover:underline">
+          {practice.organization_name ?? practice.organization_id}
+        </Link>
+        <span className="text-footnote text-secondary">{practice.combined_billing ? words.combined : words.ownBilling}</span>
+      </span>
+    </Fact>
+  );
+}
+
 function Started({ practice }: { practice: HqPractice }) {
   const day = formatCalendarDay(practice.signed_up_on, "year");
   return <>{practice.source ? words.startedOn(words.startedBy[practice.source], day) : day}</>;
@@ -35,6 +51,7 @@ export function PlanTab({ practice }: { practice: HqPractice }) {
     <Panel aria-label={words.label}>
       <dl className="m-0">
         <Fact label={words.plan}>{PLAN_LABELS[practice.plan]}</Fact>
+        <Organization practice={practice} />
         <Fact label={words.renewal}>{renewalLine(practice)}</Fact>
         <Fact label={words.billing}>
           <Billing practice={practice} />

@@ -90,7 +90,7 @@ describe("practice actions", () => {
 describe("TypedNameDialog", () => {
   it("keeps the close button off until the practice name is typed exactly", () => {
     const onConfirm = vi.fn();
-    render(<TypedNameDialog kind="close" practice={PRACTICE} pending={false} error={null} onConfirm={onConfirm} onClose={vi.fn()} />);
+    render(<TypedNameDialog kind="close" subject={PRACTICE} pending={false} error={null} onConfirm={onConfirm} onClose={vi.fn()} />);
     const close = screen.getByRole("button", { name: "Close practice" });
     const typed = screen.getByLabelText("Type Lakeside Primary Care to confirm");
 

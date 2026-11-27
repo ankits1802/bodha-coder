@@ -6,20 +6,21 @@ import { Button } from "@/components/ui/Button";
 import type { ButtonVariant } from "@/components/ui/buttonStyles";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
-import { cancelSubscription, openBillingPortal } from "@/lib/api/plan";
 import type { PlanSubscription } from "@/lib/api/types";
+import type { BillingActions } from "./billingActions";
 import { leaveFor } from "./leaveFor";
-import { PLAN_TEXT } from "./strings";
+import { PLAN_CHOOSER_TEXT } from "./strings";
 
 interface ManageBillingProps {
   subscription: PlanSubscription;
+  actions: BillingActions;
   onChanged: () => void;
 }
 
-const words = PLAN_TEXT;
+const words = PLAN_CHOOSER_TEXT;
 
-function PortalButton({ variant }: { variant: ButtonVariant }) {
-  const portal = useAction(async () => leaveFor((await openBillingPortal()).url));
+function PortalButton({ variant, actions }: { variant: ButtonVariant; actions: BillingActions }) {
+  const portal = useAction(async () => leaveFor((await actions.portal()).url));
   return (
     <div className="flex flex-col items-start gap-3">
       <Button variant={variant} pending={portal.pending} onClick={() => void portal.run()}>
@@ -30,8 +31,8 @@ function PortalButton({ variant }: { variant: ButtonVariant }) {
   );
 }
 
-function CancelButton({ subscription, onChanged }: ManageBillingProps) {
-  const cancel = useAction(cancelSubscription);
+function CancelButton({ subscription, actions, onChanged }: ManageBillingProps) {
+  const cancel = useAction(actions.cancel);
   const [confirming, setConfirming] = useState(false);
   const [requested, setRequested] = useState(false);
 
@@ -63,12 +64,12 @@ function CancelButton({ subscription, onChanged }: ManageBillingProps) {
   );
 }
 
-export function ManageBilling({ subscription, onChanged }: ManageBillingProps) {
-  if (subscription.managed_by === "portal") return <PortalButton variant="primary" />;
+export function ManageBilling({ subscription, actions, onChanged }: ManageBillingProps) {
+  if (subscription.managed_by === "portal") return <PortalButton variant="primary" actions={actions} />;
   return (
     <div className="flex flex-wrap items-start gap-3">
-      <PortalButton variant="secondary" />
-      <CancelButton subscription={subscription} onChanged={onChanged} />
+      <PortalButton variant="secondary" actions={actions} />
+      <CancelButton subscription={subscription} actions={actions} onChanged={onChanged} />
     </div>
   );
 }

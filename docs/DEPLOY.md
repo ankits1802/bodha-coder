@@ -294,6 +294,15 @@ test Google on the HQ host through a TLS tunnel as for Yahoo.
   personal Microsoft accounts are trusted.
 - Yahoo: an app with OpenID Connect permissions `openid`, `email` and `profile`.
 
+### Organizations and email domains
+
+No setting is needed ([0044](decisions/0044-organizations-and-domain-join.md)). The API resolves TXT
+records for domain claims through the system's DNS servers (the VPC resolver on AWS), so its tasks need
+ordinary DNS. A claim verified by email sends a link to `admin@`, `administrator@`, `hostmaster@`,
+`postmaster@` or `webmaster@` the domain, so SES must be out of its sandbox to reach those mailboxes.
+Combined billing uses the Stripe prices and PayPal plans already configured; the checkout of an
+organization returns to `{APP_URL}/organizations/{id}/plan`, and webhooks need no new events.
+
 ### HQ on its own host
 
 The HQ console moves to `ADMIN_URL` while practices stay on `APP_URL`

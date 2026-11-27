@@ -37,6 +37,18 @@ export const TEAM_TEXT = {
     password: (email: string) => `Password reset sent to ${email}`,
   } satisfies Record<SendKind, (email: string) => string>,
   roleChanged: (name: string) => `Role changed for ${name}`,
+  requests: {
+    title: "Join requests",
+    listLabel: "People asking to join",
+    from: (email: string, domain: string) => `${email} · ${domain}`,
+    roleFor: (name: string) => `Role for ${name}`,
+    approve: "Approve",
+    approveFor: (name: string) => `Approve ${name}`,
+    decline: "Decline",
+    declineFor: (name: string) => `Decline ${name}`,
+    approved: (name: string) => `${name} was invited`,
+    declined: (name: string) => `Request from ${name} declined`,
+  },
   confirm: {
     cancel: "Cancel",
     titles: {

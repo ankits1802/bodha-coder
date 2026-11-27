@@ -164,7 +164,7 @@ async def send_join_offer(messenger: Messenger, ticket: JoinTicket, offer: JoinO
         subject=f"Join {offer.practice_name} on Bodha Assure",
         body=(
             f"{ticket.name}, people at {offer.domain} use Bodha Assure as {offer.practice_name}. "
-            f"You can {verb} {offer.practice_name}, or start {ticket.practice_name} as its own practice: {link}. "
-            "If this was not you, you can ignore this email."
+            f"You can {verb} {offer.practice_name}, or start {ticket.practice_name} as its own practice. "
+            f"If this was not you, you can ignore this email. Continue: {link}"
         ),
     )

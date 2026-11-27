@@ -91,11 +91,20 @@ describe("HqPracticeScreen", () => {
     expect(screen.getByRole("radio", { name: "1 year" })).toBeChecked();
   });
 
+  it("links a practice to its organization and says how it is billed", async () => {
+    navigation.search = "tab=plan";
+    const grouped = { ...PAGE.practice, organization_id: "o1", organization_name: "Acme Health", combined_billing: true };
+    vi.mocked(getHqPracticePage).mockResolvedValue({ ...PAGE, practice: grouped });
+    render(<HqPracticeScreen practiceId="p1" />);
+    expect(await screen.findByRole("link", { name: "Acme Health" })).toHaveAttribute("href", "/hq/organizations/o1");
+    expect(screen.getByText("Billed through the organization")).toBeInTheDocument();
+  });
+
   it("shows a practice with no model use at zero instead of hiding it", async () => {
     navigation.search = "tab=spend";
     render(<HqPracticeScreen practiceId="p1" />);
     const row = await screen.findByText("Lakeside Primary Care", { selector: "td span" });
-    expect(getHqExpenditure).toHaveBeenCalledWith({ from: "2026-11-01", to: "2026-11-28" }, "p1");
+    expect(getHqExpenditure).toHaveBeenCalledWith({ from: "2026-11-01", to: "2026-11-28" }, { practice_id: "p1" });
     expect(within(row.closest("tr") as HTMLElement).getAllByText("$0.00").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Lakeside Primary Care" })).not.toBeInTheDocument();
   });

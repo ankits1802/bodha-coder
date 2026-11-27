@@ -104,6 +104,23 @@ describe("AccountMenu", () => {
     expect(signOut).toHaveBeenCalled();
   });
 
+  it("opens each organization the person runs", async () => {
+    const admin: User = { ...TWO, organizations: [{ id: "org-1", name: "Acme Health", role: "admin" }] };
+    const events = await openMenu(admin);
+    const menu = screen.getByRole("menu", { name: MENU });
+    expect(within(menu).getByRole("menuitem", { name: "Acme Health · Organization" })).toBeInTheDocument();
+    await events.click(within(menu).getByRole("menuitem", { name: "Acme Health · Organization" }));
+    expect(navigation.push).toHaveBeenCalledWith("/organizations/org-1");
+  });
+
+  it("offers the organization plan and sign out in a billing-only session", async () => {
+    const ended: User = { ...TWO, billing_only: true, organizations: [{ id: "org-1", name: "Acme Health", role: "admin" }] };
+    const events = await openMenu(ended);
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Acme Health · Organization", "Sign out"]);
+    await events.click(screen.getByRole("menuitem", { name: "Acme Health · Organization" }));
+    expect(navigation.push).toHaveBeenCalledWith("/organizations/org-1/plan");
+  });
+
   it("gives an HQ account the tour and sign out only", async () => {
     const hq: User = { ...CODER, role: "hq", practice: null, practices: [] };
     const events = userEvent.setup();

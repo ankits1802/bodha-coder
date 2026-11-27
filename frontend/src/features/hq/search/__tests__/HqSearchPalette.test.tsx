@@ -83,13 +83,26 @@ describe("HqSearchPalette", () => {
     expect(router.push).toHaveBeenCalledWith("/hq/practices/p2?tab=people");
   });
 
+  it("lists organizations first and opens an organization's page", async () => {
+    signIn("hq");
+    vi.mocked(searchHq).mockResolvedValue({ ...RESULTS, organizations: [{ id: "o1", name: "Lakeside Health Group", status: "active" }] });
+    render(<HqSearchPalette />);
+    act(() => openOverlay("search"));
+    const box = await screen.findByRole("combobox", { name: "Search" });
+    fireEvent.change(box, { target: { value: "lake" } });
+    expect(await screen.findByRole("option", { name: /Lakeside Health Group/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("group", { name: "Organizations" })).toBeInTheDocument();
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(router.push).toHaveBeenCalledWith("/hq/organizations/o1");
+  });
+
   it("says when nothing matches", async () => {
     signIn("hq");
     vi.mocked(searchHq).mockResolvedValue({ organizations: [], practices: [], people: [], limit: 20 });
     render(<HqSearchPalette />);
     act(() => openOverlay("search"));
     fireEvent.change(await screen.findByRole("combobox", { name: "Search" }), { target: { value: "zz" } });
-    expect(await screen.findByText("No practices or people found")).toBeInTheDocument();
+    expect(await screen.findByText("No organizations, practices or people found")).toBeInTheDocument();
   });
 
   it("is HQ only", () => {

@@ -2,7 +2,7 @@ import { optionId } from "@/hooks/useActiveOption";
 import { HQ_TEXT } from "../strings";
 import type { SearchGroup, SearchOption } from "./hqSearchModel";
 
-const GROUPS: readonly SearchGroup[] = ["practices", "people"];
+const GROUPS: readonly SearchGroup[] = ["organizations", "practices", "people"];
 const words = HQ_TEXT.search;
 
 interface HqSearchListProps {

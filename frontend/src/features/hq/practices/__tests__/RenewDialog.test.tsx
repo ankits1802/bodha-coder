@@ -21,7 +21,7 @@ describe("RenewDialog", () => {
   it("starts on a year from the current end date and renews to the preset chosen", async () => {
     vi.mocked(renewPractice).mockResolvedValue({ renews_on: "2099-04-30" });
     const onDone = vi.fn();
-    render(<RenewDialog practice={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
+    render(<RenewDialog subject={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
 
     expect(screen.getByRole("radio", { name: "1 year" })).toBeChecked();
     expect(screen.getByText("Ends 31 Jan 2100")).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("RenewDialog", () => {
   it("renews with no end date", async () => {
     vi.mocked(renewPractice).mockResolvedValue({ renews_on: null });
     const onDone = vi.fn();
-    render(<RenewDialog practice={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
+    render(<RenewDialog subject={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("radio", { name: "No end date" }));
     expect(screen.getAllByText("No end date").length).toBeGreaterThan(1);
@@ -49,7 +49,7 @@ describe("RenewDialog", () => {
     vi.mocked(renewPractice).mockImplementationOnce(async () => {
       throw new ApiError(409, "conflict", "this practice pays through Stripe; change the plan there");
     });
-    render(<RenewDialog practice={PRACTICE} onDone={vi.fn()} onClose={vi.fn()} />);
+    render(<RenewDialog subject={PRACTICE} onDone={vi.fn()} onClose={vi.fn()} />);
     const dialog = screen.getByRole("dialog", { name: "Renew Lakeside Primary Care" });
 
     await userEvent.setup().click(within(dialog).getByRole("button", { name: "Renew" }));

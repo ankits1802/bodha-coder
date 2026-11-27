@@ -1,6 +1,7 @@
 import type { PracticeRole, Role, User } from "@/lib/api/types";
+import { organizationPath } from "@/lib/paths";
 
-export type SessionUser = Pick<User, "role" | "billing_only">;
+export type SessionUser = Pick<User, "role" | "billing_only" | "organizations">;
 
 export const PLAN_PATH = "/settings/plan";
 
@@ -112,8 +113,13 @@ export function canSearchPlatform(user: SessionUser | null | undefined): boolean
   return user != null && canUse(user.role, "hq");
 }
 
+export function isOrganizationAdmin(user: SessionUser | null | undefined, organizationId: string): boolean {
+  return user?.organizations?.some((choice) => choice.id === organizationId) ?? false;
+}
+
 export function canOpenPath(user: SessionUser, pathname: string): boolean {
-  return !user.billing_only || pathname === PLAN_PATH;
+  if (!user.billing_only || pathname === PLAN_PATH) return true;
+  return (user.organizations ?? []).some((choice) => pathname === organizationPath(choice.id, "plan"));
 }
 
 const HOMES: Partial<Record<Role, string>> = { hq: "/hq", biller: "/billing", compliance: "/compliance" };

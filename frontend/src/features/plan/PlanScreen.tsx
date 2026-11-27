@@ -1,5 +1,7 @@
 "use client";
 
+import { PlanChooser } from "@/components/shared/plan-chooser/PlanChooser";
+import { useCheckoutReturn } from "@/components/shared/plan-chooser/useCheckoutReturn";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
@@ -8,10 +10,9 @@ import { usePlanStatus } from "@/hooks/usePlanStatus";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useSession } from "@/lib/session/useSession";
 import { BilledByOrganization } from "./BilledByOrganization";
-import { PlanChooser } from "./PlanChooser";
 import { PlanSummary } from "./PlanSummary";
+import { PRACTICE_BILLING } from "./practiceBilling";
 import { PLAN_TEXT } from "./strings";
-import { useCheckoutReturn } from "./useCheckoutReturn";
 
 const TEXT = { loading: PLAN_TEXT.loading, empty: PLAN_TEXT.loading, retry: PLAN_TEXT.retry };
 
@@ -36,7 +37,7 @@ export function PlanScreen() {
               <BilledByOrganization organization={current.organization} />
             ) : (
               <RemoteView state={catalog.state} text={TEXT} onRetry={catalog.reload}>
-                {(plans) => <PlanChooser status={current} catalog={plans} onChanged={status.reload} />}
+                {(plans) => <PlanChooser status={current} catalog={plans} actions={PRACTICE_BILLING} onChanged={status.reload} />}
               </RemoteView>
             )}
           </>

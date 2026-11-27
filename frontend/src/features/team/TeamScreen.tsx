@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DomainClaims } from "@/components/shared/domain-claims/DomainClaims";
 import { InviteRowsDialog } from "@/components/shared/team-invite/InviteRowsDialog";
 import { INVITE_ROWS_TEXT } from "@/components/shared/team-invite/strings";
 import { Button } from "@/components/ui/Button";
@@ -14,8 +15,10 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useTeam } from "@/hooks/useTeam";
+import { PRACTICE_DOMAINS } from "@/lib/api/domains";
 import { accessLogPath } from "@/lib/paths";
 import { useSession } from "@/lib/session/useSession";
+import { JoinRequestsPanel } from "./JoinRequestsPanel";
 import { TEAM_TEXT } from "./strings";
 import { TeamTable } from "./TeamTable";
 import { ROLE_FILTERS, activityRange, countIn, inFilter, isRoleFilter, seatsUsed, type RoleFilter } from "./teamModel";
@@ -62,6 +65,7 @@ export function TeamScreen() {
       {sent ? <InlineAlert tone="ok">{sent}</InlineAlert> : null}
       {actions.notice ? <InlineAlert tone="ok">{actions.notice}</InlineAlert> : null}
       {actions.error ? <InlineAlert tone="bad">{actions.error}</InlineAlert> : null}
+      <JoinRequestsPanel onChanged={remote.reload} />
       <Panel aria-label={TEAM_TEXT.tableLabel}>
         <RemoteView
           state={remote.state}
@@ -81,6 +85,7 @@ export function TeamScreen() {
           )}
         </RemoteView>
       </Panel>
+      <DomainClaims scope={PRACTICE_DOMAINS} />
       {inviting ? (
         <InviteRowsDialog
           onClose={() => setInviting(false)}

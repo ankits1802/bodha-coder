@@ -188,6 +188,16 @@ class FakeBillingProvider:
 
 
 @dataclass
+class FakeTxtResolver:
+    records: dict[str, list[str]] = field(default_factory=dict)
+    lookups: list[str] = field(default_factory=list)
+
+    async def txt_records(self, domain: str) -> list[str]:
+        self.lookups.append(domain)
+        return list(self.records.get(domain, []))
+
+
+@dataclass
 class ScriptedReviewer:
     report: ReviewReport
     calls: list[ReviewInputs] = field(default_factory=list)

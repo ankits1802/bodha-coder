@@ -8,6 +8,7 @@ export type NavIconName =
   | "card"
   | "bars"
   | "house"
+  | "building"
   | "people"
   | "lock"
   | "gauge"
@@ -55,6 +56,12 @@ const PATHS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M2.5 13.5V6.8L8 2.5l5.5 4.3v6.7z" {...STROKE} />
       <path d="M6.5 13.5v-3.5h3v3.5" {...STROKE} />
+    </>
+  ),
+  building: (
+    <>
+      <rect x="3" y="2.5" width="6.5" height="11" rx="1.2" {...STROKE} />
+      <path d="M9.5 6.5h2.8a.7.7 0 0 1 .7.7v6.3M1.8 13.5h12.4M5.3 5.2h2M5.3 7.7h2M5.3 10.2h2" {...STROKE} />
     </>
   ),
   people: (

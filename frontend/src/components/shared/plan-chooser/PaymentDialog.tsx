@@ -6,7 +6,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { RadioOption } from "@/components/ui/RadioOption";
 import type { BillingProvider } from "@/lib/api/types";
-import { PLAN_TEXT } from "./strings";
+import { PLAN_CHOOSER_TEXT } from "./strings";
 
 interface PaymentDialogProps {
   open: boolean;
@@ -17,7 +17,7 @@ interface PaymentDialogProps {
   onPay: (provider: BillingProvider) => void;
 }
 
-const words = PLAN_TEXT.payWith;
+const words = PLAN_CHOOSER_TEXT.payWith;
 
 export function PaymentDialog({ open, providers, pending, error, onClose, onPay }: PaymentDialogProps) {
   const group = useId();
@@ -39,7 +39,7 @@ export function PaymentDialog({ open, providers, pending, error, onClose, onPay 
         <legend className="sr-only">{words.label}</legend>
         {providers.map((option) => (
           <RadioOption key={option} name={group} value={option} checked={provider === option} onSelect={() => setChosen(option)}>
-            <span>{PLAN_TEXT.paidBy[option]}</span>
+            <span>{PLAN_CHOOSER_TEXT.paidBy[option]}</span>
             {words.via[option] ? <span className="text-secondary">{words.via[option]}</span> : null}
           </RadioOption>
         ))}

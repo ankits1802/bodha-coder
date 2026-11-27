@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AuthFrame } from "@/components/shared/AuthFrame";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -9,9 +10,10 @@ import { useRemote } from "@/hooks/useRemote";
 import { useSignInOptions } from "@/hooks/useSignInOptions";
 import { SIGN_UP_PATH, isSignedIn, mfaReturnPath } from "@/lib/api/auth";
 import { getPendingIdentity } from "@/lib/api/signup";
-import type { LoginResult } from "@/lib/api/types";
+import type { LoginResult, PendingIdentity, SignUpOptions } from "@/lib/api/types";
 import { homeFor } from "@/lib/roles";
 import { CompletionForm } from "./CompletionForm";
+import { IdentityJoin } from "./IdentityJoin";
 import { openPage } from "./openPage";
 import { SIGN_UP_TEXT } from "./strings";
 
@@ -24,6 +26,20 @@ function Expired() {
       </ButtonLink>
     </div>
   );
+}
+
+interface ChoiceProps {
+  identity: PendingIdentity;
+  options: SignUpOptions;
+  onCreated: (result: LoginResult) => void;
+}
+
+function Completion({ identity, options, onCreated }: ChoiceProps) {
+  const [own, setOwn] = useState(false);
+  if (identity.join && !own) {
+    return <IdentityJoin identity={identity} offer={identity.join} onSignedIn={onCreated} onOwn={() => setOwn(true)} />;
+  }
+  return <CompletionForm identity={identity} options={options} onCreated={onCreated} />;
 }
 
 export function PracticeCompletionScreen() {
@@ -47,7 +63,7 @@ export function PracticeCompletionScreen() {
         <ErrorState message={config.error} retryLabel={SIGN_UP_TEXT.retry} onRetry={options.reload} />
       ) : null}
       {pending.status === "success" && config.status === "success" ? (
-        <CompletionForm identity={pending.data} options={config.data.signup} onCreated={created} />
+        <Completion identity={pending.data} options={config.data.signup} onCreated={created} />
       ) : null}
     </AuthFrame>
   );

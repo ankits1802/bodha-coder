@@ -34,7 +34,13 @@ async def test_a_verified_identity_without_an_account_goes_to_sign_up_with_a_coo
     assert all(part in cookie for part in ("httponly", "secure", "samesite=lax", "path=/api/signup", "max-age=1800"))
     assert harness.client.cookies.get("bodha_signup", **SIGNUP_COOKIE)
     pending = await harness.client.get("/api/signup/identity")
-    assert pending.json() == {"email": OWNER, "name": "Omar Haddad", "provider": "google", "has_account": False}
+    assert pending.json() == {
+        "email": OWNER,
+        "name": "Omar Haddad",
+        "provider": "google",
+        "has_account": False,
+        "join": None,
+    }
 
 
 @pytest.mark.parametrize("provider", ["google", "microsoft", "yahoo"])

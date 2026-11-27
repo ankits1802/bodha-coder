@@ -9,7 +9,7 @@ import { PLAN_STATUS_KEY } from "@/hooks/usePlanStatus";
 import { refreshSession } from "@/lib/api/client";
 import { getPlanCatalog, getPlanStatus, startCheckout } from "@/lib/api/plan";
 import { clearSession, setSession } from "@/lib/session/store";
-import { leaveFor } from "../leaveFor";
+import { leaveFor } from "@/components/shared/plan-chooser/leaveFor";
 import { PlanScreen } from "../PlanScreen";
 
 const navigation = vi.hoisted(() => ({ search: "" }));
@@ -31,7 +31,7 @@ vi.mock("@/lib/api/client", async (importOriginal) => ({
   refreshSession: vi.fn(),
   endSession: vi.fn(),
 }));
-vi.mock("../leaveFor", () => ({ leaveFor: vi.fn() }));
+vi.mock("@/components/shared/plan-chooser/leaveFor", () => ({ leaveFor: vi.fn() }));
 
 const CHECKOUT_URL = "https://checkout.stripe.com/c/pay/cs_test_1";
 const ENDED = planStatus({ standing: "ended", renews_on: "2026-11-20", trial_days_left: 0 });

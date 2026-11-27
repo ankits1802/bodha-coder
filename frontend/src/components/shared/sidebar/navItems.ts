@@ -58,6 +58,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "settings", area: "settings", href: "/settings", label: words.settings, icon: "gear", group: "practice", tabs: SETTINGS_TABS },
   { key: "hqOverview", area: "hq", href: "/hq", label: words.hqOverview, icon: "gauge", group: "platform" },
   { key: "hqPractices", area: "hq", href: "/hq/practices", label: words.hqPractices, icon: "house", group: "platform" },
+  { key: "hqOrganizations", area: "hq", href: "/hq/organizations", label: words.hqOrganizations, icon: "building", group: "platform" },
   { key: "hqSpend", area: "hq", href: "/hq/spend", label: words.hqSpend, icon: "bars", group: "platform" },
   { key: "hqActivity", area: "hq", href: "/hq/activity", label: words.hqActivity, icon: "clock", group: "platform" },
   { key: "hqDemos", area: "hq", href: "/hq/demos", label: words.hqDemos, icon: "inbox", group: "platform" },
