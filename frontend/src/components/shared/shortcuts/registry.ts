@@ -28,6 +28,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: "search", scope: "global", combos: [{ key: "k", withModifier: true }, { key: "/" }], requires: "search" },
   { id: "shortcuts", scope: "global", combos: [{ key: "?" }] },
   { id: "undo", scope: "global", combos: [{ key: "u" }] },
+  { id: "toggleSidebar", scope: "global", combos: [{ key: "[" }] },
   { id: "startReviewing", scope: "today", combos: [{ key: "n" }] },
   { id: "reviewNext", scope: "queue", combos: [{ key: "n" }] },
   { id: "mine", scope: "queue", combos: [{ key: "m" }] },

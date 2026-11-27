@@ -2,62 +2,67 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Avatar } from "@/components/ui/Avatar";
-import { Button } from "@/components/ui/Button";
 import type { User } from "@/lib/api/types";
-import { ROLE_LABELS } from "@/lib/labels";
 import { canDo, canUse, homeFor } from "@/lib/roles";
-import { signOut } from "@/lib/session/signOut";
 import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
+import { ActionEntry, NavEntry } from "./NavEntry";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
+import { SidebarFooter } from "./SidebarFooter";
 import { useNavCounts, type NavCounts } from "./useNavCounts";
 
 interface SidebarProps {
   user: User;
+  collapsed: boolean;
+  onToggle: () => void;
   onNavigate: () => void;
-}
-
-function NavEntry({ item, active, count, onNavigate }: { item: NavItem; active: boolean; count?: number; onNavigate: () => void }) {
-  return (
-    <li>
-      <Link
-        href={item.href}
-        onClick={onNavigate}
-        aria-current={active ? "page" : undefined}
-        className={`flex h-8 items-center gap-2.5 rounded-nav px-2.5 text-callout tracking-snug text-label hover:bg-nav-hover ${active ? "bg-nav-active font-medium" : ""}`}
-      >
-        <NavIcon name={item.icon} />
-        {item.label}
-        {count !== undefined ? (
-          <span className={`ml-auto text-caption tabular-nums ${active ? "text-label-soft" : "text-tertiary"}`}>{count}</span>
-        ) : null}
-      </Link>
-    </li>
-  );
-}
-
-const ENTRY_CLASSES = "flex h-8 items-center gap-2.5 rounded-nav px-2.5 text-callout tracking-snug text-label hover:bg-nav-hover";
-
-function SearchEntry({ onNavigate }: { onNavigate: () => void }) {
-  const open = () => {
-    onNavigate();
-    openOverlay("search");
-  };
-  return (
-    <button type="button" onClick={open} className={`mt-3 w-full cursor-pointer text-left ${ENTRY_CLASSES}`}>
-      <NavIcon name="search" />
-      {SHARED_TEXT.nav.search}
-    </button>
-  );
 }
 
 function countFor(item: NavItem, counts: NavCounts): number | undefined {
   return item.count ? counts[item.count] : undefined;
 }
 
-export function Sidebar({ user, onNavigate }: SidebarProps) {
+function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
+  const label = collapsed ? SHARED_TEXT.expandSidebar : SHARED_TEXT.collapseSidebar;
+  const toggle = (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-expanded={!collapsed}
+      title={`${label} ( [ )`}
+      className="hidden size-7 flex-none cursor-pointer items-center justify-center rounded-nav text-secondary hover:bg-nav-hover hover:text-label lg:flex"
+    >
+      <NavIcon name="sidebar" />
+    </button>
+  );
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <Link href={homeFor(user.role)} onClick={onNavigate} title={SHARED_TEXT.brand} className="text-body-lg font-bold text-label">
+          <span aria-hidden="true">B</span>
+          <span className="sr-only">{SHARED_TEXT.brand}</span>
+        </Link>
+        {toggle}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start justify-between gap-2 pl-2.5">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <Link href={homeFor(user.role)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
+          {SHARED_TEXT.brand}
+        </Link>
+        <span className="truncate text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
+      </div>
+      {toggle}
+    </div>
+  );
+}
+
+export function Sidebar(props: SidebarProps) {
+  const { user, collapsed, onNavigate } = props;
   const pathname = usePathname();
   const items = navFor(user.role);
   const counts = useNavCounts(canUse(user.role, "queue"), pathname);
@@ -65,26 +70,35 @@ export function Sidebar({ user, onNavigate }: SidebarProps) {
   const groups = NAV_GROUP_ORDER.map((group) => ({ group, entries: items.filter((item) => item.group === group) })).filter(
     (entry) => entry.entries.length > 0,
   );
+  const search = () => {
+    onNavigate();
+    openOverlay("search");
+  };
 
   return (
-    <div className="flex h-full flex-col border-r border-separator bg-sidebar px-3 pt-5.5 pb-4">
-      <div className="flex flex-col gap-0.5 px-2.5">
-        <Link href={homeFor(user.role)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
-          {SHARED_TEXT.brand}
-        </Link>
-        <span className="text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
-      </div>
-      {canDo(user.role, "search") ? <SearchEntry onNavigate={onNavigate} /> : null}
+    <div className={`flex h-full flex-col border-r border-separator bg-sidebar pt-5.5 pb-4 ${collapsed ? "px-2" : "px-3"}`}>
+      <Header {...props} />
+      {canDo(user.role, "search") ? (
+        <div className="mt-3">
+          <ActionEntry icon="search" label={words.search} collapsed={collapsed} onClick={search} />
+        </div>
+      ) : null}
       <nav aria-label={user.role === "hq" ? words.platformLabel : words.mainLabel} className="mt-1.5 flex flex-col">
         {groups.map(({ group, entries }) => (
           <div key={group}>
-            <h2 className="m-0 px-2.5 pt-4.5 pb-1.5 font-sans text-micro font-semibold text-tertiary">{words.groups[group]}</h2>
+            <h2 className={collapsed ? "sr-only" : "m-0 px-2.5 pt-4.5 pb-1.5 font-sans text-micro font-semibold text-tertiary"}>
+              {words.groups[group]}
+            </h2>
+            {collapsed ? <div aria-hidden="true" className="mx-2 my-2.5 border-t border-separator" /> : null}
             <ul className="m-0 flex list-none flex-col gap-px p-0">
               {entries.map((item) => (
                 <NavEntry
                   key={item.key}
-                  item={item}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
                   active={isActive(item, pathname)}
+                  collapsed={collapsed}
                   count={countFor(item, counts)}
                   onNavigate={onNavigate}
                 />
@@ -95,26 +109,11 @@ export function Sidebar({ user, onNavigate }: SidebarProps) {
       </nav>
       <div className="mt-auto flex flex-col gap-2 pt-6">
         {canUse(user.role, "help") ? (
-          <Link
-            href="/help"
-            onClick={onNavigate}
-            aria-current={pathname === "/help" ? "page" : undefined}
-            className={`${ENTRY_CLASSES} ${pathname === "/help" ? "bg-nav-active font-medium" : ""}`}
-          >
-            <NavIcon name="help" />
-            {words.help}
-          </Link>
+          <ul className="m-0 list-none p-0">
+            <NavEntry href="/help" icon="help" label={words.help} active={pathname === "/help"} collapsed={collapsed} onNavigate={onNavigate} />
+          </ul>
         ) : null}
-        <div className="flex items-center gap-2.5 border-t border-separator px-2.5 pt-3">
-          <Avatar name={user.name} />
-          <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-subhead font-medium">{user.name}</span>
-            <span className="text-caption text-secondary">{ROLE_LABELS[user.role]}</span>
-          </span>
-        </div>
-        <Button variant="plain" size="sm" className="self-start" onClick={() => void signOut()}>
-          {SHARED_TEXT.signOut}
-        </Button>
+        <SidebarFooter user={user} collapsed={collapsed} />
       </div>
     </div>
   );

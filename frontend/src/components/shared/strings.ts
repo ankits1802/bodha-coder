@@ -5,6 +5,8 @@ export const SHARED_TEXT = {
   signOut: "Sign out",
   menu: "Menu",
   closeMenu: "Close menu",
+  collapseSidebar: "Collapse sidebar",
+  expandSidebar: "Expand sidebar",
   brand: "Bodha Coder",
   tagline: "Clinical coding review",
   platformAdministration: "Platform administration",
@@ -72,6 +74,7 @@ export const SHARED_TEXT = {
     titled: (label: string, keys: string) => `${label} (${keys})`,
     scopes: { global: "Everywhere", today: "Today", queue: "Review queue", review: "Note review" },
     labels: {
+      toggleSidebar: "Collapse or expand the sidebar",
       search: "Search notes",
       shortcuts: "Show keyboard shortcuts",
       undo: "Undo",

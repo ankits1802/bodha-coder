@@ -61,7 +61,7 @@ describe("shortcut registry", () => {
       "askProvider",
     ]);
     expect(shortcutsIn("review", "biller").map((shortcut) => shortcut.id)).toEqual(["nextNote", "previousNote"]);
-    expect(shortcutsIn("global", "viewer").map((shortcut) => shortcut.id)).toEqual(["shortcuts", "undo"]);
+    expect(shortcutsIn("global", "viewer").map((shortcut) => shortcut.id)).toEqual(["shortcuts", "undo", "toggleSidebar"]);
     expect(shortcutsIn("today", "coder").map((shortcut) => shortcut.id)).toEqual(["startReviewing"]);
     expect(shortcutsIn("today", "viewer")).toEqual([]);
     expect(shortcutsIn("queue", "viewer")).toEqual([]);

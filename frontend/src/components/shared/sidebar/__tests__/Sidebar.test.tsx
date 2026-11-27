@@ -1,0 +1,44 @@
+import { act, render, renderHook, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CODER } from "@/features/queue/__tests__/fixtures";
+import { SHORTCUTS } from "../../shortcuts/registry";
+import { SHARED_TEXT } from "../../strings";
+import { Sidebar } from "../Sidebar";
+import { useSidebarCollapsed } from "../useSidebarCollapsed";
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/queue" }));
+vi.mock("../useNavCounts", () => ({ useNavCounts: () => ({ queue: 7 }) }));
+
+describe("Sidebar", () => {
+  beforeEach(() => window.localStorage.clear());
+
+  it("keeps every link named when collapsed to icons", () => {
+    render(<Sidebar user={CODER} collapsed onToggle={() => undefined} onNavigate={() => undefined} />);
+    expect(screen.getByRole("link", { name: /Review queue/ })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: SHARED_TEXT.brand })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: SHARED_TEXT.signOut })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: SHARED_TEXT.expandSidebar })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("offers to collapse when expanded and reports the toggle", async () => {
+    const onToggle = vi.fn();
+    render(<Sidebar user={CODER} collapsed={false} onToggle={onToggle} onNavigate={() => undefined} />);
+    const toggle = screen.getByRole("button", { name: SHARED_TEXT.collapseSidebar });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await userEvent.setup().click(toggle);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("remembers the choice for the next visit", () => {
+    const first = renderHook(() => useSidebarCollapsed());
+    expect(first.result.current.collapsed).toBe(false);
+    act(() => first.result.current.toggle());
+    expect(first.result.current.collapsed).toBe(true);
+    expect(renderHook(() => useSidebarCollapsed()).result.current.collapsed).toBe(true);
+  });
+
+  it("registers [ as the global shortcut", () => {
+    expect(SHORTCUTS.find((shortcut) => shortcut.id === "toggleSidebar")?.combos).toEqual([{ key: "[" }]);
+  });
+});

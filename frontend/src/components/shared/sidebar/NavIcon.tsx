@@ -15,11 +15,20 @@ export type NavIconName =
   | "inbox"
   | "search"
   | "help"
-  | "book";
+  | "book"
+  | "sidebar"
+  | "signOut";
 
 const STROKE = { fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
 const PATHS: Record<NavIconName, ReactNode> = {
+  sidebar: (
+    <>
+      <rect x="2" y="2.5" width="12" height="11" rx="2.5" {...STROKE} />
+      <path d="M6.2 2.5v11" {...STROKE} />
+    </>
+  ),
+  signOut: <path d="M9.5 3.5V3c0-.6-.5-1-1-1h-5c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h5c.5 0 1-.4 1-1v-.5M7 8h7M11.5 5.5L14 8l-2.5 2.5" {...STROKE} />,
   calendar: (
     <>
       <rect x="2" y="3" width="12" height="11" rx="2.5" {...STROKE} />
