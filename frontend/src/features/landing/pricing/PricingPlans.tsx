@@ -5,16 +5,13 @@ import { IntervalControl } from "@/components/shared/plan-cards/IntervalControl"
 import { PlanCard } from "@/components/shared/plan-cards/PlanCard";
 import { mostMonthsFree } from "@/components/shared/plan-cards/planPrice";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { RemoteView } from "@/components/ui/RemoteView";
-import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 import { SIGN_UP_PATH } from "@/lib/api/auth";
 import type { BillingInterval, PlanCatalog, PlanTerms } from "@/lib/api/types";
 import { DemoRequestButton } from "../DemoRequestButton";
 import { StartTrialButton } from "../StartTrialButton";
 import { LANDING_TEXT } from "../strings";
+import { CatalogView } from "./CatalogView";
 import { PRICING_TEXT } from "./strings";
-
-const TEXT = { loading: PRICING_TEXT.loading, empty: PRICING_TEXT.loading, retry: PRICING_TEXT.retry };
 
 function PlanAction({ terms }: { terms: PlanTerms }) {
   if (terms.pricing === "custom") return <DemoRequestButton size="md" />;
@@ -42,15 +39,6 @@ function PlanGrid({ catalog }: { catalog: PlanCatalog }) {
   );
 }
 
-function FetchedPlans() {
-  const catalog = usePlanCatalog();
-  return (
-    <RemoteView state={catalog.state} text={TEXT} onRetry={catalog.reload}>
-      {(data) => <PlanGrid catalog={data} />}
-    </RemoteView>
-  );
-}
-
 export function PricingPlans({ catalog }: { catalog: PlanCatalog | null }) {
-  return catalog ? <PlanGrid catalog={catalog} /> : <FetchedPlans />;
+  return <CatalogView catalog={catalog}>{(data) => <PlanGrid catalog={data} />}</CatalogView>;
 }

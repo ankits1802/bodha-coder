@@ -5,6 +5,11 @@ export const PRICING_TEXT = {
   plansLabel: "Plans",
   loading: "Loading plans",
   retry: "Try again",
+  teaser: {
+    title: ["Start free.", "Pay per provider."],
+    noCard: "No card needed",
+    more: "See all plans",
+  },
 } as const;
 
 export const PRICING_PATH = "/pricing";

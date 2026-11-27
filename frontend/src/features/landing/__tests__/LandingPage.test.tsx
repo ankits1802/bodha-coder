@@ -2,12 +2,19 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generateStaticParams } from "@/app/(marketing)/legal/[document]/page";
+import { CATALOG } from "@/components/shared/plan-cards/__tests__/planFixtures";
 import { haptic } from "@/lib/haptics";
 import { FOOTER_SECTIONS, NAV_SECTIONS, SECTION_IDS } from "../anchors";
-import { LandingPage } from "../LandingPage";
+import { LandingPage as Landing } from "../LandingPage";
+import { PRICING_TEXT } from "../pricing/strings";
+import { SAMPLE_TEXT } from "../sample/strings";
 import { LANDING_TEXT } from "../strings";
 
 vi.mock("@/lib/haptics", () => ({ haptic: vi.fn() }));
+
+function LandingPage() {
+  return <Landing catalog={CATALOG} />;
+}
 
 describe("LandingPage", () => {
   beforeEach(() => {
@@ -25,11 +32,11 @@ describe("LandingPage", () => {
     expect(screen.getByRole("heading", { level: 2, name: LANDING_TEXT.demo.title })).toBeInTheDocument();
   });
 
-  it("starts a free trial from the nav, the hero, the close and the footer, with a demo request beside each", async () => {
+  it("starts a free trial from the nav, the hero, the sample note, the close and the footer, with a demo request beside each", async () => {
     const user = userEvent.setup();
     render(<LandingPage />);
     const trials = screen.getAllByRole("link", { name: LANDING_TEXT.startTrial });
-    expect(trials).toHaveLength(3);
+    expect(trials).toHaveLength(4);
     for (const link of trials) expect(link).toHaveAttribute("href", "/sign-up");
     expect(screen.getByRole("link", { name: LANDING_TEXT.nav.startFree })).toHaveAttribute("href", "/sign-up");
     const [heroDemo, ...otherDemos] = screen.getAllByRole("button", { name: LANDING_TEXT.requestDemo });
@@ -100,13 +107,17 @@ describe("LandingPage", () => {
     expect(button).toHaveFocus();
   });
 
-  it("gives every desk a tab, in order, and the estimator, workflow and questions their headings", () => {
+  it("gives every desk a tab, in order, and the sample note, estimator, workflow, pricing and questions their headings", () => {
     render(<LandingPage />);
     const desks = LANDING_TEXT.desks;
-    const labels = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    const labels = within(screen.getByRole("tablist", { name: desks.tabsLabel }))
+      .getAllByRole("tab")
+      .map((tab) => tab.textContent);
     expect(labels).toEqual([desks.coders.tab, desks.cdi.tab, desks.compliance.tab, desks.billers.tab, desks.providers.tab, desks.admins.tab]);
+    expect(within(screen.getByRole("tablist", { name: SAMPLE_TEXT.tabsLabel })).getAllByRole("tab")).toHaveLength(3);
     expect(screen.getByRole("heading", { level: 3, name: desks.coders.title })).toBeInTheDocument();
-    for (const title of [desks.title, LANDING_TEXT.bento.title, LANDING_TEXT.worth.title, LANDING_TEXT.flow.title, LANDING_TEXT.faq.title]) {
+    const titles = [SAMPLE_TEXT.title, desks.title, LANDING_TEXT.bento.title, LANDING_TEXT.worth.title, LANDING_TEXT.flow.title, PRICING_TEXT.teaser.title.join(" ")];
+    for (const title of [...titles, LANDING_TEXT.faq.title]) {
       expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
     }
     expect(screen.getAllByRole("heading", { level: 3, name: /./ }).length).toBeGreaterThan(20);

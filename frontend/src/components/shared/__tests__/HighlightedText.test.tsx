@@ -22,6 +22,21 @@ describe("HighlightedText", () => {
     expect(marks[0]?.className).toContain("hl-bad");
   });
 
+  it("tells screen readers where each highlight starts and ends when given labels", () => {
+    const { container } = render(
+      <HighlightedText
+        text="Afebrile. Lungs clear."
+        marks={[{ quote: "Afebrile", tone: "ok" }]}
+        labels={{ start: "Evidence:", end: "End of evidence" }}
+      />,
+    );
+
+    const mark = container.querySelector("mark");
+    expect(mark?.textContent).toBe("Evidence: Afebrile End of evidence");
+    expect([...(mark?.querySelectorAll(".sr-only") ?? [])].map((label) => label.textContent)).toEqual(["Evidence: ", " End of evidence"]);
+    expect(container.textContent).toBe("Evidence: Afebrile End of evidence. Lungs clear.");
+  });
+
   it("treats a quote containing markup as literal text", () => {
     const { container } = render(<HighlightedText text="Plan: <b>add amlodipine</b>" marks={[{ quote: "<b>add amlodipine</b>", tone: "ok" }]} />);
 

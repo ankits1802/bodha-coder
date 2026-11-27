@@ -61,7 +61,7 @@ npm run dev
 ```
 
 The frontend proxies `/api` to `BACKEND_URL` (default `http://localhost:8000`), and its server reads the
-plan catalog from there to render `/pricing`. Run uvicorn with
+plan catalog from there to render `/` and `/pricing`. Run uvicorn with
 `--proxy-headers` and `--forwarded-allow-ips` set to the web server's address so the access log
 records the visitor's address, not the proxy's.
 

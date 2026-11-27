@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { haptic } from "@/lib/haptics";
 import { DeskTabs } from "../desks/DeskTabs";
-import { nextTabIndex } from "../desks/tabKeys";
+import { nextTabIndex } from "../tabs/tabKeys";
 
 vi.mock("@/lib/haptics", () => ({ haptic: vi.fn() }));
 

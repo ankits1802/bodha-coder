@@ -2,8 +2,8 @@
 
 import { useId, type ReactNode } from "react";
 import { cssVars } from "../motion/cssVars";
+import { useRovingTabs } from "../tabs/useRovingTabs";
 import styles from "./desks.module.css";
-import { useRovingTabs } from "./useRovingTabs";
 
 export interface DeskTab {
   key: string;

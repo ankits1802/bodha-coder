@@ -1,5 +1,8 @@
 import { LandingPage } from "@/features/landing/LandingPage";
+import { loadPlanCatalog } from "@/lib/api/planCatalogServer";
 
-export default function HomePage() {
-  return <LandingPage />;
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  return <LandingPage catalog={await loadPlanCatalog()} />;
 }
