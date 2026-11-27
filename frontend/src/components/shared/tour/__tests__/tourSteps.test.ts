@@ -15,7 +15,7 @@ function record(tour: TourRecord["tour"], version: number): TourRecord {
 const MAX_WORDS = 12;
 
 describe("tourStepsFor", () => {
-  it("walks an admin through every area of the practice, the review steps and the access log", () => {
+  it("walks an admin through every sidebar area, the review steps and the access log under Insights", () => {
     expect(keysFor("admin")).toEqual([
       "welcome",
       "search",
@@ -28,40 +28,20 @@ describe("tourStepsFor", () => {
       "ask",
       "compliance",
       "billing",
-      "remittances",
-      "training",
       "insights",
-      "quality",
-      "setup",
-      "team",
-      "plan",
-      "security",
       "accessLog",
+      "settings",
       "help",
       "replay",
     ]);
   });
 
-  it("shows a coder their work, the note review steps and nothing an admin owns", () => {
-    expect(keysFor("coder")).toEqual([
-      "welcome",
-      "search",
-      "today",
-      "inbox",
-      "upload",
-      "queue",
-      "decide",
-      "evidence",
-      "ask",
-      "training",
-      "security",
-      "help",
-      "replay",
-    ]);
+  it("shows a coder their work and the note review steps, and nothing an admin owns", () => {
+    expect(keysFor("coder")).toEqual(["welcome", "search", "today", "inbox", "upload", "queue", "decide", "evidence", "ask", "help", "replay"]);
   });
 
-  it("gives every other practice role exactly the areas it can open", () => {
-    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "queue", "decide", "evidence", "ask", "training", "security", "help", "replay"]);
+  it("gives every other practice role exactly the areas its sidebar shows", () => {
+    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "queue", "decide", "evidence", "ask", "help", "replay"]);
     expect(keysFor("compliance")).toEqual([
       "welcome",
       "search",
@@ -71,37 +51,42 @@ describe("tourStepsFor", () => {
       "decide",
       "evidence",
       "compliance",
-      "training",
       "insights",
-      "quality",
-      "security",
+      "accessLog",
       "help",
       "replay",
     ]);
-    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "queue", "evidence", "billing", "remittances", "training", "security", "help", "replay"]);
-    expect(keysFor("viewer")).toEqual(["welcome", "today", "insights", "security", "help", "replay"]);
+    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "billing", "help", "replay"]);
+    expect(keysFor("viewer")).toEqual(["welcome", "today", "insights", "help", "replay"]);
   });
 
   it("gives HQ a short tour of the console", () => {
     expect(keysFor("hq")).toEqual(["welcome", "hqOverview", "hqPractices", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity", "replay"]);
   });
 
-  it("keeps a billing-only admin to the plan", () => {
-    expect(keysFor("admin", true)).toEqual(["welcome", "plan", "replay"]);
+  it("keeps a billing-only admin to the settings entry for the plan", () => {
+    expect(keysFor("admin", true)).toEqual(["welcome", "settings", "replay"]);
+    expect(tourStepsFor({ role: "admin", billing_only: true })[1]).toMatchObject({ target: "/settings/plan", path: "/settings/plan" });
   });
 
   it("points each area at its sidebar entry and opens its page", () => {
     const steps = tourStepsFor({ role: "admin", billing_only: false });
     const byKey = new Map(steps.map((step) => [step.key, step]));
     expect(byKey.get("queue")).toMatchObject({ title: "Review queue", target: "/queue", path: "/queue" });
-    expect(byKey.get("team")).toMatchObject({ title: "Team", line: "Invite people and choose their roles.", target: "/team", path: "/team" });
+    expect(byKey.get("settings")).toMatchObject({
+      title: "Settings",
+      line: "Providers, payers, checks, team, plan and security.",
+      target: "/settings/setup",
+      path: "/settings/setup",
+    });
+    expect(byKey.get("billing")).toMatchObject({ title: "Billing", target: "/billing", path: "/billing" });
     expect(byKey.get("decide")).toMatchObject({ title: "Accept or keep", target: null, path: "/queue" });
     expect(byKey.get("ask")).toMatchObject({ title: "Questions", target: null, path: "/queue" });
-    expect(byKey.get("accessLog")).toMatchObject({ title: "Access log", target: "/security", path: "/security" });
+    expect(byKey.get("accessLog")).toMatchObject({ title: "Access log", target: "/insights", path: "/insights/access-log" });
     expect(byKey.get("search")).toMatchObject({ title: "Search", target: "search", path: null });
     expect(byKey.get("help")).toMatchObject({ title: "Help", target: "/help", path: "/help" });
     expect(byKey.get("welcome")).toMatchObject({ target: null, path: null });
-    expect(byKey.get("replay")).toMatchObject({ title: "Take the tour again", target: "tour", path: null });
+    expect(byKey.get("replay")).toMatchObject({ title: "Your account", target: "tour", path: null });
   });
 
   it("has a line for every sidebar area, each short", () => {

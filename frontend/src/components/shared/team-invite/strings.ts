@@ -1,0 +1,17 @@
+export const INVITE_ROWS_TEXT = {
+  title: "Invite your team",
+  name: "Name",
+  email: "Email",
+  role: "Role",
+  nameFor: (row: number) => `Name, person ${row}`,
+  emailFor: (row: number) => `Email, person ${row}`,
+  roleFor: (row: number) => `Role, person ${row}`,
+  removeFor: (row: number) => `Remove person ${row}`,
+  remove: "Remove",
+  addRow: "Add person",
+  cancel: "Cancel",
+  send: (count: number) => (count === 1 ? "Send invite" : `Send ${count} invites`),
+  sendNone: "Send invites",
+  sent: (count: number) => (count === 1 ? "1 invite sent" : `${count} invites sent`),
+  errors: { name: "Enter a name", email: "Enter a valid email", nobody: "Add at least one person" },
+} as const;

@@ -1,5 +1,6 @@
 export const SECURITY_TEXT = {
   title: "Security",
+  accountTitle: "Account",
   loading: "Loading security settings",
   empty: "No practice settings",
   retry: "Try again",
@@ -17,11 +18,6 @@ export const SECURITY_TEXT = {
     title: "Practices",
     listLabel: "Your practices",
     current: (role: string) => `${role} · This practice`,
-    leave: "Leave",
-    leaveFor: (name: string) => `Leave ${name}`,
-    confirmTitle: (name: string) => `Leave ${name}?`,
-    cancel: "Cancel",
-    newPractice: "New practice",
   },
   signedIn: {
     title: "Signed-in devices",

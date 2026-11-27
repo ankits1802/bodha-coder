@@ -1,10 +1,10 @@
 import { request } from "./client";
-import type { IntakeSettings, IntakeView } from "./types";
+import type { IntakeView } from "./types";
 
 export function getIntake(): Promise<IntakeView> {
   return request<IntakeView>("/api/practice/intake");
 }
 
-export function saveIntake(settings: IntakeSettings): Promise<IntakeView> {
+export function saveIntake(settings: IntakeView): Promise<IntakeView> {
   return request<IntakeView>("/api/practice/intake", { method: "PUT", body: settings });
 }

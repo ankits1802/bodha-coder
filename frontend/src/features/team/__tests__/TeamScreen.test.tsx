@@ -3,15 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { forgetRemote } from "@/hooks/remoteCache";
 import { ApiError } from "@/lib/api/errors";
-import { getTeam, removeMember, updateMember } from "@/lib/api/team";
+import { getTeam, inviteMember, removeMember, updateMember } from "@/lib/api/team";
 import type { TeamList, TeamMember } from "@/lib/api/types";
 import { clearSession, setSession } from "@/lib/session/store";
 import { CODER } from "@/features/queue/__tests__/fixtures";
 import { TeamScreen } from "../TeamScreen";
 
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/team",
-  useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => "/settings/team",
+  useRouter: () => navigation,
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/lib/api/team", () => ({
@@ -58,7 +59,34 @@ describe("TeamScreen", () => {
   it("counts seats from the practice's live memberships, leaving blocked ones out", async () => {
     render(<TeamScreen />);
     expect(await screen.findByText("2 of 5 seats")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "More for Practice Admin" })).toBeDisabled();
+  });
+
+  it("opens a person's activity in the access log, and offers an admin only their own activity", async () => {
+    const user = userEvent.setup();
+    render(<TeamScreen />);
+    await choose("Sam Patel", "Activity");
+    expect(navigation.push).toHaveBeenCalledWith(expect.stringMatching(/^\/insights\/access-log\?user=user-sam&start=\d{4}-\d{2}-\d{2}&end=\d{4}-\d{2}-\d{2}$/));
+    await user.click(screen.getByRole("button", { name: "More for Practice Admin" }));
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Activity"]);
+  });
+
+  it("invites several people from one form and keeps a row the server refused", async () => {
+    vi.mocked(inviteMember)
+      .mockResolvedValueOnce({ id: "user-new" })
+      .mockRejectedValueOnce(new ApiError(409, "conflict", "someone already uses that email"));
+    const user = userEvent.setup();
+    render(<TeamScreen />);
+    await user.click(await screen.findByRole("button", { name: "Invite" }));
+    const dialog = screen.getByRole("dialog", { name: "Invite your team" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name, person 1" }), "Lee Park");
+    await user.type(within(dialog).getByRole("textbox", { name: "Email, person 1" }), "lee@lakeside.example.com");
+    await user.type(within(dialog).getByRole("textbox", { name: "Name, person 2" }), "Ana Ruiz");
+    await user.type(within(dialog).getByRole("textbox", { name: "Email, person 2" }), "ana@lakeside.example.com");
+    await user.click(within(dialog).getByRole("button", { name: "Send 2 invites" }));
+    expect(inviteMember).toHaveBeenNthCalledWith(1, { name: "Lee Park", email: "lee@lakeside.example.com", role: "coder" });
+    expect(await screen.findByText("1 invite sent")).toBeInTheDocument();
+    expect(within(dialog).getByText("someone already uses that email")).toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "Name, person 1" })).toHaveValue("Ana Ruiz");
   });
 
   it("removes a member from this practice after a confirmation", async () => {

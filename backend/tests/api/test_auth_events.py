@@ -64,7 +64,8 @@ async def test_a_sign_in_is_recorded_with_its_practice_address_and_browser(harne
     practice = await practice_with_member(harness, name="Sam Patel", email=SAM, role="coder")
     signed = await harness.client.post("/api/auth/login", json={"email": SAM, "password": PASSWORD}, headers=BROWSER)
     assert signed.status_code == 200
-    [event] = [event for event in await auth_events("signed_in") if event.user_id == await user_id(SAM)]
+    sam = await user_id(SAM)
+    [event] = [event for event in await auth_events("signed_in") if event.user_id == sam and event.user_agent]
     assert (event.practice_id, event.realm, event.detail) == (practice.id, "practice", "with password")
     assert event.ip and event.user_agent == BROWSER["user-agent"]
     entries = [(row["actor"], row["action"], row["user_agent"]) for row in await access_log(harness, practice.admin)]
@@ -90,7 +91,7 @@ async def test_setting_a_password_from_an_invite_and_from_a_reset_are_recorded(h
     assert sent.status_code == 204
     token = harness.messenger.last_fragment()
     chosen = await harness.client.post("/api/auth/password", json={"token": token, "password": "fresh-password-9"})
-    assert chosen.status_code == 204
+    assert chosen.status_code == 200
     assert [event.user_id for event in await auth_events("password_changed")] == [target]
 
 

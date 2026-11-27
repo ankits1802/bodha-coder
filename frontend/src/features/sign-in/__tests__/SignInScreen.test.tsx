@@ -86,7 +86,7 @@ describe("SignInScreen recovery codes", () => {
     await reachVerifyStep();
     fireEvent.change(screen.getByLabelText("Recovery code"), { target: { value: "abcd-efgh-jkmn-pqrs" } });
     fireEvent.click(screen.getByRole("button", { name: "Verify" }));
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/plan"));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/settings/plan"));
   });
 
   it("asks for all sixteen characters before sending a recovery code", async () => {

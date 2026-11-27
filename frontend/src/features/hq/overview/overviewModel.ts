@@ -1,6 +1,6 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
 import type { HqPractice } from "@/lib/api/types";
-import { daysUntil, isLive } from "../practiceStatus";
+import { daysLeft, isLive } from "../practiceStatus";
 import { HQ_TEXT } from "../strings";
 
 export interface AttentionItem {
@@ -14,8 +14,8 @@ const BUSIEST_LIMIT = 5;
 
 function renewalReason(practice: HqPractice): AttentionItem | null {
   const words = HQ_TEXT.overview;
-  if (!isLive(practice) || !practice.renews_on) return null;
-  const days = daysUntil(practice.renews_on);
+  if (!isLive(practice)) return null;
+  const days = daysLeft(practice);
   if (days === null || days > WINDOW_DAYS) return null;
   if (days < 0) return { practice, tone: "bad", reason: words.renewalPassed };
   return { practice, tone: "warn", reason: days === 0 ? words.endsToday : words.endsIn(days) };

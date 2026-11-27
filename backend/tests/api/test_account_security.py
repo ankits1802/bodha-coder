@@ -34,14 +34,18 @@ async def test_forgot_password_answers_the_same_whether_or_not_the_account_exist
     assert harness.messenger.sent[-1][0] == CODER
 
 
-async def test_a_reset_link_works_once_and_ends_existing_sessions(harness):
+async def test_a_reset_link_works_once_ends_existing_sessions_and_signs_in(harness):
     await practice_with_coder(harness)
     coder = await sign_in(harness.client, CODER)
+    old_refresh = harness.client.cookies.get("bodha_refresh", domain="app.test", path="/api/auth")
     await harness.client.post("/api/auth/forgot", json={"email": CODER})
     token = harness.messenger.last_fragment()
     first = await harness.client.post("/api/auth/password", json={"token": token, "password": NEW_PASSWORD})
-    assert first.status_code == 204
+    assert first.status_code == 200 and first.json()["user"]["email"] == CODER
+    signed = {"Authorization": f"Bearer {first.json()['access_token']}"}
     assert (await harness.client.get("/api/auth/me", headers=coder)).status_code == 401
+    assert (await harness.client.get("/api/auth/me", headers=signed)).status_code == 200
+    harness.client.cookies.set("bodha_refresh", old_refresh, domain="app.test", path="/api/auth")
     assert (await harness.client.post("/api/auth/refresh")).status_code == 401
     again = await harness.client.post("/api/auth/password", json={"token": token, "password": "another-pass-77"})
     assert again.status_code == 401
@@ -138,6 +142,7 @@ async def test_forgot_password_is_refused_after_three_requests_an_hour(harness):
 
 async def test_signed_in_devices_can_be_listed_and_signed_out(harness):
     practice = await practice_with_coder(harness)
+    await sign_out_after_accepting(harness)
     first = await sign_in(harness.client, CODER)
     await sign_in(harness.client, CODER)
     current = await sign_in(harness.client, CODER)
@@ -155,6 +160,10 @@ async def test_signed_in_devices_can_be_listed_and_signed_out(harness):
     assert (await harness.client.post("/api/auth/sessions/end-others", headers=fresh)).status_code == 204
     left = (await harness.client.get("/api/auth/sessions", headers=await renewed(harness))).json()
     assert [device["current"] for device in left] == [True]
+
+
+async def sign_out_after_accepting(harness) -> None:
+    assert (await harness.client.post("/api/auth/logout")).status_code == 204
 
 
 async def renewed(harness) -> dict[str, str]:

@@ -36,8 +36,8 @@ describe("inbox targets", () => {
     expect(inboxTarget(inboxEntry({ kind: "provider_answered" }))).toBe("/notes/note-1");
     expect(inboxTarget(inboxEntry({ kind: "mentioned" }))).toBe("/notes/note-1?tab=history");
     expect(inboxTarget(inboxEntry({ kind: "training_assigned", note_id: null }))).toBe("/training");
-    expect(inboxTarget(inboxEntry({ kind: "payment_failed", note_id: null }))).toBe("/plan");
-    expect(inboxTarget(inboxEntry({ kind: "plan_ending", note_id: null }))).toBe("/plan");
+    expect(inboxTarget(inboxEntry({ kind: "payment_failed", note_id: null }))).toBe("/settings/plan");
+    expect(inboxTarget(inboxEntry({ kind: "plan_ending", note_id: null }))).toBe("/settings/plan");
     expect(inboxTarget(inboxEntry({ kind: "level_disagreed", note_id: null }))).toBeNull();
   });
 });

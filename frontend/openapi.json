@@ -5219,6 +5219,30 @@
         "title": "Finding",
         "type": "object"
       },
+      "FirstRun": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "title": "Checks",
+            "type": "boolean"
+          },
+          "dismissed": {
+            "title": "Dismissed",
+            "type": "boolean"
+          },
+          "security": {
+            "title": "Security",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "checks",
+          "security",
+          "dismissed"
+        ],
+        "title": "FirstRun",
+        "type": "object"
+      },
       "FlagBody": {
         "additionalProperties": false,
         "properties": {
@@ -6564,10 +6588,6 @@
           "visit_type": {
             "title": "Visit Type",
             "type": "string"
-          },
-          "watched_prefix": {
-            "title": "Watched Prefix",
-            "type": "string"
           }
         },
         "required": [
@@ -6575,8 +6595,7 @@
           "prefix",
           "provider_by_folder",
           "place_code",
-          "visit_type",
-          "watched_prefix"
+          "visit_type"
         ],
         "title": "IntakeView",
         "type": "object"
@@ -9363,6 +9382,9 @@
             "title": "Complete",
             "type": "integer"
           },
+          "first_run": {
+            "$ref": "#/components/schemas/FirstRun"
+          },
           "missing_npi": {
             "title": "Missing Npi",
             "type": "integer"
@@ -9396,7 +9418,8 @@
           "missing_npi",
           "payers",
           "security",
-          "review"
+          "review",
+          "first_run"
         ],
         "title": "PracticeSetup",
         "type": "object"
@@ -14981,7 +15004,22 @@
           "required": true
         },
         "responses": {
-          "204": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Set Password Api Auth Password Post"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "422": {
@@ -23601,6 +23639,68 @@
           }
         },
         "summary": "Save Checks",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/practice/first-run/dismissed": {
+      "put": {
+        "operationId": "dismiss_first_run_api_practice_first_run_dismissed_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Dismiss First Run",
         "tags": [
           "practice"
         ]

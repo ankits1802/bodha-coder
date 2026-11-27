@@ -19,9 +19,22 @@ const SETUP = {
 } as unknown as PracticeSetup;
 
 describe("setup flow", () => {
-  it("goes on to the next section still incomplete, skipping finished ones", () => {
-    expect(nextIncomplete(SETUP, "practice_details")).toBe("payers");
-    expect(nextIncomplete(SETUP, "payers")).toBe("coding_rules");
+  it("goes on from a finished section to the next one still incomplete, skipping finished ones", () => {
+    const detailsDone = { ...SETUP, sections: { ...SETUP.sections, practice_details: section(true) } } as PracticeSetup;
+    expect(nextIncomplete(detailsDone, "practice_details")).toBe("payers");
+    const payersDone = { ...SETUP, sections: { ...SETUP.sections, payers: section(true) } } as PracticeSetup;
+    expect(nextIncomplete(payersDone, "payers")).toBe("coding_rules");
+  });
+
+  it("stays on a section the save left incomplete, such as payers without a payer", () => {
+    expect(nextIncomplete(SETUP, "payers")).toBeNull();
+    expect(nextIncomplete(SETUP, "practice_details")).toBeNull();
+  });
+
+  it("never moves away from the sections that are not scored", () => {
+    expect(nextIncomplete(SETUP, "checks")).toBeNull();
+    expect(nextIncomplete(SETUP, "intake")).toBeNull();
+    expect(nextIncomplete(SETUP, "mips")).toBeNull();
   });
 
   it("checks the group NPI and tax ID shapes and leaves empty or free text fields alone", () => {

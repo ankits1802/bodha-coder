@@ -23,6 +23,7 @@ from app.models import (
     Provider,
 )
 from app.services.audit_log import record_activity
+from app.services.first_run import CHECKS_REVIEWED, SECURITY_REVIEWED, first_run_view, mark_first_run
 from app.services.payers import has_active_payer, payer_list
 from app.services.plan_limits import ensure_provider_room
 from app.services.provider_channels import CHANNELS, CONTACT_FIELDS, EMAIL, TEXT, usable_channel
@@ -65,6 +66,7 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
         "checks": practice_checks(practice),
         "missing_npi": sum(1 for p in providers if not p.npi),
         "payers": payer_list(practice),
+        "first_run": first_run_view(practice),
     }
 
 
@@ -103,6 +105,7 @@ async def save_checks(db: AsyncSession, actor: Actor, checks: dict[str, bool]) -
     if practice is None:
         raise NotFound("practice not found")
     practice.checks = dict(checks)
+    mark_first_run(practice, CHECKS_REVIEWED)
     record_activity(
         db, actor, "checks changed", practice_id=practice.id, detail=", ".join(k for k, on in checks.items() if on)
     )
@@ -121,6 +124,7 @@ async def save_security(
         raise NotFound("practice not found")
     practice.mfa_roles, practice.idle_minutes = sorted(set(mfa_roles)), idle_minutes
     practice.access_log_years = access_log_years or practice.access_log_years
+    mark_first_run(practice, SECURITY_REVIEWED)
     record_activity(
         db,
         actor,

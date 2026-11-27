@@ -37,7 +37,7 @@ from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, COMPLIANCE, PRACTICE_ROLES
 from app.models import PlaceOfService, Provider, utcnow
-from app.services import access_log_reports, payers, practice_setup, quantity_sync
+from app.services import access_log_reports, first_run, payers, practice_setup, quantity_sync
 from app.services.access_log_reports import AccessLogFilter
 from app.services.provider_details import details_view
 
@@ -75,6 +75,11 @@ async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
     await practice_setup.save_security(
         db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes, access_log_years=body.access_log_years
     )
+
+
+@router.put("/practice/first-run/dismissed", status_code=204)
+async def dismiss_first_run(db: Db, actor: Admin) -> None:
+    await first_run.dismiss_first_run(db, actor)
 
 
 @router.put("/practice/review-settings", response_model=ReviewSettings)

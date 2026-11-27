@@ -24,6 +24,7 @@ export const TEAM_TEXT = {
   roleFor: (name: string) => `Role for ${name}`,
   moreFor: (name: string) => `More for ${name}`,
   menu: {
+    activity: "Activity",
     reset: "Reset two-step",
     resend: "Resend invite",
     passwordReset: "Send password reset",
@@ -52,5 +53,4 @@ export const TEAM_TEXT = {
     } satisfies Record<ConfirmKind, string>,
     actions: { block: "Block", unblock: "Unblock", reset: "Reset", remove: "Remove" } satisfies Record<ConfirmKind, string>,
   },
-  inviteDialog: { title: "Invite to the team", role: "Role" },
 } as const;

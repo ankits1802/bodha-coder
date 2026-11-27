@@ -2,12 +2,10 @@
 
 import { Chevron } from "@/components/ui/Chevron";
 import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
-import { useAction } from "@/hooks/useAction";
-import { switchPractice } from "@/lib/api/auth";
 import type { User } from "@/lib/api/types";
 import { initialsOf } from "@/lib/format";
-import { enterPractice } from "@/lib/session/practiceEntry";
 import { SHARED_TEXT } from "../strings";
+import { usePracticeSwitch } from "./usePracticeSwitch";
 
 interface PracticeSwitcherProps {
   user: User;
@@ -24,22 +22,16 @@ export function hasPracticeChoice(user: User): boolean {
 }
 
 export function PracticeSwitcher({ user, collapsed }: PracticeSwitcherProps) {
-  const switching = useAction(switchPractice);
   const current = user.practice?.id ?? null;
+  const switching = usePracticeSwitch(current);
   const name = user.practice?.name ?? "";
   const words = SHARED_TEXT.practiceSwitcher;
-
-  async function choose(practiceId: string): Promise<void> {
-    if (practiceId === current) return;
-    const outcome = await switching.run(practiceId);
-    if (outcome.ok) enterPractice(outcome.value);
-  }
 
   const items: MenuItem[] = user.practices.map((practice) => ({
     key: practice.id,
     label: practice.name,
     checked: practice.id === current,
-    onSelect: () => void choose(practice.id),
+    onSelect: () => void switching.choose(practice.id),
   }));
   const trigger = collapsed ? (
     <span aria-hidden="true">{initialsOf(name)}</span>

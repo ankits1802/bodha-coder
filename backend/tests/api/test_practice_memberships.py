@@ -146,7 +146,7 @@ async def test_a_new_email_gets_the_set_password_invite_and_accepting_is_logged(
     token = harness.messenger.last_fragment()
     assert (
         await harness.client.post("/api/auth/password", json={"token": token, "password": PASSWORD})
-    ).status_code == 204
+    ).status_code == 200
     assert (await membership_of(invited.json()["id"], practice.id)).status == "active"
     entries = [(row["actor"], row["action"]) for row in await access_log(harness, practice.admin)]
     assert ("Practice Admin", "member invited") in entries and ("Ana Ruiz", "invite accepted") in entries
@@ -215,7 +215,7 @@ async def test_the_last_active_admin_cannot_leave_and_an_invited_admin_does_not_
     token = harness.messenger.last_fragment()
     assert (
         await harness.client.post("/api/auth/password", json={"token": token, "password": PASSWORD})
-    ).status_code == 204
+    ).status_code == 200
     left = await harness.client.post(f"/api/auth/practices/{practice.id}/leave", headers=practice.admin)
     assert left.status_code == 204
 

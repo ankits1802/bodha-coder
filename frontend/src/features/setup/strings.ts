@@ -1,6 +1,6 @@
-import type { CheckKey, SetupSectionKey } from "@/lib/api/types";
+import type { SetupSectionKey } from "@/lib/api/types";
 
-export type SetupNavKey = SetupSectionKey | "providers" | "mips";
+export type SetupNavKey = SetupSectionKey | "providers" | "checks" | "intake" | "mips";
 
 export const SETUP_TEXT = {
   title: "Practice setup",
@@ -24,6 +24,8 @@ export const SETUP_TEXT = {
     contacts: "Contacts",
     patient_registration: "Patient registration",
     software: "Software",
+    checks: "Checks",
+    intake: "Automatic intake",
     mips: "Quality measures",
   } satisfies Record<SetupNavKey, string>,
   fields: {
@@ -79,14 +81,6 @@ export const SETUP_TEXT = {
     title: "Checks",
     save: "Save checks",
     saved: "Checks saved",
-    labels: {
-      em: "Visit level (E/M)",
-      icd: "Diagnoses (ICD-10)",
-      cdi: "Questions for providers",
-      audit: "Audit risk",
-      mips: "Quality measures (MIPS)",
-      hcc: "Risk adjustment (HCC)",
-    } satisfies Record<CheckKey, string>,
   },
 } as const;
 
@@ -118,6 +112,7 @@ export const PROVIDER_TEXT = {
     phone: "Mobile phone",
     channel: "Send questions by",
     optional: "optional",
+    more: "More",
     cancel: "Cancel",
     save: "Save",
     errors: {

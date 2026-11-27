@@ -12,7 +12,7 @@ const search = vi.hoisted(() => ({ value: "" }));
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(search.value),
-  usePathname: () => "/security",
+  usePathname: () => "/insights/access-log",
   useRouter: () => router,
 }));
 vi.mock("next/link", () => ({
@@ -108,7 +108,7 @@ describe("AccessLogPanel", () => {
     fireEvent.keyDown(note, { key: "Enter" });
 
     expect(router.replace).toHaveBeenCalledWith(
-      "/security?start=2026-11-01&end=2026-11-27&action=opened+note&patient=Reyes&note=note-1",
+      "/insights/access-log?start=2026-11-01&end=2026-11-27&action=opened+note&patient=Reyes&note=note-1",
       { scroll: false },
     );
   });

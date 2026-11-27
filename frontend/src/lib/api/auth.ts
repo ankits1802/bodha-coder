@@ -69,8 +69,8 @@ export async function logout(): Promise<void> {
   }
 }
 
-export function setPassword(token: string, password: string): Promise<void> {
-  return requestNothing("/api/auth/password", { body: { token, password }, auth: "none" });
+export function setPassword(token: string, password: string): Promise<LoginResult> {
+  return request<LoginResult>("/api/auth/password", { body: { token, password }, auth: "none" });
 }
 
 export function currentUser(): Promise<User> {

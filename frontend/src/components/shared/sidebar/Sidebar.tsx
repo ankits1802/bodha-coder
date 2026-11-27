@@ -6,11 +6,11 @@ import type { User } from "@/lib/api/types";
 import { canReach, canSearch, canSearchPlatform, homeFor } from "@/lib/roles";
 import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
+import { AccountMenu } from "./AccountMenu";
 import { ActionEntry, NavEntry } from "./NavEntry";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
 import { PracticeSwitcher, hasPracticeChoice } from "./PracticeSwitcher";
-import { SidebarFooter } from "./SidebarFooter";
 import { useInboxCount } from "./inboxCount";
 import { useNavCounts, type NavCounts } from "./useNavCounts";
 
@@ -72,7 +72,8 @@ export function Sidebar(props: SidebarProps) {
   const { user, collapsed, onNavigate } = props;
   const pathname = usePathname();
   const items = navFor(user);
-  const counts = { ...useNavCounts(canReach(user, "queue"), pathname), inbox: useInboxCount(canReach(user, "inbox"), pathname) };
+  const lanes = items.some((item) => item.count === "queue" || item.count === "compliance");
+  const counts = { ...useNavCounts(lanes, pathname), inbox: useInboxCount(canReach(user, "inbox"), pathname) };
   const words = SHARED_TEXT.nav;
   const groups = NAV_GROUP_ORDER.map((group) => ({ group, entries: items.filter((item) => item.group === group) })).filter(
     (entry) => entry.entries.length > 0,
@@ -120,7 +121,7 @@ export function Sidebar(props: SidebarProps) {
             <NavEntry href="/help" icon="help" label={words.help} active={pathname === "/help"} collapsed={collapsed} onNavigate={onNavigate} />
           </ul>
         ) : null}
-        <SidebarFooter user={user} collapsed={collapsed} />
+        <AccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
       </div>
     </div>
   );

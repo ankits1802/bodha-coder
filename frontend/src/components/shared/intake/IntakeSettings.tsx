@@ -7,6 +7,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { Select } from "@/components/ui/Select";
+import { StatusDot } from "@/components/ui/StatusDot";
 import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { useRemote } from "@/hooks/useRemote";
@@ -33,6 +34,7 @@ async function loadIntake(): Promise<IntakeData> {
 
 function IntakeForm({ data }: { data: IntakeData }) {
   const [draft, setDraft] = useState<IntakeDraft>(() => draftFrom(data.view));
+  const [reading, setReading] = useState(data.view.enabled);
   const [saved, setSaved] = useState(false);
   const save = useAction(saveIntake);
   const problems = problemsOf(draft);
@@ -47,6 +49,7 @@ function IntakeForm({ data }: { data: IntakeData }) {
     const outcome = await save.run(settingsFrom(draft));
     if (!outcome.ok) return;
     setDraft(draftFrom(outcome.value));
+    setReading(outcome.value.enabled);
     setSaved(true);
   }
 
@@ -57,9 +60,9 @@ function IntakeForm({ data }: { data: IntakeData }) {
         <Toggle label={INTAKE_TEXT.enabled} checked={draft.enabled} onChange={(enabled) => change({ enabled })} />
       </div>
       <div className="flex flex-col gap-4 border-t border-hairline px-4 py-4">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-subhead font-medium text-label">{INTAKE_TEXT.watched}</span>
-          <span className="text-body break-all text-secondary tabular-nums select-all">{data.view.watched_prefix}</span>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-subhead font-medium text-label">{INTAKE_TEXT.status}</span>
+          <StatusDot tone={reading ? "ok" : "neutral"}>{reading ? INTAKE_TEXT.reading : INTAKE_TEXT.off}</StatusDot>
         </div>
         <Field label={INTAKE_TEXT.place} error={problems.place}>
           {(control) => (

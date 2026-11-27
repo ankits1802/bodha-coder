@@ -1,4 +1,6 @@
 import type { Role, TeamMember } from "@/lib/api/types";
+import { addDays } from "@/lib/dates";
+import type { DayRange } from "@/lib/paths";
 
 export type RoleFilter = "all" | "coder" | "cdi" | "compliance" | "biller" | "admin-viewer";
 
@@ -26,4 +28,10 @@ export function countIn(members: TeamMember[], filter: RoleFilter): number {
 
 export function seatsUsed(members: TeamMember[]): number {
   return members.filter((member) => member.status !== "blocked").length;
+}
+
+export const ACTIVITY_DAYS = 30;
+
+export function activityRange(today: string): DayRange {
+  return { start: addDays(today, 1 - ACTIVITY_DAYS) ?? today, end: today };
 }

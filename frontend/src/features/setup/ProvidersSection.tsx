@@ -10,25 +10,30 @@ import { useCanSendTexts } from "@/hooks/useCanSendTexts";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import type { Provider } from "@/lib/api/types";
+import type { SetupOpen } from "@/lib/paths";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { ImportDialog } from "./ImportDialog";
 import { ProviderDialog } from "./ProviderDialog";
 import { ProvidersTable } from "./ProvidersTable";
 import { PROVIDER_TEXT, SETUP_TEXT } from "./strings";
+import { useArrival } from "./useArrival";
 
 interface ProvidersSectionProps {
   missingNpi: number;
+  open: SetupOpen | null;
+  onOpened: () => void;
   onChanged: () => void;
 }
 
-export function ProvidersSection({ missingNpi, onChanged }: ProvidersSectionProps) {
+export function ProvidersSection({ missingNpi, open, onOpened, onChanged }: ProvidersSectionProps) {
   const providers = useRemote("setup-providers", getProviders);
   const places = useRemote("setup-places", getPlaces);
   const canSendTexts = useCanSendTexts();
   const query = useQueryParams();
   const onlyMissing = query.get("npi") === "missing";
-  const [editing, setEditing] = useState<Provider | "new" | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [editing, setEditing] = useState<Provider | "new" | null>(() => (open === "addProvider" ? "new" : null));
+  const [importing, setImporting] = useState(open === "importProviders");
+  useArrival(open !== null, onOpened);
   const [imported, setImported] = useState<number | null>(null);
   const placeList = places.state.status === "success" ? places.state.data : [];
   const placeNames = new Map(placeList.map((place) => [place.code, place.name]));

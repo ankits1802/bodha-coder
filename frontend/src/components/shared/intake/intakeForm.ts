@@ -1,4 +1,4 @@
-import type { IntakeSettings, IntakeView } from "@/lib/api/types";
+import type { IntakeView } from "@/lib/api/types";
 import { INTAKE_TEXT } from "./strings";
 
 export interface FolderRow {
@@ -34,7 +34,7 @@ export function draftFrom(view: IntakeView): IntakeDraft {
   };
 }
 
-export function settingsFrom(draft: IntakeDraft): IntakeSettings {
+export function settingsFrom(draft: IntakeDraft): IntakeView {
   return {
     enabled: draft.enabled,
     prefix: draft.prefix,

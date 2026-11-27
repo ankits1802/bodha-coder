@@ -1,7 +1,9 @@
 export const INTAKE_TEXT = {
   title: "Automatic intake",
   enabled: "Read dropped PDFs",
-  watched: "Watched folder",
+  status: "Status",
+  reading: "Reading dropped PDFs",
+  off: "Off",
   place: "Place of service",
   choosePlace: "Choose a place",
   placeOption: (code: string, name: string) => `${code} ${name}`,

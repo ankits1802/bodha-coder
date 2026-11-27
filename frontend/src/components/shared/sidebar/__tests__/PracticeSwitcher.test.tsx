@@ -8,7 +8,7 @@ import type { SignedIn, User } from "@/lib/api/types";
 import { enterPractice } from "@/lib/session/practiceEntry";
 import { Sidebar } from "../Sidebar";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/queue" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/queue", useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("../useNavCounts", () => ({ useNavCounts: () => ({ queue: 0 }) }));
 vi.mock("@/lib/api/auth", () => ({ switchPractice: vi.fn() }));
 vi.mock("@/lib/session/practiceEntry", () => ({ enterPractice: vi.fn() }));

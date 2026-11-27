@@ -9,14 +9,15 @@ import type { TourRecord } from "@/lib/api/types";
 import { clearSession, setSession } from "@/lib/session/store";
 import { closeOverlay } from "../../overlays";
 import { TourHost } from "../TourHost";
+import { TOUR_VERSION } from "../tourSteps";
 import { TOURS_KEY } from "../useTourRecords";
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => navigation, usePathname: () => window.location.pathname }));
 vi.mock("@/lib/api/tours", () => ({ getTours: vi.fn(), saveTour: vi.fn() }));
 
-const SEEN: TourRecord = { tour: "practice", version: 1, completed_at: "2026-11-28T10:00:00+00:00", skipped_at: null };
-const CODER_STEPS = 13;
+const SEEN: TourRecord = { tour: "practice", version: TOUR_VERSION, completed_at: "2026-11-28T10:00:00+00:00", skipped_at: null };
+const CODER_STEPS = 11;
 
 function searchButtonWith(reducedMotion: boolean): Element["scrollIntoView"] {
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: reducedMotion && query === "(prefers-reduced-motion: reduce)", media: query }));
@@ -57,7 +58,7 @@ describe("TourHost", () => {
     expect(onMenu).toHaveBeenCalledWith(true);
     await userEvent.setup().click(screen.getByRole("button", { name: "Skip tour" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(saveTour).toHaveBeenCalledWith("practice", { version: 1, outcome: "skipped" });
+    expect(saveTour).toHaveBeenCalledWith("practice", { version: TOUR_VERSION, outcome: "skipped" });
     expect(onMenu).toHaveBeenLastCalledWith(false);
   });
 
@@ -91,17 +92,17 @@ describe("TourHost", () => {
     expect(screen.getByRole("button", { name: "Next" })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(saveTour).toHaveBeenCalledWith("practice", { version: 1, outcome: "skipped" });
+    expect(saveTour).toHaveBeenCalledWith("practice", { version: TOUR_VERSION, outcome: "skipped" });
   });
 
   it("opens each area's page, records completion and returns to the starting page", async () => {
     await openFirstTour();
     const user = userEvent.setup();
     for (let step = 1; step < CODER_STEPS; step += 1) await user.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("dialog")).toHaveAccessibleName("Take the tour again");
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Your account");
     await user.click(screen.getByRole("button", { name: "Done" }));
-    expect(saveTour).toHaveBeenCalledWith("practice", { version: 1, outcome: "completed" });
-    expect(navigation.push.mock.calls.map(([path]) => path)).toEqual(["/inbox", "/upload", "/queue", "/training", "/security", "/help", "/today"]);
+    expect(saveTour).toHaveBeenCalledWith("practice", { version: TOUR_VERSION, outcome: "completed" });
+    expect(navigation.push.mock.calls.map(([path]) => path)).toEqual(["/inbox", "/upload", "/queue", "/help", "/today"]);
   });
 
   it("replays from Help without recording the tour again", async () => {
@@ -128,7 +129,7 @@ describe("TourHost", () => {
     const scroll = searchButtonWith(true);
     await openFirstTour();
     await userEvent.setup().keyboard("{ArrowRight}");
-    expect(await screen.findByText("2 of 12. Search, highlighted. Find any note by patient, provider, file or code.")).toBeInTheDocument();
+    expect(await screen.findByText(`2 of ${CODER_STEPS}. Search, highlighted. Find any note by patient, provider, file or code.`)).toBeInTheDocument();
     expect(scroll).toHaveBeenCalledWith({ block: "nearest", inline: "nearest", behavior: "auto" });
     expect(document.querySelector("[data-spotlight='target']")).toBeInTheDocument();
     expect(document.querySelector("[data-side]")).toHaveAttribute("data-side", "right");

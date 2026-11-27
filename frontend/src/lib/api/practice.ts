@@ -31,6 +31,10 @@ export function saveSecurity(settings: SecuritySettings): Promise<void> {
   return requestNothing("/api/practice/security", { method: "PUT", body: settings });
 }
 
+export function dismissFirstRun(): Promise<void> {
+  return requestNothing("/api/practice/first-run/dismissed", { method: "PUT" });
+}
+
 export function saveReviewSettings(settings: ReviewSettings): Promise<ReviewSettings> {
   return request<ReviewSettings>("/api/practice/review-settings", { method: "PUT", body: settings });
 }

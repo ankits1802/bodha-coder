@@ -54,7 +54,7 @@ describe("PlanBanner", () => {
     const user = userEvent.setup();
     const { unmount } = render(<PlanBanner role="admin" />);
     expect(await screen.findByRole("status")).toHaveTextContent("Your trial ends in 5 days");
-    expect(screen.getByRole("link", { name: "Choose a plan" })).toHaveAttribute("href", "/plan");
+    expect(screen.getByRole("link", { name: "Choose a plan" })).toHaveAttribute("href", "/settings/plan");
     await user.click(screen.getByRole("button", { name: "Hide until tomorrow" }));
     expect(screen.queryByText("Your trial ends in 5 days")).not.toBeInTheDocument();
     expect(window.localStorage.getItem(DISMISS_STORAGE_KEY)).toBe(localIsoDate());

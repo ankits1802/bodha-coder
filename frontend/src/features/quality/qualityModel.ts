@@ -13,7 +13,7 @@ import type {
 } from "@/lib/api/types";
 import { QUALITY_TEXT } from "./strings";
 
-export type QualityView = "audits" | "evaluation" | "autonomy";
+export type QualityView = "audits" | "training" | "evaluation" | "autonomy";
 export type Display = "chart" | "table";
 export type RateKey = "em" | "icd_precision" | "icd_recall" | "icd_exact" | "modifiers";
 
@@ -30,7 +30,8 @@ export interface LevelShare {
   priorShare: number | null;
 }
 
-export const QUALITY_VIEWS: readonly QualityView[] = ["audits", "evaluation", "autonomy"];
+export const QUALITY_VIEWS: readonly QualityView[] = ["audits", "training", "evaluation", "autonomy"];
+const ADMIN_VIEWS: readonly QualityView[] = ["training"];
 export const DISPLAYS: readonly Display[] = ["chart", "table"];
 export const SIDES: readonly AgreementSide[] = ["bodha", "claim"];
 export const RATE_KEYS: readonly RateKey[] = ["em", "icd_precision", "icd_recall", "icd_exact", "modifiers"];
@@ -53,8 +54,13 @@ function pick<V extends string>(value: string | null, options: readonly V[], fal
   return options.find((option) => option === value) ?? fallback;
 }
 
-export function parseView(value: string | null): QualityView {
-  return pick(value, QUALITY_VIEWS, "audits");
+export function viewsFor(role: Role | null | undefined): QualityView[] {
+  const admin = isQualityAdmin(role);
+  return QUALITY_VIEWS.filter((view) => admin || !ADMIN_VIEWS.includes(view));
+}
+
+export function parseView(value: string | null, role: Role | null | undefined): QualityView {
+  return pick(value, viewsFor(role), "audits");
 }
 
 export function parseDisplay(value: string | null): Display {

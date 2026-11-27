@@ -29,7 +29,7 @@ async def second_hq(harness: Harness, headers: dict[str, str], secrets: dict[str
     assert (await invite(harness, headers)).status_code == 200
     token = harness.messenger.last_fragment()
     accepted = await harness.client.post(f"{ADMIN_SITE}/api/auth/password", json={"token": token, "password": PASSWORD})
-    assert accepted.status_code == 204
+    assert accepted.status_code == 200 and accepted.json()["mfa"] == "setup"
     return await sign_in(harness.client, SECOND, secret_box=secrets, site=ADMIN_SITE)
 
 
@@ -64,7 +64,8 @@ async def test_an_invited_hq_member_sets_a_password_on_the_admin_host_then_sets_
     token = harness.messenger.last_fragment()
     password = {"token": token, "password": PASSWORD}
     assert (await harness.client.post(f"{MAIN_SITE}/api/auth/password", json=password)).status_code == 401
-    assert (await harness.client.post(f"{ADMIN_SITE}/api/auth/password", json=password)).status_code == 204
+    accepted = await harness.client.post(f"{ADMIN_SITE}/api/auth/password", json=password)
+    assert accepted.status_code == 200 and accepted.json()["mfa"] == "setup"
     first = await harness.client.post(f"{ADMIN_SITE}/api/auth/login", json={"email": SECOND, "password": PASSWORD})
     assert first.json()["mfa"] == "setup"
     assert ("hq member invited", "Bodha Admin", "Ravi Menon") in await actions(harness, hq)

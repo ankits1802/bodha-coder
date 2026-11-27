@@ -7,7 +7,7 @@ describe("pageAfterSignIn", () => {
     expect(pageAfterSignIn(CODER, "/practices/new")).toBe("/practices/new");
     expect(pageAfterSignIn(CODER, null)).toBe("/today");
     expect(pageAfterSignIn(CODER, "https://elsewhere.example.com")).toBe("/today");
-    expect(pageAfterSignIn({ ...CODER, billing_only: true }, "/practices/new")).toBe("/plan");
+    expect(pageAfterSignIn({ ...CODER, billing_only: true }, "/practices/new")).toBe("/settings/plan");
     expect(pageAfterSignIn({ ...CODER, role: "hq", practice: null, practices: [] }, "/practices/new")).toBe("/hq");
   });
 });

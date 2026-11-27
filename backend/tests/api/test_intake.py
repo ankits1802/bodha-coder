@@ -69,7 +69,7 @@ async def test_the_inbox_settings_are_saved_and_checked(harness):
     practice = await practice_with_provider(harness)
     saved = await _turn_on(harness, practice)
     assert saved.status_code == 200, saved.text
-    assert saved.json()["watched_prefix"] == f"practices/{practice.id}/inbox/"
+    assert "watched_prefix" not in saved.json()
     stored = (await harness.client.get("/api/practice/intake", headers=practice.admin)).json()
     assert stored["provider_by_folder"] == {"varga": practice.provider_id}
     assert (stored["enabled"], stored["place_code"]) == (True, "11")

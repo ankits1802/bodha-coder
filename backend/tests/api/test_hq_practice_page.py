@@ -55,7 +55,7 @@ async def test_people_lists_live_members_with_role_status_two_step_and_last_acti
         ("Ivy Invited", "biller", "invited", False),
         ("Practice Admin", "admin", "active", True),
     ]
-    assert [row["last_active_at"] is not None for row in people] == [False, False, False, True]
+    assert [row["last_active_at"] is not None for row in people] == [True, True, False, True]
     assert people[3]["email"] == "admin@lakeside.example.com"
     missing = await harness.client.get("/api/hq/practices/no-such-practice/people", headers=hq)
     assert missing.status_code == 404

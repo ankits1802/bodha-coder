@@ -1,6 +1,6 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
 import type { HqPractice, PracticeStatus } from "@/lib/api/types";
-import { localDateFromIso, localIsoDate } from "@/lib/dates";
+import { isoDateInZone, localDateFromIso } from "@/lib/dates";
 import { formatCalendarDay } from "@/lib/format";
 import { PRACTICE_STATUS_LABELS } from "@/lib/labels";
 import { HQ_TEXT } from "./strings";
@@ -17,11 +17,21 @@ const STATUS_TONES: Record<PracticeStatus, StatusTone> = {
   purged: "neutral",
 };
 
-export function daysUntil(isoDate: string, today: string = localIsoDate()): number | null {
+type Renewal = Pick<HqPractice, "renews_on" | "time_zone">;
+
+export function practiceToday(practice: Pick<HqPractice, "time_zone">, now: Date = new Date()): string {
+  return isoDateInZone(now, practice.time_zone);
+}
+
+export function daysUntil(isoDate: string, today: string): number | null {
   const target = localDateFromIso(isoDate);
   const start = localDateFromIso(today);
   if (!target || !start) return null;
   return Math.round((target.getTime() - start.getTime()) / DAY);
+}
+
+export function daysLeft(practice: Renewal, today: string = practiceToday(practice)): number | null {
+  return practice.renews_on ? daysUntil(practice.renews_on, today) : null;
 }
 
 export function isLive(practice: Pick<HqPractice, "status">): boolean {
@@ -32,9 +42,9 @@ export function isClosed(practice: Pick<HqPractice, "status">): boolean {
   return practice.status === "closed" || practice.status === "purged";
 }
 
-export function isEndingSoon(practice: Pick<HqPractice, "status" | "renews_on">, today?: string): boolean {
-  if (!isLive(practice) || !practice.renews_on) return false;
-  const days = daysUntil(practice.renews_on, today);
+export function isEndingSoon(practice: Pick<HqPractice, "status"> & Renewal, today?: string): boolean {
+  if (!isLive(practice)) return false;
+  const days = daysLeft(practice, today);
   return days !== null && days <= ENDING_SOON_DAYS;
 }
 

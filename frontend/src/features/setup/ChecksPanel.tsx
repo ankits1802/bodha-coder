@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { CheckToggles } from "@/components/shared/practice-checks/CheckToggles";
+import { sameChecks, withAllChecks } from "@/components/shared/practice-checks/checkList";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
-import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { saveChecks } from "@/lib/api/practice";
-import type { CheckKey, Checks } from "@/lib/api/types";
+import type { Checks } from "@/lib/api/types";
 import { SETUP_TEXT } from "./strings";
-
-const CHECK_ORDER: readonly CheckKey[] = ["em", "icd", "cdi", "audit", "mips", "hcc"];
-
-function withAllChecks(checks: Checks): Checks {
-  return { ...checks, hcc: checks.hcc ?? false };
-}
 
 interface ChecksPanelProps {
   checks: Checks;
@@ -25,8 +20,7 @@ export function ChecksPanel({ checks, onSaved }: ChecksPanelProps) {
   const [draft, setDraft] = useState<Checks>(() => withAllChecks(checks));
   const [saved, setSaved] = useState(false);
   const save = useAction(saveChecks);
-  const stored = withAllChecks(checks);
-  const dirty = CHECK_ORDER.some((key) => draft[key] !== stored[key]);
+  const dirty = !sameChecks(draft, withAllChecks(checks));
   const words = SETUP_TEXT.checks;
 
   async function submit(): Promise<void> {
@@ -39,19 +33,13 @@ export function ChecksPanel({ checks, onSaved }: ChecksPanelProps) {
   return (
     <Panel aria-label={words.title}>
       <PanelHeader title={words.title} />
-      {CHECK_ORDER.map((key) => (
-        <div key={key} className="flex h-12 items-center justify-between gap-3 border-t border-hairline px-4 text-body">
-          <span>{words.labels[key]}</span>
-          <Toggle
-            label={words.labels[key]}
-            checked={draft[key] ?? false}
-            onChange={(on) => {
-              setSaved(false);
-              setDraft((current) => ({ ...current, [key]: on }));
-            }}
-          />
-        </div>
-      ))}
+      <CheckToggles
+        checks={draft}
+        onChange={(key, on) => {
+          setSaved(false);
+          setDraft((current) => ({ ...current, [key]: on }));
+        }}
+      />
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-hairline px-4 py-3">
         {save.error ? <InlineAlert tone="bad">{save.error}</InlineAlert> : null}
         {saved && !dirty ? (

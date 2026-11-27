@@ -21,7 +21,7 @@ import type { DecisionProps } from "./DecidableRow";
 import { HistoryTab } from "./HistoryTab";
 import { QuestionsTab } from "./QuestionsTab";
 import { RiskAdjustmentTab } from "./RiskAdjustmentTab";
-import { Tabs, type TabItem } from "./Tabs";
+import { Tabs, type TabItem } from "@/components/ui/Tabs";
 import { WordingTab } from "./WordingTab";
 
 export type ReviewTab = "codes" | "questions" | "wording" | "audit" | "risk" | "history";

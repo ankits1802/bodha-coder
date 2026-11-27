@@ -66,6 +66,12 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
   };
 }
 
+const MAIN_FIELDS: readonly string[] = ["name", "credential", "npi", "place_code", "email"];
+
+export function hidesError(errors: ProviderErrors): boolean {
+  return Object.keys(errors).some((field) => !MAIN_FIELDS.includes(field));
+}
+
 export function touchedErrors(errors: ProviderErrors, touched: readonly string[]): ProviderErrors {
   return Object.fromEntries(Object.entries(errors).filter(([field]) => touched.includes(field))) as ProviderErrors;
 }

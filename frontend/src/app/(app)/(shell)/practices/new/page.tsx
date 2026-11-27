@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: SIGN_UP_TEXT.newPracticeTitle };
 
 export default function NewPracticePage() {
   return (
-    <AreaGuard area="security">
+    <AreaGuard area="account">
       <NewPracticeScreen />
     </AreaGuard>
   );

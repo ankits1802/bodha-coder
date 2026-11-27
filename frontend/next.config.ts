@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { backendUrl } from "./src/lib/backend";
+import { ROUTE_REDIRECTS } from "./src/lib/routeRedirects";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -12,6 +13,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   agentRules: false,
+  async redirects() {
+    return ROUTE_REDIRECTS.map((route) => ({ ...route }));
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backendUrl()}/api/:path*` }];
   },

@@ -10,6 +10,7 @@ __all__ = [
     "AccessLogEntry",
     "AccessLogPage",
     "AccessLogPerson",
+    "FirstRun",
     "ImportedProviders",
     "IntakeView",
     "MipsChoice",
@@ -62,6 +63,12 @@ class Payer(View):
     active: bool
 
 
+class FirstRun(View):
+    checks: bool
+    security: bool
+    dismissed: bool
+
+
 class PracticeSetup(View):
     sections: SetupSections
     complete: int
@@ -71,6 +78,7 @@ class PracticeSetup(View):
     payers: list[Payer]
     security: SecuritySettings
     review: ReviewSettings
+    first_run: FirstRun
 
 
 class PayerOption(View):
@@ -160,4 +168,3 @@ class IntakeView(View):
     provider_by_folder: dict[str, str]
     place_code: str | None
     visit_type: str
-    watched_prefix: str
