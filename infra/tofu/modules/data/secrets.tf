@@ -57,6 +57,10 @@ resource "aws_sesv2_configuration_set" "this" {
   count                  = var.mail_from_address == "" ? 0 : 1
   configuration_set_name = var.name
 
+  delivery_options {
+    tls_policy = "REQUIRE"
+  }
+
   suppression_options {
     suppressed_reasons = ["BOUNCE", "COMPLAINT"]
   }

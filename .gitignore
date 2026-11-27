@@ -26,3 +26,5 @@ next-env.d.ts
 backend.hcl
 crash.log
 plan.txt
+.vercel/
+apply.txt
