@@ -1,9 +1,9 @@
 import type { HqPractice } from "@/lib/api/types";
-import { isEndingSoon } from "../practiceStatus";
+import { isClosed, isEndingSoon } from "../practiceStatus";
 
-export type PracticeFilter = "all" | "active" | "trial" | "ending" | "ended" | "blocked";
+export type PracticeFilter = "all" | "active" | "trial" | "ending" | "ended" | "blocked" | "closed";
 
-export const PRACTICE_FILTERS: readonly PracticeFilter[] = ["all", "active", "trial", "ending", "ended", "blocked"];
+export const PRACTICE_FILTERS: readonly PracticeFilter[] = ["all", "active", "trial", "ending", "ended", "blocked", "closed"];
 
 export function isPracticeFilter(value: string | null): value is PracticeFilter {
   return value !== null && (PRACTICE_FILTERS as readonly string[]).includes(value);
@@ -12,6 +12,7 @@ export function isPracticeFilter(value: string | null): value is PracticeFilter 
 export function inPracticeFilter(practice: HqPractice, filter: PracticeFilter): boolean {
   if (filter === "all") return true;
   if (filter === "ending") return isEndingSoon(practice);
+  if (filter === "closed") return isClosed(practice);
   return practice.status === filter;
 }
 

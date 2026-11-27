@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.calendar import today_in
 from app.core.deps import Actor
 from app.core.statistics import ChiSquare, chi_square_homogeneity
-from app.models import Note, Suggestion
+from app.models import VOIDED, Note, Suggestion
 from app.services.agreement import TIMED_LEVEL, em_level
 
 __all__ = ["LEVEL_ORDER", "MIN_NOTES_PER_WINDOW", "PRIOR_DAYS", "RECENT_DAYS", "SHIFT_P_VALUE", "level_mix"]
@@ -31,6 +31,7 @@ async def level_mix(db: AsyncSession, actor: Actor) -> dict[str, Any]:
         .join(Note, Note.current_analysis_id == Suggestion.analysis_id)
         .where(
             Note.practice_id == actor.practice_id,
+            Note.status != VOIDED,
             Suggestion.kind == "em",
             Note.service_date >= prior_start,
             Note.service_date <= today,

@@ -21,7 +21,6 @@ export const LEGAL_PARTY = {
 
 export const LEGAL_PERIODS = {
   trialDays: 14,
-  trialRetentionDays: 30,
   exportWindowDays: 30,
   priceNoticeDays: 30,
   changeNoticeDays: 30,
@@ -41,11 +40,13 @@ export const LEGAL_PERIODS = {
 
 export const SERVICE_FACTS = {
   region: "Amazon Web Services US East (N. Virginia), us-east-1",
-  accessLogYears: 6,
+  recordRetentionYears: 7,
+  recordRetentionDays: 2557,
+  accessLogYears: 7,
   accessLogMaxYears: 10,
-  backupDays: 35,
-  documentVersionDays: 30,
-  operationalLogDays: 400,
+  backupYears: 7,
+  documentLockYears: 7,
+  logYears: 7,
   documentLinkSeconds: 60,
   accessTokenMinutes: 15,
   refreshDays: 7,

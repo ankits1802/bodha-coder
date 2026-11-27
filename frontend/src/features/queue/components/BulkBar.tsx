@@ -10,10 +10,10 @@ interface BulkBarProps {
   onClear: () => void;
   onApprove: () => void;
   onAssign: () => void;
-  onDelete: () => void;
+  onVoid: () => void;
 }
 
-export function BulkBar({ count, abilities, pending, onClear, onApprove, onAssign, onDelete }: BulkBarProps) {
+export function BulkBar({ count, abilities, pending, onClear, onApprove, onAssign, onVoid }: BulkBarProps) {
   if (count === 0) return null;
   const amount = formatCount(count);
   return (
@@ -29,9 +29,9 @@ export function BulkBar({ count, abilities, pending, onClear, onApprove, onAssig
       <Button variant="plain" size="sm" onClick={onClear} disabled={pending}>
         {QUEUE_TEXT.clear}
       </Button>
-      {abilities.remove ? (
-        <Button variant="danger" size="sm" onClick={onDelete} disabled={pending}>
-          {QUEUE_TEXT.delete(amount)}
+      {abilities.void ? (
+        <Button variant="danger" size="sm" onClick={onVoid} disabled={pending}>
+          {QUEUE_TEXT.void(amount)}
         </Button>
       ) : null}
       {abilities.assign ? (

@@ -20,6 +20,8 @@ logger = logging.getLogger("bodha.ses_intake")
 logger.setLevel(logging.INFO)
 
 RAW_PREFIX = "ses-inbound/"
+RETAINED_PREFIX = "ses-retained/"
+MESSAGE_TYPE = "message/rfc822"
 ADDRESSES_VARIABLE = "INTAKE_ADDRESSES"
 DEFAULT_INBOX = "inbox"
 PDF_TYPE = "application/pdf"
@@ -96,6 +98,7 @@ def process_event(s3: Any, inboxes: dict[str, Inbox], event: dict[str, Any]) -> 
         key = unquote_plus(record["s3"]["object"]["key"])
         recipient = recipient_of(key)
         raw = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+        s3.put_object(Bucket=bucket, Key=retained_key(key), Body=raw, ContentType=MESSAGE_TYPE)
         outcome = deliver(s3, bucket, inboxes.get(recipient), raw)
         s3.delete_object(Bucket=bucket, Key=key)
         logger.info(json.dumps(outcome.as_log()))
@@ -108,6 +111,11 @@ def recipient_of(key: str) -> str:
     if len(parts) != 2 or not all(parts):
         raise ValueError(f"not a stored message under {RAW_PREFIX}<recipient>/")
     return parts[0].lower()
+
+
+def retained_key(key: str) -> str:
+    recipient_of(key)
+    return RETAINED_PREFIX + key[len(RAW_PREFIX) :]
 
 
 def deliver(s3: Any, bucket: str, inbox: Inbox | None, raw: bytes) -> Outcome:

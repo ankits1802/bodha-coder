@@ -13,7 +13,7 @@ from app.services.remittance_835 import Adjustment, ServicePayment, parse_835
 from app.services.remittance_outcomes import line_outcome
 from app.services.x12 import X12Invalid
 from tests.api.remittance_helpers import BODY, FILE_NAME, era, post_era, three_notes
-from tests.builders import practice_with_member, practice_with_provider, sign_in
+from tests.builders import maintenance, practice_with_member, practice_with_provider, sign_in
 
 
 async def test_an_835_is_stored_matched_and_classified(harness):
@@ -154,6 +154,7 @@ async def test_an_upload_from_before_checksums_is_recognised_and_given_its_check
     data = era()
     first_id = (await post_era(harness, practice.admin, data)).json()["ids"][0]
     async with SessionFactory() as db:
+        await maintenance(db)
         await db.execute(update(Remittance).where(Remittance.id == first_id).values(file_sha256=None))
         await db.commit()
 

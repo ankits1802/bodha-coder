@@ -13,6 +13,8 @@ const STATUS_TONES: Record<PracticeStatus, StatusTone> = {
   trial: "low",
   ended: "bad",
   blocked: "bad",
+  closed: "neutral",
+  purged: "neutral",
 };
 
 export function daysUntil(isoDate: string, today: string = localIsoDate()): number | null {
@@ -24,6 +26,10 @@ export function daysUntil(isoDate: string, today: string = localIsoDate()): numb
 
 export function isLive(practice: Pick<HqPractice, "status">): boolean {
   return practice.status === "active" || practice.status === "trial";
+}
+
+export function isClosed(practice: Pick<HqPractice, "status">): boolean {
+  return practice.status === "closed" || practice.status === "purged";
 }
 
 export function isEndingSoon(practice: Pick<HqPractice, "status" | "renews_on">, today?: string): boolean {
@@ -39,6 +45,8 @@ export function practiceStatusView(practice: HqPractice, today?: string): { tone
 
 export function renewalLine(practice: HqPractice, today?: string): string {
   const words = HQ_TEXT.status;
+  if (practice.status === "purged") return words.purged(practice.purged_at ? formatCalendarDay(practice.purged_at.slice(0, 10), "year") : "").trim();
+  if (practice.status === "closed" && practice.purge_after) return words.purgeAfter(formatCalendarDay(practice.purge_after, "year"));
   if (!practice.renews_on) return words.noRenewal;
   const day = formatCalendarDay(practice.renews_on, "year");
   if (practice.status === "ended") return words.ended(day);

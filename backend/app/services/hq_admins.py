@@ -8,7 +8,7 @@ from app.adapters.messenger import Messenger
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
 from app.core.roles import ADMIN_ROLE, ADMINS
-from app.models import PRACTICE_REALM, Practice, PracticeMembership, User
+from app.models import CLOSED_STATUSES, PRACTICE_REALM, Practice, PracticeMembership, User
 from app.services.account_lookup import account_by_email
 from app.services.audit_log import record_activity, record_practice_access
 from app.services.memberships import ACTIVE, BLOCKED, INVITED, active_members, membership_in, retire_legacy_link
@@ -23,6 +23,7 @@ ADDED_OUTCOME = "added"
 PROMOTED_OUTCOME = "promoted"
 OUTCOMES = (INVITED_OUTCOME, ADDED_OUTCOME, PROMOTED_OUTCOME)
 ALREADY_ADMIN = "this person is already an admin of the practice"
+CLOSED_PRACTICE = "a closed practice takes no new admins"
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,8 @@ async def appoint_admin(
     practice = await db.get(Practice, practice_id, with_for_update=True)
     if practice is None:
         raise NotFound("practice not found")
+    if practice.status in CLOSED_STATUSES:
+        raise Conflict(CLOSED_PRACTICE)
     person = await account_by_email(db, appointment.email, (PRACTICE_REALM,))
     current = await membership_in(db, person.id, practice.id) if person is not None else None
     if person is not None and current is not None and current.ended_at is None:

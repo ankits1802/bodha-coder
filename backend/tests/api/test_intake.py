@@ -35,6 +35,11 @@ class UnreadableArrivals(FakeListingStore):
         return await super().get(key)
 
 
+class LossyCopies(FakeListingStore):
+    async def put(self, key: str, data: bytes, *, content_type: str) -> None:
+        await super().put(key, data[:-1] if "/processed/" in key else data, content_type=content_type)
+
+
 def _checksum(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -159,7 +164,7 @@ async def test_a_dropped_file_is_renamed_to_its_checksum_before_it_is_read(harne
 
     with pytest.raises(OSError):
         await _poll(store)
-    assert list(store.objects) == [f"{folder}{_checksum(DROPPED_PDF)} - 99214.pdf"]
+    assert sorted(store.objects) == sorted([f"{folder}{NOTE_NAME}", f"{folder}{_checksum(DROPPED_PDF)} - 99214.pdf"])
 
     store.unreadable = False
     assert await _poll(store) == 1
@@ -167,6 +172,19 @@ async def test_a_dropped_file_is_renamed_to_its_checksum_before_it_is_read(harne
         note = await db.scalar(select(Note).where(Note.practice_id == practice.id))
         billed = await db.scalar(select(CodeSet).where(CodeSet.note_id == note.id))
     assert [code["code"] for code in billed.codes] == ["99214"]
+
+
+async def test_an_arrival_stays_in_the_inbox_when_its_kept_copy_does_not_match(harness):
+    practice = await practice_with_provider(harness)
+    assert (await _turn_on(harness, practice)).status_code == 200
+    folder = f"practices/{practice.id}/inbox/varga/2026-11-20/"
+    store = LossyCopies()
+    store.objects[f"{folder}{NOTE_NAME}"] = DROPPED_PDF
+
+    with pytest.raises(OSError):
+        await _poll(store)
+
+    assert store.objects[f"{folder}{_checksum(DROPPED_PDF)} - 99214.pdf"] == DROPPED_PDF
 
 
 def test_an_arrival_keeps_only_its_checksum_its_code_and_its_type():

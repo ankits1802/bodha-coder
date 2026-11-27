@@ -20,7 +20,7 @@ from app.codes.payer_rules import (
     repeated_initial_visit,
 )
 from app.core.deps import Actor
-from app.models import Note, Provider
+from app.models import VOIDED, Note, Provider
 from app.services.audit_log import record_access
 from app.services.payers import payer_list
 from app.services.remittance_matching import same_person
@@ -69,6 +69,7 @@ async def stay_history(db: AsyncSession, note: Note) -> list[EarlierVisit]:
         .where(
             Note.practice_id == note.practice_id,
             Note.id != note.id,
+            Note.status != VOIDED,
             Note.patient_name.is_not(None),
             Note.service_date <= note.service_date,
         )

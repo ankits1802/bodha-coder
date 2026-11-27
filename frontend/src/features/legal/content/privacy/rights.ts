@@ -13,7 +13,7 @@ export const PRIVACY_RIGHTS = [
     ),
     clauses(
       ["Know and access:", "to know what personal information we collect, use and disclose, and to get a copy of it."],
-      ["Delete:", "to ask us to delete personal information we collected from you."],
+      ["Delete:", `to ask us to delete personal information we collected from you, except information the law or our agreements with your organization require us to keep, such as the records described in “${PRIVACY_HEADINGS.retention}”.`],
       ["Correct:", "to ask us to correct inaccurate personal information."],
       ["Portability:", "to receive your personal information in a usable format."],
       ["Opt out:", "of the sale or sharing of personal information, targeted advertising and profiling with significant effects. We do none of these."],

@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session/useSession";
 import { canUse } from "@/lib/roles";
 import { codeLabel } from "../findings";
 import { REVIEW_TEXT } from "../strings";
+import { HistoryChanges } from "./HistoryChanges";
 import { HistoryComments } from "./HistoryComments";
 import { HistoryEntry, HistoryList, joinMeta } from "./HistoryEntry";
 import { AttestationHistory, ExportHistory, SnapshotHistory } from "./HistoryRecords";
@@ -128,6 +129,9 @@ export function HistoryTab({ detail }: { detail: NoteDetail }) {
       </Section>
       <Section title={words.decisions} count={history.decisions.length}>
         <Decisions detail={detail} />
+      </Section>
+      <Section title={words.changes} count={history.changes.length}>
+        <HistoryChanges changes={history.changes} />
       </Section>
       <Section title={words.requests} count={requests.length}>
         <HistoryRequests requests={requests} />

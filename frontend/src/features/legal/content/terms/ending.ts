@@ -36,19 +36,24 @@ export const TERMS_ENDING = [
       "During your Subscription Term you can export your data from the Service at any time, including approved claims data as a claims CSV and as 837P-ready claim lines in CSV or JSON, audit defense packets as PDF, signed addenda as text and the access log as CSV.",
     ),
     paragraph(
+      "Records are not deleted while you use the Service. A note uploaded by mistake can be voided: it is hidden from work lists and counts, marked with who voided it, when and why, and kept, and an administrator can restore it.",
+    ),
+    paragraph(
       `When your subscription ends, your Authorized Users can no longer sign in. For ${LEGAL_PERIODS.exportWindowDays} days after the end date you may ask us in writing to provide an export of your Customer Data in the formats the Service supports, or to reopen access briefly so that you can export it yourself.`,
     ),
-    paragraph("After that period, or sooner if you ask in writing, we delete your organization’s account in the Service:"),
+    paragraph("After that period we close your organization’s account in the Service. Every Authorized User is signed out and access is blocked, and nothing is deleted. We keep every record and stored file that belongs to your organization, including users, providers, notes and every version of their documents and text, analyses with the prompts and model replies they used, decisions, code sets, provider requests and answers, change history and the access log:"),
     bullets(
-      "every record that belongs to it, including users, providers, notes and their history, provider requests, analyses and the access log;",
-      "every stored document and file, including uploaded PDFs, model replies and remittance files;",
-      "keeping only a minimal record that the account existed, who deleted it and when.",
+      `for at least ${SERVICE_FACTS.recordRetentionYears} years (${SERVICE_FACTS.recordRetentionDays} days) from the date each was created; and`,
+      `for at least ${SERVICE_FACTS.recordRetentionYears} years after the account is closed.`,
     ),
     paragraph(
-      `Earlier versions of stored documents remain in versioned storage for up to ${SERVICE_FACTS.documentVersionDays} days after deletion and then expire. Database backups are kept for up to ${SERVICE_FACTS.backupDays} days and then expire. Until they expire, these residual copies stay encrypted, are used only to restore the Service after a failure, and remain protected by these Terms and the BAA. On request, we will confirm in writing the date by which every copy is gone.`,
+      "We keep these records because the law and payer audits require them, so we cannot delete them earlier at your request. When both periods have passed we purge your organization’s records and stored files, keeping only our own activity record, which shows that the account existed and who closed and purged it and when, and an export of the access log.",
     ),
     paragraph(
-      `While you are a customer, the access log is kept for the period your administrator chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears} years. We do not keep an archive for you after deletion, so export anything you must retain before your data is deleted. If the law requires us to keep some Customer Data longer, or returning or destroying PHI is not feasible, the BAA governs that data for as long as we keep it.`,
+      `Monthly database backups are kept for ${SERVICE_FACTS.backupYears} years, and every version of a stored file is kept under a ${SERVICE_FACTS.documentLockYears}-year retention lock from when it was stored, so residual copies of purged data remain until those periods end. Until then they stay encrypted, are used only to restore the Service after a failure or as the law requires, and remain protected by these Terms and the BAA. On request, we will confirm in writing the date by which every copy is gone.`,
+    ),
+    paragraph(
+      `The access log is kept for the period your administrator chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears} years, and never less than ${SERVICE_FACTS.accessLogYears} years. Sign-in credentials, such as recovery codes, sign-in links and sessions, are not among the records kept for these periods. The BAA governs PHI for as long as we keep it.`,
     ),
   ),
 ];

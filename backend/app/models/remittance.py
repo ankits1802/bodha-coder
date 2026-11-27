@@ -5,7 +5,7 @@ from sqlalchemy import Date, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, IdMixin, one_of
+from app.models.base import Base, IdMixin, LedgerMixin, one_of
 
 
 class Remittance(IdMixin, Base):
@@ -19,7 +19,7 @@ class Remittance(IdMixin, Base):
     file_sha256: Mapped[str | None] = mapped_column(String(64), index=True)
 
 
-class RemittanceLine(IdMixin, Base):
+class RemittanceLine(LedgerMixin, Base):
     __tablename__ = "remittance_lines"
     __table_args__ = (one_of("status", ("matched", "unmatched", "downcoded", "denied", "paid_as_billed")),)
     remittance_id: Mapped[str] = mapped_column(ForeignKey("remittances.id"), index=True)

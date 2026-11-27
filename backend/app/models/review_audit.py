@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, Str
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, IdMixin, one_of, timestamp
+from app.models.base import Base, LedgerMixin, one_of, timestamp
 
 OVERRIDE_REASONS = (
     "documentation",
@@ -36,7 +36,7 @@ def override_checks() -> tuple[CheckConstraint, CheckConstraint]:
     )
 
 
-class ApprovedClaim(IdMixin, Base):
+class ApprovedClaim(LedgerMixin, Base):
     __tablename__ = "approved_claims"
     __table_args__ = (UniqueConstraint("note_id", "revision"), Index("ix_approved_claims_practice", "practice_id"))
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
@@ -57,7 +57,7 @@ class ApprovedClaim(IdMixin, Base):
     content: Mapped[dict[str, Any]] = mapped_column(JSONB)
 
 
-class ClaimExport(IdMixin, Base):
+class ClaimExport(LedgerMixin, Base):
     __tablename__ = "claim_exports"
     __table_args__ = (one_of("format", EXPORT_FORMATS), Index("ix_claim_exports_practice", "practice_id", "created_at"))
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
@@ -75,7 +75,7 @@ class ClaimExport(IdMixin, Base):
     user_agent: Mapped[str | None] = mapped_column(String(300))
 
 
-class ClaimExportItem(IdMixin, Base):
+class ClaimExportItem(LedgerMixin, Base):
     __tablename__ = "claim_export_items"
     __table_args__ = (UniqueConstraint("export_id", "note_id"), Index("ix_claim_export_items_note", "note_id"))
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
@@ -85,7 +85,7 @@ class ClaimExportItem(IdMixin, Base):
     snapshot_revision: Mapped[int] = mapped_column(Integer)
 
 
-class ProviderAttestation(IdMixin, Base):
+class ProviderAttestation(LedgerMixin, Base):
     __tablename__ = "provider_attestations"
     __table_args__ = (
         one_of("purpose", REQUEST_PURPOSES),
@@ -109,7 +109,7 @@ class ProviderAttestation(IdMixin, Base):
     user_agent: Mapped[str | None] = mapped_column(String(300))
 
 
-class ReviewComment(IdMixin, Base):
+class ReviewComment(LedgerMixin, Base):
     __tablename__ = "review_comments"
     __table_args__ = (Index("ix_review_comments_note", "note_id", "created_at"),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
@@ -122,7 +122,7 @@ class ReviewComment(IdMixin, Base):
     mentions: Mapped[list[str]] = mapped_column(JSONB)
 
 
-class ReviewCommentRemoval(IdMixin, Base):
+class ReviewCommentRemoval(LedgerMixin, Base):
     __tablename__ = "review_comment_removals"
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), index=True)
@@ -132,7 +132,7 @@ class ReviewCommentRemoval(IdMixin, Base):
     remover_role: Mapped[str] = mapped_column(String(16))
 
 
-class AuditPackage(IdMixin, Base):
+class AuditPackage(LedgerMixin, Base):
     __tablename__ = "audit_packages"
     __table_args__ = (Index("ix_audit_packages_note", "note_id", "created_at"),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))

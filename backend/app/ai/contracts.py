@@ -46,6 +46,15 @@ class ModelReply:
     model: str
     input_tokens: int
     output_tokens: int
+    temperature: float | None = None
+    schema_applied: bool | None = None
+
+
+@dataclass(frozen=True)
+class ModelRequest:
+    prompt: str
+    schema: dict[str, Any] | None
+    system: str | None
 
 
 class ModelClient(Protocol):
@@ -163,3 +172,4 @@ class ReviewOutcome:
     prompt_version: str
     replies: tuple[ModelReply, ...] = field(default_factory=tuple)
     failed_sections: frozenset[Section] = frozenset()
+    requests: tuple[ModelRequest, ...] = field(default_factory=tuple)

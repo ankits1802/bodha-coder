@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, IdMixin, one_of, timestamp
+from app.models.base import Base, IdMixin, LedgerMixin, one_of, timestamp
 
 PRACTICE_MEMBER_ROLES = ("admin", "coder", "cdi", "compliance", "biller", "viewer")
 MEMBERSHIP_STATUSES = ("invited", "active", "blocked")
@@ -42,7 +42,7 @@ class PracticeMembership(IdMixin, Base):
     ended_at: Mapped[datetime | None] = timestamp()
 
 
-class AuthEvent(IdMixin, Base):
+class AuthEvent(LedgerMixin, Base):
     __tablename__ = "auth_events"
     __table_args__ = (
         Index("ix_auth_events_user_time", "user_id", "created_at"),

@@ -79,3 +79,9 @@ overwritten or deleted.
 - Export and package keys are of a shape the orphan sweep does not know, so it leaves them alone.
 - Mentionable people are read from `users.practice_id`; multi-practice membership will need to read them
   from its membership table.
+
+## Amended 2026-11-28
+
+Notes are voided and practices closed rather than deleted; the database refuses UPDATE and DELETE on
+these records under the guards of [0038](0038-seven-year-retention-and-tamper-evidence.md), which
+replace the update-only trigger, and only a purge 2557 days after a practice closes removes them.

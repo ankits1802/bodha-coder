@@ -38,7 +38,7 @@ export const PRIVACY_COLLECT = [
     ),
     subheading("Information collected automatically"),
     clauses(
-      ["Access log:", `when you sign in, or open, change or export a record, the Service records who did it, the action, the time, your IP address and your browser’s user agent. Customers rely on this log for HIPAA compliance, and it is kept for the period each customer chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears}.`],
+      ["Access log:", `when you sign in, or open, change or export a record, the Service records who did it, the action, the time, your IP address and your browser’s user agent. Viewing or exporting the access log is recorded in it too. Customers rely on this log for HIPAA compliance, and it is kept for the period each customer chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears}, never less than ${SERVICE_FACTS.accessLogYears}.`],
       ["Signed-in devices:", "for each device where you are signed in, the time it was last used, its IP address and browser user agent, so that you can review your devices and sign them out."],
       ["Service logs:", "technical records of each request (the type of page or action, the result, the time taken and a request identifier) and of errors, used to run and secure the Service. These logs are designed to exclude names, email addresses, IP addresses, search text and note content."],
       ["Security signals:", "counts of sign-in, password reset, sign-up and demo request attempts, stored against a one-way hash of the email address or IP address involved, used to stop abuse."],

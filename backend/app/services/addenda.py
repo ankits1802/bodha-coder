@@ -27,6 +27,7 @@ from app.services.analysis import next_revision, request_analysis
 from app.services.attestations import ADDENDUM_ATTESTATION, Statement, checked_wording, record_attestation
 from app.services.audit_log import record_access, record_provider_access
 from app.services.note_texts import current_texts, note_texts
+from app.services.note_voids import refuse_voided
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.provider_channels import EMAIL, contact_for, require_channel, usable_channel
 from app.services.query_governance import refuse_repeat_queries
@@ -83,6 +84,7 @@ async def create_request(
     hold: bool,
 ) -> AddendumRequest:
     note = await note_for(db, actor, note_id)
+    refuse_voided(note)
     await refuse_repeat_queries(db, note, [edit.key for edit in edits])
     provider = await db.get_one(Provider, note.provider_id)
     questions = await _chosen_questions(db, note, edits)
