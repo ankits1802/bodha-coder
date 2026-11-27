@@ -1,4 +1,4 @@
-# 0032 Sample review and pricing teaser on the landing page
+# 0034 Sample review and pricing teaser on the landing page
 
 Date: 2026-11-28
 
