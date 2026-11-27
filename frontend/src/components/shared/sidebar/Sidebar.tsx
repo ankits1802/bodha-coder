@@ -71,7 +71,7 @@ export function Sidebar(props: SidebarProps) {
   const { user, collapsed, onNavigate } = props;
   const pathname = usePathname();
   const items = navFor(user);
-  const counts = useNavCounts(canReach(user, "queue"), pathname);
+  const counts = useNavCounts(items.some((item) => item.count !== undefined), pathname);
   const words = SHARED_TEXT.nav;
   const groups = NAV_GROUP_ORDER.map((group) => ({ group, entries: items.filter((item) => item.group === group) })).filter(
     (entry) => entry.entries.length > 0,
