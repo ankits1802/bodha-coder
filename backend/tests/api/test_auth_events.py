@@ -65,7 +65,11 @@ async def test_a_sign_in_is_recorded_with_its_practice_address_and_browser(harne
     signed = await harness.client.post("/api/auth/login", json={"email": SAM, "password": PASSWORD}, headers=BROWSER)
     assert signed.status_code == 200
     sam = await user_id(SAM)
-    [event] = [event for event in await auth_events("signed_in") if event.user_id == sam and event.user_agent]
+    [event] = [
+        event
+        for event in await auth_events("signed_in")
+        if event.user_id == sam and event.user_agent == BROWSER["user-agent"]
+    ]
     assert (event.practice_id, event.realm, event.detail) == (practice.id, "practice", "with password")
     assert event.ip and event.user_agent == BROWSER["user-agent"]
     entries = [(row["actor"], row["action"], row["user_agent"]) for row in await access_log(harness, practice.admin)]

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import type { NoteHeader } from "@/lib/api/types";
+import type { NoteHeader, ReturnView } from "@/lib/api/types";
+import { RETURN_REASON_LABELS } from "@/lib/labels";
 import { REVIEW_TEXT } from "../strings";
 import { VoidedLine } from "./VoidedLine";
 
@@ -12,6 +13,11 @@ interface StatusBannerProps {
   retryPending: boolean;
   canRestore: boolean;
   onRestored: () => void;
+}
+
+function returnedText(returned: ReturnView): string {
+  const label = RETURN_REASON_LABELS[returned.reason];
+  return REVIEW_TEXT.returned(returned.note ? `${label} · ${returned.note}` : label, returned.by);
 }
 
 export function StatusBanner({ note, reason, onRetry, onReopen, retryPending, canRestore, onRestored }: StatusBannerProps) {
@@ -43,5 +49,6 @@ export function StatusBanner({ note, reason, onRetry, onReopen, retryPending, ca
     );
   }
   if (note.flag_reason) return <InlineAlert tone="warn">{REVIEW_TEXT.flagged(note.flag_reason)}</InlineAlert>;
+  if (note.returned) return <InlineAlert tone="warn">{returnedText(note.returned)}</InlineAlert>;
   return null;
 }

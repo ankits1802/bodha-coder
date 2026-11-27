@@ -22,6 +22,7 @@ EXPECTED_FILES = {
     "snapshots.json",
     "provider-requests.json",
     "provider-statements.json",
+    "returns.json",
     "exports.json",
     "comments.json",
     "access-log.json",

@@ -89,3 +89,9 @@ left out practices with no priced use; and that billers saw two exports that pro
 - Matching is rules over page 1 text only: a scanned PDF without a text layer, a note that names its
   provider only in a signature image, or a layout whose labels differ from the ones listed will be
   marked Check and filled in by hand.
+
+## Amended 2026-11-28
+
+The compliance return writer landed with [0043](0043-one-findings-list-and-returns.md): it sends
+`compliance_returned` with the structured reason key as `reason`, to whoever flagged the note, else its
+assignee, else the last person who decided on it.

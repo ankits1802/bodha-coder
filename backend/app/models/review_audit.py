@@ -20,6 +20,15 @@ OVERRIDE_REASON_ALLOWED = (
     "override_reason IS NULL OR override_reason IN (" + ", ".join(f"'{reason}'" for reason in OVERRIDE_REASONS) + ")"
 )
 OTHER_NEEDS_NOTE = "override_reason IS DISTINCT FROM 'other' OR length(btrim(coalesce(override_note, ''))) > 0"
+RETURN_REASONS = (
+    "level_not_supported",
+    "documentation_missing",
+    "coding_error",
+    "ask_provider",
+    "payer_policy",
+    "other",
+)
+RETURN_OTHER_NOTED = "reason <> 'other' OR length(btrim(coalesce(note, ''))) > 0"
 QUESTIONS_PURPOSE = "questions"
 LEVEL_CHANGE_PURPOSE = "level_change"
 REQUEST_PURPOSES = (QUESTIONS_PURPOSE, LEVEL_CHANGE_PURPOSE)
@@ -146,3 +155,21 @@ class AuditPackage(LedgerMixin, Base):
     actor_role: Mapped[str] = mapped_column(String(16))
     ip: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(String(300))
+
+
+class NoteReturn(LedgerMixin, Base):
+    __tablename__ = "note_returns"
+    __table_args__ = (
+        one_of("reason", RETURN_REASONS),
+        CheckConstraint(RETURN_OTHER_NOTED, name="other_noted"),
+        Index("ix_note_returns_note", "note_id", "created_at"),
+    )
+    practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
+    note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
+    analysis_id: Mapped[str | None] = mapped_column(ForeignKey("analyses.id"))
+    actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(24))
+    note: Mapped[str | None] = mapped_column(String(OVERRIDE_NOTE_LENGTH))
+    flag_reason: Mapped[str | None] = mapped_column(Text)
+    finding_keys: Mapped[list[str]] = mapped_column(JSONB)

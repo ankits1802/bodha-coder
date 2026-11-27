@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { ReturnDialog } from "@/components/shared/return-reason/ReturnDialog";
 import { useAction } from "@/hooks/useAction";
 import { decideCompliance } from "@/lib/api/notes";
 import type { ComplianceDecision } from "@/lib/api/types";
@@ -21,6 +22,7 @@ interface CaseActionsProps {
 export function CaseActions({ noteId, facts, canDecide, onDecided }: CaseActionsProps) {
   const decide = useAction(decideCompliance);
   const [keeping, setKeeping] = useState(false);
+  const [returning, setReturning] = useState(false);
   const changed = facts?.billed && facts.supported && facts.billed !== facts.supported;
 
   async function submit(decision: ComplianceDecision, reason: string | null): Promise<void> {
@@ -43,7 +45,7 @@ export function CaseActions({ noteId, facts, canDecide, onDecided }: CaseActions
             <Button variant="plain" disabled={decide.pending} onClick={() => setKeeping(true)}>
               {changed && facts.billed ? COMPLIANCE_TEXT.keep(facts.billed) : COMPLIANCE_TEXT.keepAsBilled}
             </Button>
-            <Button disabled={decide.pending} onClick={() => void submit("return", null)}>
+            <Button disabled={decide.pending} onClick={() => setReturning(true)}>
               {COMPLIANCE_TEXT.returnToCoder}
             </Button>
             <Button variant="primary" pending={decide.pending && !keeping} onClick={() => void submit("confirm", null)}>
@@ -59,6 +61,16 @@ export function CaseActions({ noteId, facts, canDecide, onDecided }: CaseActions
         onClose={() => setKeeping(false)}
         onKeep={(reason) => void submit("keep", reason)}
       />
+      {returning ? (
+        <ReturnDialog
+          noteId={noteId}
+          onClose={() => setReturning(false)}
+          onReturned={() => {
+            setReturning(false);
+            onDecided(COMPLIANCE_TEXT.decided.return);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -51,6 +51,7 @@ from app.services import (
     note_voids,
     review_actions,
 )
+from app.services.note_returns import checked_return_reason
 from app.services.override_reasons import OverrideReason, checked_reason
 from app.services.records import NewDocument, replace_document
 
@@ -148,8 +149,10 @@ async def compliance(
     actor: Annotated[Actor, Depends(require(*COMPLIANCE))],
 ) -> dict[str, str | None]:
     kept = override(body.override) if body.override else None
+    given = body.return_reason
+    returned = checked_return_reason(given.reason, given.note) if given else None
     note = await approval.compliance_decision(
-        db, mail, signer, actor, note_id, decision=body.decision, reason=body.reason, override=kept
+        db, mail, signer, actor, note_id, decision=body.decision, reason=body.reason, override=kept, returned=returned
     )
     return {"status": note.status, "lane": note.lane}
 

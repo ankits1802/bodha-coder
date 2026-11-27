@@ -1,17 +1,9 @@
-import type { ReactNode } from "react";
 import { CodeList } from "@/components/shared/CodeList";
 import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import type { AnalysisStatus, DecisionRecord, NoteDetail, OverrideReason } from "@/lib/api/types";
-import { useSession } from "@/lib/session/useSession";
-import { canUse } from "@/lib/roles";
 import { codeLabel } from "../findings";
 import { REVIEW_TEXT } from "../strings";
-import { HistoryChanges } from "./HistoryChanges";
-import { HistoryComments } from "./HistoryComments";
 import { HistoryEntry, HistoryList, joinMeta } from "./HistoryEntry";
-import { AttestationHistory, ExportHistory, SnapshotHistory } from "./HistoryRecords";
-import { HistoryRequests } from "./HistoryRequests";
-import { TabSection } from "./TabSection";
 
 const ANALYSIS_TONES: Record<AnalysisStatus, StatusTone> = {
   queued: "warn",
@@ -27,7 +19,7 @@ function reasonLabel(reason: string): string {
   return words.reason[reason] ?? reason;
 }
 
-function byLabel(name: string | null, role: string | null = null): string {
+export function byLabel(name: string | null, role: string | null = null): string {
   return words.by(role && name ? `${name} (${role})` : (name ?? words.system));
 }
 
@@ -37,7 +29,7 @@ function overrideLabel(reason: OverrideReason | null, note: string | null): stri
   return REVIEW_TEXT.override.given(note ? `${label} · ${note}` : label);
 }
 
-function Readings({ detail }: { detail: NoteDetail }) {
+export function Readings({ detail }: { detail: NoteDetail }) {
   return (
     <HistoryList>
       {detail.history.analyses.map((analysis) => (
@@ -57,7 +49,7 @@ function Readings({ detail }: { detail: NoteDetail }) {
   );
 }
 
-function CodeRevisions({ detail }: { detail: NoteDetail }) {
+export function CodeRevisions({ detail }: { detail: NoteDetail }) {
   return (
     <HistoryList>
       {detail.history.code_sets.map((set) => (
@@ -85,7 +77,7 @@ function decisionTitle(decision: DecisionRecord, titles: Map<string, string>): s
   return linked.diagnoses.length > 0 ? words.linked(linked.code, linked.diagnoses.join(", ")) : words.linkedDefault(linked.code);
 }
 
-function Decisions({ detail }: { detail: NoteDetail }) {
+export function Decisions({ detail }: { detail: NoteDetail }) {
   const titles = new Map(detail.findings.map((finding) => [finding.key, finding.title]));
   return (
     <HistoryList>
@@ -102,49 +94,5 @@ function Decisions({ detail }: { detail: NoteDetail }) {
         />
       ))}
     </HistoryList>
-  );
-}
-
-function Section({ title, count, children }: { title: string; count: number; children: ReactNode }) {
-  return (
-    <TabSection title={title}>
-      {count === 0 ? <p className="m-0 text-callout text-tertiary">{words.none}</p> : children}
-    </TabSection>
-  );
-}
-
-export function HistoryTab({ detail }: { detail: NoteDetail }) {
-  const { history, requests } = detail;
-  const { user } = useSession();
-  return (
-    <>
-      <Section title={words.comments} count={1}>
-        <HistoryComments findings={detail.findings} />
-      </Section>
-      <Section title={words.analyses} count={history.analyses.length}>
-        <Readings detail={detail} />
-      </Section>
-      <Section title={words.codeSets} count={history.code_sets.length}>
-        <CodeRevisions detail={detail} />
-      </Section>
-      <Section title={words.decisions} count={history.decisions.length}>
-        <Decisions detail={detail} />
-      </Section>
-      <Section title={words.changes} count={history.changes.length}>
-        <HistoryChanges changes={history.changes} />
-      </Section>
-      <Section title={words.requests} count={requests.length}>
-        <HistoryRequests requests={requests} />
-      </Section>
-      <Section title={words.attestations} count={history.attestations.length}>
-        <AttestationHistory attestations={history.attestations} />
-      </Section>
-      <Section title={words.snapshots} count={history.snapshots.length}>
-        <SnapshotHistory snapshots={history.snapshots} />
-      </Section>
-      <Section title={words.exports} count={history.exports.length}>
-        <ExportHistory exports={history.exports} canDownload={canUse(user?.role, "billing")} />
-      </Section>
-    </>
   );
 }

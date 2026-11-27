@@ -19,7 +19,7 @@ export const INBOX_TEXT = {
       notes === 1 ? `${actor} assigned you 1 training note` : `${actor} assigned you ${notes} training notes`,
     paymentFailed: (day: string) => `Payment failed. Access continues until ${day}`,
     planEnding: (day: string) => `The plan ends on ${day}`,
-    complianceReturned: (actor: string) => `${actor} returned a note`,
+    complianceReturned: (actor: string, reason: string | null) => (reason ? `${actor} returned a note: ${reason}` : `${actor} returned a note`),
     joinRequested: (actor: string) => `${actor} asked to join`,
   },
 } as const;

@@ -17,6 +17,7 @@ import type {
   ReopenedNotes,
   RequestCancelled,
   RequestCreated,
+  ReturnReasonChoice,
   VoidedNotes,
 } from "./types";
 
@@ -66,6 +67,12 @@ export function decideCompliance(
   reason: string | null,
 ): Promise<ComplianceOutcome> {
   return request<ComplianceOutcome>(notePath(noteId, "/compliance"), { body: { decision, reason } });
+}
+
+export function returnToCoder(noteId: string, returnReason: ReturnReasonChoice): Promise<ComplianceOutcome> {
+  return request<ComplianceOutcome>(notePath(noteId, "/compliance"), {
+    body: { decision: "return", reason: null, return_reason: returnReason },
+  });
 }
 
 export function getPayers(): Promise<PayerOption[]> {

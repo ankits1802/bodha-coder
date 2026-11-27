@@ -17,6 +17,7 @@ from app.models import (
     OVERRIDE_NOTE_LENGTH,
     OVERRIDE_REASONS,
     QUEUE_VIEW_NAME_LENGTH,
+    RETURN_REASONS,
     SIGNATURE_SOURCES,
     SIGNER_NAME_LENGTH,
     TOUR_OUTCOMES,
@@ -103,10 +104,16 @@ class FlagBody(Body):
     reason: str = Field(min_length=3, max_length=2000)
 
 
+class ReturnReasonBody(Body):
+    reason: Literal[RETURN_REASONS]
+    note: str | None = Field(default=None, max_length=OVERRIDE_NOTE_LENGTH)
+
+
 class ComplianceBody(Body):
     decision: Literal["confirm", "return", "keep"]
     reason: str | None = Field(default=None, max_length=ACCESS_DETAIL_LENGTH)
     override: OverrideBody | None = None
+    return_reason: ReturnReasonBody | None = None
 
 
 class QuestionBody(Body):

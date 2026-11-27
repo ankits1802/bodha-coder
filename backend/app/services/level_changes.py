@@ -197,7 +197,7 @@ async def _notify_approver(
         return
     await notify(db, note.practice_id, [approver.id], Notice(DISAGREED, provider.name, note_id=note.id))
     practice = await db.get_one(Practice, note.practice_id)
-    link = f"{get_settings().app_url}/notes/{note.id}?tab=history"
+    link = f"{get_settings().app_url}/notes/{note.id}?history=1"
     body = f"{practice.name}: a provider disagreed with a visit level you approved. Open: {link}"
     try:
         await messenger.email(approver.email, subject=f"Visit level disagreement at {practice.name}", body=body)

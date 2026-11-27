@@ -12,6 +12,7 @@ export const DAY_TEXT = {
   topLevels: (share: string) => `${share} at the two highest levels`,
   clonePairs: (count: string, total: number) => (total === 1 ? `${count} cloned pair` : `${count} cloned pairs`),
   otherNotes: "Other notes that day",
+  showOthers: (count: number) => (count === 1 ? "1 other note that day" : `${count} other notes that day`),
   untitled: "Untitled note",
   noVisitCode: "No visit code",
   loading: "Checking the provider's day",

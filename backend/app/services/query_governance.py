@@ -22,6 +22,7 @@ from app.services.review_actions import note_for
 __all__ = [
     "ASKED_STATUSES",
     "ESCALATE_AFTER",
+    "REPEAT_REFUSAL",
     "AddendumExport",
     "addendum_export",
     "escalate_unanswered",
@@ -36,6 +37,7 @@ ASKED_STATUSES = ("sent", "answered", "expired")
 ESCALATE_AFTER = timedelta(hours=48)
 ESCALATION_BATCH = 500
 ESCALATED = "provider requests escalated"
+REPEAT_REFUSAL = "These questions were already sent on {day}; remind the provider instead"
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,23 @@ async def repeat_query_blocked(db: AsyncSession, note: Note, question_keys: Sequ
     wanted = list(dict.fromkeys(question_keys))
     if not wanted:
         return []
+    blocked: set[str] = set()
+    for _, keys in await _blocking_requests(db, note):
+        blocked |= keys
+    return [key for key in wanted if key in blocked]
+
+
+async def refuse_repeat_queries(db: AsyncSession, note: Note, question_keys: Sequence[str]) -> None:
+    wanted = set(question_keys)
+    sent = [request.created_at for request, keys in await _blocking_requests(db, note) if keys & wanted]
+    if not sent:
+        return
+    practice = await db.get_one(Practice, note.practice_id)
+    day = max(sent).astimezone(zone_named(practice.time_zone)).date()
+    raise Conflict(REPEAT_REFUSAL.format(day=f"{day.day} {day:%b %Y}"))
+
+
+async def _blocking_requests(db: AsyncSession, note: Note) -> list[tuple[AddendumRequest, set[str]]]:
     earlier = (
         await db.scalars(
             select(AddendumRequest)
@@ -58,18 +77,11 @@ async def repeat_query_blocked(db: AsyncSession, note: Note, question_keys: Sequ
     texts = (
         await db.execute(select(NoteText.created_at, NoteText.addendum_request_id).where(NoteText.note_id == note.id))
     ).all()
-    blocked: set[str] = set()
-    for request in earlier:
-        documented = any(at > request.created_at and source != request.id for at, source in texts)
-        if not documented:
-            blocked |= {str(question["key"]) for question in request.questions}
-    return [key for key in wanted if key in blocked]
-
-
-async def refuse_repeat_queries(db: AsyncSession, note: Note, question_keys: Sequence[str]) -> None:
-    repeated = await repeat_query_blocked(db, note, question_keys)
-    if repeated:
-        raise Conflict("already asked with no new documentation in the note since: " + ", ".join(repeated))
+    return [
+        (request, {str(question["key"]) for question in request.questions})
+        for request in earlier
+        if not any(at > request.created_at and source != request.id for at, source in texts)
+    ]
 
 
 async def escalate_unanswered(db: AsyncSession, messenger: Messenger, now: datetime) -> int:

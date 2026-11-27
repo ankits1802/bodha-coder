@@ -62,6 +62,7 @@ async def refresh_placement(db: AsyncSession, note: Note) -> None:
         cleared=note.compliance_cleared_by is not None,
         awaiting_provider=await awaiting_provider(db, note.id),
         billed_diagnoses=has_diagnosis_codes(billed),
+        returned=note.returned_at is not None,
     )
     note.lane, note.lane_reason, note.headline = placement.lane, placement.reason, placement.headline
     derived = claim(billed, findings, choices_for(findings, await current_decisions(db, note.id)))

@@ -1,4 +1,13 @@
-import type { AttestationAnswer, Choice, ExportFormat, NoteChangeField, NoteStatus, OverrideReason, RequestPurpose } from "@/lib/api/types";
+import type {
+  AttestationAnswer,
+  Choice,
+  ComplianceDecision,
+  ExportFormat,
+  NoteChangeField,
+  NoteStatus,
+  OverrideReason,
+  RequestPurpose,
+} from "@/lib/api/types";
 
 export const REVIEW_TEXT = {
   pageTitle: "Note review",
@@ -37,14 +46,25 @@ export const REVIEW_TEXT = {
   noText: "The note text is not available yet.",
   legend: { ok: "Supported", warn: "Needs detail", bad: "Not supported" },
   reviewLabel: "Coding review",
-  tabs: {
-    codes: "Codes",
+  filterLabel: "Show findings",
+  filters: { all: "All", changes: "Changes", questions: "Questions", risk: "Risk", guidance: "Guidance" },
+  groups: {
+    blocking: "Before you approve",
+    changes: "Changes",
     questions: "Questions",
-    wording: "Suggested wording",
-    audit: "Audit risk",
     risk: "Risk adjustment",
-    history: "History",
+    guidance: "Audit and wording",
   },
+  nothingHere: "Nothing here.",
+  supported: {
+    toggle: (count: number) => `${count} supported`,
+    accept: "Accept all supported",
+    accepted: "Accepted",
+  },
+  historyOpen: "History",
+  historyClose: "Close",
+  decideAgain: "Decide again",
+  amountChange: (amount: string) => `${amount} est.`,
   choices: {
     accept: "Accept",
     keep: "Keep",
@@ -75,7 +95,6 @@ export const REVIEW_TEXT = {
   nextLevel: "Next level needs",
   alternative: (code: string) => `Also possible: ${code}`,
   options: "Options",
-  noCodeFindings: "No code findings.",
   billed: {
     label: "Billed codes",
     save: "Save codes",
@@ -118,7 +137,6 @@ export const REVIEW_TEXT = {
     showRemoved: "Show removed",
   },
   questions: {
-    none: "No questions for the provider.",
     ask: (count: number) => (count === 1 ? "Ask 1 question" : `Ask ${count} questions`),
     requests: "Sent to the provider",
     remind: "Remind",
@@ -131,20 +149,15 @@ export const REVIEW_TEXT = {
     other: "Other",
   },
   wording: {
-    none: "No suggested wording.",
     current: "In the note",
     suggested: "Suggested wording",
-    recommendation: "Recommendation",
     guidance: "Guidance",
     linking: "Link these in the assessment",
     priority: (value: string) => `${value} priority`,
   },
   audit: {
-    none: "No audit findings.",
     score: "Compliance score",
     summary: "Summary",
-    risks: "Risks",
-    findings: "Findings",
     required: "Required elements",
     present: "Present",
     missing: "Missing",
@@ -160,13 +173,11 @@ export const REVIEW_TEXT = {
     warning: "Warning",
   },
   risk: {
-    none: "No risk adjustment findings.",
     scores: "HCC scores",
     scoreBilled: "Billed",
     scoreDocumented: "Documented",
     categories: "Categories",
     noCategories: "No risk-adjusting conditions.",
-    suspected: "Suspected conditions",
     unavailable: (year: string | null) => (year ? `No CMS-HCC model for payment year ${year}` : "No CMS-HCC model"),
     model: (model: string, year: string) => `${model} · payment year ${year}`,
     ageFromNote: "Age from note",
@@ -207,6 +218,8 @@ export const REVIEW_TEXT = {
     from: (address: string) => `From ${address}`,
     noteThread: "Note",
     changes: "Changes",
+    returns: "Returned to the coder",
+    flagWas: (reason: string) => `Flag: ${reason}`,
     field: {
       status: "Status",
       flag: "Flag",
@@ -246,6 +259,12 @@ export const REVIEW_TEXT = {
     reopen: "Reopen",
   },
   flagged: (reason: string) => `Flagged: ${reason}`,
+  returned: (reason: string, by: string | null) => (by ? `Returned by ${by}: ${reason}` : `Returned: ${reason}`),
+  complianceDone: {
+    confirm: "Confirmed and approved",
+    return: "Returned to the coder",
+    keep: "Kept as billed and approved",
+  } satisfies Record<ComplianceDecision, string>,
   tools: {
     label: "Note",
     visitType: "Visit type",

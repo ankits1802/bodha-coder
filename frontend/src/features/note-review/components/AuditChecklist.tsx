@@ -1,7 +1,7 @@
 import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import type { AnalysisView, CodingComplianceCheck } from "@/lib/api/types";
 import { REVIEW_TEXT } from "../strings";
-import { TabSection } from "./TabSection";
+import { ReviewSection } from "./ReviewSection";
 
 const CHECK_TONES: Record<CodingComplianceCheck["status"], StatusTone> = { Pass: "ok", Fail: "bad", Warning: "warn" };
 
@@ -30,7 +30,7 @@ export function AuditChecklist({ audit }: { audit: AnalysisView["audit"] }) {
   return (
     <>
       {audit.requiredElements?.length ? (
-        <TabSection title={words.required}>
+        <ReviewSection title={words.required}>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {audit.requiredElements.map((item) => (
               <CheckLine
@@ -42,10 +42,10 @@ export function AuditChecklist({ audit }: { audit: AnalysisView["audit"] }) {
               />
             ))}
           </ul>
-        </TabSection>
+        </ReviewSection>
       ) : null}
       {audit.codingCompliance?.length ? (
-        <TabSection title={words.checks}>
+        <ReviewSection title={words.checks}>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {audit.codingCompliance.map((item) => (
               <CheckLine
@@ -57,10 +57,10 @@ export function AuditChecklist({ audit }: { audit: AnalysisView["audit"] }) {
               />
             ))}
           </ul>
-        </TabSection>
+        </ReviewSection>
       ) : null}
       {audit.cmsCDICompliance?.length ? (
-        <TabSection title={words.cms}>
+        <ReviewSection title={words.cms}>
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {audit.cmsCDICompliance.map((item) => (
               <CheckLine
@@ -72,7 +72,7 @@ export function AuditChecklist({ audit }: { audit: AnalysisView["audit"] }) {
               />
             ))}
           </ul>
-        </TabSection>
+        </ReviewSection>
       ) : null}
     </>
   );

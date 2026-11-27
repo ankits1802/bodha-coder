@@ -1,6 +1,7 @@
 import { ASSIGNABLE_STATUSES, canVoidNote } from "@/components/shared/noteStatus";
+import { urlFor } from "@/lib/api/client";
 import type { Lane, LaneReason, QueueRow, User } from "@/lib/api/types";
-import { LANE_ORDER } from "@/lib/labels";
+import { notePath } from "@/lib/paths";
 import { canDo } from "@/lib/roles";
 
 export type Member = Pick<User, "id" | "role">;
@@ -13,24 +14,6 @@ export interface BulkAbilities {
   void: boolean;
 }
 
-const LANE_REASONS: Record<LaneReason, true> = {
-  flagged: true,
-  levels_too_high: true,
-  audit_risk: true,
-  waiting_on_provider: true,
-  code_changes: true,
-  questions: true,
-  matches: true,
-};
-
-export function isLane(value: string | null): value is Lane {
-  return value !== null && (LANE_ORDER as readonly string[]).includes(value);
-}
-
-export function isLaneReason(value: string | null): value is LaneReason {
-  return value !== null && Object.hasOwn(LANE_REASONS, value);
-}
-
 export function rowToToggle(rows: QueueRow[], member: Member, selectedIds: string[], focusedId: string | null): string | null {
   const focused = rows.find((row) => row.id === focusedId && isSelectable(row, member));
   if (focused) return focused.id;
@@ -38,7 +21,7 @@ export function rowToToggle(rows: QueueRow[], member: Member, selectedIds: strin
 }
 
 export function isApprovable(row: QueueRow): boolean {
-  return row.lane === "approve" && row.status === "ready";
+  return row.lane === "approve" && row.status === "ready" && row.lane_reason !== "returned";
 }
 
 export function isAwaitingProvider(row: QueueRow): boolean {
@@ -49,9 +32,8 @@ export function canOpen(row: QueueRow): boolean {
   return row.status === "ready" || row.status === "failed";
 }
 
-export function noteHref(noteId: string, lane: Lane | undefined): string {
-  const path = `/notes/${encodeURIComponent(noteId)}`;
-  return lane ? `${path}?lane=${lane}` : path;
+export function noteHref(noteId: string, lane: Lane | undefined, reason?: LaneReason): string {
+  return urlFor(notePath(noteId), { lane, reason });
 }
 
 export function patientName(row: QueueRow): string {

@@ -14,9 +14,9 @@ from app.services.claim_snapshots import approver_of, write_snapshot
 from app.services.code_sets import next_revision
 from app.services.findings import Finding
 from app.services.level_changes import ask_level_confirmation
-from app.services.note_change_history import record_note_change
+from app.services.note_returns import ReturnReason, return_to_coder, undecided_items
 from app.services.override_reasons import OTHER_REASON, OverrideReason, Reasoned, checked_reason, missing_reasons
-from app.services.placement import current_findings, refresh_placement
+from app.services.placement import current_findings
 from app.services.review_actions import current_claim, new_decision, note_for, open_note
 from app.services.sealed_records import APPROVAL_EVENT, COMPLIANCE_EVENT
 from app.services.sealing import person_signer, seal_snapshot
@@ -25,6 +25,9 @@ from app.services.signatures import person_signature
 __all__ = ["SIGNED_STATEMENTS", "approve", "approve_many", "compliance_decision", "latest_reasoned"]
 
 MISSING_REASONS = "choose a reason for each choice that departs from Bodha before approving"
+UNDECIDED_RETURN = "decide again on what compliance returned before approving"
+RETURNED_ALONE = "a note returned by compliance is approved on its own"
+NO_RETURN_REASON = "choose why the note goes back to the coder"
 SIGNED_STATEMENTS = {
     "approved": "I approve this claim as coded from the documentation.",
     "compliance confirm": "I confirm this claim after compliance review.",
@@ -51,7 +54,7 @@ async def approve(
         raise Conflict("there are no codes to bill")
     final_set = await _final_set(db, actor, note, codes, reason)
     note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
-    note.approved_by, note.approved_at = actor.user.id, utcnow()
+    note.approved_by, note.approved_at, note.returned_at = actor.user.id, utcnow(), None
     snapshot = await write_snapshot(db, note, final_set, approver_of(actor), findings)
     signed_by = person_signer(actor, signature)
     await seal_snapshot(db, signer, signed_by, snapshot, event=event, statement=SIGNED_STATEMENTS[reason])
@@ -69,6 +72,8 @@ async def approve_many(
     approved: list[str] = []
     for note_id in note_ids:
         note = await note_for(db, actor, note_id)
+        if note.returned_at is not None:
+            raise Conflict(RETURNED_ALONE)
         if note.lane != "approve":
             raise Conflict("only notes whose codes match the note can be approved together")
         await approve(db, messenger, signer, actor, note_id)
@@ -86,6 +91,7 @@ async def compliance_decision(
     decision: str,
     reason: str | None,
     override: OverrideReason | None = None,
+    returned: ReturnReason | None = None,
 ) -> Note:
     note = await open_note(db, actor, note_id)
     if note.lane != "compliance":
@@ -93,10 +99,9 @@ async def compliance_decision(
     if note.flagged_by == actor.user.id:
         raise Forbidden("a note can't be cleared by the person who flagged it")
     if decision == "return":
-        record_note_change(db, actor, note, "flag", old=note.flag_reason, new=None, reason=reason)
-        note.flag_reason, note.compliance_cleared_by = None, actor.user.id
-        await refresh_placement(db, note)
-        record_access(db, actor, "returned to coder", note_id=note.id, detail=reason)
+        if returned is None:
+            raise Invalid(NO_RETURN_REASON)
+        await return_to_coder(db, actor, note, returned)
         await db.commit()
         return note
     if decision == "keep":
@@ -129,6 +134,8 @@ async def _refuse_unready(db: AsyncSession, note: Note, findings: list[Finding])
     missing = missing_reasons(findings, await latest_reasoned(db, note.id))
     if missing:
         raise Conflict(f"{MISSING_REASONS}: {', '.join(missing)}")
+    if await undecided_items(db, note, findings):
+        raise Conflict(UNDECIDED_RETURN)
 
 
 async def _final_set(db: AsyncSession, actor: Actor, note: Note, codes: tuple[Code, ...], reason: str) -> CodeSet:

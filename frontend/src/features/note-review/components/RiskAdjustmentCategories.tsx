@@ -2,7 +2,7 @@ import { CodeList } from "@/components/shared/CodeList";
 import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import { formatRiskScore, type RiskCategory, type RiskStatus, type RiskSummary } from "../findings";
 import { REVIEW_TEXT } from "../strings";
-import { TabSection } from "./TabSection";
+import { ReviewSection } from "./ReviewSection";
 
 const STATUS_TONES: Record<RiskStatus, StatusTone> = { captured: "ok", missed: "warn", unsupported: "bad" };
 
@@ -20,13 +20,13 @@ export function RiskScores({ summary }: { summary: RiskSummary }) {
   const model = summary.model && summary.paymentYear ? words.model(summary.model, summary.paymentYear) : null;
   const facts = [model, summary.segment, summary.ageFromNote ? words.ageFromNote : null].filter(Boolean);
   return (
-    <TabSection title={words.scores}>
+    <ReviewSection title={words.scores}>
       <dl className="m-0 flex flex-wrap gap-y-3">
         <Score label={words.scoreBilled} value={summary.scoreBilled} />
         <Score label={words.scoreDocumented} value={summary.scoreDocumented} />
       </dl>
       {facts.length > 0 ? <p className="m-0 text-footnote text-secondary">{facts.join(" · ")}</p> : null}
-    </TabSection>
+    </ReviewSection>
   );
 }
 
@@ -52,13 +52,13 @@ function CategoryRow({ category }: { category: RiskCategory }) {
 export function RiskCategories({ categories }: { categories: RiskCategory[] }) {
   const words = REVIEW_TEXT.risk;
   return (
-    <TabSection title={words.categories}>
+    <ReviewSection title={words.categories}>
       {categories.length === 0 ? <p className="m-0 text-secondary">{words.noCategories}</p> : null}
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {categories.map((category) => (
           <CategoryRow key={category.hcc} category={category} />
         ))}
       </ul>
-    </TabSection>
+    </ReviewSection>
   );
 }

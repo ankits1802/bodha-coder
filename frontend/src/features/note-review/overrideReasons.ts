@@ -1,3 +1,12 @@
+import {
+  REASON_NOTE_MAX,
+  emptyReason,
+  reasonAtKey,
+  reasonProblem,
+  toReasonChoice,
+  type ReasonDraft,
+  type ReasonProblem,
+} from "@/components/shared/reason-picker/reasonDraft";
 import type { Choice, Finding, OverrideChoice, OverrideReason } from "@/lib/api/types";
 
 export const OVERRIDE_REASONS: readonly OverrideReason[] = [
@@ -9,35 +18,24 @@ export const OVERRIDE_REASONS: readonly OverrideReason[] = [
   "other",
 ];
 
-export const OVERRIDE_NOTE_MAX = 500;
+export const OVERRIDE_NOTE_MAX = REASON_NOTE_MAX;
 
-export interface OverrideDraft {
-  reason: OverrideReason | null;
-  note: string;
-}
+export type OverrideDraft = ReasonDraft<OverrideReason>;
 
-export type OverrideProblem = "choose" | "note" | "long";
+export type OverrideProblem = ReasonProblem;
 
-export const EMPTY_OVERRIDE: OverrideDraft = { reason: null, note: "" };
+export const EMPTY_OVERRIDE: OverrideDraft = emptyReason<OverrideReason>();
 
 export function reasonForKey(key: string): OverrideReason | null {
-  const position = Number.parseInt(key, 10);
-  if (!/^[1-9]$/.test(key) || position > OVERRIDE_REASONS.length) return null;
-  return OVERRIDE_REASONS[position - 1] ?? null;
+  return reasonAtKey(OVERRIDE_REASONS, key);
 }
 
 export function overrideProblem(draft: OverrideDraft): OverrideProblem | null {
-  if (draft.reason === null) return "choose";
-  const note = draft.note.trim();
-  if (note.length > OVERRIDE_NOTE_MAX) return "long";
-  if (draft.reason === "other" && note === "") return "note";
-  return null;
+  return reasonProblem(draft);
 }
 
 export function toOverride(draft: OverrideDraft): OverrideChoice | null {
-  if (draft.reason === null || overrideProblem(draft) !== null) return null;
-  const note = draft.note.trim();
-  return { reason: draft.reason, note: note === "" ? null : note };
+  return toReasonChoice(draft);
 }
 
 export function departsWith(finding: Finding, choice: Choice): boolean {

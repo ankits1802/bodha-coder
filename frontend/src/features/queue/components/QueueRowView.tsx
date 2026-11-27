@@ -4,7 +4,7 @@ import { noteStatus } from "@/components/shared/noteStatus";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { TextButton } from "@/components/ui/TextButton";
 import { Td, Tr } from "@/components/ui/Table";
-import type { Lane, QueueRow } from "@/lib/api/types";
+import type { Lane, LaneReason, QueueRow } from "@/lib/api/types";
 import { formatDueIn, formatMoneyChange } from "@/lib/format";
 import { NOTE_ROW_ATTRIBUTE, canOpen, isAwaitingProvider, isSelectable, noteHref, patientName, type Member } from "../queueRules";
 import { QUEUE_TEXT } from "../strings";
@@ -12,6 +12,7 @@ import { AssigneeChip } from "./AssigneeChip";
 
 export interface RowControls {
   lane: Lane | undefined;
+  reason: LaneReason | undefined;
   member: Member;
   selectable: boolean;
   canRemind: boolean;
@@ -81,7 +82,7 @@ export function QueueRowView({ row, selected, controls }: { row: QueueRow; selec
       ) : null}
       <Td>
         {canOpen(row) ? (
-          <Link href={noteHref(row.id, controls.lane)} className="font-medium hover:underline">
+          <Link href={noteHref(row.id, controls.lane, controls.reason)} className="font-medium hover:underline">
             {patientName(row)}
           </Link>
         ) : (

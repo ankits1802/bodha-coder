@@ -96,7 +96,7 @@ describe("TeamScreen", () => {
     await user.click(within(dialog).getByRole("button", { name: "Send 2 invites" }));
     expect(inviteMember).toHaveBeenNthCalledWith(1, { name: "Lee Park", email: "lee@lakeside.example.com", role: "coder" });
     expect(await screen.findByText("1 invite sent")).toBeInTheDocument();
-    expect(within(dialog).getByText("someone already uses that email")).toBeInTheDocument();
+    expect(within(dialog).getByText(/someone already uses that email/i)).toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: "Name, person 1" })).toHaveValue("Ana Ruiz");
   });
 

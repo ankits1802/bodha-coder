@@ -1,5 +1,15 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
-import type { Choice, CodeJson, Finding, FindingAction, FindingKind, MdmElements, NoteHistory, NoteText } from "@/lib/api/types";
+import type {
+  AddendumRequestView,
+  Choice,
+  CodeJson,
+  Finding,
+  FindingAction,
+  FindingKind,
+  MdmElements,
+  NoteHistory,
+  NoteText,
+} from "@/lib/api/types";
 import { FORMAT_WORDS } from "@/lib/format";
 import { containsQuote, type HighlightTone, type Mark } from "@/lib/highlight";
 import { REVIEW_TEXT } from "./strings";
@@ -8,7 +18,8 @@ export const CODE_KINDS: readonly FindingKind[] = ["em", "modifier", "code_revie
 const QUESTION_KINDS: readonly FindingKind[] = ["cdi_query", "diagnosis"];
 const CHANGE_KINDS: readonly FindingKind[] = ["em", "diagnosis", "code_review", "modifier"];
 const CHANGE_ACTIONS: readonly FindingAction[] = ["lower", "raise", "replace", "add", "remove", "review"];
-const SEVERITY_ORDER = ["Critical", "High", "Medium", "Low"];
+export const SEVERITY_ORDER = ["Critical", "High", "Medium", "Low"];
+export const COMPLIANCE_SEVERITY = "Critical";
 
 const SUPPORTING: readonly FindingAction[] = ["keep", "add", "lower", "raise", "replace"];
 const NEEDS_DETAIL: readonly FindingAction[] = ["ask", "review"];
@@ -138,6 +149,15 @@ export function measureStatus(finding: Finding): MeasureStatus | null {
 
 export function openQuestions(findings: Finding[]): Finding[] {
   return findings.filter((item) => QUESTION_KINDS.includes(item.kind) && item.action === "ask" && item.choice === "ask");
+}
+
+export function askableQuestions(findings: Finding[], requests: AddendumRequestView[]): Finding[] {
+  const sent = new Set(requests.filter((request) => request.status === "sent").flatMap((request) => request.questions.map((question) => question.key)));
+  return openQuestions(findings).filter((item) => !sent.has(item.key));
+}
+
+export function isQuestion(finding: Finding): boolean {
+  return finding.kind === "cdi_query" || (finding.kind === "diagnosis" && finding.action === "ask");
 }
 
 export function codeChangeCount(findings: Finding[]): number {

@@ -9,9 +9,10 @@ from sqlalchemy import select
 
 from app.core.db import SessionFactory
 from app.core.errors import Conflict
-from app.models import AccessLog, Activity, AddendumRequest, Note, NoteText, User, utcnow
+from app.models import AccessLog, Activity, AddendumRequest, Note, NoteText, Practice, User, utcnow
 from app.services.query_governance import escalate_unanswered, refuse_repeat_queries, repeat_query_blocked
 from app.services.query_metrics import AskedRequest, metrics_for
+from tests.api.inbox_helpers import QUESTION, ask_provider
 from tests.builders import reviewed_note
 
 ADMIN = "admin@lakeside.example.com"
@@ -88,10 +89,37 @@ async def test_a_question_asked_before_is_blocked_until_the_note_has_new_text(ha
     async with SessionFactory() as db:
         with pytest.raises(Conflict) as refused:
             await refuse_repeat_queries(db, await db.get_one(Note, note_id), ["dx:N18.30"])
-    assert refused.value.message.endswith("since: dx:N18.30")
+    assert refused.value.message.startswith("These questions were already sent on ")
+    assert "dx:N18.30" not in refused.value.message
 
     await _add_text(note_id, 3, source="document")
     assert await _blocked(note_id, ["dx:N18.30"]) == []
+
+
+async def test_a_repeat_question_is_refused_with_the_day_it_was_sent_in_the_practice_calendar(harness, icd_catalog):
+    _, note_id = await reviewed_note(harness, icd_catalog)
+    await _add_request(note_id, keys=("dx:N18.30",), sent_at=datetime(2099, 11, 28, 3, 0, tzinfo=UTC))
+    await _add_request(note_id, keys=("em",), sent_at=datetime(2099, 12, 5, 3, 0, tzinfo=UTC))
+    async with SessionFactory() as db:
+        note = await db.get_one(Note, note_id)
+        assert (await db.get_one(Practice, note.practice_id)).time_zone == "America/Chicago"
+        with pytest.raises(Conflict) as refused:
+            await refuse_repeat_queries(db, note, ["dx:N18.30"])
+    assert refused.value.message == "These questions were already sent on 27 Nov 2099; remind the provider instead"
+
+
+async def test_asking_the_same_questions_again_names_no_internal_id(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    await ask_provider(harness, practice.admin, note_id)
+
+    again = await harness.client.post(
+        f"/api/notes/{note_id}/ask", headers=practice.admin, json={"questions": [QUESTION], "channel": "email"}
+    )
+
+    assert again.status_code == 409
+    message = again.json()["message"]
+    assert message.startswith("These questions were already sent on ")
+    assert message.endswith("; remind the provider instead") and "dx:" not in message
 
 
 async def test_query_metrics_per_provider_over_http(harness, icd_catalog):

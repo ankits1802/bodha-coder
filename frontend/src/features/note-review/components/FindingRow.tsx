@@ -3,6 +3,7 @@ import { CodeList } from "@/components/shared/CodeList";
 import { CodeChange } from "@/components/ui/CodeChange";
 import { StatusDot } from "@/components/ui/StatusDot";
 import type { Finding } from "@/lib/api/types";
+import { formatMoneyChange } from "@/lib/format";
 import { codeAfterLabel, findingStatus, quoteStatus, stringList, type QuoteCheck } from "../findings";
 import { REVIEW_TEXT } from "../strings";
 import { EmDetails } from "./EmDetails";
@@ -39,6 +40,10 @@ export function FindingRow({ finding, decision, quote = null, current = false, c
             <span className="font-medium">{finding.title}</span>
             <StatusDot tone={status.tone}>{status.label}</StatusDot>
             {quoted ? <StatusDot tone={quoted.tone}>{quoted.label}</StatusDot> : null}
+            {finding.decide_again ? <StatusDot tone="warn">{REVIEW_TEXT.decideAgain}</StatusDot> : null}
+            {finding.amount_change ? (
+              <span className="text-footnote text-secondary tabular-nums">{REVIEW_TEXT.amountChange(formatMoneyChange(finding.amount_change))}</span>
+            ) : null}
           </span>
           {finding.reasoning ? <span className="text-callout text-secondary">{finding.reasoning}</span> : null}
         </div>

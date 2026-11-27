@@ -1,28 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Finding } from "@/lib/api/types";
 import { highlightTone, marksFor, openQuestions } from "../findings";
-
-function finding(overrides: Partial<Finding>): Finding {
-  return {
-    kind: "diagnosis",
-    key: "dx:I10",
-    action: "keep",
-    title: "Hypertension",
-    reasoning: "",
-    code_before: "I10",
-    code_after: null,
-    evidence: [],
-    severity: null,
-    detail: {},
-    default_choice: "keep",
-    choice: "keep",
-    allowed: ["keep"],
-    departing_choices: [],
-    override: null,
-    override_needed: false,
-    ...overrides,
-  };
-}
+import { finding } from "./fixtures";
 
 describe("highlightTone", () => {
   it("marks supported and accepted changes green", () => {

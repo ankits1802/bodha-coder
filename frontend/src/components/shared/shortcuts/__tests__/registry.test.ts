@@ -12,25 +12,38 @@ import {
 } from "../registry";
 
 function press(key: string, extra: Partial<KeyPress> = {}): KeyPress {
-  return { key, ctrlKey: false, metaKey: false, altKey: false, ...extra };
+  return { key, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...extra };
 }
 
 describe("shortcut registry", () => {
-  it("tells Ctrl or Command K, which searches, from K alone, which goes to the previous note", () => {
+  it("tells Ctrl or Command K, which searches, from K, which moves between findings, and Shift K, which goes to the previous note", () => {
     expect(comboFor(press("k", { ctrlKey: true }), "global")?.shortcut.id).toBe("search");
     expect(comboFor(press("k", { metaKey: true }), "global")?.shortcut.id).toBe("search");
     expect(comboFor(press("/"), "global")?.shortcut.id).toBe("search");
-    expect(comboFor(press("?"), "global")?.shortcut.id).toBe("shortcuts");
+    expect(comboFor(press("?", { shiftKey: true }), "global")?.shortcut.id).toBe("shortcuts");
     expect(comboFor(press("k"), "global")).toBeNull();
-    expect(comboFor(press("K"), "review")?.shortcut.id).toBe("previousNote");
+    expect(comboFor(press("k"), "review")?.shortcut.id).toBe("previousFinding");
+    expect(comboFor(press("K", { shiftKey: true }), "review")?.shortcut.id).toBe("previousNote");
+    expect(comboFor(press("J", { shiftKey: true }), "review")?.shortcut.id).toBe("nextNote");
     expect(comboFor(press("k", { ctrlKey: true }), "review")).toBeNull();
     expect(comboFor(press("j", { altKey: true }), "review")).toBeNull();
+  });
+
+  it("moves between findings with J and K or the arrow keys, and accepts all supported with Shift Y", () => {
+    expect(comboFor(press("j"), "review")?.shortcut.id).toBe("nextFinding");
+    expect(comboFor(press("ArrowDown"), "review")?.shortcut.id).toBe("nextFinding");
+    expect(comboFor(press("ArrowUp"), "review")?.shortcut.id).toBe("previousFinding");
+    expect(comboFor(press("ArrowDown", { shiftKey: true }), "review")).toBeNull();
+    expect(comboFor(press("y"), "review")?.shortcut.id).toBe("acceptFinding");
+    expect(comboFor(press("Y", { shiftKey: true }), "review")?.shortcut.id).toBe("acceptSupported");
+    expect(comboFor(press("e"), "review")?.shortcut.id).toBe("editBilled");
+    expect(comboFor(press("E", { shiftKey: true }), "review")).toBeNull();
   });
 
   it("gives each key one meaning on every screen", () => {
     for (const scope of SCOPE_ORDER) {
       const keys = SHORTCUTS.filter((shortcut) => shortcut.scope === scope || shortcut.scope === "global").flatMap((shortcut) =>
-        shortcut.combos.map((combo) => `${combo.withModifier ? "mod+" : ""}${combo.key}`),
+        shortcut.combos.map((combo) => `${combo.withModifier ? "mod+" : ""}${combo.withShift ? "shift+" : ""}${combo.key}`),
       );
       expect(new Set(keys).size).toBe(keys.length);
     }
@@ -48,16 +61,24 @@ describe("shortcut registry", () => {
     expect(shortcutsIn("review", "coder").map((shortcut) => shortcut.id)).toEqual([
       "nextNote",
       "previousNote",
+      "nextFinding",
+      "previousFinding",
       "approve",
       "acceptFinding",
       "rejectFinding",
+      "acceptSupported",
+      "editBilled",
       "askProvider",
     ]);
     expect(shortcutsIn("review", "cdi").map((shortcut) => shortcut.id)).toEqual([
       "nextNote",
       "previousNote",
+      "nextFinding",
+      "previousFinding",
       "acceptFinding",
       "rejectFinding",
+      "acceptSupported",
+      "editBilled",
       "askProvider",
     ]);
     expect(shortcutsIn("review", "biller").map((shortcut) => shortcut.id)).toEqual(["nextNote", "previousNote"]);
@@ -72,11 +93,14 @@ describe("shortcut registry", () => {
     expect(comboKeys({ key: "k", withModifier: true }, true)).toEqual(["⌘", "K"]);
     expect(comboKeys({ key: "k", withModifier: true }, false)).toEqual(["Ctrl", "K"]);
     expect(comboKeys({ key: "/" }, false)).toEqual(["/"]);
+    expect(comboKeys({ key: "y", withShift: true }, true)).toEqual(["Shift", "Y"]);
+    expect(comboKeys({ key: "arrowdown" }, false)).toEqual(["↓"]);
   });
 
   it("titles a control with its label and first key, as the overlay lists them", () => {
-    expect(shortcutTitle("previousNote", false)).toBe("Previous note (K)");
-    expect(shortcutTitle("nextNote", true)).toBe("Next note (J)");
+    expect(shortcutTitle("previousNote", false)).toBe("Previous note (Shift+K)");
+    expect(shortcutTitle("nextNote", true)).toBe("Next note (Shift+J)");
+    expect(shortcutTitle("acceptSupported", false)).toBe("Accept all supported (Shift+Y)");
     expect(shortcutKeys("approve", false)).toBe("A");
     expect(shortcutKeys("askProvider", true)).toBe("Q");
     expect(comboFor(press("p"), "review")?.shortcut.id).toBe("askProvider");

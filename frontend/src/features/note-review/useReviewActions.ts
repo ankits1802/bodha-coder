@@ -17,7 +17,7 @@ import { openDocument } from "@/lib/openDocument";
 
 interface ReviewCallbacks {
   approved: () => void;
-  moveOn: () => void;
+  complianceDone: (decision: ComplianceDecision) => void;
   changed: () => void;
 }
 
@@ -47,9 +47,7 @@ export function useReviewActions(noteId: string, callbacks: ReviewCallbacks) {
     },
     decideCompliance: async (decision: ComplianceDecision, reason: string | null) => {
       const outcome = await compliance.run(decision, reason);
-      if (!outcome.ok) return outcome;
-      if (outcome.value.status === "approved") callbacks.moveOn();
-      else callbacks.changed();
+      if (outcome.ok) callbacks.complianceDone(decision);
       return outcome;
     },
     retry: async () => {

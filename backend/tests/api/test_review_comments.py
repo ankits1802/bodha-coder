@@ -44,7 +44,7 @@ async def test_a_mention_emails_a_link_and_the_practice_name_only(harness, icd_c
     )
     [(to, message)] = harness.messenger.sent[sent_before:]
     assert to == "cora@lakeside.example.com"
-    assert message.startswith("Lakeside: you were mentioned") and f"/notes/{note_id}?tab=history" in message
+    assert message.startswith("Lakeside: you were mentioned") and f"/notes/{note_id}?history=1" in message
     assert "Reyes" not in message and "level" not in message
 
 

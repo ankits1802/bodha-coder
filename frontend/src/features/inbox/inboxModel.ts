@@ -1,6 +1,7 @@
 import type { InboxEntry, InboxKind } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
-import { TEAM_PATH } from "@/lib/paths";
+import { RETURN_REASON_LABELS, isReturnReason } from "@/lib/labels";
+import { TEAM_PATH, notePath, noteHistoryPath } from "@/lib/paths";
 import { PLAN_PATH } from "@/lib/roles";
 import { INBOX_TEXT } from "./strings";
 
@@ -15,7 +16,7 @@ const SENTENCES: Record<InboxKind, (entry: InboxEntry) => string> = {
   training_assigned: (entry) => words.trainingAssigned(entry.actor_name, entry.payload.notes ?? 0),
   payment_failed: (entry) => words.paymentFailed(formatCalendarDay(entry.payload.access_until ?? null, "year")),
   plan_ending: (entry) => words.planEnding(formatCalendarDay(entry.payload.ends_on ?? null, "year")),
-  compliance_returned: (entry) => words.complianceReturned(entry.actor_name),
+  compliance_returned: (entry) => words.complianceReturned(entry.actor_name, returnLabel(entry)),
   join_requested: (entry) => words.joinRequested(entry.actor_name),
 };
 
@@ -26,7 +27,12 @@ const FIXED_TARGETS: Partial<Record<InboxKind, string>> = {
   join_requested: TEAM_PATH,
 };
 
-const NOTE_TABS: Partial<Record<InboxKind, string>> = { mentioned: "history" };
+const HISTORY_KINDS: readonly InboxKind[] = ["mentioned"];
+
+function returnLabel(entry: InboxEntry): string | null {
+  const reason = entry.payload.reason;
+  return isReturnReason(reason) ? RETURN_REASON_LABELS[reason] : null;
+}
 
 export function inboxSentence(entry: InboxEntry): string {
   return SENTENCES[entry.kind](entry);
@@ -36,9 +42,7 @@ export function inboxTarget(entry: InboxEntry): string | null {
   const fixed = FIXED_TARGETS[entry.kind];
   if (fixed) return fixed;
   if (!entry.note_id) return null;
-  const path = `/notes/${encodeURIComponent(entry.note_id)}`;
-  const tab = NOTE_TABS[entry.kind];
-  return tab ? `${path}?tab=${tab}` : path;
+  return HISTORY_KINDS.includes(entry.kind) ? noteHistoryPath(entry.note_id) : notePath(entry.note_id);
 }
 
 export function inboxMeta(entry: InboxEntry): string | null {

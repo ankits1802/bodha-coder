@@ -10,7 +10,13 @@ from app.services.plan_notices import notify_plans_ending
 from app.services.reminders import expire_requests
 from tests.api.billing_helpers import configure_prices, practice_on_plan, send_event, stripe_state
 from tests.api.inbox_helpers import CODER_EMAIL, ask_provider, entries, inbox_of, stored_items
-from tests.api.review_helpers import approve, keep_i10_with_reason, provider_session, turn_on_level_confirmation
+from tests.api.review_helpers import (
+    approve,
+    keep_i10_with_reason,
+    provider_session,
+    provider_signature,
+    turn_on_level_confirmation,
+)
 from tests.api.test_quality_samples import audit_setup
 from tests.builders import invite_member, practice_with_provider, reviewed_note, sign_in
 
@@ -26,7 +32,13 @@ async def test_a_signed_addendum_tells_the_person_who_asked_and_nobody_else(harn
     provider = await provider_session(harness, await ask_provider(harness, coder, note_id))
 
     signed = await harness.client.post(
-        "/api/respond", headers=provider, json={"answers": [{"key": "dx:N18.30", "choice": "Yes"}], "confirmed": True}
+        "/api/respond",
+        headers=provider,
+        json={
+            "answers": [{"key": "dx:N18.30", "choice": "Yes"}],
+            "confirmed": True,
+            "signature_id": await provider_signature(harness, provider),
+        },
     )
 
     assert signed.status_code == 200, signed.text
@@ -67,7 +79,12 @@ async def test_a_level_disagreement_tells_the_approver_and_still_emails_them(har
     disagreed = await harness.client.post(
         "/api/respond/level-change",
         headers=provider,
-        json={"answer": "disagree", "comment": "Time supports 99215.", "confirmed": True},
+        json={
+            "answer": "disagree",
+            "comment": "Time supports 99215.",
+            "confirmed": True,
+            "signature_id": await provider_signature(harness, provider),
+        },
     )
 
     assert disagreed.status_code == 200, disagreed.text

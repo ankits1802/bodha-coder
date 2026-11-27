@@ -29,10 +29,10 @@ export function Field({ label, error, hint, optional, className = "", children }
       <label id={fieldLabelId(id)} htmlFor={id} className="text-subhead font-medium text-label">
         {label}
         {optional ? (
-          <span className="ml-1 font-normal text-tertiary">
-            <span className="sr-only">, </span>
-            {optional}
-          </span>
+          <>
+            <span className="sr-only">,</span>{" "}
+            <span className="font-normal text-tertiary">{optional}</span>
+          </>
         ) : null}
       </label>
       {children({ id, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined })}

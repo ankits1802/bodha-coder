@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { NoteDetail, NoteStatus } from "@/lib/api/types";
+import type { AddendumRequestView, NoteDetail, NoteStatus } from "@/lib/api/types";
+import { askableQuestions } from "../findings";
 import { reviewPermissions } from "../permissions";
+import { finding, noteDetail } from "./fixtures";
 
 function detail(status: NoteStatus, read = true): NoteDetail {
   return { note: { status, lane: null }, findings: [], requests: [], analysis: read ? {} : null } as unknown as NoteDetail;
@@ -39,5 +41,17 @@ describe("reviewPermissions", () => {
     expect(reviewPermissions("coder", detail("approved")).editVisitType).toBe(false);
     expect(reviewPermissions("admin", detail("failed")).editVisitType).toBe(true);
     expect(reviewPermissions("admin", detail("voided")).editVisitType).toBe(false);
+  });
+
+  it("hides Ask while a request already sent covers every open question", () => {
+    const stage = finding({ kind: "cdi_query", key: "cdiq-1", action: "ask", code_before: null, choice: "ask", allowed: ["ask", "skip"] });
+    const laterality = finding({ ...stage, key: "cdiq-2" });
+    const sent = { status: "sent", questions: [{ key: "cdiq-1" }] } as AddendumRequestView;
+    const answered = { status: "answered", questions: [{ key: "cdiq-2" }] } as AddendumRequestView;
+    expect(askableQuestions([stage, laterality], [sent]).map((item) => item.key)).toEqual(["cdiq-2"]);
+    expect(reviewPermissions("coder", noteDetail([stage, laterality], { requests: [sent] })).ask).toBe(true);
+    expect(reviewPermissions("coder", noteDetail([stage], { requests: [sent] })).ask).toBe(false);
+    expect(reviewPermissions("coder", noteDetail([stage], { requests: [answered] })).ask).toBe(true);
+    expect(reviewPermissions("coder", noteDetail([stage])).ask).toBe(true);
   });
 });
