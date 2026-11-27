@@ -78,6 +78,16 @@ variable "public_url" {
   type = string
 }
 
+variable "billing" {
+  type = object({
+    stripe_prices      = map(string)
+    paypal_client_id   = string
+    paypal_webhook_id  = string
+    paypal_environment = string
+    paypal_plans       = map(string)
+  })
+}
+
 variable "site_host" {
   type = string
 }

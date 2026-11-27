@@ -35,6 +35,16 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
    `https://www.<domain>/api/auth/<provider>/callback` to each sign-in provider and force a new
    deployment.
 
+## Billing
+
+Follow "Set up Stripe and PayPal" in `docs/DEPLOY.md`, then put the keys in Secrets Manager before
+naming any price, because a task cannot start while a secret it reads is empty:
+`aws secretsmanager put-secret-value --secret-id bodha/staging/<name> --secret-string file://<file>`
+for `stripe-secret-key`, `stripe-webhook-secret` and `paypal-client-secret`. Then set `billing` in
+`production.auto.tfvars` (`stripe_prices` and `paypal_plans` keyed `essentials_monthly`,
+`essentials_annual`, `professional_monthly`, `professional_annual`, plus `paypal_client_id`,
+`paypal_webhook_id` and `paypal_environment`), apply and force a new deployment.
+
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
 

@@ -60,6 +60,27 @@ variable "domain_live" {
   }
 }
 
+variable "billing" {
+  type = object({
+    stripe_prices      = optional(map(string), {})
+    paypal_client_id   = optional(string, "")
+    paypal_webhook_id  = optional(string, "")
+    paypal_environment = optional(string, "sandbox")
+    paypal_plans       = optional(map(string), {})
+  })
+  default = {}
+
+  validation {
+    condition     = alltrue([for key in concat(keys(var.billing.stripe_prices), keys(var.billing.paypal_plans)) : contains(["essentials_monthly", "essentials_annual", "professional_monthly", "professional_annual"], key)])
+    error_message = "Plan keys are essentials_monthly, essentials_annual, professional_monthly and professional_annual."
+  }
+
+  validation {
+    condition     = contains(["sandbox", "live"], var.billing.paypal_environment)
+    error_message = "paypal_environment is sandbox or live."
+  }
+}
+
 variable "google_client_id" {
   type    = string
   default = ""

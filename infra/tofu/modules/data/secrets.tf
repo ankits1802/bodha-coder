@@ -15,7 +15,7 @@ ephemeral "random_password" "hq_password" {
 }
 
 locals {
-  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key"]
+  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key", "stripe-secret-key", "stripe-webhook-secret", "paypal-client-secret"]
   mail_from_domain = "mail.${var.mail_domain}"
 }
 

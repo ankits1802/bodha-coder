@@ -22,7 +22,25 @@ locals {
     { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
-  ], local.legal_links, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  ], local.legal_links, local.billing_environment, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  stripe_on = length(var.billing.stripe_prices) > 0
+  paypal_on = var.billing.paypal_client_id != ""
+  billing_environment = concat(
+    [for plan, id in var.billing.stripe_prices : { name = "STRIPE_PRICE_${upper(plan)}", value = id }],
+    [for plan, id in var.billing.paypal_plans : { name = "PAYPAL_PLAN_${upper(plan)}", value = id }],
+    local.paypal_on ? [
+      { name = "PAYPAL_CLIENT_ID", value = var.billing.paypal_client_id },
+      { name = "PAYPAL_WEBHOOK_ID", value = var.billing.paypal_webhook_id },
+      { name = "PAYPAL_ENVIRONMENT", value = var.billing.paypal_environment },
+    ] : [],
+  )
+  billing_secrets = concat(
+    local.stripe_on ? [
+      { name = "STRIPE_SECRET_KEY", valueFrom = var.secret_arns["stripe-secret-key"] },
+      { name = "STRIPE_WEBHOOK_SECRET", valueFrom = var.secret_arns["stripe-webhook-secret"] },
+    ] : [],
+    local.paypal_on ? [{ name = "PAYPAL_CLIENT_SECRET", valueFrom = var.secret_arns["paypal-client-secret"] }] : [],
+  )
   identity_providers = {
     GOOGLE    = { id = var.google_client_id, secret = "google-client-secret" }
     MICROSOFT = { id = var.microsoft_client_id, secret = "microsoft-client-secret" }
@@ -33,7 +51,7 @@ locals {
   shared_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
     { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
-  ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [])
+  ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [], local.billing_secrets)
   tasks = {
     api = {
       image   = local.api_image
