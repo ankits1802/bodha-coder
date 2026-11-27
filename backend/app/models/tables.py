@@ -59,7 +59,10 @@ def _timestamp(*, nullable: bool = True) -> Any:
 
 class Practice(IdMixin, Base):
     __tablename__ = "practices"
-    __table_args__ = (_one_of("status", ("trial", "active", "ended", "blocked")),)
+    __table_args__ = (
+        _one_of("status", ("trial", "active", "ended", "blocked")),
+        CheckConstraint("access_log_years >= 6", name="access_log_years_min"),
+    )
     name: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(16), default="trial")
     plan: Mapped[str] = mapped_column(String(16), default="trial")
@@ -71,6 +74,7 @@ class Practice(IdMixin, Base):
     idle_minutes: Mapped[int] = mapped_column(Integer, default=15)
     private_messages: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
+    access_log_years: Mapped[int] = mapped_column(Integer, default=6)
 
 
 class User(IdMixin, Base):
@@ -86,6 +90,7 @@ class User(IdMixin, Base):
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_last_step: Mapped[int | None] = mapped_column(Integer)
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
+    notify_digest: Mapped[bool] = mapped_column(Boolean, default=True)
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     last_active_at: Mapped[datetime | None] = _timestamp()
 
@@ -148,6 +153,7 @@ class Provider(IdMixin, Base):
     phone: Mapped[str | None] = mapped_column(String(32))
     channel: Mapped[str] = mapped_column(String(8), default="email")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
 class Batch(IdMixin, Base):
@@ -198,6 +204,7 @@ class Note(IdMixin, Base):
     approved_at: Mapped[datetime | None] = _timestamp()
     exported_at: Mapped[datetime | None] = _timestamp()
     due_at: Mapped[datetime] = _timestamp(nullable=False)
+    assigned_to: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
 
 
 class NoteText(IdMixin, Base):
