@@ -6,6 +6,7 @@ from sqlalchemy import delete, exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, note_prefix
+from app.core.db import permit_record_erasure
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
 from app.models import (
@@ -24,6 +25,7 @@ from app.models import (
     RemittanceLine,
     ReviewComment,
     ReviewCommentRemoval,
+    SigningEvent,
     Suggestion,
 )
 from app.services.analysis import request_analysis
@@ -36,6 +38,7 @@ logger = logging.getLogger("bodha.notes")
 DELETABLE = ("queued", "ready", "failed", "approved")
 EDITABLE = ("queued", "ready", "failed")
 CHILD_TABLES = (
+    SigningEvent,
     ReviewCommentRemoval,
     ReviewComment,
     ProviderAttestation,
@@ -68,6 +71,7 @@ async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_
     ids = [note.id for note in notes]
     folders = [note_prefix(note.practice_id, note.id) for note in notes]
     await db.execute(update(RemittanceLine).where(RemittanceLine.note_id.in_(ids)).values(note_id=None))
+    await permit_record_erasure(db)
     for table in CHILD_TABLES:
         await db.execute(delete(table).where(table.note_id.in_(ids)))
     await db.execute(delete(Note).where(Note.id.in_(ids)))

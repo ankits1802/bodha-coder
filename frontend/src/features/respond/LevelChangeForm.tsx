@@ -7,8 +7,10 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { TextArea } from "@/components/ui/Input";
 import { Panel } from "@/components/ui/Panel";
 import { RadioOption } from "@/components/ui/RadioOption";
-import type { LevelAnswer, LevelChangeBody, LevelChangeView } from "@/lib/api/types";
+import type { LevelAnswer, LevelChangeBody, LevelChangeView, SignatureView } from "@/lib/api/types";
+import { ProviderSignature } from "./ProviderSignature";
 import { RESPOND_TEXT } from "./strings";
+import { useProviderSigning, type ProviderSigning } from "./useProviderSigning";
 
 const ANSWERS: readonly LevelAnswer[] = ["confirm", "disagree"];
 
@@ -17,7 +19,9 @@ interface LevelChangeFormProps {
   attestation: string;
   pending: boolean;
   error: string | null;
-  onSend: (body: LevelChangeBody) => void;
+  remembered: SignatureView | null;
+  providerName: string;
+  onSend: (body: LevelChangeBody, signing: ProviderSigning) => void;
 }
 
 export function levelReply(answer: LevelAnswer | null, comment: string, confirmed: boolean, attestation: string): LevelChangeBody | null {
@@ -26,12 +30,14 @@ export function levelReply(answer: LevelAnswer | null, comment: string, confirme
   return { answer, comment: said === "" ? null : said, confirmed, attestation };
 }
 
-export function LevelChangeForm({ change, attestation, pending, error, onSend }: LevelChangeFormProps) {
+export function LevelChangeForm(props: LevelChangeFormProps) {
+  const { change, attestation, pending, error, remembered, providerName, onSend } = props;
   const name = useId();
   const [answer, setAnswer] = useState<LevelAnswer | null>(null);
   const [comment, setComment] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const reply = levelReply(answer, comment, confirmed, attestation);
+  const signing = useProviderSigning(remembered, providerName);
+  const reply = signing.ready ? levelReply(answer, comment, confirmed, attestation) : null;
   const missingComment = answer === "disagree" && comment.trim() === "";
 
   return (
@@ -52,12 +58,13 @@ export function LevelChangeForm({ change, attestation, pending, error, onSend }:
       >
         {(control) => <TextArea {...control} required={answer === "disagree"} value={comment} onChange={(event) => setComment(event.target.value)} />}
       </Field>
+      <ProviderSignature signing={signing} disabled={pending} />
       <label className="flex cursor-pointer items-center gap-3 text-body">
         <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="size-5 flex-none accent-label" />
         {attestation}
       </label>
       {error ? <InlineAlert tone="bad">{error}</InlineAlert> : null}
-      <Button variant="primary" size="lg" className="w-full" disabled={reply === null} pending={pending} onClick={() => reply && onSend(reply)}>
+      <Button variant="primary" size="lg" className="w-full" disabled={reply === null} pending={pending} onClick={() => reply && onSend(reply, signing)}>
         {RESPOND_TEXT.levelSend}
       </Button>
     </Panel>

@@ -2,6 +2,7 @@ from sqlalchemy import update
 
 from app.core.db import SessionFactory
 from app.models import AddendumRequest
+from tests.api.review_helpers import provider_signature
 from tests.builders import practice_with_provider, read_next_note, upload_note
 from tests.fakes import NOTE_TEXT
 
@@ -66,9 +67,9 @@ async def test_after_signing_the_provider_moves_to_their_next_open_request(harne
     provider = await _provider_session(harness, first_link)
 
     assert await _others(harness, provider) == [(second_id, "Pike Jonah", "2026-11-25", 1)]
-    signed = await harness.client.post(
-        "/api/respond", headers=provider, json={"answers": [{"key": "dx:N18.30", "choice": "Yes"}], "confirmed": True}
-    )
+    signature_id = await provider_signature(harness, provider)
+    body = {"answers": [{"key": "dx:N18.30", "choice": "Yes"}], "confirmed": True, "signature_id": signature_id}
+    signed = await harness.client.post("/api/respond", headers=provider, json=body)
     assert signed.json()["status"] == "answered"
     assert await _others(harness, provider) == [(second_id, "Pike Jonah", "2026-11-25", 1)]
 

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from app.adapters.pdf_writer import PdfBlock, PdfDocument, PdfFacts, PdfHeading, PdfPageBreak, PdfTable, PdfText
 from app.codes.billing_codes import Code
 from app.codes.fees import ClaimEstimate
+from app.services.certificate_layout import CertificateFacts, certificate_blocks
 from app.services.defense_record_layout import (
     ADDENDUM_LABEL,
     CHOICE_LABELS,
@@ -100,6 +101,7 @@ class PacketFacts:
     analysis_label: str
     generated: PacketEvent
     records: PacketRecords
+    certificates: tuple[CertificateFacts, ...]
 
 
 def patient_initials(name: str | None) -> str:
@@ -111,6 +113,8 @@ def packet_document(facts: PacketFacts) -> PdfDocument:
     blocks: list[PdfBlock] = [*_cover(facts), PdfPageBreak(), *_visit(facts), *_claim(facts), *_em_basis(facts)]
     blocks += [*_decided(facts), *_checks(facts), *_requests(facts), *_history(facts), *_analyses(facts)]
     blocks += record_blocks(facts.records, facts.zone)
+    for certificate in facts.certificates:
+        blocks += [PdfPageBreak(), *certificate_blocks(certificate, facts.zone)]
     return PdfDocument(TITLE, f"Bodha Assure · {TITLE} · {facts.visit.practice_name}", tuple(blocks))
 
 

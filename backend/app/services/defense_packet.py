@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.adapters.object_store import ObjectStore
 from app.adapters.pdf_writer import render_pdf
 from app.codes.billing_codes import Code
 from app.codes.catalog_pfs import DATA_YEAR as PFS_CODE_YEAR
@@ -28,6 +29,7 @@ from app.models import (
 )
 from app.services.analysis import latest_codes
 from app.services.audit_log import record_access
+from app.services.certificates import note_certificates
 from app.services.defense_layout import (
     CHOICE_LABELS,
     DecidedFinding,
@@ -83,21 +85,21 @@ def packet_file_name(note: Note) -> str:
     return f"bodha-defense-packet-{note.service_date:%Y%m%d}-{note.id[:8]}.pdf"
 
 
-async def defense_packet(db: AsyncSession, actor: Actor, note_id: str) -> DefensePacket:
+async def defense_packet(db: AsyncSession, store: ObjectStore, actor: Actor, note_id: str) -> DefensePacket:
     note = await note_for(db, actor, note_id)
-    packet = await build_packet(db, actor, note)
+    packet = await build_packet(db, store, actor, note)
     record_access(db, actor, DOWNLOADED, note_id=note.id)
     await db.commit()
     return packet
 
 
-async def build_packet(db: AsyncSession, actor: Actor, note: Note) -> DefensePacket:
-    facts = await _facts(db, actor, note)
+async def build_packet(db: AsyncSession, store: ObjectStore, actor: Actor, note: Note) -> DefensePacket:
+    facts = await _facts(db, store, actor, note)
     content = await asyncio.to_thread(render_pdf, packet_document(facts))
     return DefensePacket(packet_file_name(note), content)
 
 
-async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
+async def _facts(db: AsyncSession, store: ObjectStore, actor: Actor, note: Note) -> PacketFacts:
     provider = await db.get_one(Provider, note.provider_id)
     names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == note.practice_id))).all())
     findings = await current_findings(db, note)
@@ -127,6 +129,7 @@ async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
         analysis_label=_analysis_label(current),
         generated=PacketEvent(utcnow(), actor.user.name, DOWNLOADED),
         records=await packet_records(db, note, findings, decisions, names),
+        certificates=tuple(await note_certificates(db, store, note.id)),
     )
 
 

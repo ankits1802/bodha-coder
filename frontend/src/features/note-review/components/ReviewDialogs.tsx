@@ -1,5 +1,6 @@
 "use client";
 
+import type { SignatureGate } from "@/components/shared/signature/useSignatureGate";
 import { decideCompliance, flagNote } from "@/lib/api/notes";
 import type { Finding, NoteDetail } from "@/lib/api/types";
 import { COMPLIANCE_REASON_MAX } from "@/lib/validation";
@@ -16,13 +17,14 @@ interface ReviewDialogsProps {
   onClose: () => void;
   onChanged: () => void;
   onApproved: () => void;
+  gate: SignatureGate;
 }
 
 const FLAG_TEXT = { ...REVIEW_TEXT.flagDialog, invalid: REVIEW_TEXT.flagDialog.tooShort };
 const KEEP_TEXT = { ...REVIEW_TEXT.keepDialog, invalid: REVIEW_TEXT.keepDialog.required };
 const FLAG_MAX = 2000;
 
-export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onApproved }: ReviewDialogsProps) {
+export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onApproved, gate }: ReviewDialogsProps) {
   const noteId = detail.note.id;
   if (open === "ask") return <AskProviderDialog detail={detail} questions={questions} onClose={onClose} onSent={onChanged} />;
   if (open === "flag") {
@@ -36,7 +38,7 @@ export function ReviewDialogs({ open, detail, questions, onClose, onChanged, onA
         maxLength={COMPLIANCE_REASON_MAX}
         onClose={onClose}
         onDone={onApproved}
-        submit={(reason) => decideCompliance(noteId, "keep", reason)}
+        submit={gate.gated((reason: string) => decideCompliance(noteId, "keep", reason))}
       />
     );
   }

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.messenger import Messenger
 from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import PROVIDERS, provider_label
+from app.adapters.seal_keys import RecordSigner
 from app.core.calendar import today_in, zone_named
 from app.core.config import Settings, get_settings
 from app.core.deps import Actor
@@ -22,6 +23,7 @@ from app.services.auth import MfaChallenge, Tokens, sign_in_user
 from app.services.identity_sign_in import bind_identity
 from app.services.practice_accounts import AdminDraft, NewPractice, PracticeDraft, add_practice_with_admin
 from app.services.rate_limits import SIGNUP_PER_EMAIL, SIGNUP_PER_IP, hit
+from app.services.sealing import agreement_signer, seal_agreement
 from app.services.team import send_invite
 
 SIGNUP_TOKEN = "signup"
@@ -32,6 +34,7 @@ TRIAL = "trial"
 SIGNED_UP = "practice signed up"
 NOT_AVAILABLE = "Self sign-up is not available"
 START_AGAIN = "start sign-up again"
+AGREEMENT_STATEMENT = "I accept the Terms and the Business Associate Agreement, version {version}, for this practice."
 
 
 @dataclass(frozen=True)
@@ -86,7 +89,13 @@ async def check_email_signup(db: AsyncSession, form: EmailSignup, *, ip: str | N
 
 
 async def request_email_signup(
-    db: AsyncSession, messenger: Messenger, form: EmailSignup, *, ip: str | None, agent: str | None
+    db: AsyncSession,
+    messenger: Messenger,
+    signer: RecordSigner,
+    form: EmailSignup,
+    *,
+    ip: str | None,
+    agent: str | None,
 ) -> None:
     if await email_in_use(db, form.email, PRACTICE_REALM):
         await _send_existing_account(messenger, normal_email(form.email))
@@ -95,6 +104,7 @@ async def request_email_signup(
         db, form.practice_name, form.time_zone, AdminDraft(form.name, form.email, "invited")
     )
     created.practice.signup = _signup_record(created, EMAIL_METHOD, ip)
+    await _seal_agreement(db, signer, created, Visitor(ip, agent))
     await send_invite(db, messenger, created.admin, team_name=created.practice.name)
     _record_signup(db, created, EMAIL_METHOD, Visitor(ip, agent))
     await db.commit()
@@ -120,7 +130,7 @@ def pending_identity(token: str | None) -> ProviderIdentity:
 
 
 async def complete_identity_signup(
-    db: AsyncSession, token: str | None, form: IdentitySignup, visitor: Visitor
+    db: AsyncSession, signer: RecordSigner, token: str | None, form: IdentitySignup, visitor: Visitor
 ) -> Tokens | MfaChallenge:
     identity = pending_identity(token)
     _require_agreement(form.agreed)
@@ -132,6 +142,7 @@ async def complete_identity_signup(
     created = await _trial_practice(db, form.practice_name, form.time_zone, admin)
     await bind_identity(db, created.admin, identity.provider, identity.subject)
     created.practice.signup = _signup_record(created, identity.provider, visitor.ip)
+    await _seal_agreement(db, signer, created, visitor)
     _record_signup(db, created, identity.provider, visitor)
     await db.commit()
     label = provider_label(identity.provider)
@@ -160,6 +171,13 @@ def _signup_record(created: NewPractice, method: str, ip: str | None) -> dict[st
         "method": method,
         "ip": ip,
     }
+
+
+async def _seal_agreement(db: AsyncSession, signer: RecordSigner, created: NewPractice, visitor: Visitor) -> None:
+    signed_by = agreement_signer(created.admin, visitor.ip, visitor.agent)
+    version = get_settings().agreement_version
+    statement = AGREEMENT_STATEMENT.format(version=version)
+    await seal_agreement(db, signer, signed_by, created.practice, statement=statement)
 
 
 def _record_signup(db: AsyncSession, created: NewPractice, method: str, visitor: Visitor) -> None:

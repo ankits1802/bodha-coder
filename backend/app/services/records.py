@@ -7,12 +7,13 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.object_store import ObjectStore, note_document_revision_key, practice_prefix
+from app.adapters.object_store import ObjectStore, note_document_revision_key, person_prefix, practice_prefix
 from app.adapters.pdf_text import DocumentUnreadable, read_pdf_text
 from app.core.calendar import day_bounds, shift_years, zone_named
+from app.core.db import permit_record_erasure
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import (
@@ -42,6 +43,9 @@ from app.models import (
     ReviewComment,
     ReviewCommentRemoval,
     Session,
+    Signature,
+    SignatureAdoption,
+    SigningEvent,
     Subscription,
     Suggestion,
     User,
@@ -214,16 +218,19 @@ async def delete_practice(
     if is_live(await subscription_for(db, practice_id)):
         raise Conflict("cancel the practice's subscription before deleting it")
     name = practice.name
+    people = list((await db.scalars(select(User.id).where(User.practice_id == practice_id))).all())
     await _delete_practice_rows(db, practice_id)
     record_activity(db, actor, PRACTICE_DELETED, practice_id=practice_id, detail=name)
     await db.commit()
     await _remove_practice_files(store, practice_id)
+    await _remove_people_files(store, people)
 
 
 async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
     notes = select(Note.id).where(Note.practice_id == practice_id)
     users = select(User.id).where(User.practice_id == practice_id)
     remittances = select(Remittance.id).where(Remittance.practice_id == practice_id)
+    await _delete_sealed_rows(db, practice_id, users)
     await db.execute(delete(RemittanceLine).where(RemittanceLine.remittance_id.in_(remittances)))
     for table in QUALITY_AND_REMITTANCE_TABLES:
         await db.execute(delete(table).where(table.practice_id == practice_id))
@@ -241,6 +248,21 @@ async def _delete_practice_rows(db: AsyncSession, practice_id: str) -> None:
         await db.execute(delete(table).where(table.user_id.in_(users)))
     await db.execute(delete(User).where(User.practice_id == practice_id))
     await db.execute(delete(Practice).where(Practice.id == practice_id))
+
+
+async def _delete_sealed_rows(db: AsyncSession, practice_id: str, users: Any) -> None:
+    await permit_record_erasure(db)
+    await db.execute(delete(SigningEvent).where(SigningEvent.practice_id == practice_id))
+    for table in (SignatureAdoption, Signature):
+        await db.execute(delete(table).where(or_(table.practice_id == practice_id, table.user_id.in_(users))))
+
+
+async def _remove_people_files(store: ObjectStore, people: list[str]) -> None:
+    for user_id in people:
+        try:
+            await store.delete_prefix(person_prefix(user_id))
+        except Exception:
+            logger.exception("stored signatures of a deleted practice's people were not removed")
 
 
 async def _remove_practice_files(store: ObjectStore, practice_id: str) -> None:

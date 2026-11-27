@@ -1,5 +1,6 @@
 "use client";
 
+import { useSignatureGate } from "@/components/shared/signature/useSignatureGate";
 import { useAction } from "@/hooks/useAction";
 import {
   approveNote,
@@ -21,9 +22,10 @@ interface ReviewCallbacks {
 }
 
 export function useReviewActions(noteId: string, callbacks: ReviewCallbacks) {
-  const approve = useAction(() => approveNote(noteId));
-  const compliance = useAction((decision: ComplianceDecision, reason: string | null) =>
-    decideCompliance(noteId, decision, reason),
+  const signatureGate = useSignatureGate();
+  const approve = useAction(signatureGate.gated(() => approveNote(noteId)));
+  const compliance = useAction(
+    signatureGate.gated((decision: ComplianceDecision, reason: string | null) => decideCompliance(noteId, decision, reason)),
   );
   const retry = useAction(() => retryNote(noteId));
   const reopen = useAction(() => reopenNote(noteId));
@@ -39,6 +41,7 @@ export function useReviewActions(noteId: string, callbacks: ReviewCallbacks) {
     remindError: remind.error,
     remindPending: remind.pending,
     pdfPending: pdf.pending,
+    signatureGate,
     approve: async () => {
       if ((await approve.run()).ok) callbacks.approved();
     },

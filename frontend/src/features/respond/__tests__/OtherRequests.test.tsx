@@ -32,6 +32,7 @@ const ANSWERED: ProviderRequest = {
   purpose: "questions",
   attestation: "This is clinically accurate",
   level_change: null,
+  signature: null,
 };
 
 const PIKE: OtherRequest = {

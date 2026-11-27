@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AreaGuard } from "@/components/shared/AreaGuard";
+import { SignatureGateDialog } from "@/components/shared/signature/SignatureDialog";
 import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
@@ -104,6 +105,7 @@ function QueueContent({ user }: { user: User }) {
         )}
       </RemoteView>
       <BulkActions member={user} rows={selectedRows} actions={actions} onClear={() => selection.select([])} />
+      <SignatureGateDialog gate={actions.signatureGate} />
     </>
   );
 }

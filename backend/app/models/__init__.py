@@ -26,6 +26,16 @@ from app.models.review_audit import (
     ReviewComment,
     ReviewCommentRemoval,
 )
+from app.models.signatures import (
+    SEAL_SCHEMA_VERSION,
+    SIGNATURE_SOURCES,
+    SIGNER_KINDS,
+    SIGNER_NAME_LENGTH,
+    SIGNING_EVENTS,
+    Signature,
+    SignatureAdoption,
+    SigningEvent,
+)
 from app.models.tables import (
     ACCESS_DETAIL_LENGTH,
     ANALYSIS_STATUSES,
@@ -85,6 +95,11 @@ __all__ = [
     "REALMS",
     "REQUEST_PURPOSES",
     "ROLES",
+    "SEAL_SCHEMA_VERSION",
+    "SIGNATURE_SOURCES",
+    "SIGNER_KINDS",
+    "SIGNER_NAME_LENGTH",
+    "SIGNING_EVENTS",
     "SNAPSHOT_SCHEMA_VERSION",
     "SUBSCRIPTION_STATUSES",
     "SUGGESTION_KINDS",
@@ -124,6 +139,9 @@ __all__ = [
     "ReviewComment",
     "ReviewCommentRemoval",
     "Session",
+    "Signature",
+    "SignatureAdoption",
+    "SigningEvent",
     "Subscription",
     "Suggestion",
     "User",

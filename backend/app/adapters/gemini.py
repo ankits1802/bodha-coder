@@ -110,6 +110,10 @@ class GeminiClient:
             response = await self._answer(contents, schema=schema, system=system)
         return self._reply(response)
 
+    async def inspect_image(self, prompt: str, *, schema: dict[str, Any], image: bytes, mime_type: str) -> ModelReply:
+        picture = types.Part.from_bytes(data=image, mime_type=mime_type)
+        return self._reply(await self._answer([picture, prompt], schema=schema, system=None))
+
     async def _answer(
         self, contents: list[Any], *, schema: dict[str, Any] | None, system: str | None
     ) -> types.GenerateContentResponse:

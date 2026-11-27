@@ -51,4 +51,7 @@ export const RESPOND_TEXT = {
   levelSend: "Send",
   levelConfirmed: "Level confirmed",
   levelDisagreed: "Disagreement sent",
+  newSignature: "Use a new signature",
+  savedSignature: "Use my saved signature",
+  rememberSignature: "Remember my signature for this practice",
 } as const;

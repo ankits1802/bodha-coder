@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     baa_url: str | None = None
     privacy_url: str | None = None
     agreement_version: str = Field(default="unpublished", min_length=1, max_length=40)
+    signing_key_id: str | None = None
 
     stripe_secret_key: SecretStr | None = None
     stripe_webhook_secret: SecretStr | None = None
@@ -128,7 +129,7 @@ class Settings(BaseSettings):
     addendum_link_hours: int = 72
     provider_session_minutes: int = 30
 
-    @field_validator(*BILLING_SETTINGS, mode="before")
+    @field_validator(*BILLING_SETTINGS, "signing_key_id", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: object) -> object:
         if isinstance(value, str) and not value.strip():

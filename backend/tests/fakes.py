@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
 import json
 import re
+import struct
+import zlib
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -18,6 +21,15 @@ from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, provider_label
 from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
 
+PNG_MAGIC = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+INK = bytes([0, 0, 0])
+PAPER = bytes([255, 255, 255])
+SIGNATURE_ANSWER = {
+    "is_signature": True,
+    "contains_other_text": False,
+    "multiple_signatures": False,
+    "image_issues": [],
+}
 NOTE_TEXT = (
     "Follow-up of diabetes and blood pressure. 67-year-old woman with type 2 diabetes, hypertension and chronic kidney "
     "disease. A1c 8.4. eGFR 38. Assessment and plan: Type 2 diabetes with hyperglycemia, increase metformin. "
@@ -212,3 +224,39 @@ class FailingReviewer:
 
     async def __call__(self, client: ModelClient, inputs: ReviewInputs) -> ReviewOutcome:
         raise self.error
+
+
+def signature_png(width: int = 120, height: int = 48) -> bytes:
+    rows = bytearray()
+    for y in range(height):
+        rows.append(0)
+        for x in range(width):
+            inked = abs(y - height // 2) <= 1 and 10 <= x < width - 10
+            rows += INK if inked else PAPER
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    chunks = _chunk(b"IHDR", header) + _chunk(b"IDAT", zlib.compress(bytes(rows))) + _chunk(b"IEND", b"")
+    return PNG_MAGIC + chunks
+
+
+def signature_data_url(png: bytes | None = None) -> str:
+    return "data:image/png;base64," + base64.b64encode(png or signature_png()).decode("ascii")
+
+
+def _chunk(kind: bytes, data: bytes) -> bytes:
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+
+@dataclass
+class FakeImageModel:
+    answer: dict[str, Any] = field(default_factory=lambda: dict(SIGNATURE_ANSWER))
+    failure: Exception | None = None
+    images: list[bytes] = field(default_factory=list)
+
+    async def inspect_image(self, prompt: str, *, schema: dict[str, Any], image: bytes, mime_type: str) -> ModelReply:
+        self.images.append(image)
+        if self.failure is not None:
+            raise self.failure
+        return ModelReply(text=json.dumps(self.answer), model="fake-gemini", input_tokens=10, output_tokens=5)
+
+    async def aclose(self) -> None:
+        return None

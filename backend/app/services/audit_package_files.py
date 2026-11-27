@@ -20,6 +20,7 @@ from app.models import (
     Note,
     NoteText,
     ProviderAttestation,
+    SigningEvent,
     Suggestion,
 )
 from app.services.claim_exports import note_exports
@@ -56,6 +57,7 @@ async def note_files(db: AsyncSession, store: ObjectStore, note: Note) -> list[P
         ("snapshots.json", ApprovedClaim, ApprovedClaim.revision),
         ("provider-requests.json", AddendumRequest, AddendumRequest.created_at),
         ("provider-statements.json", ProviderAttestation, ProviderAttestation.created_at),
+        ("signing-events.json", SigningEvent, SigningEvent.signed_at),
     ):
         rows = await db.scalars(select(model).where(model.note_id == note.id).order_by(order))
         files.append(json_file(path, [row_record(row) for row in rows]))

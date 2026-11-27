@@ -10,7 +10,7 @@ export const SECURITY: LegalDocumentData = {
   slug: "security",
   title: LEGAL_TITLES.security,
   summary: `The safeguards built into ${product}.`,
-  version: "1.1",
+  version: "1.2",
   updated: "2026-11-28",
   numbered: false,
   sections: [
@@ -58,6 +58,16 @@ export const SECURITY: LegalDocumentData = {
       ),
     ),
     section(
+      "signatures",
+      SECURITY_HEADINGS,
+      bullets(
+        "Each person who approves claims or decides on compliance adopts a signature once: drawn, typed as their full name, or a photo. Providers sign on the secure link and may keep their signature for the next request at the same practice. Replacing a signature keeps the earlier one as a record.",
+        "Every approval, compliance decision, provider addendum, visit level statement and agreement accepted at sign-up records the signature, the typed name, the role or credential, the time, the IP address and the device.",
+        "Each of these is written as a signed record holding the SHA-256 fingerprint of the document and of the approved content, sealed with a key held in AWS Key Management Service that cannot be exported. The database refuses to change or delete these records.",
+        "Every audit defense packet and audit package carries a certificate for each signature, with a verification code anyone can check on the verification page. The page shows the practice, the signer, the time and the fingerprints, and no patient details.",
+      ),
+    ),
+    section(
       "messages",
       SECURITY_HEADINGS,
       bullets(
@@ -76,6 +86,7 @@ export const SECURITY: LegalDocumentData = {
         "Google does not use customer data to train its models. We train our own models only on data de-identified under the HIPAA Safe Harbor standard, as the Terms and the BAA describe. The Gemini Developer API is used only with synthetic test data.",
         "The model proposes; people approve. Every suggested code is checked against the official code set for the date of service, and every suggestion quotes its evidence from the note.",
         "Each analysis records the model and prompt version it used.",
+        "A drawn or photographed signature is checked by Gemini to confirm it is one handwritten signature before it is kept; the check sees only the signature image.",
       ),
     ),
     section(

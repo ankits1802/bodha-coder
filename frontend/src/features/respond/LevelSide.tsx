@@ -9,6 +9,7 @@ import type { LevelChangeBody, LevelChangeResult, LevelChangeView, ProviderReque
 import { LevelChangeForm } from "./LevelChangeForm";
 import { watchExpiry } from "./providerSession";
 import { RESPOND_TEXT } from "./strings";
+import type { ProviderSigning } from "./useProviderSigning";
 
 interface LevelSideProps {
   request: ProviderRequest;
@@ -30,11 +31,14 @@ function Answered({ result, next }: { result: LevelChangeResult; next: ReactNode
 }
 
 export function LevelSide({ request, change, providerToken, next, onExpired }: LevelSideProps) {
-  const send = useAction((body: LevelChangeBody) => watchExpiry(answerLevelChange(providerToken, body), onExpired));
+  const send = useAction(async (body: LevelChangeBody, signing: ProviderSigning) => {
+    const choice = await watchExpiry(signing.choose(providerToken), onExpired);
+    return watchExpiry(answerLevelChange(providerToken, { ...body, ...choice }), onExpired);
+  });
   const [result, setResult] = useState<LevelChangeResult | null>(null);
 
-  async function submit(body: LevelChangeBody): Promise<void> {
-    const outcome = await send.run(body);
+  async function submit(body: LevelChangeBody, signing: ProviderSigning): Promise<void> {
+    const outcome = await send.run(body, signing);
     if (outcome.ok) setResult(outcome.value);
   }
 
@@ -47,6 +51,14 @@ export function LevelSide({ request, change, providerToken, next, onExpired }: L
     );
   }
   return (
-    <LevelChangeForm change={change} attestation={request.attestation} pending={send.pending} error={send.error} onSend={(body) => void submit(body)} />
+    <LevelChangeForm
+      change={change}
+      attestation={request.attestation}
+      pending={send.pending}
+      error={send.error}
+      remembered={request.signature}
+      providerName={request.provider_name}
+      onSend={(body, signing) => void submit(body, signing)}
+    />
   );
 }

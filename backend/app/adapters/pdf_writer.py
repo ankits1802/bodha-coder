@@ -9,9 +9,11 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import (
     Flowable,
+    Image,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -20,7 +22,19 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-__all__ = ["PdfBlock", "PdfDocument", "PdfFacts", "PdfHeading", "PdfPageBreak", "PdfTable", "PdfText", "render_pdf"]
+__all__ = [
+    "PdfBlock",
+    "PdfDocument",
+    "PdfFacts",
+    "PdfHeading",
+    "PdfImage",
+    "PdfPageBreak",
+    "PdfTable",
+    "PdfText",
+    "UnreadableImage",
+    "image_size",
+    "render_pdf",
+]
 
 TextTone = Literal["body", "secondary", "quote", "label"]
 FONT = "Helvetica"
@@ -33,6 +47,8 @@ MARGIN = 0.75 * inch
 FOOTER_Y = 0.45 * inch
 FRAME_WIDTH = LETTER[0] - 2 * MARGIN
 FACT_LABEL_WIDTH = 1.9 * inch
+IMAGE_WIDTH = 3 * inch
+IMAGE_HEIGHT = 1.25 * inch
 
 
 @dataclass(frozen=True)
@@ -64,7 +80,18 @@ class PdfPageBreak:
     pass
 
 
-PdfBlock = PdfHeading | PdfText | PdfFacts | PdfTable | PdfPageBreak
+@dataclass(frozen=True)
+class PdfImage:
+    data: bytes
+    width: float = IMAGE_WIDTH
+    height: float = IMAGE_HEIGHT
+
+
+PdfBlock = PdfHeading | PdfText | PdfFacts | PdfTable | PdfImage | PdfPageBreak
+
+
+class UnreadableImage(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -127,6 +154,22 @@ def render_pdf(document: PdfDocument) -> bytes:
     return buffer.getvalue()
 
 
+def image_size(data: bytes) -> tuple[int, int]:
+    try:
+        reader = ImageReader(io.BytesIO(data))
+        reader.getRGBData()
+        width, height = reader.getSize()
+    except (OSError, ValueError, SyntaxError) as error:
+        raise UnreadableImage("the image cannot be read") from error
+    return int(width), int(height)
+
+
+def _image(block: PdfImage) -> Image:
+    width, height = image_size(block.data)
+    scale = min(block.width / width, block.height / height)
+    return Image(io.BytesIO(block.data), width=width * scale, height=height * scale, hAlign="LEFT")
+
+
 def _paragraph(text: str, style: ParagraphStyle) -> Paragraph:
     return Paragraph(escape(text).replace("\n", "<br/>"), style)
 
@@ -143,6 +186,8 @@ def _flowables(block: PdfBlock) -> list[Flowable]:
         header = [_paragraph(column, STYLES["label"]) for column in block.columns]
         body = [[_paragraph(cell, STYLES["body"]) for cell in row] for row in block.rows]
         return [_table([header, *body], _widths(block), header=True), Spacer(1, 6)]
+    if isinstance(block, PdfImage):
+        return [_image(block), Spacer(1, 6)]
     return [PageBreak()]
 
 

@@ -60,6 +60,20 @@ def audit_package_key(practice_id: str, note_id: str, package_id: str) -> str:
     return f"{note_prefix(practice_id, note_id)}audit-packages/{package_id}.zip"
 
 
+def person_prefix(user_id: str) -> str:
+    if not user_id or "/" in user_id:
+        raise ValueError(f"not a user id: {user_id!r}")
+    return f"people/{user_id}/"
+
+
+def person_signature_key(user_id: str, signature_id: str) -> str:
+    return f"{person_prefix(user_id)}signatures/{signature_id}.png"
+
+
+def provider_signature_key(practice_id: str, signature_id: str) -> str:
+    return f"{practice_prefix(practice_id)}signatures/{signature_id}.png"
+
+
 DELETE_BATCH = 1000
 MISSING_OBJECT_CODES = ("404", "NoSuchKey", "NotFound")
 

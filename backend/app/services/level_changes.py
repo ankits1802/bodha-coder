@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.message_errors import MessageNotSent
 from app.adapters.messenger import Messenger
+from app.adapters.seal_keys import RecordSigner
 from app.codes.billing_codes import Code
 from app.codes.em import is_em_code
 from app.core.config import get_settings
@@ -23,6 +24,8 @@ from app.services.claim_snapshots import snapshot_codes
 from app.services.finding import Finding
 from app.services.placement import refresh_placement
 from app.services.provider_channels import require_channel, usable_channel
+from app.services.sealing import provider_signer, seal_attestation
+from app.services.signatures import SignatureChoice, provider_signature
 
 __all__ = [
     "LEVEL_ANSWERS",
@@ -50,6 +53,7 @@ class LevelAnswer:
     comment: str | None
     confirmed: bool
     attestation: str | None
+    signature: SignatureChoice
 
 
 def level_change(billed: Sequence[Code], approved: Sequence[Code]) -> tuple[str | None, str | None] | None:
@@ -140,7 +144,7 @@ def _level_request(
 
 
 async def answer_level_change(
-    db: AsyncSession, messenger: Messenger, actor: ProviderActor, reply: LevelAnswer
+    db: AsyncSession, messenger: Messenger, signer: RecordSigner, actor: ProviderActor, reply: LevelAnswer
 ) -> AddendumRequest:
     request, note, provider = await load_for_provider(db, actor)
     if request.purpose != LEVEL_CHANGE_PURPOSE:
@@ -149,9 +153,12 @@ async def answer_level_change(
         raise Conflict("this request was already answered")
     comment = _checked_reply(reply)
     wording = checked_wording(LEVEL_ATTESTATION, reply.attestation)
+    signature = await provider_signature(db, actor, reply.signature)
     request.answers = [{"key": LEVEL_KEY, "choice": LEVEL_ANSWERS[reply.answer], "comment": comment}]
     request.status, request.answered_at, request.remind_at = "answered", utcnow(), None
-    await record_attestation(db, actor, request, Statement(wording, shown_text(request), reply.answer, comment))
+    statement = Statement(wording, shown_text(request), reply.answer, comment)
+    attestation = await record_attestation(db, actor, request, statement)
+    await seal_attestation(db, signer, provider_signer(actor, provider, signature), attestation, note)
     record_provider_access(db, actor, provider.name, ACTIONS[reply.answer], note_id=note.id)
     if reply.answer == "disagree":
         await _reopen_for_review(db, actor, note, provider)

@@ -19,6 +19,7 @@ import { ReviewPanel } from "./ReviewPanel";
 import { StatusBanner } from "./StatusBanner";
 import { SummaryPanel } from "./SummaryPanel";
 import { DayBanner } from "@/components/shared/day-checks/DayBanner";
+import { SignatureGateDialog } from "@/components/shared/signature/SignatureDialog";
 
 interface ReviewWorkspaceProps {
   detail: NoteDetail;
@@ -107,7 +108,9 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
           onReload();
         }}
         onApproved={onApproved}
+        gate={actions.signatureGate}
       />
+      <SignatureGateDialog gate={actions.signatureGate} />
     </CommentsContext>
   );
 }

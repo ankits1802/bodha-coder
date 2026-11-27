@@ -9,6 +9,7 @@ from tests.api.review_helpers import (
     keep_i10_with_reason,
     note_detail,
     provider_session,
+    provider_signature,
     turn_on_level_confirmation,
 )
 from tests.builders import invite_member, reviewed_note, sign_in
@@ -67,7 +68,12 @@ async def test_the_provider_sees_both_levels_and_the_evidence_and_confirms(harne
     answered = await harness.client.post(
         "/api/respond/level-change",
         headers=provider,
-        json={"answer": "confirm", "confirmed": True, "attestation": LEVEL_ATTESTATION},
+        json={
+            "answer": "confirm",
+            "confirmed": True,
+            "attestation": LEVEL_ATTESTATION,
+            "signature_id": await provider_signature(harness, provider),
+        },
     )
 
     assert answered.json() == {"status": "answered", "answer": "confirm"}
@@ -92,9 +98,9 @@ async def test_a_disagreement_needs_a_comment_reopens_the_note_and_tells_the_app
     path = "/api/respond/level-change"
 
     bare = await harness.client.post(path, headers=provider, json={"answer": "disagree", "confirmed": True})
-    disagreed = await harness.client.post(
-        path, headers=provider, json={"answer": "disagree", "comment": "Time supports 99215.", "confirmed": True}
-    )
+    reason = {"answer": "disagree", "comment": "Time supports 99215.", "confirmed": True}
+    signature = {"signature_id": await provider_signature(harness, provider)}
+    disagreed = await harness.client.post(path, headers=provider, json={**reason, **signature})
 
     assert (bare.status_code, disagreed.status_code) == (422, 200)
     detail = await note_detail(harness, practice, note_id)
@@ -120,8 +126,11 @@ async def test_with_hold_on_the_claim_cannot_be_exported_until_the_provider_conf
     assert row["held"] is True
     assert (everything.status_code, named.status_code, lines.status_code) == (422, 409, 409)
     provider = await provider_session(harness, link)
+    signature_id = await provider_signature(harness, provider)
     await harness.client.post(
-        "/api/respond/level-change", headers=provider, json={"answer": "confirm", "confirmed": True}
+        "/api/respond/level-change",
+        headers=provider,
+        json={"answer": "confirm", "confirmed": True, "signature_id": signature_id},
     )
     assert (await harness.client.post(export, headers=practice.admin, json={})).status_code == 200
 

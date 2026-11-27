@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel } from "@/components/ui/Panel";
+import { ProviderSignature } from "./ProviderSignature";
 import { RESPOND_TEXT } from "./strings";
+import type { ProviderSigning } from "./useProviderSigning";
 
 interface AddendumPanelProps {
   header: string;
@@ -13,11 +15,12 @@ interface AddendumPanelProps {
   error: string | null;
   providerName: string;
   attestation: string;
+  signing: ProviderSigning;
   onSign: () => void;
 }
 
 export function AddendumPanel(props: AddendumPanelProps) {
-  const { header, lines, confirmed, onConfirm, signable, pending, error, providerName, attestation, onSign } = props;
+  const { header, lines, confirmed, onConfirm, signable, pending, error, providerName, attestation, signing, onSign } = props;
   return (
     <Panel aria-label={RESPOND_TEXT.previewTitle} className="flex flex-col gap-3.5 px-5 py-4.5">
       <div>
@@ -34,6 +37,7 @@ export function AddendumPanel(props: AddendumPanelProps) {
           )}
         </div>
       </div>
+      <ProviderSignature signing={signing} disabled={pending} />
       <label className="flex cursor-pointer items-center gap-3 text-body">
         <input
           type="checkbox"

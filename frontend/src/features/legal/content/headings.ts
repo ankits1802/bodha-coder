@@ -98,6 +98,7 @@ export const SECURITY_HEADINGS = {
   hosting: "Hosting and encryption",
   access: "Access control",
   audit: "Audit trail",
+  signatures: "Electronic signatures and sealed records",
   messages: "Patient details stay out of messages and logs",
   ai: "AI processing",
   backups: "Backups and recovery",

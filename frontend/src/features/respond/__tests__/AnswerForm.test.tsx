@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { AddendumQuestion } from "@/lib/api/types";
 import { AnswerForm } from "../AnswerForm";
+import { SAVED_SIGNATURE } from "./signatureFixture";
 
 const questions: AddendumQuestion[] = [
   {
@@ -27,6 +28,7 @@ function renderForm(onSign = vi.fn()) {
       attestation="This is clinically accurate"
       pending={false}
       error={null}
+      remembered={SAVED_SIGNATURE}
       onSign={onSign}
     />,
   );
@@ -85,9 +87,12 @@ describe("provider answer form", () => {
 
     await user.click(form.confirm());
     await user.click(form.signButton());
-    expect(form.onSign).toHaveBeenCalledWith([
-      { key: "cdiq-1", choice: "Other", comment: "Stage 4" },
-      { key: "cdiq-2", choice: "Yes", comment: null },
-    ]);
+    expect(form.onSign).toHaveBeenCalledWith(
+      [
+        { key: "cdiq-1", choice: "Other", comment: "Stage 4" },
+        { key: "cdiq-2", choice: "Yes", comment: null },
+      ],
+      expect.objectContaining({ useSaved: true, remembered: SAVED_SIGNATURE }),
+    );
   });
 });

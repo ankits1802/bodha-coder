@@ -42,7 +42,8 @@ export type Action =
   | "manageSecurity"
   | "assign"
   | "assignAnyone"
-  | "search";
+  | "search"
+  | "sign";
 
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
@@ -71,6 +72,7 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   assign: ASSIGNERS,
   assignAnyone: ADMINS,
   search: NOTE_READERS,
+  sign: DECIDERS,
 };
 
 export function canUse(role: Role | null | undefined, area: Area): boolean {

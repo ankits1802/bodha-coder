@@ -15,6 +15,7 @@ from app.core.deps import Actor
 from app.models import AuditPackage, Note, new_id, utcnow
 from app.services.audit_log import record_access
 from app.services.audit_package_files import PackageFile, json_file, note_files
+from app.services.certificates import certificate_files, note_certificates
 from app.services.defense_packet import build_packet
 from app.services.review_actions import note_for
 
@@ -35,8 +36,10 @@ class AuditPackageFile:
 async def audit_package(db: AsyncSession, store: ObjectStore, actor: Actor, note_id: str) -> AuditPackageFile:
     note = await note_for(db, actor, note_id)
     package_id, generated = new_id(), utcnow()
-    packet = await build_packet(db, actor, note)
+    packet = await build_packet(db, store, actor, note)
+    certificates = await certificate_files(await note_certificates(db, store, note.id), actor.zone)
     files = [PackageFile("defense-packet.pdf", packet.content), *await note_files(db, store, note)]
+    files += [PackageFile(path, content) for path, content in certificates]
     manifest = _manifest(note, actor, package_id, generated.isoformat(), files)
     content = await asyncio.to_thread(zipped, [*files, manifest])
     key = audit_package_key(note.practice_id, note.id, package_id)

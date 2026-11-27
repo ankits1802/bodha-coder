@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LevelChangeForm } from "../LevelChangeForm";
+import { SAVED_SIGNATURE } from "./signatureFixture";
 
 const WORDING = "I reviewed the billed and approved visit levels and the evidence shown";
 const CHANGE = {
@@ -12,7 +13,17 @@ const CHANGE = {
 
 function renderForm() {
   const onSend = vi.fn();
-  render(<LevelChangeForm change={CHANGE} attestation={WORDING} pending={false} error={null} onSend={onSend} />);
+  render(
+    <LevelChangeForm
+      change={CHANGE}
+      attestation={WORDING}
+      pending={false}
+      error={null}
+      remembered={SAVED_SIGNATURE}
+      providerName="Elena Varga, MD"
+      onSend={onSend}
+    />,
+  );
   return { onSend, send: () => screen.getByRole("button", { name: "Send" }) };
 }
 
@@ -28,7 +39,10 @@ describe("visit level confirmation", () => {
     await user.click(screen.getByRole("checkbox", { name: WORDING }));
     await user.click(form.send());
 
-    expect(form.onSend).toHaveBeenCalledWith({ answer: "confirm", comment: null, confirmed: true, attestation: WORDING });
+    expect(form.onSend).toHaveBeenCalledWith(
+      { answer: "confirm", comment: null, confirmed: true, attestation: WORDING },
+      expect.objectContaining({ useSaved: true }),
+    );
   });
 
   it("needs a comment to disagree", async () => {
@@ -42,11 +56,9 @@ describe("visit level confirmation", () => {
     await user.type(screen.getByRole("textbox", { name: "Comment" }), "Time supports 99215.");
     await user.click(form.send());
 
-    expect(form.onSend).toHaveBeenCalledWith({
-      answer: "disagree",
-      comment: "Time supports 99215.",
-      confirmed: true,
-      attestation: WORDING,
-    });
+    expect(form.onSend).toHaveBeenCalledWith(
+      { answer: "disagree", comment: "Time supports 99215.", confirmed: true, attestation: WORDING },
+      expect.objectContaining({ useSaved: true }),
+    );
   });
 });

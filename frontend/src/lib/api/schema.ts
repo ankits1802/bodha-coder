@@ -1919,6 +1919,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/respond/signature/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["signature_draft_api_respond_signature_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/respond/switch": {
         parameters: {
             query?: never;
@@ -1961,6 +1977,54 @@ export interface paths {
         get: operations["find_notes_api_search_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/signature": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["my_signature_api_signature_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/signature/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["new_draft_api_signature_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/signature/drafts/{signature_id}/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adopt_api_signature_drafts__signature_id__adopt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2153,6 +2217,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["preview_api_uploads_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/verify/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["verify_api_verify__code__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2715,7 +2795,7 @@ export interface components {
             visits: number;
         };
         ErrorResponse: {
-            error: "bad_request" | "unauthorized" | "forbidden" | "not_found" | "method_not_allowed" | "conflict" | "invalid" | "rate_limited" | "server_error" | "unavailable" | "plan_ended";
+            error: "bad_request" | "unauthorized" | "forbidden" | "not_found" | "method_not_allowed" | "conflict" | "invalid" | "rate_limited" | "server_error" | "unavailable" | "plan_ended" | "signature_required";
             message: string;
         };
         EstimateLine: {
@@ -3055,6 +3135,8 @@ export interface components {
             attestation?: string | null;
             comment?: string | null;
             confirmed: boolean;
+            remember_signature?: boolean;
+            signature_id?: string | null;
         };
         LevelChangeResult: {
             answer: "confirm" | "disagree";
@@ -3148,6 +3230,9 @@ export interface components {
             limit: number;
             mai: number;
             units: number;
+        };
+        MySignature: {
+            signature: components["schemas"]["SignatureView"] | null;
         };
         NcciCoverage: {
             covers: boolean;
@@ -3580,6 +3665,7 @@ export interface components {
             requested_at: string;
             requested_by: string | null;
             service_date: string;
+            signature: components["schemas"]["SignatureView"] | null;
             status: "sent" | "answered" | "expired" | "cancelled";
             texts: components["schemas"]["TextRevision"][];
             visit_type: string;
@@ -3780,6 +3866,8 @@ export interface components {
             answers: components["schemas"]["AnswerBody"][];
             attestation?: string | null;
             confirmed: boolean;
+            remember_signature?: boolean;
+            signature_id?: string | null;
         };
         RespondResult: {
             addendum_text: string;
@@ -3845,6 +3933,19 @@ export interface components {
             sample: components["schemas"]["SampleOverview"];
             summary: components["schemas"]["AgreementSides"];
         };
+        SealVerification: {
+            code: string;
+            document_sha256: string | null;
+            envelope_sha256: string;
+            event: "approval" | "compliance_decision" | "provider_addendum" | "provider_level_change" | "agreement";
+            practice_name: string;
+            problems: ("record_missing" | "record_changed" | "signature_missing" | "signature_changed" | "envelope_changed" | "seal_invalid")[];
+            signed_at: string;
+            signer_kind: "user" | "provider";
+            signer_name: string;
+            signer_title: string;
+            valid: boolean;
+        };
         SearchResults: {
             items: components["schemas"]["NoteSummary"][];
             limit: number;
@@ -3895,6 +3996,18 @@ export interface components {
             privacy_url: string | null;
             terms_url: string | null;
             test_data_only: boolean;
+        };
+        SignatureDraftBody: {
+            image: string;
+            source: "drawn" | "typed" | "uploaded";
+            typed_name: string;
+        };
+        SignatureView: {
+            created_at: string;
+            id: string;
+            image: string;
+            source: "drawn" | "typed" | "uploaded";
+            typed_name: string;
         };
         SignedIn: {
             access_token: string;
@@ -10972,6 +11085,55 @@ export interface operations {
             };
         };
     };
+    signature_draft_api_respond_signature_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignatureDraftBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignatureView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     switch_api_respond_switch_post: {
         parameters: {
             query?: never;
@@ -11079,6 +11241,163 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    my_signature_api_signature_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySignature"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    new_draft_api_signature_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignatureDraftBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignatureView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    adopt_api_signature_drafts__signature_id__adopt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                signature_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySignature"];
                 };
             };
             401: {
@@ -11826,6 +12145,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    verify_api_verify__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SealVerification"];
                 };
             };
             422: {

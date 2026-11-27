@@ -19,6 +19,7 @@ import { RequestHeader } from "./RequestHeader";
 import { SignedPanel } from "./SignedPanel";
 import { RESPOND_TEXT } from "./strings";
 import { TopBar } from "./TopBar";
+import type { ProviderSigning } from "./useProviderSigning";
 import { useOtherRequests, type OtherRequests } from "./useOtherRequests";
 
 interface RequestViewProps {
@@ -33,7 +34,7 @@ interface SideProps {
   pending: boolean;
   error: string | null;
   next: ReactNode;
-  onSign: (answers: AddendumAnswer[]) => void;
+  onSign: (answers: AddendumAnswer[], signing: ProviderSigning) => void;
 }
 
 const REMOTE_TEXT = { loading: RESPOND_TEXT.loading, empty: "", retry: RESPOND_TEXT.retry };
@@ -85,6 +86,7 @@ function Side({ request, result, pending, error, next, onSign }: SideProps) {
       attestation={request.attestation}
       pending={pending}
       error={error}
+      remembered={request.signature}
       onSign={onSign}
     />
   );
@@ -92,16 +94,17 @@ function Side({ request, result, pending, error, next, onSign }: SideProps) {
 
 export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewProps) {
   const remote = useRemote(`respond:${providerToken}`, () => watchExpiry(getProviderRequest(providerToken), onExpired));
-  const sign = useAction((answers: AddendumAnswer[], attestation: string) =>
-    watchExpiry(submitAnswers(providerToken, answers, attestation), onExpired),
-  );
+  const sign = useAction(async (answers: AddendumAnswer[], attestation: string, signing: ProviderSigning) => {
+    const choice = await watchExpiry(signing.choose(providerToken), onExpired);
+    return watchExpiry(submitAnswers(providerToken, answers, attestation, choice), onExpired);
+  });
   const pdf = useAction(() => openDocument(() => watchExpiry(getProviderDocument(providerToken), onExpired)));
   const others = useOtherRequests(providerToken, onExpired, onSwitch);
   const [result, setResult] = useState<RespondResult | null>(null);
   const request = remote.state.status === "success" ? remote.state.data : null;
 
-  async function submit(answers: AddendumAnswer[], attestation: string): Promise<void> {
-    const outcome = await sign.run(answers, attestation);
+  async function submit(answers: AddendumAnswer[], attestation: string, signing: ProviderSigning): Promise<void> {
+    const outcome = await sign.run(answers, attestation, signing);
     if (outcome.ok) setResult(outcome.value);
   }
 
@@ -125,7 +128,7 @@ export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewP
                       pending={sign.pending}
                       error={sign.error}
                       next={nextButton(others)}
-                      onSign={(answers) => void submit(answers, data.attestation)}
+                      onSign={(answers, signing) => void submit(answers, data.attestation, signing)}
                     />
                   )}
                   <OtherRequestsPanel others={others} />

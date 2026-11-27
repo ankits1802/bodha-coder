@@ -5,6 +5,7 @@ import re
 
 from pypdf import PdfReader
 
+from tests.api.review_helpers import provider_signature
 from tests.builders import practice_with_provider, read_next_note, reviewed_note
 
 QUESTION = "What stage is the kidney disease?"
@@ -26,9 +27,9 @@ async def _signed_addendum(harness, practice, note_id, icd_catalog) -> None:
         "/api/respond/verify", json={"token": token, "code": harness.messenger.last_code()}
     )
     provider = {"Authorization": f"Bearer {verified.json()['provider_token']}"}
-    answered = await harness.client.post(
-        "/api/respond", headers=provider, json={"answers": [{"key": "dx:N18.30", "choice": "Yes"}], "confirmed": True}
-    )
+    signature_id = await provider_signature(harness, provider)
+    body = {"answers": [{"key": "dx:N18.30", "choice": "Yes"}], "confirmed": True, "signature_id": signature_id}
+    answered = await harness.client.post("/api/respond", headers=provider, json=body)
     assert answered.json()["status"] == "answered", answered.text
     await read_next_note(harness, icd_catalog)
 

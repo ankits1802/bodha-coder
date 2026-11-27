@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSignatureGate, type SignatureGate } from "@/components/shared/signature/useSignatureGate";
 import { useAction } from "@/hooks/useAction";
 import { showToast } from "@/components/shared/toast/toastStore";
 import { approveNotes, assignNotes, deleteNotes, remindProvider, reopenNotes, retryFailedNotes } from "@/lib/api/notes";
@@ -23,10 +24,12 @@ export interface QueueActions {
   retrying: boolean;
   notice: string | null;
   error: string | null;
+  signatureGate: SignatureGate;
 }
 
 export function useQueueActions(onChanged: () => void): QueueActions {
-  const approve = useAction(approveNotes);
+  const signatureGate = useSignatureGate();
+  const approve = useAction(signatureGate.gated(approveNotes));
   const assign = useAction(assignNotes);
   const remove = useAction(deleteNotes);
   const remind = useAction(remindProvider);
@@ -88,6 +91,7 @@ export function useQueueActions(onChanged: () => void): QueueActions {
   }
 
   return {
+    signatureGate,
     approveSelected,
     approving: approve.pending,
     assignSelected,

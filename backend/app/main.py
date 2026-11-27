@@ -10,9 +10,11 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app.adapters.billing_providers import build_billing_providers
+from app.adapters.image_models import build_image_model
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.oidc import build_identity_providers
+from app.adapters.record_signers import build_record_signer
 from app.api.routes import (
     account,
     auth,
@@ -24,10 +26,12 @@ from app.api.routes import (
     plan,
     practice,
     respond,
+    signatures,
     signup,
     team,
     tours,
     uploads,
+    verify,
     work,
 )
 from app.api.routes.blind_review import router as blind_review_router
@@ -51,12 +55,15 @@ configure_logging()
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     settings.refuse_unready_signup()
+    app.state.signer = build_record_signer(settings)
     app.state.store = S3ObjectStore(settings)
     app.state.messenger = build_messenger(settings)
     app.state.identity_providers = build_identity_providers(settings)
     app.state.billing_providers = build_billing_providers(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
+    app.state.image_model = build_image_model(settings)
     yield
+    await app.state.image_model.aclose()
 
 
 app = FastAPI(
@@ -78,6 +85,8 @@ for module in (
     plan,
     team,
     respond,
+    signatures,
+    verify,
     hq,
 ):
     app.include_router(module.router, prefix="/api")

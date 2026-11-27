@@ -8,6 +8,7 @@ import { DevicesPanel } from "./DevicesPanel";
 import { DigestPreferencePanel } from "./DigestPreferencePanel";
 import { RecoveryCodesPanel } from "./RecoveryCodesPanel";
 import { SecuritySettingsPanel } from "./SecuritySettingsPanel";
+import { SignaturePanel } from "./SignaturePanel";
 import { SECURITY_TEXT } from "./strings";
 
 export function SecurityScreen() {
@@ -17,6 +18,7 @@ export function SecurityScreen() {
     <>
       <PageHeader title={SECURITY_TEXT.title} />
       {managesPractice ? <SecuritySettingsPanel /> : null}
+      <SignaturePanel />
       <DevicesPanel />
       <RecoveryCodesPanel />
       <DigestPreferencePanel />

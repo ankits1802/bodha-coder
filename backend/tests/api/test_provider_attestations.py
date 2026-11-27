@@ -3,7 +3,7 @@ from sqlalchemy import select
 from app.core.db import SessionFactory
 from app.models import NoteText, ProviderAttestation
 from app.services.attestations import ADDENDUM_ATTESTATION
-from tests.api.review_helpers import provider_session
+from tests.api.review_helpers import provider_session, provider_signature
 from tests.builders import reviewed_note
 
 QUESTION = {"key": "dx:N18.30", "text": "What stage is the kidney disease?"}
@@ -25,10 +25,16 @@ async def test_signing_stores_the_exact_wording_the_texts_shown_and_the_address(
         shown_texts = list((await db.scalars(select(NoteText.id).where(NoteText.note_id == note_id))).all())
 
     opened = (await harness.client.get("/api/respond", headers=provider)).json()
+    signature_id = await provider_signature(harness, provider)
     signed = await harness.client.post(
         "/api/respond",
         headers=provider,
-        json={"answers": ANSWERS, "confirmed": True, "attestation": opened["attestation"]},
+        json={
+            "answers": ANSWERS,
+            "confirmed": True,
+            "attestation": opened["attestation"],
+            "signature_id": signature_id,
+        },
     )
 
     assert (opened["purpose"], opened["attestation"], opened["level_change"]) == (

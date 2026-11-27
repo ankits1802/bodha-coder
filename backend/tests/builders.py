@@ -19,10 +19,12 @@ from app.worker import process_one
 from tests.fakes import (
     NOTE_TEXT,
     FakeBillingProvider,
+    FakeImageModel,
     FakeMessenger,
     FakeProvider,
     FakeStore,
     ScriptedReviewer,
+    signature_data_url,
     text_pdf,
 )
 
@@ -40,6 +42,7 @@ class Harness:
     messenger: FakeMessenger
     providers: dict[str, FakeProvider]
     billing: dict[str, FakeBillingProvider]
+    image_model: FakeImageModel
 
     @property
     def google(self) -> FakeProvider:
@@ -59,6 +62,16 @@ async def sign_in(
             box[email] = setup.json()["secret"]
         body = await pass_two_step(client, email, body["mfa_token"], box[email], site=site)
     return {"Authorization": f"Bearer {body['access_token']}"}
+
+
+async def adopt_signature(client: AsyncClient, headers: dict[str, str], *, name: str = "Practice Admin") -> str:
+    body = {"source": "typed", "typed_name": name, "image": signature_data_url()}
+    drafted = await client.post("/api/signature/drafts", headers=headers, json=body)
+    assert drafted.status_code == 200, drafted.text
+    signature_id = drafted.json()["id"]
+    adopted = await client.post(f"/api/signature/drafts/{signature_id}/adopt", headers=headers)
+    assert adopted.status_code == 200, adopted.text
+    return signature_id
 
 
 async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret: str, *, site: str = "") -> dict:
@@ -152,6 +165,7 @@ async def practice_with_provider(
     hq = await sign_in(harness.client, f"hq-{admin_email}", secret_box=secrets)
     practice_id = await new_practice(harness, name=name, admin_email=admin_email, hq_headers=hq)
     admin = await sign_in(harness.client, admin_email, secret_box=secrets)
+    await adopt_signature(harness.client, admin)
     provider = await harness.client.post(
         "/api/providers",
         headers=admin,

@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
+from app.adapters.seal_keys import RecordSigner
 from app.core.calendar import zone_named
 from app.core.config import get_settings
 from app.core.deps import Actor, ProviderActor
@@ -33,6 +34,8 @@ from app.services.query_governance import refuse_repeat_queries
 from app.services.rate_limits import PROVIDER_CODE_PER_REQUEST, hit
 from app.services.review_actions import note_for
 from app.services.routing import choices_for, open_questions
+from app.services.sealing import provider_signer, seal_attestation
+from app.services.signatures import SignatureChoice, provider_signature
 
 CODE_MINUTES = 10
 MAX_CODE_ATTEMPTS = 5
@@ -303,24 +306,32 @@ async def load_for_provider(db: AsyncSession, actor: ProviderActor) -> tuple[Add
     return request, await db.get_one(Note, request.note_id), await db.get_one(Provider, request.provider_id)
 
 
-async def answer(
-    db: AsyncSession, actor: ProviderActor, answers: list[Answer], *, confirmed: bool, attestation: str | None = None
-) -> AddendumRequest:
+@dataclass(frozen=True)
+class SignedAnswers:
+    answers: list[Answer]
+    confirmed: bool
+    attestation: str | None
+    signature: SignatureChoice
+
+
+async def answer(db: AsyncSession, signer: RecordSigner, actor: ProviderActor, reply: SignedAnswers) -> AddendumRequest:
     request, note, provider = await load_for_provider(db, actor)
     if request.purpose != QUESTIONS_PURPOSE:
         raise Conflict("confirm or disagree with the visit level instead")
     if request.status != "sent":
         raise Conflict("this request was already answered")
-    if not confirmed:
+    if not reply.confirmed:
         raise Invalid("confirm the answers are clinically accurate")
-    wording = checked_wording(ADDENDUM_ATTESTATION, attestation)
-    chosen = _validated(request.questions, answers)
+    wording = checked_wording(ADDENDUM_ATTESTATION, reply.attestation)
+    chosen = _validated(request.questions, reply.answers)
+    signature = await provider_signature(db, actor, reply.signature)
     practice = await db.get_one(Practice, note.practice_id)
     signed_on = datetime.now(zone_named(practice.time_zone)).date()
     text = addendum_text(f"{provider.name}, {provider.credential}", request.questions, chosen, signed_on=signed_on)
     request.answers = [{"key": item.key, "choice": item.choice, "comment": item.comment} for item in chosen]
     request.addendum_text, request.status, request.answered_at = text, "answered", utcnow()
-    await record_attestation(db, actor, request, Statement(wording, text, "signed", None))
+    statement = await record_attestation(db, actor, request, Statement(wording, text, "signed", None))
+    await seal_attestation(db, signer, provider_signer(actor, provider, signature), statement, note)
     db.add(
         NoteText(
             note_id=note.id,

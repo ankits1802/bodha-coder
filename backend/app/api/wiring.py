@@ -9,6 +9,7 @@ from app.adapters.billing_contract import BillingProvider
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
+from app.adapters.seal_keys import RecordSigner
 from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
 from app.core.deps import billing_only_since
@@ -16,6 +17,7 @@ from app.core.errors import NotFound
 from app.models import Practice, User
 from app.services.auth import MfaChallenge, Tokens
 from app.services.practice_setup import practice_checks
+from app.services.signatures import SignatureTools
 
 REFRESH_COOKIE = "bodha_refresh"
 REFRESH_PATH = "/api/auth"
@@ -52,6 +54,14 @@ def billing_providers(request: Request) -> dict[str, BillingProvider]:
     return request.app.state.billing_providers
 
 
+def record_signer(request: Request) -> RecordSigner:
+    return request.app.state.signer
+
+
+def signature_tools(request: Request) -> SignatureTools:
+    return SignatureTools(request.app.state.store, request.app.state.image_model)
+
+
 def client_of(request: Request) -> tuple[str | None, str | None]:
     return (request.client.host if request.client else None), request.headers.get("user-agent")
 
@@ -62,6 +72,8 @@ Icd = Annotated[IcdCatalog, Depends(icd)]
 IdentityProviders = Annotated[dict[str, IdentityProvider], Depends(identity_providers)]
 ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
 BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_providers)]
+Sealer = Annotated[RecordSigner, Depends(record_signer)]
+SigningTools = Annotated[SignatureTools, Depends(signature_tools)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
 OidcCookie = Annotated[str | None, Cookie(alias=OIDC_COOKIE)]
 SignupCookie = Annotated[str | None, Cookie(alias=SIGNUP_COOKIE)]

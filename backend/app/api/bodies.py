@@ -13,10 +13,13 @@ from app.models import (
     COMMENT_LENGTH,
     OVERRIDE_NOTE_LENGTH,
     OVERRIDE_REASONS,
+    SIGNATURE_SOURCES,
+    SIGNER_NAME_LENGTH,
     TOUR_OUTCOMES,
     TOUR_VERSION_LIMIT,
 )
 from app.services.plans import CHECKOUT_PLANS
+from app.services.signature_images import MAX_IMAGE_DATA_CHARS
 
 
 class Body(BaseModel):
@@ -237,13 +240,24 @@ class AnswerBody(Body):
     comment: str | None = Field(default=None, max_length=2000)
 
 
-class RespondBody(Body):
+class SignatureDraftBody(Body):
+    source: Literal[SIGNATURE_SOURCES]
+    typed_name: str = Field(min_length=1, max_length=SIGNER_NAME_LENGTH)
+    image: str = Field(min_length=1, max_length=MAX_IMAGE_DATA_CHARS)
+
+
+class ProviderSigningBody(Body):
+    signature_id: str | None = Field(default=None, max_length=36)
+    remember_signature: bool = False
+
+
+class RespondBody(ProviderSigningBody):
     answers: list[AnswerBody] = Field(min_length=1, max_length=10)
     confirmed: bool
     attestation: str | None = Field(default=None, max_length=300)
 
 
-class LevelChangeBody(Body):
+class LevelChangeBody(ProviderSigningBody):
     answer: Literal["confirm", "disagree"]
     comment: str | None = Field(default=None, max_length=COMMENT_LENGTH)
     confirmed: bool

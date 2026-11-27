@@ -11,9 +11,15 @@ from app.ai.contracts import ModelReply
 from app.ai.errors import ModelRequestRejected
 from app.ai.prompts.context import ADDENDUM_HEADING_PATTERN, CONTEXT_HEADING
 
-__all__ = ["DEMO_MODEL", "DemoModelClient", "demo_outcome", "read_request"]
+__all__ = ["DEMO_MODEL", "DEMO_SIGNATURE_ANSWER", "DemoImageModel", "DemoModelClient", "demo_outcome", "read_request"]
 
 DEMO_MODEL = "bodha-demo"
+DEMO_SIGNATURE_ANSWER = {
+    "is_signature": True,
+    "contains_other_text": False,
+    "multiple_signatures": False,
+    "image_issues": [],
+}
 _NOTE = re.compile(r"<clinical_note>\n(?P<text>.*)\n</clinical_note>", re.S)
 
 
@@ -34,6 +40,14 @@ class DemoModelClient:
         parts = tuple(schema.get("properties", {}))
         bundle = demo_bundle(parts, read_request(prompt, pdf), self._codes)
         return ModelReply(text=json.dumps(bundle), model=DEMO_MODEL, input_tokens=0, output_tokens=0)
+
+
+class DemoImageModel:
+    async def inspect_image(self, prompt: str, *, schema: dict[str, Any], image: bytes, mime_type: str) -> ModelReply:
+        return ModelReply(text=json.dumps(DEMO_SIGNATURE_ANSWER), model=DEMO_MODEL, input_tokens=0, output_tokens=0)
+
+    async def aclose(self) -> None:
+        return None
 
 
 def demo_outcome(document: bytes) -> DemoOutcome:

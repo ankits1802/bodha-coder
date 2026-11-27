@@ -1,0 +1,38 @@
+import type { SigningEventType, VerificationProblem } from "@/lib/api/types";
+
+export const VERIFY_TEXT = {
+  title: "Verify a signed record",
+  code: "Verification code",
+  verify: "Verify",
+  incomplete: "Enter the 12-character code.",
+  resultLabel: "Verification result",
+  valid: "Seal verified",
+  invalid: "Seal does not match",
+  event: "Event",
+  practice: "Practice",
+  signedBy: "Signed by",
+  signed: "Signed",
+  document: "Document SHA-256",
+  envelope: "Envelope SHA-256",
+  noDocument: "No document",
+  checkPdf: "Check a PDF",
+  pdfLabel: "PDF to compare",
+  matches: "Same as the signed document",
+  differs: "Not the signed document",
+  checking: "Checking",
+  events: {
+    approval: "Claim approved",
+    compliance_decision: "Compliance decision",
+    provider_addendum: "Provider addendum signed",
+    provider_level_change: "Provider visit level statement",
+    agreement: "Practice agreement accepted",
+  } satisfies Record<SigningEventType, string>,
+  problems: {
+    record_missing: "The signed record is gone",
+    record_changed: "The signed record changed",
+    signature_missing: "The signature image is gone",
+    signature_changed: "The signature image changed",
+    envelope_changed: "The sealed facts changed",
+    seal_invalid: "The seal does not match",
+  } satisfies Record<VerificationProblem, string>,
+} as const;

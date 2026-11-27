@@ -3,6 +3,7 @@ from __future__ import annotations
 from httpx import Response
 
 from tests.builders import DOCUMENTED, Harness, Practice
+from tests.fakes import signature_data_url
 
 KEEP_I10 = {"choices": {"dx:I10": "keep"}}
 
@@ -21,6 +22,13 @@ async def keep_i10_with_reason(harness: Harness, practice: Practice, note_id: st
 
 async def approve(harness: Harness, practice: Practice, note_id: str) -> Response:
     return await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)
+
+
+async def provider_signature(harness: Harness, provider: dict[str, str], *, source: str = "typed") -> str:
+    body = {"source": source, "typed_name": "Elena Varga", "image": signature_data_url()}
+    drafted = await harness.client.post("/api/respond/signature/drafts", headers=provider, json=body)
+    assert drafted.status_code == 200, drafted.text
+    return drafted.json()["id"]
 
 
 async def note_detail(harness: Harness, practice: Practice, note_id: str) -> dict:

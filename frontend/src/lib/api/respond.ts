@@ -9,6 +9,7 @@ import type {
   ProviderRequest,
   ProviderToken,
   RespondResult,
+  SigningChoice,
 } from "./types";
 
 export function sendProviderCode(token: string): Promise<CodeSent> {
@@ -27,9 +28,14 @@ export function getProviderDocument(providerToken: string): Promise<DocumentLink
   return request<DocumentLink>("/api/respond/document", { auth: { bearer: providerToken } });
 }
 
-export function submitAnswers(providerToken: string, answers: AddendumAnswer[], attestation: string): Promise<RespondResult> {
+export function submitAnswers(
+  providerToken: string,
+  answers: AddendumAnswer[],
+  attestation: string,
+  choice: SigningChoice,
+): Promise<RespondResult> {
   return request<RespondResult>("/api/respond", {
-    body: { answers, confirmed: true, attestation },
+    body: { answers, confirmed: true, attestation, ...choice },
     auth: { bearer: providerToken },
   });
 }

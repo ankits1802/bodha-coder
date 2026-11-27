@@ -37,7 +37,7 @@ from app.api.responses.note_actions import (
     RequestCreated,
 )
 from app.api.responses.notes import NoteDetail
-from app.api.wiring import Icd, Mail, Store
+from app.api.wiring import Icd, Mail, Sealer, Store
 from app.core.deps import Actor, Db, require
 from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
 from app.services import addenda, approval, assignment, claim_lines, note_changes, note_view, review_actions
@@ -102,14 +102,16 @@ async def link_diagnoses(note_id: str, body: PointersBody, db: Db, actor: Sighte
 
 
 @router.post("/{note_id}/approve", response_model=NoteState)
-async def approve(note_id: str, db: Db, mail: Mail, actor: Approver) -> dict[str, str]:
-    note = await approval.approve(db, mail, actor, note_id)
+async def approve(note_id: str, db: Db, mail: Mail, signer: Sealer, actor: Approver) -> dict[str, str]:
+    note = await approval.approve(db, mail, signer, actor, note_id)
     return {"status": note.status}
 
 
 @router.post("/approve", response_model=ApprovedNotes)
-async def approve_many(body: BulkApproveBody, db: Db, mail: Mail, actor: Approver) -> dict[str, list[str]]:
-    return {"approved": await approval.approve_many(db, mail, actor, body.note_ids)}
+async def approve_many(
+    body: BulkApproveBody, db: Db, mail: Mail, signer: Sealer, actor: Approver
+) -> dict[str, list[str]]:
+    return {"approved": await approval.approve_many(db, mail, signer, actor, body.note_ids)}
 
 
 @router.post("/assign", response_model=AssignedNotes)
@@ -127,11 +129,17 @@ async def flag(note_id: str, body: FlagBody, db: Db, actor: Decider) -> dict[str
 
 @router.post("/{note_id}/compliance", response_model=ComplianceOutcome)
 async def compliance(
-    note_id: str, body: ComplianceBody, db: Db, mail: Mail, actor: Annotated[Actor, Depends(require(*COMPLIANCE))]
+    note_id: str,
+    body: ComplianceBody,
+    db: Db,
+    mail: Mail,
+    *,
+    signer: Sealer,
+    actor: Annotated[Actor, Depends(require(*COMPLIANCE))],
 ) -> dict[str, str | None]:
     kept = override(body.override) if body.override else None
     note = await approval.compliance_decision(
-        db, mail, actor, note_id, decision=body.decision, reason=body.reason, override=kept
+        db, mail, signer, actor, note_id, decision=body.decision, reason=body.reason, override=kept
     )
     return {"status": note.status, "lane": note.lane}
 

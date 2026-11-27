@@ -12,7 +12,7 @@ CODE_BY_STATUS = {
     500: "server_error",
     503: "unavailable",
 }
-CODE_STATUS_EXTRAS = {"plan_ended": 403}
+CODE_STATUS_EXTRAS = {"plan_ended": 403, "signature_required": 409}
 ERROR_CODES = (*CODE_BY_STATUS.values(), *CODE_STATUS_EXTRAS)
 SERVER_ERROR_MESSAGE = "something went wrong on our side; try again"
 
@@ -44,6 +44,10 @@ class NotFound(AppError):
 class Conflict(AppError):
     status_code = 409
     code = "conflict"
+
+
+class SignatureRequired(Conflict):
+    code = "signature_required"
 
 
 class Invalid(AppError):

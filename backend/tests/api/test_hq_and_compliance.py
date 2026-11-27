@@ -1,4 +1,4 @@
-from tests.builders import create_hq_user, invite_member, reviewed_note, sign_in
+from tests.builders import adopt_signature, create_hq_user, invite_member, reviewed_note, sign_in
 
 KEEP_REASON = "Risk of the chosen management was discussed with the patient at length"
 
@@ -77,6 +77,7 @@ async def test_compliance_keeps_the_billed_level_with_its_reason_in_the_access_l
     assert flagged.status_code == 200, flagged.text
     await invite_member(harness, practice, name="Jordan Diaz", email="jordan@lakeside.example.com", role="compliance")
     compliance = await sign_in(harness.client, "jordan@lakeside.example.com", secret_box=practice.secrets)
+    await adopt_signature(harness.client, compliance, name="Jordan Diaz")
     kept = await harness.client.post(
         f"{path}/compliance", headers=compliance, json={"decision": "keep", "reason": KEEP_REASON}
     )

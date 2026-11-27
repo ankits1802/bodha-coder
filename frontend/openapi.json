@@ -3668,7 +3668,8 @@
               "rate_limited",
               "server_error",
               "unavailable",
-              "plan_ended"
+              "plan_ended",
+              "signature_required"
             ],
             "title": "Error",
             "type": "string"
@@ -5747,6 +5748,23 @@
           "confirmed": {
             "title": "Confirmed",
             "type": "boolean"
+          },
+          "remember_signature": {
+            "default": false,
+            "title": "Remember Signature",
+            "type": "boolean"
+          },
+          "signature_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature Id"
           }
         },
         "required": [
@@ -6282,6 +6300,26 @@
           "mai"
         ],
         "title": "MueEdit",
+        "type": "object"
+      },
+      "MySignature": {
+        "additionalProperties": false,
+        "properties": {
+          "signature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignatureView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "signature"
+        ],
+        "title": "MySignature",
         "type": "object"
       },
       "NcciCoverage": {
@@ -9341,6 +9379,16 @@
             "title": "Service Date",
             "type": "string"
           },
+          "signature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignatureView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "status": {
             "enum": [
               "sent",
@@ -9381,7 +9429,8 @@
           "addendum_text",
           "purpose",
           "attestation",
-          "level_change"
+          "level_change",
+          "signature"
         ],
         "title": "ProviderRequest",
         "type": "object"
@@ -10729,6 +10778,23 @@
           "confirmed": {
             "title": "Confirmed",
             "type": "boolean"
+          },
+          "remember_signature": {
+            "default": false,
+            "title": "Remember Signature",
+            "type": "boolean"
+          },
+          "signature_id": {
+            "anyOf": [
+              {
+                "maxLength": 36,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature Id"
           }
         },
         "required": [
@@ -11188,6 +11254,99 @@
         "title": "SampleResults",
         "type": "object"
       },
+      "SealVerification": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "document_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Sha256"
+          },
+          "envelope_sha256": {
+            "title": "Envelope Sha256",
+            "type": "string"
+          },
+          "event": {
+            "enum": [
+              "approval",
+              "compliance_decision",
+              "provider_addendum",
+              "provider_level_change",
+              "agreement"
+            ],
+            "title": "Event",
+            "type": "string"
+          },
+          "practice_name": {
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "enum": [
+                "record_missing",
+                "record_changed",
+                "signature_missing",
+                "signature_changed",
+                "envelope_changed",
+                "seal_invalid"
+              ],
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "signed_at": {
+            "title": "Signed At",
+            "type": "string"
+          },
+          "signer_kind": {
+            "enum": [
+              "user",
+              "provider"
+            ],
+            "title": "Signer Kind",
+            "type": "string"
+          },
+          "signer_name": {
+            "title": "Signer Name",
+            "type": "string"
+          },
+          "signer_title": {
+            "title": "Signer Title",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "problems",
+          "code",
+          "event",
+          "practice_name",
+          "signer_kind",
+          "signer_name",
+          "signer_title",
+          "signed_at",
+          "document_sha256",
+          "envelope_sha256"
+        ],
+        "title": "SealVerification",
+        "type": "object"
+      },
       "SearchResults": {
         "additionalProperties": false,
         "properties": {
@@ -11476,6 +11635,78 @@
           "test_data_only"
         ],
         "title": "SignUpOptions",
+        "type": "object"
+      },
+      "SignatureDraftBody": {
+        "additionalProperties": false,
+        "properties": {
+          "image": {
+            "maxLength": 2000026,
+            "minLength": 1,
+            "title": "Image",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "drawn",
+              "typed",
+              "uploaded"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "typed_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Typed Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "typed_name",
+          "image"
+        ],
+        "title": "SignatureDraftBody",
+        "type": "object"
+      },
+      "SignatureView": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "image": {
+            "title": "Image",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "drawn",
+              "typed",
+              "uploaded"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "typed_name": {
+            "title": "Typed Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "typed_name",
+          "image",
+          "created_at"
+        ],
+        "title": "SignatureView",
         "type": "object"
       },
       "SignedIn": {
@@ -23491,6 +23722,85 @@
         ]
       }
     },
+    "/api/respond/signature/drafts": {
+      "post": {
+        "operationId": "signature_draft_api_respond_signature_drafts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignatureDraftBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignatureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Signature Draft",
+        "tags": [
+          "provider"
+        ]
+      }
+    },
     "/api/respond/switch": {
       "post": {
         "operationId": "switch_api_respond_switch_post",
@@ -23707,6 +24017,252 @@
         "summary": "Find Notes",
         "tags": [
           "work"
+        ]
+      }
+    },
+    "/api/signature": {
+      "get": {
+        "operationId": "my_signature_api_signature_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySignature"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "My Signature",
+        "tags": [
+          "signatures"
+        ]
+      }
+    },
+    "/api/signature/drafts": {
+      "post": {
+        "operationId": "new_draft_api_signature_drafts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignatureDraftBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignatureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "New Draft",
+        "tags": [
+          "signatures"
+        ]
+      }
+    },
+    "/api/signature/drafts/{signature_id}/adopt": {
+      "post": {
+        "operationId": "adopt_api_signature_drafts__signature_id__adopt_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signature_id",
+            "required": true,
+            "schema": {
+              "title": "Signature Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySignature"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Adopt",
+        "tags": [
+          "signatures"
         ]
       }
     },
@@ -24841,6 +25397,58 @@
         "summary": "Preview",
         "tags": [
           "uploads"
+        ]
+      }
+    },
+    "/api/verify/{code}": {
+      "get": {
+        "operationId": "verify_api_verify__code__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SealVerification"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Verify",
+        "tags": [
+          "verify"
         ]
       }
     }

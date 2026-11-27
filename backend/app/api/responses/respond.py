@@ -1,6 +1,7 @@
 from app.api.responses.base import RequestStatus, View
 from app.api.responses.notes import AddendumQuestion, TextRevision
 from app.api.responses.review_records import RequestPurpose
+from app.api.responses.signatures import SignatureView
 
 __all__ = [
     "CodeSent",
@@ -52,6 +53,7 @@ class ProviderRequest(View):
     purpose: RequestPurpose
     attestation: str
     level_change: LevelChangeView | None
+    signature: SignatureView | None
 
 
 class RespondResult(View):

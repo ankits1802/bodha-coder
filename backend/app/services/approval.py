@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
+from app.adapters.seal_keys import RecordSigner
 from app.codes.billing_codes import Code
 from app.core.deps import Actor
 from app.core.errors import Conflict, Forbidden, Invalid
@@ -16,16 +17,32 @@ from app.services.level_changes import ask_level_confirmation
 from app.services.override_reasons import OTHER_REASON, OverrideReason, Reasoned, checked_reason, missing_reasons
 from app.services.placement import current_findings, refresh_placement
 from app.services.review_actions import current_claim, new_decision, note_for, open_note
+from app.services.sealed_records import APPROVAL_EVENT, COMPLIANCE_EVENT
+from app.services.sealing import person_signer, seal_snapshot
+from app.services.signatures import person_signature
 
-__all__ = ["approve", "approve_many", "compliance_decision", "latest_reasoned"]
+__all__ = ["SIGNED_STATEMENTS", "approve", "approve_many", "compliance_decision", "latest_reasoned"]
 
 MISSING_REASONS = "choose a reason for each choice that departs from Bodha before approving"
+SIGNED_STATEMENTS = {
+    "approved": "I approve this claim as coded from the documentation.",
+    "compliance confirm": "I confirm this claim after compliance review.",
+    "compliance keep": "I keep the billed visit level after compliance review.",
+}
 
 
 async def approve(
-    db: AsyncSession, messenger: Messenger, actor: Actor, note_id: str, *, reason: str = "approved"
+    db: AsyncSession,
+    messenger: Messenger,
+    signer: RecordSigner,
+    actor: Actor,
+    note_id: str,
+    *,
+    reason: str = "approved",
+    event: str = APPROVAL_EVENT,
 ) -> Note:
     note = await open_note(db, actor, note_id)
+    signature = await person_signature(db, actor)
     findings = await current_findings(db, note)
     await _refuse_unready(db, note, findings)
     codes = await current_claim(db, note)
@@ -35,6 +52,8 @@ async def approve(
     note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
     note.approved_by, note.approved_at = actor.user.id, utcnow()
     snapshot = await write_snapshot(db, note, final_set, approver_of(actor), findings)
+    signed_by = person_signer(actor, signature)
+    await seal_snapshot(db, signer, signed_by, snapshot, event=event, statement=SIGNED_STATEMENTS[reason])
     detail = f"{', '.join(code.label() for code in codes)} · snapshot {snapshot.revision}"
     record_access(db, actor, "approved", note_id=note.id, detail=detail[:300])
     await ask_level_confirmation(db, messenger, actor, note, snapshot=snapshot, findings=findings)
@@ -42,13 +61,16 @@ async def approve(
     return note
 
 
-async def approve_many(db: AsyncSession, messenger: Messenger, actor: Actor, note_ids: list[str]) -> list[str]:
+async def approve_many(
+    db: AsyncSession, messenger: Messenger, signer: RecordSigner, actor: Actor, note_ids: list[str]
+) -> list[str]:
+    await person_signature(db, actor)
     approved: list[str] = []
     for note_id in note_ids:
         note = await note_for(db, actor, note_id)
         if note.lane != "approve":
             raise Conflict("only notes whose codes match the note can be approved together")
-        await approve(db, messenger, actor, note_id)
+        await approve(db, messenger, signer, actor, note_id)
         approved.append(note_id)
     return approved
 
@@ -56,6 +78,7 @@ async def approve_many(db: AsyncSession, messenger: Messenger, actor: Actor, not
 async def compliance_decision(
     db: AsyncSession,
     messenger: Messenger,
+    signer: RecordSigner,
     actor: Actor,
     note_id: str,
     *,
@@ -83,7 +106,8 @@ async def compliance_decision(
     if reason:
         record_access(db, actor, f"compliance {decision}", note_id=note.id, detail=reason)
     note.compliance_cleared_by = actor.user.id
-    return await approve(db, messenger, actor, note_id, reason=f"compliance {decision}")
+    reason_given = f"compliance {decision}"
+    return await approve(db, messenger, signer, actor, note_id, reason=reason_given, event=COMPLIANCE_EVENT)
 
 
 async def latest_reasoned(db: AsyncSession, note_id: str) -> dict[str, Reasoned]:

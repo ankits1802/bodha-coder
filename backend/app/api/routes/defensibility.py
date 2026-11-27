@@ -11,6 +11,7 @@ from app.api.responses.base import ExactRoute, file_download
 from app.api.responses.defensibility import FlaggedDays, NoteDay
 from app.api.responses.insights import EmMix
 from app.api.routes.billing import INSIGHT_PERIODS
+from app.api.wiring import Store
 from app.codes.em_benchmarks import EmBenchmarks, default_em_benchmarks
 from app.core.calendar import today_in
 from app.core.deps import Actor, Db, require
@@ -29,8 +30,8 @@ Benchmarks = Annotated[EmBenchmarks, Depends(em_benchmark_data)]
 
 
 @router.get("/notes/{note_id}/defense-packet", **file_download("application/pdf"))
-async def packet(note_id: str, db: Db, actor: SightedReader) -> Response:
-    built = await defense_packet.defense_packet(db, actor, note_id)
+async def packet(note_id: str, db: Db, store: Store, actor: SightedReader) -> Response:
+    built = await defense_packet.defense_packet(db, store, actor, note_id)
     disposition = f'attachment; filename="{built.file_name}"'
     return Response(built.content, media_type="application/pdf", headers={"Content-Disposition": disposition})
 

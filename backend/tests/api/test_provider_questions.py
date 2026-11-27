@@ -1,3 +1,4 @@
+from tests.api.review_helpers import provider_signature
 from tests.builders import reviewed_note
 
 QUESTION = "What stage is the kidney disease?"
@@ -44,6 +45,7 @@ async def test_the_provider_answers_and_the_note_is_read_again(harness, icd_cata
         json={
             "answers": [{"key": "dx:N18.30", "choice": "Yes"}],
             "confirmed": True,
+            "signature_id": await provider_signature(harness, provider),
         },
     )
     assert answered.json()["status"] == "answered"

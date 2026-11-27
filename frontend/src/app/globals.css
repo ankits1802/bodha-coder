@@ -141,6 +141,7 @@
   --container-content: 1160px;
   --container-review: 1380px;
   --container-landing: 1120px;
+  --font-signature: "Snell Roundhand", "Apple Chancery", "Segoe Script", "Brush Script MT", cursive;
 }
 
 @theme inline {
