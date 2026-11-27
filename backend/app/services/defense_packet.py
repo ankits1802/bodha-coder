@@ -116,7 +116,7 @@ async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
 
 def _visit(note: Note, provider: Provider, place: PlaceOfService | None, actor: Actor) -> PacketVisit:
     return PacketVisit(
-        practice_name=actor.practice.name if actor.practice else "",
+        practice_name=actor.own_practice.name,
         provider_label=f"{provider.name}, {provider.credential}",
         provider_npi=provider.npi,
         provider_specialty=provider.specialty,

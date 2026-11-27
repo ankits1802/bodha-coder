@@ -121,7 +121,9 @@ dictionaries and the model validates them (see Architecture, API types).
 
 | Module | Provides |
 |---|---|
-| `base.py` | `View` (base model, `extra="forbid"`), `ExactRoute` (the `route_class` of every router: responses carry exactly the keys the service built), `Omittable[T]` (a key a service may leave out: optional, never `null`, declared `= None`), `file_download(media_type)` (route options for a file response), `Created` (`id`), `DocumentLink` (`url`), the shared literals `NoteStatus`, `Lane`, `Role`, `PracticeRole`, `Channel`, `TextSource`, `RequestStatus`, `PlanType` (derived from the model and service constants) |
+| `view.py` | `View` (base model, `extra="forbid"`) |
+| `errors.py` | `ErrorResponse` (`error`, `message`), `error_responses(path, endpoint, dependencies)` (the error responses a route can return, read from its dependency tree) |
+| `base.py` | re-exports `View` and `ErrorResponse`; `ExactRoute` (the `route_class` of every router: responses carry exactly the keys the service built, and errors are described by `error_responses`), `Omittable[T]` (a key a service may leave out: optional, never `null`, declared `= None`), `file_download(media_type)` (route options for a file response), `Created` (`id`), `DocumentLink` (`url`), the shared literals `NoteStatus`, `Lane`, `Role`, `PracticeRole`, `Channel`, `TextSource`, `RequestStatus`, `PlanType` (derived from the model and service constants) |
 | `auth.py` | `User`, `PracticeSummary`, `Checks`, `SignedIn` (`recovery_codes` omittable), `MfaChallenge`, `MfaEnrolment`, `SignInProviders`, `SignedInDevice`, `RecoveryCodeStatus`, `RecoveryCodes`, `Preferences` |
 | `work.py` | `NoteSummary`, `QueueRow`, `ComplianceRow`, `LaneCount`, `LaneCounts`, `BatchProgress`, `TodaySummary`, `QueuePage`, `SearchResults`, `ComplianceList`, `LaneReason`, `EmAction` |
 | `notes.py` | `NoteDetail` and its parts (`NoteHeader`, `TextRevision`, `NoteText`, `AnalysisView`, `Finding`, `FindingAction`, `ClaimEstimates`, `NoteHistory`, `CodeJson` (`units` and `pointers` omittable), `AddendumRequestView`, `AddendumQuestion`, `AddendumAnswer`) |

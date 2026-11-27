@@ -20,6 +20,7 @@ export type RecoveryCodes = Schemas["RecoveryCodes"];
 export type Preferences = Schemas["Preferences"];
 
 export type Created = Schemas["Created"];
+export type ErrorBody = Schemas["ErrorResponse"];
 export type DocumentLink = Schemas["DocumentLink"];
 
 export type NoteSummary = Schemas["NoteSummary"];

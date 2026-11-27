@@ -67,7 +67,7 @@ class PracticeSetup(View):
     checks: Checks
     missing_npi: int
     payers: list[Payer]
-    security: SecuritySettings | None
+    security: SecuritySettings
 
 
 class PayerOption(View):

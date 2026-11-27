@@ -65,4 +65,12 @@ about 150 shapes by hand. The two sides could drift without any check noticing.
   `review` (a visit Bodha could not level), a sample's period may be `null` (shown as `—`), and an
   analysis's MIPS scope has a type instead of `unknown`.
 - Error bodies (`{"error", "message"}`) are not described per route; the OpenAPI document still shows
-  FastAPI's default 422 schema for them.
+  FastAPI's default 422 schema for them. Cleared by the amendment below.
+
+Amendment (2026-11-27): every operation describes its errors with `ErrorResponse` (`error` is one of
+`core.errors.ERROR_CODES`, `message` a string). `ExactRoute` reads the route's dependency tree: `422` when it
+takes a body, query or path input, `401` when it depends on `current_actor` or `current_provider`, `403` when
+it passes a role guard from `require`, and `default` for every other error a service may raise. FastAPI's
+`HTTPValidationError` no longer appears. Unknown routes and methods (Starlette's `HTTPException`) and
+unhandled exceptions answer in the same shape (`not_found`, `method_not_allowed`, `server_error` with a fixed
+message and no detail), so every non-2xx JSON body matches the document.

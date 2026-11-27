@@ -3,17 +3,21 @@ from typing import Annotated, Any, Literal, TypeVar
 
 from fastapi.responses import Response
 from fastapi.routing import APIRoute
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 from pydantic.json_schema import SkipJsonSchema
 
 from app.core.roles import PRACTICE_ROLES
 from app.models import LANES, NOTE_STATUSES, ROLES
 from app.services.payers import PLAN_TYPES
 
+from .errors import ErrorResponse, error_responses
+from .view import View
+
 __all__ = [
     "Channel",
     "Created",
     "DocumentLink",
+    "ErrorResponse",
     "ExactRoute",
     "Lane",
     "NoteStatus",
@@ -46,13 +50,10 @@ def _optional_key(schema: dict[str, Any]) -> None:
 Omittable = Annotated[T | SkipJsonSchema[None], Field(json_schema_extra=_optional_key)]
 
 
-class View(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
 class ExactRoute(APIRoute):
     def __init__(self, path: str, endpoint: Callable[..., Any], **options: Any) -> None:
-        super().__init__(path, endpoint, **{**options, "response_model_exclude_unset": True})
+        responses = {**error_responses(path, endpoint, options.get("dependencies")), **(options.get("responses") or {})}
+        super().__init__(path, endpoint, **{**options, "responses": responses, "response_model_exclude_unset": True})
 
 
 class Created(View):

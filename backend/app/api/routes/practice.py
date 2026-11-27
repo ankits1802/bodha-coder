@@ -31,17 +31,14 @@ Admin = Annotated[Actor, Depends(require(*ADMINS))]
 
 @router.get("/practice/setup", response_model=PracticeSetup)
 async def setup(db: Db, actor: Admin) -> dict[str, Any]:
-    practice = actor.practice
-    overview = await practice_setup.setup_overview(db, practice) if practice else {}
+    practice = actor.own_practice
     return {
-        **overview,
+        **await practice_setup.setup_overview(db, practice),
         "security": {
             "mfa_roles": practice.mfa_roles,
             "idle_minutes": practice.idle_minutes,
             "access_log_years": practice.access_log_years,
-        }
-        if practice
-        else None,
+        },
     }
 
 

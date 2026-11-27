@@ -24,6 +24,7 @@ from `api/responses/<area>.py`. The types flow one way:
 |---|---|---|
 | Route | `api/routes/<area>.py` | every JSON route names a response model. File downloads (claims CSV, defense packet PDF, addendum text) declare their media type with `responses.base.file_download`; the Google redirects declare `RedirectResponse`; 204 routes have no body |
 | Validation | `responses.base.View` | `extra="forbid"`: a key the service builds but the model does not declare fails the request (500) and the test that reaches it, so the model and the service cannot drift silently |
+| Errors | `responses.errors` | every non-2xx JSON body is `{"error", "message"}` (`ErrorResponse`, codes in `core.errors.ERROR_CODES`). Each operation documents `422` (takes input), `401` (needs a session), `403` (role guard) and `default`, read from its dependency tree; unknown routes, wrong methods and unhandled exceptions answer in the same shape, the last with a fixed message |
 | Exact keys | `responses.base.ExactRoute` | every router uses it; it serialises with `exclude_unset`, so a response carries exactly the keys the service built. A key a service may leave out is declared `Omittable[...] = None` (optional in the schema, never `null`) |
 | Document | `tools/export_openapi.py` | writes `frontend/openapi.json` (sorted keys, LF) from `app.main.app.openapi()` with placeholder settings, no database |
 | Frontend | `npm run api:types` | `scripts/api-types.mjs` runs openapi-typescript on `openapi.json` and prints `src/lib/api/schema.ts` without comments |

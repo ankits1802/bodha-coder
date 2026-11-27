@@ -1,5 +1,20 @@
 from __future__ import annotations
 
+CODE_BY_STATUS = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
+    409: "conflict",
+    422: "invalid",
+    429: "rate_limited",
+    500: "server_error",
+    503: "unavailable",
+}
+ERROR_CODES = tuple(CODE_BY_STATUS.values())
+SERVER_ERROR_MESSAGE = "something went wrong on our side; try again"
+
 
 class AppError(Exception):
     status_code = 400

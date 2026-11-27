@@ -1,4 +1,5 @@
 import { API_MESSAGES } from "./messages";
+import type { ErrorBody } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -23,15 +24,15 @@ export class UserFacingError extends Error {
   }
 }
 
+function isErrorBody(body: unknown): body is ErrorBody {
+  if (!body || typeof body !== "object") return false;
+  const record = body as Record<string, unknown>;
+  return typeof record.error === "string" && typeof record.message === "string";
+}
+
 export async function errorFromResponse(response: Response): Promise<ApiError> {
   const body: unknown = await response.json().catch(() => null);
-  if (body && typeof body === "object") {
-    const record = body as Record<string, unknown>;
-    if (typeof record.message === "string") {
-      const code = typeof record.error === "string" ? record.error : "error";
-      return new ApiError(response.status, code, record.message);
-    }
-  }
+  if (isErrorBody(body)) return new ApiError(response.status, body.error, body.message);
   return new ApiError(response.status, "error", fallbackMessage(response.status));
 }
 

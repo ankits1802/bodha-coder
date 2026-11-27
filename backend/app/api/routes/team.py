@@ -19,9 +19,8 @@ Admin = Annotated[Actor, Depends(require(*ADMINS))]
 @router.get("", response_model=TeamList)
 async def members(db: Db, actor: Admin) -> dict[str, Any]:
     rows = await team.team(db, actor)
-    seats = actor.practice.seats if actor.practice else 0
     return {
-        "seats": seats,
+        "seats": actor.own_practice.seats,
         "members": [
             {
                 "id": u.id,

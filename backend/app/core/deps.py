@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Annotated
+from weakref import WeakSet
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Header, Request
@@ -19,6 +20,7 @@ ACTIVE_PRACTICE_STATUSES = ("trial", "active")
 ACTIVITY_WRITE_INTERVAL = timedelta(minutes=1)
 
 Db = Annotated[AsyncSession, Depends(get_session)]
+ROLE_GUARDS: WeakSet[Callable[..., Awaitable[Actor]]] = WeakSet()
 
 
 @dataclass(frozen=True)
@@ -29,16 +31,18 @@ class Actor:
     user_agent: str | None
 
     @property
-    def practice_id(self) -> str:
+    def own_practice(self) -> Practice:
         if self.practice is None:
             raise Forbidden("this action needs a practice account")
-        return self.practice.id
+        return self.practice
+
+    @property
+    def practice_id(self) -> str:
+        return self.own_practice.id
 
     @property
     def zone(self) -> ZoneInfo:
-        if self.practice is None:
-            raise Forbidden("this action needs a practice account")
-        return zone_named(self.practice.time_zone)
+        return zone_named(self.own_practice.time_zone)
 
 
 @dataclass(frozen=True)
@@ -92,6 +96,7 @@ def require(*roles: str) -> Callable[..., Awaitable[Actor]]:
             raise Forbidden("your role cannot do this")
         return actor
 
+    ROLE_GUARDS.add(guard)
     return guard
 
 

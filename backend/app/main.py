@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from app.adapters.google_oidc import build_google_sign_in
 from app.adapters.messenger import build_messenger
@@ -21,7 +22,7 @@ from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
-from app.core.errors import AppError, Invalid
+from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError, Invalid
 from app.core.logging import RequestLog, configure_logging
 
 configure_logging()
@@ -65,6 +66,17 @@ async def invalid_request(request: Request, error: RequestValidationError) -> JS
     reason = first.get("msg", "the request is not valid")
     message = f"{field}: {reason}" if field else reason
     return JSONResponse({"error": Invalid.code, "message": message}, status_code=Invalid.status_code)
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, error: HTTPException) -> JSONResponse:
+    code = CODE_BY_STATUS.get(error.status_code, AppError.code)
+    return JSONResponse({"error": code, "message": str(error.detail).lower()}, error.status_code, error.headers)
+
+
+@app.exception_handler(Exception)
+async def server_error(request: Request, error: Exception) -> JSONResponse:
+    return JSONResponse({"error": CODE_BY_STATUS[500], "message": SERVER_ERROR_MESSAGE}, status_code=500)
 
 
 @app.middleware("http")
