@@ -10,7 +10,8 @@ async def test_deleting_a_note_removes_its_records_and_files(harness, icd_catalo
     assert (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).status_code == 404
     assert not any(note_id in key for key in harness.store.objects)
     assert (await harness.client.get("/api/today", headers=practice.admin)).json()["batches"] == []
-    actions = [row["action"] for row in (await harness.client.get("/api/access-log", headers=practice.admin)).json()]
+    log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
+    actions = [row["action"] for row in log]
     assert "deleted note" in actions
 
 

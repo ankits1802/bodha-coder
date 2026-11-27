@@ -41,8 +41,10 @@ export function RespondScreen() {
   if (stage.kind === "request") {
     return (
       <RequestView
+        key={stage.providerToken}
         providerToken={stage.providerToken}
         onExpired={() => setStage({ kind: "verify", expired: true })}
+        onSwitch={(providerToken) => setStage({ kind: "request", providerToken })}
       />
     );
   }

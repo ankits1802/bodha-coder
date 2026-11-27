@@ -15,6 +15,9 @@ const PRACTICE: HqPractice = {
   time_zone: "America/Chicago",
   failed_24h: 0,
   last_failure: null,
+  admin_name: "Priya Raman",
+  admin_email: "priya@lakeside.example.com",
+  admin_status: "active",
 };
 
 describe("practiceChanges", () => {

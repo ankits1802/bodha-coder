@@ -1,7 +1,7 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
-import type { Choice, CodeJson, Finding, FindingAction, FindingKind, MdmElements, NoteHistory } from "@/lib/api/types";
+import type { Choice, CodeJson, Finding, FindingAction, FindingKind, MdmElements, NoteHistory, NoteText } from "@/lib/api/types";
 import { FORMAT_WORDS } from "@/lib/format";
-import type { HighlightTone, Mark } from "@/lib/highlight";
+import { containsQuote, type HighlightTone, type Mark } from "@/lib/highlight";
 import { REVIEW_TEXT } from "./strings";
 
 export const CODE_KINDS: readonly FindingKind[] = ["em", "modifier", "code_review", "diagnosis"];
@@ -152,8 +152,34 @@ export function choiceLabel(finding: Pick<Finding, "code_before">, choice: Choic
   return REVIEW_TEXT.choices[choice];
 }
 
+const UNITS_SIGN = "×";
+
+export function withUnits(label: string, units: number | undefined): string {
+  return units !== undefined && units > 1 ? `${label} ${UNITS_SIGN}${units}` : label;
+}
+
 export function codeLabel(code: CodeJson): string {
-  return [code.code, ...code.modifiers].join("-");
+  return withUnits([code.code, ...code.modifiers].join("-"), code.units);
+}
+
+export function codeAfterLabel(finding: Pick<Finding, "code_after" | "detail">): string | null {
+  const units = typeof finding.detail.units === "number" ? finding.detail.units : undefined;
+  return finding.code_after === null ? null : withUnits(finding.code_after, units);
+}
+
+export type QuoteCheck = "found" | "missing";
+
+export function quoteCheck(finding: Pick<Finding, "evidence">, texts: NoteText[]): QuoteCheck | null {
+  const quotes = finding.evidence.filter((quote) => quote.trim() !== "");
+  if (quotes.length === 0 || texts.length === 0) return null;
+  const found = quotes.every((quote) => texts.some((text) => containsQuote(text.text, quote)));
+  return found ? "found" : "missing";
+}
+
+export function quoteStatus(check: QuoteCheck): FindingStatus {
+  return check === "found"
+    ? { tone: "ok", label: REVIEW_TEXT.quote.found }
+    : { tone: "warn", label: REVIEW_TEXT.quote.missing };
 }
 
 export function latestBilled(history: NoteHistory): CodeJson[] {

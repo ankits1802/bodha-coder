@@ -8,7 +8,7 @@ provider, or compliance. Approved codes are exported for billing.
 |---|---|
 | `frontend/` | Next.js (App Router), React, TypeScript, Tailwind CSS |
 | `backend/` | Python, FastAPI, SQLAlchemy, Alembic, Postgres |
-| AI | Gemini, one bundled structured call per note (E/M with modifiers and add-on codes, ICD-10-CM, CDI queries, audit risk, MIPS, risk adjustment) |
+| AI | Gemini (Vertex AI for PHI, or the Developer API), one bundled structured call per note (E/M with modifiers and add-on codes, ICD-10-CM, CDI queries, audit risk, MIPS, risk adjustment) |
 | Files | S3 or Cloudflare R2 (any S3-compatible store) |
 
 ## How a note moves
@@ -77,7 +77,7 @@ Every email is sent as plain text with an HTML version; no message contains pati
 
 | Setting | Values |
 |---|---|
-| `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again |
+| `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
 
 Register `{APP_URL}/api/auth/google/callback` (for example `https://coder.example.com/api/auth/google/callback`)
@@ -86,6 +86,40 @@ Google only signs in people who already have a Bodha Coder account with the same
 verification still applies to them. Sign-in, password reset, two-step codes, Google returns, provider
 codes and demo requests are rate limited per address and account, so uvicorn must see the visitor's
 address (`--proxy-headers` and `--forwarded-allow-ips`, above).
+
+### Gemini on Vertex AI
+
+Clinical notes are PHI. Send them to Gemini through Vertex AI, which Google's HIPAA BAA covers; the
+Gemini Developer API (`GEMINI_API_KEY`) is for development with made-up notes.
+
+| Setting | Values |
+|---|---|
+| `GEMINI_BACKEND` | `developer` (default, uses `GEMINI_API_KEY`) or `vertex` |
+| `GOOGLE_CLOUD_PROJECT` | the Google Cloud project that holds the signed BAA and has the Vertex AI API enabled |
+| `GOOGLE_CLOUD_LOCATION` | a regional endpoint such as `us-central1`, where notes are processed |
+| `GEMINI_MODEL` | a Gemini model Vertex serves in that location |
+
+Vertex uses Application Default Credentials: the service account attached to the worker on Google
+Cloud, workload identity federation elsewhere, or `GOOGLE_APPLICATION_CREDENTIALS` pointing at a key
+file kept outside the repository. Grant the account the Vertex AI User role. Never put credentials
+in `.env` values that are committed. PDFs are sent inline (up to 50 MiB); a larger one fails with
+"PDF too large for Vertex inline; split it". See
+[docs/decisions/0012-vertex-ai.md](docs/decisions/0012-vertex-ai.md).
+
+## Deploy
+
+`backend/Dockerfile` builds one image for the API, the worker and migrations; `frontend/Dockerfile`
+builds the web image, which takes `BACKEND_URL` at start. CI builds both on every push. For a local
+or staging stack with Postgres and LocalStack:
+
+```
+copy .env.compose.example .env.compose
+docker compose --env-file .env.compose up --build
+```
+
+The AWS reference deployment (ECS on Fargate, RDS, S3, SES, SNS, Secrets Manager, CloudWatch) is in
+[docs/DEPLOY.md](docs/DEPLOY.md), the runbooks in [docs/OPERATIONS.md](docs/OPERATIONS.md), and the
+staging load test in [tools/load/README.md](tools/load/README.md).
 
 ## Checks
 
@@ -98,6 +132,7 @@ check, tests and build.
 | Data | Source | Retrieved |
 |---|---|---|
 | CMS-HCC V28 ICD-10 mapping, relative factors, hierarchies, interactions (`backend/app/codes/data/hcc_v28_2027*`) | CMS PY 2027 initial model software, [py-2027-initial-model-software.zip](https://www.cms.gov/files/zip/py-2027-initial-model-software.zip) (package `CMS_HCC_v28_2027_T1_initial_package_v2`); SHA-256 values in `hcc_v28_2027.meta.json` | 2026-11-26 |
+| CMS CY 2026 physician fee schedule RVUs and conversion factor for Medicare national estimates (`backend/app/codes/data/pfs_rvu_2026*`) | CMS PFS Relative Value Files, [RVU26D](https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files/rvu26d) (October 2026 release, [rvu26d-updated-08-26-2026.zip](https://www.cms.gov/files/zip/rvu26d-updated-08-26-2026.zip)), `PPRRVU2026_Oct_nonQPP.csv` rows with a blank modifier, conversion factor 33.4009; SHA-256 values in `pfs_rvu_2026.meta.json` | 2026-11-27 |
 
 ## Reused from ChartMate
 

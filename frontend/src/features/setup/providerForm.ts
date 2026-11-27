@@ -1,5 +1,6 @@
 import type { Channel, Provider, ProviderInput } from "@/lib/api/types";
 import { isEmail, isNpiShaped } from "@/lib/validation";
+import { credentialDraftFrom, detailsFrom, validateCredentials, type CredentialDraft, type CredentialErrors } from "./credentialForm";
 import { PROVIDER_TEXT } from "./strings";
 
 export interface ProviderDraft {
@@ -12,10 +13,11 @@ export interface ProviderDraft {
   phone: string;
   channel: Channel;
   active: boolean;
+  details: CredentialDraft;
 }
 
-export type ProviderTextField = Exclude<keyof ProviderDraft, "active">;
-export type ProviderErrors = Partial<Record<ProviderTextField, string>>;
+export type ProviderTextField = Exclude<keyof ProviderDraft, "active" | "details">;
+export type ProviderErrors = Partial<Record<ProviderTextField, string>> & CredentialErrors;
 
 export function draftFrom(provider: Provider | null): ProviderDraft {
   return {
@@ -28,12 +30,13 @@ export function draftFrom(provider: Provider | null): ProviderDraft {
     phone: provider?.phone ?? "",
     channel: provider?.channel ?? "email",
     active: provider?.active ?? true,
+    details: credentialDraftFrom(provider?.details),
   };
 }
 
 export function validateProvider(draft: ProviderDraft): ProviderErrors {
   const words = PROVIDER_TEXT.dialog.errors;
-  const errors: ProviderErrors = {};
+  const errors: ProviderErrors = { ...validateCredentials(draft.details) };
   if (!draft.name.trim()) errors.name = words.name;
   if (draft.npi.trim() && !isNpiShaped(draft.npi)) errors.npi = words.npi;
   if (draft.email.trim() && !isEmail(draft.email)) errors.email = words.email;
@@ -58,5 +61,6 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
     phone: optional(draft.phone),
     channel: draft.channel,
     active: draft.active,
+    details: detailsFrom(draft.details),
   };
 }

@@ -32,8 +32,10 @@ TEXT_SUFFIXES = {
     ".mako",
     ".txt",
     ".example",
+    ".sh",
 }
 HASH_COMMENT_SUFFIXES = {".yml", ".yaml", ".toml", ".ini", ".example", ".sh"}
+HASH_COMMENT_NAMES = {".gitignore", ".dockerignore", "Dockerfile"}
 SLASH_COMMENT_SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".css"}
 PYTHON_DIRECTIVES = ("# noqa", "# type: ignore")
 VENDORED = {
@@ -71,7 +73,9 @@ def tracked_files() -> list[Path]:
         text=True,
         check=True,
     ).stdout.splitlines()
-    paths = [ROOT / name for name in listed if (ROOT / name).suffix in TEXT_SUFFIXES or name.endswith(".gitignore")]
+    paths = [
+        ROOT / name for name in listed if Path(name).suffix in TEXT_SUFFIXES or Path(name).name in HASH_COMMENT_NAMES
+    ]
     return [path for path in paths if path.is_file()]
 
 
@@ -110,7 +114,7 @@ def comment_count(path: Path, text: str) -> int:
         return python_comments(text)
     if path.suffix in SLASH_COMMENT_SUFFIXES:
         return slash_comments(text)
-    if path.suffix in HASH_COMMENT_SUFFIXES or path.name == ".gitignore":
+    if path.suffix in HASH_COMMENT_SUFFIXES or path.name in HASH_COMMENT_NAMES:
         return sum(1 for line in text.splitlines() if line.lstrip().startswith("#"))
     if path.suffix in {".html", ".svg"}:
         return text.count("<!--")

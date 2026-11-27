@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { CodeList } from "@/components/shared/CodeList";
 import { Button } from "@/components/ui/Button";
 import type { NoteDetail } from "@/lib/api/types";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import type { ReviewActions } from "../useReviewActions";
+import { ClaimCodes, EstimateSummary } from "./ClaimEstimate";
 
 interface ClaimBarProps {
   detail: NoteDetail;
@@ -68,9 +68,16 @@ export function ClaimBar(props: ClaimBarProps) {
   return (
     <div className="sticky bottom-0 z-10 -mx-4 border-t border-separator bg-surface/95 sm:-mx-8">
       <div className="mx-auto flex max-w-review flex-wrap items-center justify-between gap-3.5 px-4 py-3 sm:px-8">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-subhead text-secondary">{REVIEW_TEXT.claim}</span>
-          {detail.claim.length > 0 ? <CodeList codes={detail.claim} /> : <span className="text-subhead text-tertiary">{REVIEW_TEXT.claimEmpty}</span>}
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-subhead text-secondary">{REVIEW_TEXT.claim}</span>
+            {detail.claim.length > 0 ? (
+              <ClaimCodes claim={detail.claim} estimate={detail.estimate} />
+            ) : (
+              <span className="text-subhead text-tertiary">{REVIEW_TEXT.claimEmpty}</span>
+            )}
+          </div>
+          {detail.estimate ? <EstimateSummary estimate={detail.estimate} /> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {actions.error ? <span role="alert" className="text-footnote text-bad-text">{actions.error}</span> : null}

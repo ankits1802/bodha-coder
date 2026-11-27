@@ -19,6 +19,8 @@ function row(id: string, laneReason: LaneReason | null, headline: string): Compl
     flagged_by_name: null,
     due_at: "2026-11-26T18:00:00Z",
     file_name: "ruth.pdf",
+    assigned_to: null,
+    assignee_name: null,
     billed: ["99310"],
     suggested: ["99308"],
     em_action: "lower",

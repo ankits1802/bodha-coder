@@ -1,5 +1,6 @@
 import type { PracticeSetup } from "@/lib/api/types";
 import { MipsSection } from "./MipsSection";
+import { PayersPanel } from "./PayersPanel";
 import { ProvidersSection } from "./ProvidersSection";
 import { SectionForm } from "./SectionForm";
 import type { SetupNavKey } from "./strings";
@@ -15,5 +16,12 @@ export function SectionContent({ navKey, setup, onSaved }: SectionContentProps) 
   if (navKey === "providers") return <ProvidersSection missingNpi={setup.missing_npi} onChanged={onSaved} />;
   const section = setup.sections[navKey];
   if (!section) return null;
-  return <SectionForm sectionKey={navKey} section={section} onSaved={onSaved} />;
+  const form = <SectionForm sectionKey={navKey} section={section} onSaved={onSaved} />;
+  if (navKey !== "payers") return form;
+  return (
+    <>
+      {form}
+      <PayersPanel payers={setup.payers} onChanged={onSaved} />
+    </>
+  );
 }

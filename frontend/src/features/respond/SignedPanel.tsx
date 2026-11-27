@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Panel } from "@/components/ui/Panel";
 import { formatCalendarDay, formatDateTime } from "@/lib/format";
 import { RESPOND_TEXT } from "./strings";
@@ -7,9 +8,10 @@ interface SignedPanelProps {
   addendumText: string;
   serviceDate: string;
   answeredAt: string | null;
+  action?: ReactNode;
 }
 
-export function SignedPanel({ title, addendumText, serviceDate, answeredAt }: SignedPanelProps) {
+export function SignedPanel({ title, addendumText, serviceDate, answeredAt, action }: SignedPanelProps) {
   return (
     <Panel role="status" className="flex flex-col items-center gap-2.5 px-7 py-9 text-center">
       <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-full bg-ok text-white">
@@ -24,6 +26,7 @@ export function SignedPanel({ title, addendumText, serviceDate, answeredAt }: Si
         <h3 className="m-0 mb-1 font-sans text-caption font-semibold text-tertiary">{RESPOND_TEXT.addendum}</h3>
         <p className="m-0 text-body-lg whitespace-pre-wrap">{addendumText}</p>
       </div>
+      {action ? <div className="mt-3">{action}</div> : null}
     </Panel>
   );
 }

@@ -24,6 +24,7 @@ class BilledCode:
     code: str
     type: Literal["CPT", "ICD-10"]
     modifiers: tuple[str, ...] = ()
+    units: int = 1
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,7 @@ class ModifierSuggestion(BaseModel):
 class AddOnSuggestion(BaseModel):
     code: str
     name: str = ""
+    units: int = 1
     reason: str = ""
     evidence: list[str] = Field(default_factory=list)
 

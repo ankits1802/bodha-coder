@@ -1,6 +1,6 @@
 import { StatCell, StatGrid } from "@/components/ui/StatGrid";
 import type { Insights } from "@/lib/api/types";
-import { formatCount, formatPercent, ratio } from "@/lib/format";
+import { formatCount, formatMoneyChange, formatPercent, ratio } from "@/lib/format";
 import { notesRead, outcomeTotal } from "../insightMath";
 import { INSIGHTS_TEXT } from "../strings";
 
@@ -25,6 +25,11 @@ export function InsightStats({ insights }: { insights: Insights }) {
         label={INSIGHTS_TEXT.matched}
         value={formatPercent(matched)}
         note={changed === null ? undefined : INSIGHTS_TEXT.changedShare(formatPercent(changed))}
+      />
+      <StatCell
+        label={INSIGHTS_TEXT.estimate}
+        value={formatMoneyChange(insights.estimates.notes > 0 ? insights.estimates.difference : null)}
+        note={INSIGHTS_TEXT.estimateNotes(formatCount(insights.estimates.notes))}
       />
     </StatGrid>
   );

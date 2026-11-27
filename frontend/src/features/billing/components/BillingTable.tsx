@@ -8,7 +8,7 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { GroupRow, Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { BillingRow } from "@/lib/api/types";
 import { localIsoDate } from "@/lib/dates";
-import { formatCalendarDay, formatCount } from "@/lib/format";
+import { formatCalendarDay, formatCount, formatMoney } from "@/lib/format";
 import { groupByServiceDate, momentLabel } from "../billingRows";
 import { BILLING_TEXT } from "../strings";
 
@@ -41,6 +41,7 @@ function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
       <Td>
         <CodeList codes={row.codes} />
       </Td>
+      <Td className="text-right text-secondary tabular-nums">{formatMoney(row.estimate)}</Td>
       <Td>
         <ReviewCell changed={row.changed} />
       </Td>
@@ -62,13 +63,14 @@ export function BillingTable({ rows }: { rows: BillingRow[] }) {
             <Th>{words.patient}</Th>
             <Th>{words.provider}</Th>
             <Th>{words.codes}</Th>
+            <Th className="text-right">{words.estimate}</Th>
             <Th>{words.review}</Th>
             <Th>{words.approvedBy}</Th>
           </tr>
         </thead>
         {groupByServiceDate(rows).map((group) => (
           <tbody key={group.day}>
-            <GroupRow colSpan={5}>
+            <GroupRow colSpan={6}>
               {BILLING_TEXT.seenGroup(formatCalendarDay(group.day), formatCount(group.rows.length))}
             </GroupRow>
             {group.rows.map((row) => (

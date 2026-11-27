@@ -61,6 +61,13 @@ class FakeStore:
         for key in keys:
             self.objects.pop(key, None)
 
+    async def delete_prefix(self, prefix: str) -> int:
+        if not prefix.endswith("/") or prefix == "/":
+            raise ValueError(f"refusing to delete under {prefix!r}")
+        doomed = [key for key in self.objects if key.startswith(prefix)]
+        await self.delete(doomed)
+        return len(doomed)
+
 
 @dataclass
 class FakeMessenger:

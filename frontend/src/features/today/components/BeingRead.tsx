@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { batchCounts, type BatchCounts } from "@/components/shared/batchProgress";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Panel } from "@/components/ui/Panel";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -6,7 +7,6 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { placeName, type PlaceNames } from "@/hooks/usePlaceNames";
 import type { BatchProgress } from "@/lib/api/types";
 import { formatCalendarDay, formatCount } from "@/lib/format";
-import { batchCounts, type BatchCounts } from "../batchProgress";
 import { TODAY_TEXT } from "../strings";
 
 interface BeingReadProps {

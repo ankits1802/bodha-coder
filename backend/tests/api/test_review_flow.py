@@ -49,7 +49,8 @@ async def test_a_decided_note_is_approved_and_exported_once(harness, icd_catalog
     assert (await harness.client.get("/api/billing?show=ready", headers=practice.admin)).json()["items"] == []
 
     actions = [
-        entry["action"] for entry in (await harness.client.get("/api/access-log", headers=practice.admin)).json()
+        entry["action"]
+        for entry in (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
     ]
     for action in ("uploaded notes", "opened note", "approved", "exported claims"):
         assert action in actions

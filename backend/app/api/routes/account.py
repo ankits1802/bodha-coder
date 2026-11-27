@@ -4,13 +4,15 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.bodies import MfaCodeBody
+from app.api.bodies import MfaCodeBody, PreferencesBody
 from app.api.wiring import RefreshCookie
-from app.core.deps import Actor, Db, current_actor
-from app.services import recovery_codes, user_sessions
+from app.core.deps import Actor, Db, current_actor, require
+from app.core.roles import NOTE_READERS
+from app.services import digests, recovery_codes, user_sessions
 
 router = APIRouter(prefix="/auth", tags=["account"])
 Me = Annotated[Actor, Depends(current_actor)]
+Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 
 
 @router.get("/sessions")
@@ -47,3 +49,13 @@ async def recovery_status(db: Db, actor: Me) -> dict[str, Any]:
 @router.post("/recovery-codes")
 async def new_recovery_codes(body: MfaCodeBody, db: Db, actor: Me) -> dict[str, list[str]]:
     return {"codes": list(await recovery_codes.regenerate_recovery_codes(db, actor.user, body.code))}
+
+
+@router.get("/preferences")
+async def preferences(actor: Reader) -> dict[str, bool]:
+    return {"notify_digest": actor.user.notify_digest}
+
+
+@router.put("/preferences")
+async def save_preferences(body: PreferencesBody, db: Db, actor: Reader) -> dict[str, bool]:
+    return {"notify_digest": await digests.set_digest_preference(db, actor, enabled=body.notify_digest)}

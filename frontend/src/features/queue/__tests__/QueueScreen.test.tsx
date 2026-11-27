@@ -2,16 +2,19 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/errors";
-import type { QueuePage, QueueRow, User } from "@/lib/api/types";
+import type { QueuePage } from "@/lib/api/types";
 import { getProviders } from "@/lib/api/uploads";
 import { getQueue } from "@/lib/api/work";
 import { clearSession, setSession } from "@/lib/session/store";
 import { QueueScreen } from "../QueueScreen";
+import { CODER, page, ROW } from "./fixtures";
+
+const router = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
   usePathname: () => "/queue",
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => router,
 }));
 
 vi.mock("next/link", () => ({
@@ -24,51 +27,13 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/lib/api/work", () => ({ getQueue: vi.fn() }));
 vi.mock("@/lib/api/uploads", () => ({ getProviders: vi.fn() }));
-
-const CODER: User = {
-  id: "user-1",
-  name: "Priya Nair",
-  email: "priya.nair@example.com",
-  role: "coder",
-  practice: {
-    id: "practice-1",
-    name: "Lakeside Primary Care",
-    checks: { em: true, icd: true, cdi: true, audit: true, mips: false },
-    idle_minutes: 15,
-    time_zone: "America/Chicago",
-  },
-};
-
-const LANES: QueuePage["lanes"] = {
-  approve: { total: 3, due_soon: 1 },
-  coder: { total: 4, due_soon: 2 },
-  provider: { total: 1, due_soon: 0 },
-  compliance: { total: 2, due_soon: 0 },
-};
-
-const ROW: QueueRow = {
-  id: "note-1",
-  patient_name: "Marisol Reyes",
-  provider_name: "Elena Varga",
-  service_date: "2026-11-25",
-  status: "ready",
-  lane: "coder",
-  lane_reason: "code_changes",
-  headline: "Billed too high",
-  place_code: "11",
-  visit_type: "Established patient",
-  flag_reason: null,
-  flagged_by: null,
-  due_at: "2026-11-27T18:00:00Z",
-  file_name: "2026-11-25 - REYES MARISOL - 99215.pdf",
-  billed: ["99215", "I10"],
-  suggested: ["99214"],
-  em_action: "lower",
-};
-
-function page(items: QueueRow[], failed = 0): QueuePage {
-  return { items, lanes: LANES, total: 10, all_total: 12, failed, page_size: 50 };
-}
+vi.mock("@/lib/api/notes", () => ({
+  approveNotes: vi.fn(),
+  assignNotes: vi.fn(),
+  deleteNotes: vi.fn(),
+  remindProvider: vi.fn(),
+  retryFailedNotes: vi.fn(),
+}));
 
 describe("QueueScreen", () => {
   beforeEach(() => {
@@ -79,6 +44,7 @@ describe("QueueScreen", () => {
   afterEach(() => {
     clearSession();
     vi.mocked(getQueue).mockReset();
+    router.replace.mockReset();
   });
 
   it("shows a loading state while the queue is on its way", () => {
@@ -121,5 +87,13 @@ describe("QueueScreen", () => {
     render(<QueueScreen />);
     expect(await screen.findByRole("button", { name: "Read 2 again" })).toBeInTheDocument();
     expect(screen.getByText("10 notes, sorted by when they're due")).toBeInTheDocument();
+  });
+
+  it("shows who has each note by initials, with the full name on hover", async () => {
+    vi.mocked(getQueue).mockResolvedValue(page([{ ...ROW, assigned_to: "user-2", assignee_name: "Omar Haddad" }]));
+    render(<QueueScreen />);
+    const chip = await screen.findByTitle("Omar Haddad");
+    expect(chip).toHaveTextContent("OH");
+    expect(screen.getByRole("columnheader", { name: "Assigned" })).toBeInTheDocument();
   });
 });

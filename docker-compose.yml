@@ -1,0 +1,133 @@
+name: bodha-coder
+
+x-local-aws:
+  region: &region us-east-1
+  endpoint: &aws-endpoint http://localhost.localstack.cloud:4566
+  bucket: &bucket bodha-local
+  mail-from: &mail-from "Bodha Coder <no-reply@bodha.test>"
+
+x-backend: &backend
+  image: bodha-coder-api:local
+  build: ./backend
+  restart: unless-stopped
+  environment: &backend-environment
+    DATABASE_URL: postgresql+asyncpg://bodha:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.compose}@postgres:5432/bodha
+    SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.compose}
+    MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY in .env.compose}
+    APP_URL: ${APP_URL:-http://localhost:3000}
+    COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    GEMINI_API_KEY: ${GEMINI_API_KEY:?set GEMINI_API_KEY in .env.compose}
+    S3_BUCKET: *bucket
+    S3_ENDPOINT_URL: *aws-endpoint
+    S3_REGION: *region
+    S3_SERVER_SIDE_ENCRYPTION: AES256
+    EMAIL_TRANSPORT: ses
+    SMS_TRANSPORT: sns
+    MAIL_FROM: *mail-from
+    AWS_MESSAGING_REGION: *region
+    AWS_ENDPOINT_URL: *aws-endpoint
+    AWS_ACCESS_KEY_ID: test
+    AWS_SECRET_ACCESS_KEY: test
+  depends_on: &backend-dependencies
+    postgres:
+      condition: service_healthy
+    localstack:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:17.12-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bodha
+      POSTGRES_DB: bodha
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.compose}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "bodha", "-d", "bodha"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  localstack:
+    image: localstack/localstack:2026.11.0
+    restart: unless-stopped
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:?set LOCALSTACK_AUTH_TOKEN in .env.compose}
+      AWS_DEFAULT_REGION: *region
+      AWS_MESSAGING_REGION: *region
+      S3_REGION: *region
+      S3_BUCKET: *bucket
+      MAIL_FROM: *mail-from
+    volumes:
+      - ./tools/localstack/init_aws.py:/etc/localstack/init/ready.d/init_aws.py:ro
+    ports:
+      - "127.0.0.1:4566:4566"
+    networks:
+      default:
+        aliases:
+          - localhost.localstack.cloud
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import json, urllib.request; scripts = json.load(urllib.request.urlopen('http://localhost:4566/_localstack/init/ready', timeout=4))['scripts']; raise SystemExit(0 if scripts and all(script['state'] == 'SUCCESSFUL' for script in scripts) else 1)"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  migrate:
+    <<: *backend
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      <<: *backend-environment
+      BOOTSTRAP_HQ_EMAIL: ${BOOTSTRAP_HQ_EMAIL:-}
+      BOOTSTRAP_HQ_PASSWORD: ${BOOTSTRAP_HQ_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  api:
+    <<: *backend
+    command: ["api"]
+    environment:
+      <<: *backend-environment
+      FORWARDED_ALLOW_IPS: "*"
+      WEB_CONCURRENCY: "2"
+    depends_on:
+      <<: *backend-dependencies
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *backend
+    command: ["worker"]
+    depends_on:
+      <<: *backend-dependencies
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  web:
+    image: bodha-coder-web:local
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

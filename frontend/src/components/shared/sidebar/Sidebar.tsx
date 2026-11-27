@@ -6,8 +6,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import type { User } from "@/lib/api/types";
 import { ROLE_LABELS } from "@/lib/labels";
-import { canUse, homeFor } from "@/lib/roles";
+import { canDo, canUse, homeFor } from "@/lib/roles";
 import { signOut } from "@/lib/session/signOut";
+import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
@@ -35,6 +36,21 @@ function NavEntry({ item, active, count, onNavigate }: { item: NavItem; active: 
   );
 }
 
+const ENTRY_CLASSES = "flex h-8 items-center gap-2.5 rounded-nav px-2.5 text-callout tracking-snug text-label hover:bg-nav-hover";
+
+function SearchEntry({ onNavigate }: { onNavigate: () => void }) {
+  const open = () => {
+    onNavigate();
+    openOverlay("search");
+  };
+  return (
+    <button type="button" onClick={open} className={`mt-3 w-full cursor-pointer text-left ${ENTRY_CLASSES}`}>
+      <NavIcon name="search" />
+      {SHARED_TEXT.nav.search}
+    </button>
+  );
+}
+
 function countFor(item: NavItem, counts: NavCounts): number | undefined {
   return item.count ? counts[item.count] : undefined;
 }
@@ -56,6 +72,7 @@ export function Sidebar({ user, onNavigate }: SidebarProps) {
         </Link>
         <span className="text-footnote text-secondary">{user.practice?.name ?? SHARED_TEXT.platformAdministration}</span>
       </div>
+      {canDo(user.role, "search") ? <SearchEntry onNavigate={onNavigate} /> : null}
       <nav aria-label={user.role === "hq" ? words.platformLabel : words.mainLabel} className="mt-1.5 flex flex-col">
         {groups.map(({ group, entries }) => (
           <div key={group}>
@@ -75,6 +92,17 @@ export function Sidebar({ user, onNavigate }: SidebarProps) {
         ))}
       </nav>
       <div className="mt-auto flex flex-col gap-2 pt-6">
+        {canUse(user.role, "help") ? (
+          <Link
+            href="/help"
+            onClick={onNavigate}
+            aria-current={pathname === "/help" ? "page" : undefined}
+            className={`${ENTRY_CLASSES} ${pathname === "/help" ? "bg-nav-active font-medium" : ""}`}
+          >
+            <NavIcon name="help" />
+            {words.help}
+          </Link>
+        ) : null}
         <div className="flex items-center gap-2.5 border-t border-separator px-2.5 pt-3">
           <Avatar name={user.name} />
           <span className="flex min-w-0 flex-col leading-tight">

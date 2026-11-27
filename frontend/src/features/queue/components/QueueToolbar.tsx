@@ -5,6 +5,7 @@ import { SegmentedControl, type Segment } from "@/components/ui/SegmentedControl
 import type { Lane, LaneCounts, Provider } from "@/lib/api/types";
 import { LANE_LABELS, LANE_ORDER } from "@/lib/labels";
 import { QUEUE_TEXT } from "../strings";
+import type { AssignedFilter } from "../useQueueFilters";
 import { QueueSearch } from "./QueueSearch";
 
 type LaneChoice = Lane | "all";
@@ -16,9 +17,11 @@ interface QueueToolbarProps {
   search: string;
   providerId: string;
   providers: Provider[];
+  assigned: AssignedFilter;
   onLane: (lane: Lane | undefined) => void;
   onSearch: (search: string) => void;
   onProvider: (providerId: string) => void;
+  onAssigned: (assigned: string) => void;
 }
 
 function laneSegments(lanes: LaneCounts | null, allTotal: number | undefined): Segment<LaneChoice>[] {
@@ -29,7 +32,7 @@ function laneSegments(lanes: LaneCounts | null, allTotal: number | undefined): S
 }
 
 export function QueueToolbar(props: QueueToolbarProps) {
-  const { lane, lanes, allTotal, search, providerId, providers, onLane, onSearch, onProvider } = props;
+  const { lane, lanes, allTotal, search, providerId, providers, assigned, onLane, onSearch, onProvider, onAssigned } = props;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2.5">
       <SegmentedControl<LaneChoice>
@@ -47,6 +50,11 @@ export function QueueToolbar(props: QueueToolbarProps) {
               {provider.name}
             </option>
           ))}
+        </FilterSelect>
+        <FilterSelect label={QUEUE_TEXT.assignedFilter} value={assigned} onChange={(event) => onAssigned(event.target.value)}>
+          <option value="">{QUEUE_TEXT.anyone}</option>
+          <option value="me">{QUEUE_TEXT.mine}</option>
+          <option value="none">{QUEUE_TEXT.unassigned}</option>
         </FilterSelect>
       </div>
     </div>

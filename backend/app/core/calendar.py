@@ -25,3 +25,10 @@ def day_bounds(day: date, zone: ZoneInfo) -> tuple[datetime, datetime]:
 
 def today_in(zone: ZoneInfo) -> date:
     return datetime.now(zone).date()
+
+
+def shift_years(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year + years)
+    except ValueError:
+        return day.replace(year=day.year + years, day=28)

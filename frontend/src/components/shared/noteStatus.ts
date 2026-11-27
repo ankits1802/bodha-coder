@@ -1,5 +1,5 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
-import type { EmAction, Lane, LaneReason, NoteSummary } from "@/lib/api/types";
+import type { EmAction, Lane, LaneReason, NoteStatus, NoteSummary } from "@/lib/api/types";
 import { LANE_LABELS } from "@/lib/labels";
 import { SHARED_TEXT } from "./strings";
 
@@ -32,6 +32,9 @@ const LANE_TONES: Record<Lane, StatusTone> = {
 };
 
 export const LANE_DOT_TONES = LANE_TONES;
+
+export const DELETABLE_STATUSES: readonly NoteStatus[] = ["queued", "ready", "failed", "approved"];
+export const ASSIGNABLE_STATUSES: readonly NoteStatus[] = ["queued", "reading", "ready", "failed"];
 
 type StatusFields = Pick<NoteSummary, "status" | "lane" | "lane_reason" | "headline"> & { em_action?: EmAction | null };
 

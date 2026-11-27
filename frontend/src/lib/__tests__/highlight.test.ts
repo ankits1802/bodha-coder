@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { highlightSegments } from "@/lib/highlight";
+import { containsQuote, highlightSegments } from "@/lib/highlight";
+
+describe("containsQuote", () => {
+  it("finds a quote verbatim after folding case and whitespace", () => {
+    expect(containsQuote("Assessment:\n  Hypertension above goal.", "hypertension ABOVE goal")).toBe(true);
+    expect(containsQuote("Hypertension above goal.", "Hypertension at goal")).toBe(false);
+    expect(containsQuote("Hypertension", "   ")).toBe(false);
+  });
+});
 
 describe("highlightSegments", () => {
   it("marks an exact quote and keeps the surrounding text", () => {
@@ -12,11 +20,15 @@ describe("highlightSegments", () => {
     ]);
   });
 
-  it("matches case-sensitively and never approximately", () => {
-    const text = "eGFR 38, creatinine 1.5.";
+  it("ignores case and runs of whitespace but never matches approximately", () => {
+    const text = "eGFR  38,\ncreatinine 1.5.";
 
-    expect(highlightSegments(text, [{ quote: "egfr 38", tone: "warn" }])).toEqual([{ text, tone: null }]);
+    expect(highlightSegments(text, [{ quote: "egfr 38, creatinine", tone: "warn" }])).toEqual([
+      { text: "eGFR  38,\ncreatinine", tone: "warn" },
+      { text: " 1.5.", tone: null },
+    ]);
     expect(highlightSegments(text, [{ quote: "eGFR 39", tone: "warn" }])).toEqual([{ text, tone: null }]);
+    expect(highlightSegments(text, [{ quote: "eGFR38", tone: "warn" }])).toEqual([{ text, tone: null }]);
   });
 
   it("marks every occurrence of a quote", () => {

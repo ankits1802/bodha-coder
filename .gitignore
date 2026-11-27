@@ -10,6 +10,7 @@ __pycache__/
 .pytest_cache/
 .env
 .env.local
+.env.compose
 coverage/
 vitest-results/
 *.tsbuildinfo

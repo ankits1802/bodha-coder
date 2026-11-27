@@ -18,6 +18,7 @@ from app.codes.mips_scope import practice_scope
 from app.codes.places import setting_for
 from app.models import Analysis, CodeSet, MipsList, Note, NoteText, Practice, Suggestion, utcnow
 from app.services.findings import Finding, build_findings
+from app.services.note_texts import current_texts, note_texts
 from app.services.placement import refresh_placement
 
 SECTION_BY_CHECK = {"em": "em", "icd": "diagnoses", "cdi": "cdi", "audit": "audit", "mips": "mips", "hcc": "hcc"}
@@ -81,8 +82,9 @@ async def run_analysis(db: AsyncSession, analysis: Analysis, deps: AnalysisDeps)
     outcome = await deps.review(deps.client, inputs)
     await _store_outcome(db, analysis, note, outcome, deps)
     if source.text is None and outcome.report.extracted_text:
-        db.add(NoteText(note_id=note.id, revision=1, source="document", text=outcome.report.extracted_text))
-        analysis.text_revision = 1
+        revision = await next_revision(db, NoteText, note.id)
+        db.add(NoteText(note_id=note.id, revision=revision, source="document", text=outcome.report.extracted_text))
+        analysis.text_revision = revision
     findings = build_findings(outcome.report, billed, deps.icd.for_service_date(note.service_date))
     await save_findings(db, analysis, findings)
     _adopt_patient(note, outcome)
@@ -98,15 +100,17 @@ class NoteSource:
 
 
 async def _note_source(db: AsyncSession, note: Note, store: ObjectStore) -> NoteSource:
-    texts = (await db.scalars(select(NoteText).where(NoteText.note_id == note.id).order_by(NoteText.revision))).all()
-    if texts:
-        return NoteSource("\n\n".join(_labelled(text) for text in texts), None, texts[-1].revision)
+    texts = await note_texts(db, note.id)
+    current = current_texts(texts)
+    if current and current[0].text.strip():
+        return NoteSource("\n\n".join(_labelled(text) for text in current), None, current[-1].revision)
     pdf = await store.get(note.file_key)
     document = read_pdf_text(pdf)
     if not document.has_text_layer:
-        return NoteSource(None, pdf, None)
-    db.add(NoteText(note_id=note.id, revision=1, source="document", text=document.text))
-    return NoteSource(document.text, None, 1)
+        return NoteSource(None, pdf, current[-1].revision if current else None)
+    revision = texts[-1].revision + 1 if texts else 1
+    db.add(NoteText(note_id=note.id, revision=revision, source="document", text=document.text))
+    return NoteSource(document.text, None, revision)
 
 
 def _labelled(text: NoteText) -> str:
@@ -128,7 +132,7 @@ async def _inputs(
         place_of_service=note.place_code,
         visit_type=note.visit_type,
         service_date=note.service_date,
-        billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers) for code in billed),
+        billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers, code.units) for code in billed),
         note_text=source.text,
         pdf=source.pdf,
         mips_scope=practice_scope(mips_list),

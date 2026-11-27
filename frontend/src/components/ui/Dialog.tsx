@@ -25,7 +25,10 @@ export function Dialog({ open, onClose, title, description, footer, size = "md",
       if (typeof dialog.showModal === "function") dialog.showModal();
       else dialog.setAttribute("open", "");
     }
-    if (!open && dialog.open) dialog.close();
+    if (!open && dialog.open) {
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+    }
   }, [open]);
 
   return (

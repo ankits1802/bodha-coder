@@ -5,6 +5,7 @@ import { canDo } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { AccessLogPanel } from "./AccessLogPanel";
 import { DevicesPanel } from "./DevicesPanel";
+import { DigestPreferencePanel } from "./DigestPreferencePanel";
 import { RecoveryCodesPanel } from "./RecoveryCodesPanel";
 import { SecuritySettingsPanel } from "./SecuritySettingsPanel";
 import { SECURITY_TEXT } from "./strings";
@@ -18,6 +19,7 @@ export function SecurityScreen() {
       {managesPractice ? <SecuritySettingsPanel /> : null}
       <DevicesPanel />
       <RecoveryCodesPanel />
+      <DigestPreferencePanel />
       {managesPractice ? <AccessLogPanel /> : null}
     </>
   );

@@ -1,6 +1,8 @@
 import { localDateFromIso } from "./dates";
 
 const LOCALE = "en-GB";
+const MONEY_LOCALE = "en-US";
+const MEDICARE_CURRENCY = "USD";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
@@ -14,6 +16,13 @@ export const FORMAT_WORDS = {
 
 const numberFormat = new Intl.NumberFormat(LOCALE);
 const percentFormat = new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDigits: 1 });
+const tenthsFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+const moneyFormat = new Intl.NumberFormat(MONEY_LOCALE, { style: "currency", currency: MEDICARE_CURRENCY });
+const moneyChangeFormat = new Intl.NumberFormat(MONEY_LOCALE, {
+  style: "currency",
+  currency: MEDICARE_CURRENCY,
+  signDisplay: "exceptZero",
+});
 const shortDay = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" });
 const longDay = new Intl.DateTimeFormat(LOCALE, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 const fullDay = new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long" });
@@ -39,6 +48,21 @@ export function ratio(part: number, whole: number): number | null {
 
 export function formatPercent(value: number | null): string {
   return value === null ? FORMAT_WORDS.empty : percentFormat.format(value);
+}
+
+export function formatMoney(value: number | null): string {
+  return value === null ? FORMAT_WORDS.empty : moneyFormat.format(value);
+}
+
+export function formatMoneyChange(value: number | null): string {
+  return value === null ? FORMAT_WORDS.empty : moneyChangeFormat.format(value);
+}
+
+export function formatMinutes(minutes: number | null): string {
+  if (minutes === null) return FORMAT_WORDS.empty;
+  if (minutes < 60) return `${tenthsFormat.format(minutes)} min`;
+  if (minutes < 24 * 60) return `${tenthsFormat.format(minutes / 60)} h`;
+  return `${tenthsFormat.format(minutes / (24 * 60))} d`;
 }
 
 export function formatCalendarDay(isoDate: string, style: DayStyle = "short"): string {

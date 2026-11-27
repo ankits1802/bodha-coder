@@ -7,7 +7,7 @@ from typing import Any
 import bcrypt
 import jwt
 import pyotp
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 from app.core.config import get_settings
 from app.core.errors import Unavailable
@@ -103,11 +103,25 @@ def open_mfa_secret(stored: str) -> str:
         raise MfaKeyUnavailable("two-step verification cannot be read on this server") from error
 
 
-def _mfa_cipher() -> Fernet:
-    key = get_settings().mfa_encryption_key
-    if not key:
+def mfa_secret_is_current(stored: str) -> bool:
+    if not is_sealed_mfa_secret(stored):
+        return False
+    try:
+        _mfa_keys()[0].decrypt(stored.removeprefix(MFA_SECRET_PREFIX).encode())
+    except InvalidToken:
+        return False
+    return True
+
+
+def _mfa_cipher() -> MultiFernet:
+    return MultiFernet(_mfa_keys())
+
+
+def _mfa_keys() -> list[Fernet]:
+    keys = [key.strip() for key in (get_settings().mfa_encryption_key or "").split(",") if key.strip()]
+    if not keys:
         raise MfaKeyUnavailable("two-step verification is not set up on this server")
     try:
-        return Fernet(key)
+        return [Fernet(key) for key in keys]
     except ValueError as error:
         raise MfaKeyUnavailable("two-step verification is not set up on this server") from error

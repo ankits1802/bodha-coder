@@ -7,12 +7,13 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
 import { refreshSession } from "@/lib/api/client";
 import { saveSecurity } from "@/lib/api/practice";
-import type { IdleMinutes, PracticeRole, SecuritySettings } from "@/lib/api/types";
+import type { AccessLogYears, IdleMinutes, PracticeRole, SecuritySettings } from "@/lib/api/types";
 import { PRACTICE_ROLES } from "@/lib/roles";
 import { RolesPicker } from "./RolesPicker";
 import { SECURITY_TEXT } from "./strings";
 
 const IDLE_CHOICES: readonly IdleMinutes[] = [5, 10, 15, 30];
+const YEAR_CHOICES: readonly AccessLogYears[] = [6, 7, 8, 9, 10];
 const ROW = "flex min-h-13 items-center justify-between gap-4 border-t border-hairline px-4.5 text-body";
 
 async function saveAndRefresh(settings: SecuritySettings): Promise<void> {
@@ -28,12 +29,14 @@ interface SecurityFormProps {
 export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
   const [roles, setRoles] = useState<Set<PracticeRole>>(() => new Set(settings.mfa_roles));
   const [idle, setIdle] = useState<IdleMinutes>(settings.idle_minutes);
+  const [years, setYears] = useState<AccessLogYears>(settings.access_log_years);
   const [saved, setSaved] = useState(false);
   const save = useAction(saveAndRefresh);
   const chosen = PRACTICE_ROLES.filter((role) => roles.has(role));
   const dirty =
     chosen.join() !== PRACTICE_ROLES.filter((role) => settings.mfa_roles.includes(role)).join() ||
-    idle !== settings.idle_minutes;
+    idle !== settings.idle_minutes ||
+    years !== settings.access_log_years;
 
   function toggleRole(role: PracticeRole, on: boolean): void {
     setSaved(false);
@@ -46,7 +49,7 @@ export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
   }
 
   async function submit(): Promise<void> {
-    const outcome = await save.run({ mfa_roles: chosen, idle_minutes: idle });
+    const outcome = await save.run({ mfa_roles: chosen, idle_minutes: idle, access_log_years: years });
     if (!outcome.ok) return;
     setSaved(true);
     onSaved();
@@ -68,6 +71,23 @@ export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
           {IDLE_CHOICES.map((minutes) => (
             <option key={minutes} value={minutes}>
               {SECURITY_TEXT.minutes(minutes)}
+            </option>
+          ))}
+        </FilterSelect>
+      </div>
+      <div className={ROW}>
+        <span>{SECURITY_TEXT.keepLog}</span>
+        <FilterSelect
+          label={SECURITY_TEXT.keepLog}
+          value={years}
+          onChange={(event) => {
+            setSaved(false);
+            setYears(Number(event.target.value) as AccessLogYears);
+          }}
+        >
+          {YEAR_CHOICES.map((count) => (
+            <option key={count} value={count}>
+              {SECURITY_TEXT.years(count)}
             </option>
           ))}
         </FilterSelect>

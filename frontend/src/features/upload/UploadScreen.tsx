@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,6 +10,7 @@ import type { Place, Provider } from "@/lib/api/types";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { canUse } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
+import { RecentUploads } from "./components/RecentUploads";
 import { UploadWorkspace } from "./components/UploadWorkspace";
 import { UPLOAD_TEXT } from "./strings";
 
@@ -27,21 +29,31 @@ const REMOTE_TEXT = { loading: UPLOAD_TEXT.loading, empty: UPLOAD_TEXT.noProvide
 function UploadContent() {
   const { user } = useSession();
   const references = useRemote("upload:references", loadReferences);
+  const [uploads, setUploads] = useState(0);
   const setupLink = canUse(user?.role, "setup") ? (
     <ButtonLink href="/setup" size="sm">
       {UPLOAD_TEXT.openSetup}
     </ButtonLink>
   ) : null;
   return (
-    <RemoteView
-      state={references.state}
-      text={REMOTE_TEXT}
-      isEmpty={(data) => data.providers.length === 0}
-      emptyAction={setupLink}
-      onRetry={references.reload}
-    >
-      {(data) => <UploadWorkspace providers={data.providers} places={data.places} />}
-    </RemoteView>
+    <>
+      <RemoteView
+        state={references.state}
+        text={REMOTE_TEXT}
+        isEmpty={(data) => data.providers.length === 0}
+        emptyAction={setupLink}
+        onRetry={references.reload}
+      >
+        {(data) => (
+          <UploadWorkspace
+            providers={data.providers}
+            places={data.places}
+            onUploaded={() => setUploads((count) => count + 1)}
+          />
+        )}
+      </RemoteView>
+      <RecentUploads refresh={uploads} />
+    </>
   );
 }
 

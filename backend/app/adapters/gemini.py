@@ -17,7 +17,14 @@ from app.ai.contracts import ModelReply
 from app.ai.errors import ModelError, ModelNotConfigured, ModelRefused, ModelRequestRejected, ModelUnavailable
 from app.core.config import Settings
 
-__all__ = ["INLINE_PDF_LIMIT_BYTES", "GeminiClient", "is_transient_error", "retry_operation"]
+__all__ = [
+    "INLINE_PDF_LIMIT_BYTES",
+    "VERTEX_INLINE_PDF_LIMIT_BYTES",
+    "VERTEX_PDF_TOO_LARGE",
+    "GeminiClient",
+    "is_transient_error",
+    "retry_operation",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +32,8 @@ TEMPERATURE = 0.2
 JSON_MIME_TYPE = "application/json"
 PDF_MIME_TYPE = "application/pdf"
 INLINE_PDF_LIMIT_BYTES = 14 * 1024 * 1024
+VERTEX_INLINE_PDF_LIMIT_BYTES = 50 * 1024 * 1024
+VERTEX_PDF_TOO_LARGE = "PDF too large for Vertex inline; split it"
 DEFAULT_MAX_RETRIES = 2
 DEFAULT_RETRY_DELAY_SECONDS = 1.0
 UPLOAD_POLL_SECONDS = 1.0
@@ -77,9 +86,9 @@ class GeminiClient:
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_delay_seconds: float = DEFAULT_RETRY_DELAY_SECONDS,
     ) -> None:
-        if client is None and not settings.gemini_api_key:
-            raise ModelNotConfigured("GEMINI_API_KEY is not set, so the review model cannot be called.")
-        self._client = client if client is not None else genai.Client(api_key=settings.gemini_api_key)
+        self._vertex = settings.gemini_backend == "vertex"
+        self._client = client if client is not None else _sdk_client(settings)
+        self._inline_limit = VERTEX_INLINE_PDF_LIMIT_BYTES if self._vertex else INLINE_PDF_LIMIT_BYTES
         self._model = settings.gemini_model
         self._timeout_seconds = float(settings.gemini_timeout_seconds)
         self._max_retries = max_retries
@@ -142,9 +151,11 @@ class GeminiClient:
         if pdf is None:
             yield None
             return
-        if len(pdf) <= INLINE_PDF_LIMIT_BYTES:
+        if len(pdf) <= self._inline_limit:
             yield types.Part.from_bytes(data=pdf, mime_type=PDF_MIME_TYPE)
             return
+        if self._vertex:
+            raise ModelRequestRejected(VERTEX_PDF_TOO_LARGE)
         uploaded = await self._guarded(
             lambda: self._client.aio.files.upload(
                 file=io.BytesIO(pdf), config=types.UploadFileConfig(mime_type=PDF_MIME_TYPE)
@@ -194,6 +205,20 @@ class GeminiClient:
             input_tokens=_tokens(usage, "prompt_token_count"),
             output_tokens=_tokens(usage, "candidates_token_count") + _tokens(usage, "thoughts_token_count"),
         )
+
+
+def _sdk_client(settings: Settings) -> genai.Client:
+    if settings.gemini_backend == "vertex":
+        if not settings.google_cloud_project or not settings.google_cloud_location:
+            raise ModelNotConfigured(
+                "GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION must be set when GEMINI_BACKEND is vertex."
+            )
+        return genai.Client(
+            enterprise=True, project=settings.google_cloud_project, location=settings.google_cloud_location
+        )
+    if not settings.gemini_api_key:
+        raise ModelNotConfigured("GEMINI_API_KEY is not set, so the review model cannot be called.")
+    return genai.Client(api_key=settings.gemini_api_key)
 
 
 async def retry_operation[T](

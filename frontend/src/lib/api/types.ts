@@ -66,6 +66,10 @@ export interface RecoveryCodes {
   codes: string[];
 }
 
+export interface Preferences {
+  notify_digest: boolean;
+}
+
 export type Lane = "approve" | "coder" | "provider" | "compliance";
 export type NoteStatus = "queued" | "reading" | "ready" | "failed" | "approved" | "exported";
 export type LaneReason =
@@ -101,9 +105,11 @@ export interface NoteSummary {
   flagged_by: string | null;
   due_at: string;
   file_name: string;
+  assigned_to: string | null;
 }
 
 export interface QueueRow extends NoteSummary {
+  assignee_name: string | null;
   billed: string[];
   suggested: string[];
   em_action: EmAction | null;
@@ -139,7 +145,13 @@ export interface QueueQuery {
   search?: string;
   provider_id?: string;
   batch_id?: string;
+  assigned?: string;
   offset?: number;
+}
+
+export interface SearchResults {
+  items: NoteSummary[];
+  limit: number;
 }
 
 export interface CompliancePattern {
@@ -167,6 +179,7 @@ export interface ProviderRef {
 }
 
 export interface NoteHeader extends NoteSummary {
+  assignee_name: string | null;
   patient_age: number | null;
   patient_sex: string | null;
   provider: ProviderRef;
@@ -291,6 +304,7 @@ export interface CodeJson {
   code: string;
   type: CodeType;
   modifiers: string[];
+  units?: number;
 }
 
 export interface AnalysisRevision {
@@ -358,8 +372,30 @@ export interface NoteDetail {
   analysis: AnalysisView | null;
   findings: Finding[];
   claim: string[];
+  estimate: ClaimEstimates | null;
   history: NoteHistory;
   requests: AddendumRequestView[];
+}
+
+export type RateSetting = "facility" | "non_facility";
+
+export interface EstimateLine {
+  code: string;
+  amount: number | null;
+}
+
+export interface ClaimEstimate {
+  total: number;
+  lines: EstimateLine[];
+  unpriced: string[];
+}
+
+export interface ClaimEstimates {
+  release: string;
+  setting: RateSetting;
+  billed: ClaimEstimate;
+  claim: ClaimEstimate;
+  difference: number;
 }
 
 export type ComplianceDecision = "confirm" | "return" | "keep";
@@ -400,6 +436,37 @@ export interface UploadResult {
   duplicates: string[];
 }
 
+export interface Page<T> {
+  items: T[];
+  total: number;
+  offset: number;
+  page_size: number;
+}
+
+export interface UploadedBatch {
+  id: string;
+  provider_name: string;
+  service_date: string;
+  place_code: string;
+  visit_type: string;
+  uploaded_by: string;
+  created_at: string;
+  counts: Partial<Record<NoteStatus, number>>;
+}
+
+export type BillsUnder = "individual" | "group";
+
+export interface ProviderDetails {
+  taxonomy_code: string | null;
+  license_number: string | null;
+  license_state: string | null;
+  dea_number: string | null;
+  bills_under: BillsUnder | null;
+  group_npi: string | null;
+  supervising_physician: string | null;
+  signature_on_file: boolean;
+}
+
 export interface Provider {
   id: string;
   name: string;
@@ -411,6 +478,7 @@ export interface Provider {
   phone: string | null;
   channel: Channel;
   active: boolean;
+  details: ProviderDetails;
 }
 
 export interface ProviderInput {
@@ -423,6 +491,7 @@ export interface ProviderInput {
   phone: string | null;
   channel: Channel | null;
   active: boolean;
+  details: ProviderDetails;
 }
 
 export interface Place {
@@ -441,6 +510,7 @@ export interface BillingRow {
   place_code: string;
   codes: string[];
   changed: number;
+  estimate: number | null;
   approved_by: string;
   approved_at: string | null;
   exported_at: string | null;
@@ -454,8 +524,7 @@ export interface BillingSummary {
   held_for_provider: number;
 }
 
-export interface BillingList {
-  items: BillingRow[];
+export interface BillingList extends Page<BillingRow> {
   summary: BillingSummary;
   limit: number;
 }
@@ -476,6 +545,22 @@ export interface Insights {
   approved_on_time: number;
   outcomes: Outcomes;
   providers: { provider_name: string; notes: number; matched: number }[];
+  estimates: InsightEstimates;
+  people: PersonProductivity[];
+}
+
+export interface InsightEstimates {
+  notes: number;
+  difference: number;
+  providers: { provider_name: string; notes: number; difference: number }[];
+}
+
+export interface PersonProductivity {
+  id: string;
+  name: string;
+  approved: number;
+  median_minutes: number | null;
+  changed: number;
 }
 
 export type SetupSectionKey =
@@ -499,9 +584,25 @@ export interface SetupSection {
 
 export type IdleMinutes = 5 | 10 | 15 | 30;
 
+export type AccessLogYears = 6 | 7 | 8 | 9 | 10;
+
 export interface SecuritySettings {
   mfa_roles: PracticeRole[];
   idle_minutes: IdleMinutes;
+  access_log_years: AccessLogYears;
+}
+
+export type PlanType = "commercial" | "medicare" | "medicaid" | "other";
+
+export interface PayerInput {
+  name: string;
+  payer_id: string | null;
+  plan_type: PlanType;
+  active: boolean;
+}
+
+export interface Payer extends PayerInput {
+  id: string;
 }
 
 export interface PracticeSetup {
@@ -510,6 +611,7 @@ export interface PracticeSetup {
   total: number;
   checks: Checks;
   missing_npi: number;
+  payers: Payer[];
   security: SecuritySettings | null;
 }
 
@@ -587,6 +689,14 @@ export interface RespondResult {
   addendum_text: string;
 }
 
+export interface OtherRequest {
+  id: string;
+  patient_name: string | null;
+  service_date: string;
+  sent_at: string;
+  questions: number;
+}
+
 export interface HqOverview {
   practices: number;
   people: number;
@@ -613,7 +723,12 @@ export interface HqPractice {
   time_zone: string;
   failed_24h: number;
   last_failure: string | null;
+  admin_name: string | null;
+  admin_email: string | null;
+  admin_status: MemberStatus | null;
 }
+
+export type AdminLink = "invite" | "reset";
 
 export interface NewPractice {
   name: string;
@@ -654,6 +769,16 @@ export interface HqActivityEntry {
   action: string;
   practice_id: string | null;
   detail: string | null;
+}
+
+export interface HqActivityPage extends Page<HqActivityEntry> {
+  actions: string[];
+}
+
+export interface HqActivityQuery {
+  practice_id: string | null;
+  action: string | null;
+  offset: number;
 }
 
 export interface DemoRequest {

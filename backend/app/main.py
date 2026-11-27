@@ -11,10 +11,13 @@ from fastapi.responses import JSONResponse
 from app.adapters.google_oidc import build_google_sign_in
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
-from app.api.routes import account, auth, billing, google, hq, notes, practice, respond, team, uploads, work
+from app.api.routes import account, auth, billing, google, health, hq, notes, practice, respond, team, uploads, work
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import AppError, Invalid
+from app.core.logging import RequestLog, configure_logging
+
+configure_logging()
 
 
 @asynccontextmanager
@@ -31,7 +34,7 @@ app = FastAPI(
     title="Bodha Coder", lifespan=lifespan, docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json"
 )
 
-for module in (auth, google, account, work, notes, uploads, billing, practice, team, respond, hq):
+for module in (health, auth, google, account, work, notes, uploads, billing, practice, team, respond, hq):
     app.include_router(module.router, prefix="/api")
 
 
@@ -58,6 +61,4 @@ async def no_store(request: Request, call_next: Callable[[Request], Awaitable[Re
     return response
 
 
-@app.get("/api/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
+app.add_middleware(RequestLog)

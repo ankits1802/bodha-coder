@@ -1,22 +1,24 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { AreaGuard } from "@/components/shared/AreaGuard";
+import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
-import type { QueuePage, Role } from "@/lib/api/types";
+import type { QueuePage, User } from "@/lib/api/types";
 import { getQueue } from "@/lib/api/work";
 import { formatCount } from "@/lib/format";
 import { canDo } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
-import { BulkBar } from "./components/BulkBar";
+import { BulkActions } from "./components/BulkActions";
 import { Pager } from "./components/Pager";
 import { QueueFiltersBar } from "./components/QueueFiltersBar";
 import { QueueTable } from "./components/QueueTable";
-import { noteHref } from "./queueRules";
+import { noteHref, selectsRows } from "./queueRules";
 import { QUEUE_TEXT } from "./strings";
 import { useQueueActions } from "./useQueueActions";
 import { useQueueFilters } from "./useQueueFilters";
@@ -28,7 +30,8 @@ function totalWaiting(page: QueuePage | null): string | undefined {
   return page ? QUEUE_TEXT.subtitle(formatCount(page.total)) : undefined;
 }
 
-function QueueContent({ role }: { role: Role }) {
+function QueueContent({ user }: { user: User }) {
+  const router = useRouter();
   const filters = useQueueFilters();
   const queue = useRemote(`queue:${filters.key}`, () => getQueue(filters.query));
   const selection = useQueueSelection(filters.key);
@@ -38,15 +41,21 @@ function QueueContent({ role }: { role: Role }) {
   });
   const page = queue.state.status === "success" ? queue.state.data : null;
   const next = page?.items.find((row) => row.status === "ready");
+  const selectedRows = page?.items.filter((row) => selection.selectedIds.includes(row.id)) ?? [];
   const controls = {
     lane: filters.lane,
-    selectable: canDo(role, "approve"),
-    canRemind: canDo(role, "ask"),
+    member: user,
+    selectable: selectsRows(user),
+    canRemind: canDo(user.role, "ask"),
     remindingId: actions.remindingId,
     onToggle: selection.toggle,
     onRemind: (id: string) => void actions.remindOne(id),
   };
-  const failed = page && canDo(role, "retry") ? page.failed : 0;
+  useShortcuts("queue", {
+    reviewNext: next ? () => router.push(noteHref(next.id, filters.lane)) : undefined,
+    mine: () => filters.update({ assigned: filters.assigned === "me" ? null : "me", offset: null }),
+  });
+  const failed = page && canDo(user.role, "retry") ? page.failed : 0;
   const header = (
     <>
       {failed > 0 ? (
@@ -85,17 +94,12 @@ function QueueContent({ role }: { role: Role }) {
           </>
         )}
       </RemoteView>
-      <BulkBar
-        count={selection.selectedIds.length}
-        pending={actions.approving}
-        onClear={() => selection.select([])}
-        onApprove={() => void actions.approveSelected(selection.selectedIds)}
-      />
+      <BulkActions member={user} rows={selectedRows} actions={actions} onClear={() => selection.select([])} />
     </>
   );
 }
 
 export function QueueScreen() {
   const { user } = useSession();
-  return <AreaGuard area="queue">{user ? <QueueContent role={user.role} /> : null}</AreaGuard>;
+  return <AreaGuard area="queue">{user ? <QueueContent user={user} /> : null}</AreaGuard>;
 }

@@ -11,6 +11,12 @@ export function getNoteDocument(noteId: string): Promise<{ url: string }> {
   return request<{ url: string }>(notePath(noteId, "/document"));
 }
 
+export function replaceNoteDocument(noteId: string, file: File): Promise<{ status: NoteStatus }> {
+  const form = new FormData();
+  form.set("file", file, file.name);
+  return request<{ status: NoteStatus }>(notePath(noteId, "/document"), { method: "POST", form });
+}
+
 export function saveDecisions(noteId: string, choices: Record<string, Choice>): Promise<NoteDetail> {
   return request<NoteDetail>(notePath(noteId, "/decisions"), { method: "PUT", body: { choices } });
 }
@@ -41,6 +47,10 @@ export function decideCompliance(
 
 export function deleteNotes(noteIds: string[]): Promise<{ deleted: string[] }> {
   return request<{ deleted: string[] }>("/api/notes/delete", { body: { note_ids: noteIds } });
+}
+
+export function assignNotes(noteIds: string[], userId: string | null): Promise<{ assigned: string[] }> {
+  return request<{ assigned: string[] }>("/api/notes/assign", { body: { note_ids: noteIds, user_id: userId } });
 }
 
 export function changeVisitType(noteId: string, visitType: string): Promise<{ status: NoteStatus }> {

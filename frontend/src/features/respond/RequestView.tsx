@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
@@ -11,15 +12,18 @@ import type { AddendumAnswer, ProviderRequest, RespondResult } from "@/lib/api/t
 import { openDocument } from "@/lib/openDocument";
 import { AnswerForm } from "./AnswerForm";
 import { NotePanel } from "./NotePanel";
+import { OtherRequestsPanel } from "./OtherRequestsPanel";
 import { watchExpiry } from "./providerSession";
 import { RequestHeader } from "./RequestHeader";
 import { SignedPanel } from "./SignedPanel";
 import { RESPOND_TEXT } from "./strings";
 import { TopBar } from "./TopBar";
+import { useOtherRequests, type OtherRequests } from "./useOtherRequests";
 
 interface RequestViewProps {
   providerToken: string;
   onExpired: () => void;
+  onSwitch: (providerToken: string) => void;
 }
 
 interface SideProps {
@@ -27,12 +31,23 @@ interface SideProps {
   result: RespondResult | null;
   pending: boolean;
   error: string | null;
+  next: ReactNode;
   onSign: (answers: AddendumAnswer[]) => void;
 }
 
 const REMOTE_TEXT = { loading: RESPOND_TEXT.loading, empty: "", retry: RESPOND_TEXT.retry };
 
-function Side({ request, result, pending, error, onSign }: SideProps) {
+function nextButton(others: OtherRequests): ReactNode {
+  const next = others.next;
+  if (!next) return null;
+  return (
+    <Button variant="primary" pending={others.openingId === next.id} onClick={() => others.open(next.id)}>
+      {RESPOND_TEXT.nextRequest}
+    </Button>
+  );
+}
+
+function Side({ request, result, pending, error, next, onSign }: SideProps) {
   if (result) {
     return (
       <SignedPanel
@@ -40,6 +55,7 @@ function Side({ request, result, pending, error, onSign }: SideProps) {
         addendumText={result.addendum_text}
         serviceDate={request.service_date}
         answeredAt={null}
+        action={next}
       />
     );
   }
@@ -50,6 +66,7 @@ function Side({ request, result, pending, error, onSign }: SideProps) {
         addendumText={request.addendum_text}
         serviceDate={request.service_date}
         answeredAt={request.answered_at}
+        action={next}
       />
     );
   }
@@ -65,10 +82,11 @@ function Side({ request, result, pending, error, onSign }: SideProps) {
   );
 }
 
-export function RequestView({ providerToken, onExpired }: RequestViewProps) {
+export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewProps) {
   const remote = useRemote(`respond:${providerToken}`, () => watchExpiry(getProviderRequest(providerToken), onExpired));
   const sign = useAction((answers: AddendumAnswer[]) => watchExpiry(submitAnswers(providerToken, answers), onExpired));
   const pdf = useAction(() => openDocument(() => watchExpiry(getProviderDocument(providerToken), onExpired)));
+  const others = useOtherRequests(providerToken, onExpired, onSwitch);
   const [result, setResult] = useState<RespondResult | null>(null);
   const request = remote.state.status === "success" ? remote.state.data : null;
 
@@ -93,8 +111,10 @@ export function RequestView({ providerToken, onExpired }: RequestViewProps) {
                     result={result}
                     pending={sign.pending}
                     error={sign.error}
+                    next={nextButton(others)}
                     onSign={(answers) => void submit(answers)}
                   />
+                  <OtherRequestsPanel others={others} />
                 </div>
               </div>
             </>

@@ -10,20 +10,57 @@ export interface Segment {
   tone: HighlightTone | null;
 }
 
-interface Range {
+interface Span {
   start: number;
   end: number;
+}
+
+interface Range extends Span {
   tone: HighlightTone;
 }
 
-function rangesOf(text: string, mark: Mark): Range[] {
-  const quote = mark.quote.trim();
-  if (!quote) return [];
-  const found: Range[] = [];
-  let from = text.indexOf(quote);
+interface FoldedText {
+  text: string;
+  starts: number[];
+  ends: number[];
+}
+
+const WHITESPACE = /\s/;
+
+function fold(text: string): FoldedText {
+  let folded = "";
+  const starts: number[] = [];
+  const ends: number[] = [];
+  let index = 0;
+  for (const char of text) {
+    const end = index + char.length;
+    if (!WHITESPACE.test(char)) {
+      const lower = char.toLowerCase();
+      folded += lower;
+      for (let unit = 0; unit < lower.length; unit += 1) {
+        starts.push(index);
+        ends.push(end);
+      }
+    } else if (folded.endsWith(" ")) {
+      ends[ends.length - 1] = end;
+    } else {
+      folded += " ";
+      starts.push(index);
+      ends.push(end);
+    }
+    index = end;
+  }
+  return { text: folded, starts, ends };
+}
+
+function spansOf(note: FoldedText, quote: string): Span[] {
+  const needle = fold(quote.trim()).text;
+  if (!needle) return [];
+  const found: Span[] = [];
+  let from = note.text.indexOf(needle);
   while (from >= 0) {
-    found.push({ start: from, end: from + quote.length, tone: mark.tone });
-    from = text.indexOf(quote, from + quote.length);
+    found.push({ start: note.starts[from] ?? 0, end: note.ends[from + needle.length - 1] ?? 0 });
+    from = note.text.indexOf(needle, from + needle.length);
   }
   return found;
 }
@@ -38,8 +75,13 @@ function withoutOverlaps(ranges: Range[]): Range[] {
   return kept;
 }
 
+export function containsQuote(text: string, quote: string): boolean {
+  return spansOf(fold(text), quote).length > 0;
+}
+
 export function highlightSegments(text: string, marks: Mark[]): Segment[] {
-  const ranges = withoutOverlaps(marks.flatMap((mark) => rangesOf(text, mark)));
+  const note = fold(text);
+  const ranges = withoutOverlaps(marks.flatMap((mark) => spansOf(note, mark.quote).map((span) => ({ ...span, tone: mark.tone }))));
   const segments: Segment[] = [];
   let cursor = 0;
   for (const range of ranges) {

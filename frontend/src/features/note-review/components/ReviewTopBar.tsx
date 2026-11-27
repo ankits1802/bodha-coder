@@ -4,6 +4,12 @@ import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Chevron } from "@/components/ui/Chevron";
 import { REVIEW_TEXT } from "../strings";
 import type { Neighbours } from "../useNoteData";
+import { ReplacePdfButton } from "./ReplacePdfButton";
+
+export interface ReplacePdf {
+  noteId: string;
+  onReplaced: () => void;
+}
 
 interface ReviewTopBarProps {
   backHref: string;
@@ -12,6 +18,7 @@ interface ReviewTopBarProps {
   onGo: (noteId: string) => void;
   onOpenPdf: (() => void) | null;
   pdfPending: boolean;
+  replacePdf?: ReplacePdf | null;
 }
 
 function StepButton({ target, label, direction, onGo }: { target: string | null; label: string; direction: "left" | "right"; onGo: (id: string) => void }) {
@@ -28,7 +35,7 @@ function StepButton({ target, label, direction, onGo }: { target: string | null;
   );
 }
 
-export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdfPending }: ReviewTopBarProps) {
+export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdfPending, replacePdf = null }: ReviewTopBarProps) {
   return (
     <div className="sticky top-0 z-10 flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-separator bg-surface/95 px-4 py-2">
       <Link href={backHref} className={buttonClasses("plain", "md", "px-3")}>
@@ -51,6 +58,7 @@ export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdf
             {REVIEW_TEXT.originalPdf}
           </Button>
         ) : null}
+        {replacePdf ? <ReplacePdfButton noteId={replacePdf.noteId} onReplaced={replacePdf.onReplaced} /> : null}
       </div>
     </div>
   );

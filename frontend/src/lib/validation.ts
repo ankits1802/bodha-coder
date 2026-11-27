@@ -2,6 +2,10 @@ const CPT_PATTERN = /^(\d{4}[0-9A-Z]|[A-Z]\d{4})$/;
 const MODIFIER_PATTERN = /^[0-9A-Z]{2}$/;
 const ICD_UNDOTTED = /^[A-TV-Z][0-9][0-9A-Z][0-9A-Z]{0,4}$/;
 const MAX_MODIFIERS = 4;
+const UNITS_SUFFIX = /^(.+?)\s*[X×]\s*(\d+)$/;
+const CODE_PARTS = /[-\s]+/;
+const MIN_UNITS = 1;
+const MAX_UNITS = 99;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIX_DIGITS = /^\d{6}$/;
 const NPI_PATTERN = /^\d{10}$/;
@@ -17,12 +21,19 @@ function isIcdShaped(token: string): boolean {
   return ICD_UNDOTTED.test(token.replaceAll(".", ""));
 }
 
+function isProcedure(text: string): boolean {
+  const [base = "", ...modifiers] = text.split(CODE_PARTS);
+  return CPT_PATTERN.test(base) && modifiers.length <= MAX_MODIFIERS && modifiers.every((m) => MODIFIER_PATTERN.test(m));
+}
+
 function isValidCodeToken(token: string): boolean {
-  const [base = "", ...modifiers] = token.split(/[-\s]+/);
-  if (CPT_PATTERN.test(base) && modifiers.length <= MAX_MODIFIERS && modifiers.every((m) => MODIFIER_PATTERN.test(m))) {
-    return true;
+  const counted = UNITS_SUFFIX.exec(token);
+  if (counted && isProcedure(counted[1] ?? "")) {
+    const units = Number(counted[2]);
+    return units >= MIN_UNITS && units <= MAX_UNITS;
   }
-  if (modifiers.length > 0) return false;
+  if (isProcedure(token)) return true;
+  if (CODE_PARTS.test(token)) return false;
   return (token.includes(".") || token.length === 3) && isIcdShaped(token);
 }
 

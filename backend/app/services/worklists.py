@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.codes.billing_codes import Code
 from app.core.calendar import today_in
 from app.models import LANES, Batch, CodeSet, Note, Provider, Suggestion, User, utcnow
 
 PAGE_SIZE = 50
 DUE_SOON = timedelta(hours=24)
 RECENT_BATCH_DAYS = 3
+QUEUE_STATUSES = ("queued", "reading", "ready", "failed")
+UNASSIGNED = "none"
 
 
-async def lane_counts(db: AsyncSession, practice_id: str) -> dict[str, dict[str, int]]:
-    soon = utcnow() + DUE_SOON
+async def lane_counts(db: AsyncSession, practice_id: str, *, now: datetime | None = None) -> dict[str, dict[str, int]]:
+    soon = (now or utcnow()) + DUE_SOON
     rows = await db.execute(
         select(Note.lane, func.count(), func.count().filter(Note.due_at <= soon))
         .where(Note.practice_id == practice_id, Note.status == "ready")
@@ -27,12 +30,18 @@ async def lane_counts(db: AsyncSession, practice_id: str) -> dict[str, dict[str,
 
 
 def queue_query(
-    practice_id: str, *, lane: str | None, search: str | None, provider_id: str | None, batch_id: str | None = None
+    practice_id: str,
+    *,
+    lane: str | None,
+    search: str | None,
+    provider_id: str | None,
+    batch_id: str | None = None,
+    assigned: str | None = None,
 ) -> Select[Any]:
     query = (
         select(Note, Provider.name)
         .join(Provider, Provider.id == Note.provider_id)
-        .where(Note.practice_id == practice_id, Note.status.in_(("queued", "reading", "ready", "failed")))
+        .where(Note.practice_id == practice_id, Note.status.in_(QUEUE_STATUSES))
     )
     if lane:
         query = query.where(Note.lane == lane, Note.status == "ready")
@@ -40,6 +49,10 @@ def queue_query(
         query = query.where(Note.provider_id == provider_id)
     if batch_id:
         query = query.where(Note.batch_id == batch_id)
+    if assigned == UNASSIGNED:
+        query = query.where(Note.assigned_to.is_(None))
+    elif assigned:
+        query = query.where(Note.assigned_to == assigned)
     if search:
         pattern = f"%{search.strip()}%"
         query = query.where(or_(Note.patient_name.ilike(pattern), Note.file_name.ilike(pattern)))
@@ -64,9 +77,11 @@ async def queue_rows(
     analysis_ids = [note.current_analysis_id for note in notes if note.current_analysis_id]
     changes = await _changes_by_analysis(db, analysis_ids)
     em_actions = await _em_actions(db, analysis_ids)
+    assignees = await user_names(db, {note.assigned_to for note in notes if note.assigned_to})
     return [
         {
             **summary(note, provider_name),
+            "assignee_name": assignees.get(note.assigned_to or ""),
             "billed": billed.get(note.id, []),
             "suggested": changes.get(note.current_analysis_id or "", []),
             "em_action": em_actions.get(note.current_analysis_id or ""),
@@ -91,6 +106,7 @@ def summary(note: Note, provider_name: str) -> dict[str, Any]:
         "flagged_by": note.flagged_by,
         "due_at": note.due_at.isoformat(),
         "file_name": note.file_name,
+        "assigned_to": note.assigned_to,
     }
 
 
@@ -108,7 +124,7 @@ async def _billed_by_note(db: AsyncSession, note_ids: list[str]) -> dict[str, li
         .join(latest, and_(CodeSet.note_id == latest.c.note_id, CodeSet.revision == latest.c.revision))
         .where(CodeSet.kind == "billed")
     )
-    return {note_id: [item["code"] for item in codes] for note_id, codes in rows}
+    return {note_id: [Code.from_json(item).label() for item in codes] for note_id, codes in rows}
 
 
 async def _changes_by_analysis(db: AsyncSession, analysis_ids: list[str]) -> dict[str, list[str]]:
@@ -182,6 +198,12 @@ async def user_names(db: AsyncSession, user_ids: set[str]) -> dict[str, str]:
         return {}
     rows = await db.execute(select(User.id, User.name).where(User.id.in_(user_ids)))
     return {user_id: name for user_id, name in rows.all()}
+
+
+async def assignee_name(db: AsyncSession, note: Note) -> str | None:
+    if note.assigned_to is None:
+        return None
+    return (await user_names(db, {note.assigned_to})).get(note.assigned_to)
 
 
 async def compliance_patterns(db: AsyncSession, practice_id: str) -> list[dict[str, Any]]:

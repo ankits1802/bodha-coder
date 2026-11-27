@@ -150,12 +150,17 @@ async def practice_with_provider(
 
 async def practice_with_member(harness: Harness, *, name: str, email: str, role: str) -> Practice:
     practice = await practice_with_provider(harness)
+    await invite_member(harness, practice, name=name, email=email, role=role)
+    return practice
+
+
+async def invite_member(harness: Harness, practice: Practice, *, name: str, email: str, role: str) -> str:
     invited = await harness.client.post(
         "/api/team", headers=practice.admin, json={"name": name, "email": email, "role": role}
     )
     assert invited.status_code == 200, invited.text
     await accept_invite(harness)
-    return practice
+    return invited.json()["id"]
 
 
 async def back_from_google(harness: Harness, code: str):

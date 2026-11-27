@@ -21,13 +21,13 @@ Nothing a person or the model produced is overwritten.
 | Table | Holds | Revisions |
 |---|---|---|
 | `notes` | one visit document: file, patient, date of service, provider, place, lane, headline | current state only; everything below is the history |
-| `note_texts` | the note's text: revision 1 from the document, then one per signed addendum | append-only |
+| `note_texts` | the note's text: a `document` revision for each PDF (extracted text, or empty for a scan until the model's text is stored as the next `document` revision), then one per signed addendum. A read uses the texts from the latest `document` revision onward | append-only |
 | `analyses` | one row per model run or re-derivation: inputs (context), model, prompt version, tokens, validated report, raw response key | append-only; older runs become `superseded` |
 | `suggestions` | each suggestion of an analysis: kind, codes before and after, action, reasoning, evidence quotes, severity, detail | belong to one analysis |
 | `decisions` | each choice a person made on a suggestion | append-only; the latest per key applies |
 | `code_sets` | billed and final code lists | append-only revisions per kind |
 | `addendum_requests` | questions sent to a provider, the answers and the signed addendum | one per request |
-| `access_log` | every PHI read, change and export (who, what, when, from where) | append-only |
+| `access_log` | every PHI read, change and export (who, what, when, from where) | append-only; rows older than the practice's retention are purged |
 | `activity` | administrative changes (setup, team, MIPS list, HQ) | append-only |
 | `recovery_codes` | hashed single-use two-step recovery codes per user | replaced as a set |
 | `rate_events` | one row per counted attempt (bucket, hashed key, time) | deleted once outside the window |
@@ -42,6 +42,7 @@ The queued `analyses` row is the job. The worker records `attempts`, `error` and
 | Key | Content |
 |---|---|
 | `practices/{practice}/notes/{note}/document.pdf` | the uploaded PDF |
+| `practices/{practice}/notes/{note}/document-r{revision}.pdf` | an amended PDF that replaced it; `revision` is its `note_texts` revision. Earlier PDFs are kept |
 | `practices/{practice}/notes/{note}/analyses/{revision}.json` | every raw model reply of that analysis |
 
 Keys carry ids only, never names. PDFs are opened through signed links that expire after
@@ -51,8 +52,8 @@ Keys carry ids only, never names. PDFs are opened through signed links that expi
 
 1. `POST /api/uploads` validates every file first (PDF signature, size, billed codes), stores
    the PDFs, and creates a batch, notes, billed code set revision 1 and a queued analysis each.
-2. The worker claims the analysis, takes the latest note text (or extracts the PDF text, or
-   sends the PDF itself when it has no text layer), and calls `ai.review.review_note` with the
+2. The worker claims the analysis, takes the note texts from the latest `document` revision onward
+   (or extracts the PDF text, or sends the PDF itself when it has no text layer), and calls `ai.review.review_note` with the
    practice's enabled checks, the setting from the place of service, the billed codes and the
    practice MIPS scope.
 3. `services.findings.build_findings` turns the report into suggestions. Every suggested ICD-10-CM
@@ -70,16 +71,58 @@ Keys carry ids only, never names. PDFs are opened through signed links that expi
    URL fragment. The provider confirms a one-time code sent to the contact on file, answers, and
    signs; the answers become a new note text revision and a new analysis is queued.
 
+## Records: replaced PDFs, retention and practice deletion
+
+| Piece | Flow |
+|---|---|
+| Replace a PDF | `POST /api/notes/{id}/document` (uploaders; `services.records.replace_document`). Refused for an exported note, a note being read, an open provider request, a file that is not a PDF or is too large, the same file, or a file another note already holds. The new PDF is stored under `document-r{n}.pdf` and becomes `notes.file_key`; the old object stays. A `document` text revision `n` holds the extracted text, or an empty string for a scan. Queued analyses of the note become `superseded`, a new one is queued with reason `document`, the note returns to `queued` (an approval is cleared) and the access log records `replaced PDF`. The note view shows the texts from the latest document onward |
+| Access-log retention | `practices.access_log_years`, 6 (default) to 10, set by an admin on Security (`PUT /api/practice/security`). `services.records.purge_access_logs(db, now)` deletes each practice's rows created before the start of the practice-local day that many years before `now`, and returns the count; the worker calls it once a day |
+| Delete a practice | HQ only, after the practice is `ended` or `blocked`: `DELETE /api/hq/practices/{id}` with `confirm_name` equal to the practice name. `services.records.delete_practice` deletes, in foreign-key order, decisions, suggestions and texts of its notes, its addendum requests, analyses and code sets, notes, batches, providers, MIPS list, access log and activity, its users' tokens, sessions and recovery codes, its users and the practice; then writes one `activity` row `practice deleted` (practice id, name) and removes every object under `practices/{id}/` (`ObjectStore.delete_prefix`: `list_objects_v2` pages, `delete_objects` in batches of 1000) |
+| HQ administration | `/api/hq/practices` rows carry the first admin (`admin_name`, `admin_email`, `admin_status`; a blocked admin only when no other). `POST /api/hq/practices/{id}/admin-link` resends an invited admin's invite or sends an active admin a password reset; `POST /api/hq/practices/{id}/renew` sets `renews_on` one year after the later of today and the current date. Both write `activity` |
+| Paging | `/api/batches` (50), `/api/billing` (100, the export still takes up to 500), `/api/hq/activity` (100, filtered by `practice_id` and `action` on the server, with the list of actions) and `/api/access-log` (200) take `offset` and answer `items`, `total`, `offset`, `page_size` |
+
+Decision: [0011](decisions/0011-practice-deletion-and-retention.md).
+
+## Practice setup: credentialing and payers
+
+| Piece | Flow |
+|---|---|
+| Credentialing | `providers.details` holds `taxonomy_code` (NUCC, 10 characters ending in X), `license_number` with `license_state` (US state or territory), `dea_number` (DEA check digit), `bills_under` (`individual` or `group`), `group_npi` (NPI check digit), `supervising_physician` and `signature_on_file`; `services.provider_details.validated_details` checks them for the provider dialog and for CSV import, where they are extra columns. Editing a provider without `details` keeps them |
+| Payers | `practices.setup["payers"]["list"]`: `id`, `name` (unique, any case), `payer_id` (2 to 15 letters, digits or hyphens, stored in capitals), `plan_type` (`commercial`, `medicare`, `medicaid`, `other`) and `active`, changed through `POST`, `PUT` and `DELETE /api/practice/payers` (`services.payers`). The Insurance payers section is complete with its clearinghouse and EFT/ERA fields and at least one active payer; saving those fields keeps the list |
+
 ## Modifiers, add-on codes and risk adjustment
 
 | Piece | Flow |
 |---|---|
 | Modifiers | The E/M answer names each modifier and its code. `services.code_additions` keeps those in `codes/modifiers.py` (visit or procedure set) for a code on the claim as a `modifier` suggestion (`add`, code before to code with modifier); a visit modifier follows the suggested level. Others become `review` suggestions. `routing.claim` appends accepted modifiers to the claim's E/M code or to the named code |
-| Add-on codes | Each add-on the E/M answer names becomes a `code_review` suggestion (`add`, `addon:<code>`) when `is_known_cpt` accepts it and it is not billed; otherwise `review`. Accepted ones are added to the claim once |
+| Add-on codes | Each add-on the E/M answer names becomes a `code_review` suggestion (`add`, `addon:<code>`) when `is_known_cpt` accepts it, its units are 1 to 99 and it is not billed; otherwise `review`. Accepted ones are added to the claim once, with the units the answer gives (`detail.units`) |
+| Units | `Code.units` (1 to 99) rides in the code set JSON (`"units"`, absent means 1). Code lists read `96127x2`, `96127 x 2` or `96127×2`; labels show `96127 ×2`; the CSV `cpt` column writes `96127x2`. `routing.claim` keeps units through replacements and modifiers |
 | Risk adjustment | With the `hcc` check, the model lists suspected conditions only. `codes/hcc.py` loads the vendored CMS-HCC V28 files for the payment year (date of service year + 1), maps billed and documented ICD-10-CM codes to payment HCCs with the CMS age and sex edits and hierarchies, and scores both sets from the CMS relative factors. `services.risk_adjustment` stores the result as one `diagnosis` suggestion with key `hcc` (action `info`) and each new suspected condition as a `diagnosis` question (`hcc:<code>`, `ask`) |
 | MIPS status | Each eligible measure carries `met`, `missing` or `not_applicable`; the suggestion detail holds it |
 
-Decision: [0010](decisions/0010-modifiers-add-ons-and-hcc.md).
+Decision: [0010](decisions/0010-modifiers-add-ons-and-hcc.md), units in [0014](decisions/0014-units-and-medicare-national-estimates.md).
+
+## Medicare national estimates
+
+Every amount is an estimate of the Medicare national amount, never the practice's payment.
+
+| Piece | Flow |
+|---|---|
+| Data | `codes/fees.py` loads `codes/data/pfs_rvu_2026.tsv.gz` (CMS CY 2026 PFS RVU26D, nonQPP PPRRVU, blank-modifier rows) after checking it against `pfs_rvu_2026.meta.json` (SHA-256, code counts, conversion factor 33.4009), once per process |
+| Amount | per unit (work + practice expense + malpractice RVU) × conversion factor, rounded to the cent, times units; facility or non-facility practice expense from the place of service (`rate_setting_for`, Claims Processing Manual ch. 12 §20.4.2). Status other than A, R, T, zero RVUs, a payment-changing modifier, an unknown place or another calendar year give no amount |
+| Note review | `services.estimates.note_estimate` prices the latest billed codes and the derived claim; the note detail carries `estimate` (release, setting, both sides with lines, unpriced codes, difference) |
+| Billing | each row carries `estimate`, the priced total of its final codes |
+| Insights | `estimates`: the claim minus billed difference across notes approved in the period, and per provider; `people`: per approver, approvals, median minutes from the current analysis finishing to approval, and claims changed in review (`claim_changes`) |
+
+Decision: [0014](decisions/0014-units-and-medicare-national-estimates.md).
+
+## Gemini endpoint
+
+`GEMINI_BACKEND` chooses the Gemini Developer API (`developer`, API key, Files API for PDFs over
+14 MiB) or Vertex AI (`vertex`, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`, Application
+Default Credentials, PDFs inline up to 50 MiB; a larger PDF fails for good with "PDF too large for
+Vertex inline; split it"). PHI goes through Vertex under Google's BAA. Decision:
+[0012](decisions/0012-vertex-ai.md).
 
 ## Calendar days
 
@@ -93,6 +136,25 @@ computed in that zone through `app/core/calendar.py`. Instants are stored and se
 `levels_too_high`, `audit_risk`, `waiting_on_provider`, `code_changes`, `questions`, `matches`), and
 `notes.headline` is the sentence people read. Screens sort and filter on the reason, never the
 headline.
+
+## Assignment, daily summary and search
+
+| Piece | Flow |
+|---|---|
+| Assignment | `notes.assigned_to` names the person working a note. `POST /api/notes/assign` (`services.assignment.assign_notes`): an admin assigns any active user of the practice with a note-reading role, or nobody; a coder or CDI specialist takes an unassigned note or releases their own. Only open notes (`queued`, `reading`, `ready`, `failed`) take a change; approving, exporting or deleting clears nothing. Each change writes `assigned` (detail `to <name>` or `to nobody`) to `access_log`. `GET /api/notes?assigned=me\|none\|<user id>` filters the queue; rows carry `assigned_to` and `assignee_name` |
+| Daily summary | `services.digests.send_due_digests(db, messenger, now)` runs from the worker every five minutes. A practice that is open (trial or active, plan not ended) is due once its local time is 07:00 or later and no `activity` row `digest sent` holds its local date; a per-practice advisory lock keeps two workers from both sending. Each active note reader with `users.notify_digest` gets counts only (waiting by lane, due within 24 hours, assigned to them) and `{APP_URL}/today`, never a patient detail. People turn it off on Security (`GET`/`PUT /api/auth/preferences`) |
+| Search | `GET /api/search?q=` (note readers, 2 to 100 characters) matches the practice's notes in every status by patient, file or provider name (`ILIKE`, wildcards escaped) or by a code on the latest billed or final code set (`code_forms` normalises `e119` to `E11.9`); 50 results, newest date of service first. The access log records `searched` with the count only |
+
+## Provider requests
+
+A provider token is bound to one request. After verifying, `GET /api/respond/others` lists the same
+provider's other requests in the same practice that are `sent` and not expired (patient, date of
+service, sent, question count), and writes `listed open requests` per note. `POST /api/respond/switch`
+checks that the target belongs to the same provider and practice, is `sent` and not expired, writes
+`switched request`, and returns a new provider token for it; anything else is 404. The provider page
+offers the list and, after signing, the next request.
+
+Decision: [0015](decisions/0015-assignment-digests-and-provider-switch.md).
 
 ## Security
 

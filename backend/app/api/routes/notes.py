@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.api.bodies import (
     AskBody,
+    AssignBody,
     BilledBody,
     BulkApproveBody,
     ComplianceBody,
@@ -17,8 +18,9 @@ from app.api.bodies import (
 )
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
-from app.core.roles import APPROVERS, ASKERS, COMPLIANCE, DECIDERS, NOTE_READERS, UPLOADERS
-from app.services import addenda, note_changes, note_view, review_actions
+from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, NOTE_READERS, UPLOADERS
+from app.services import addenda, assignment, note_changes, note_view, review_actions
+from app.services.records import NewDocument, replace_document
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
@@ -34,6 +36,19 @@ async def detail(note_id: str, db: Db, actor: Reader) -> dict[str, Any]:
 @router.get("/{note_id}/document")
 async def document(note_id: str, db: Db, actor: Reader, store: Store) -> dict[str, str]:
     return {"url": await note_view.pdf_link(db, store, actor, note_id)}
+
+
+@router.post("/{note_id}/document")
+async def replace_pdf(
+    note_id: str,
+    file: Annotated[UploadFile, File()],
+    db: Db,
+    store: Store,
+    actor: Annotated[Actor, Depends(require(*UPLOADERS))],
+) -> dict[str, str]:
+    document = NewDocument(file.filename or "document.pdf", await file.read())
+    note = await replace_document(db, store, actor, note_id, document)
+    return {"status": note.status}
 
 
 @router.put("/{note_id}/decisions")
@@ -57,6 +72,13 @@ async def approve(note_id: str, db: Db, actor: Approver) -> dict[str, str]:
 @router.post("/approve")
 async def approve_many(body: BulkApproveBody, db: Db, actor: Approver) -> dict[str, list[str]]:
     return {"approved": await review_actions.approve_many(db, actor, body.note_ids)}
+
+
+@router.post("/assign")
+async def assign(
+    body: AssignBody, db: Db, actor: Annotated[Actor, Depends(require(*ASSIGNERS))]
+) -> dict[str, list[str]]:
+    return {"assigned": await assignment.assign_notes(db, actor, body.note_ids, body.user_id)}
 
 
 @router.post("/{note_id}/flag")

@@ -11,6 +11,7 @@ import { useSession } from "@/lib/session/useSession";
 import { ReviewTopBar } from "./components/ReviewTopBar";
 import { ReviewWorkspace } from "./components/ReviewWorkspace";
 import { reviewPermissions } from "./permissions";
+import { canReplacePdf } from "./replacePdf";
 import { REVIEW_TEXT } from "./strings";
 import { parseLane, useNeighbours, useNote } from "./useNoteData";
 import { useReviewActions } from "./useReviewActions";
@@ -44,6 +45,7 @@ function NoteReview({ noteId, lane }: { noteId: string; lane: Lane | null }) {
         onGo={go}
         onOpenPdf={detail ? actions.openPdf : null}
         pdfPending={actions.pdfPending}
+        replacePdf={detail && canReplacePdf(user?.role, detail.note.status) ? { noteId, onReplaced: note.reload } : null}
       />
       <main id="main" className="flex flex-1 flex-col">
         <RemoteView state={note.state} text={REMOTE_TEXT} onRetry={note.reload}>

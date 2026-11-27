@@ -1,5 +1,5 @@
 import { request } from "./client";
-import type { FileDetail, FilePreview, Place, Provider, UploadPlan, UploadResult } from "./types";
+import type { FileDetail, FilePreview, Page, Place, Provider, UploadedBatch, UploadPlan, UploadResult } from "./types";
 
 export function previewFiles(fileNames: string[]): Promise<FilePreview[]> {
   return request<FilePreview[]>("/api/uploads/preview", { body: { file_names: fileNames } });
@@ -18,6 +18,10 @@ export function buildUploadForm(plan: UploadPlan, files: File[], details: FileDe
 
 export function uploadNotes(form: FormData): Promise<UploadResult> {
   return request<UploadResult>("/api/uploads", { method: "POST", form });
+}
+
+export function getUploadHistory(offset: number): Promise<Page<UploadedBatch>> {
+  return request<Page<UploadedBatch>>("/api/batches", { query: { offset } });
 }
 
 export function getProviders(): Promise<Provider[]> {

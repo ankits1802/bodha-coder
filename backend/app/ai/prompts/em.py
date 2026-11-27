@@ -181,6 +181,11 @@ _STEP_4 = """
 A screening instrument counts only when the note documents that it was administered and its result. Never suggest
 an add-on the note does not support.
 
+Units: give every add-on the number of units the note documents, never more. A code reported once is 1 unit. A
+per-instrument code is one unit for each instrument administered and scored (PHQ-9 and GAD-7 are 2 units of 96127).
+A time add-on is one unit for each FULL increment of time past its threshold, counted from the documented total
+time; a partial increment is not a unit.
+
 Depression screening:
 - G0444 (annual depression screening, Medicare, up to 15 minutes) or 96127 (brief standardized instrument, per
   instrument)
@@ -204,14 +209,18 @@ Prolonged service:
 - 99417 (office, each additional 15 minutes)
 - Trigger: a documented total time of 75 minutes or more with 99205, or 55 minutes or more with 99215. Medicare
   uses G2212 instead: 89 minutes or more with 99205, 69 minutes or more with 99215.
+- Units: the first unit at the trigger time and one more for each further full 15 minutes (99417 with 99215:
+  55 minutes is 1 unit, 70 minutes is 2; G2212 with 99215: 69 minutes is 1 unit, 84 minutes is 2)
 
 Wound debridement:
 - 97597 and 97598
 - Trigger: debridement documented, with the surface area and depth
+- Units: 97598 is one unit for each additional 20 sq cm, or part of it, past the first 20 sq cm
 
 Critical care:
 - 99292 (each additional 30 minutes beyond the first 74)
 - Trigger: 99291 is the code and the documented critical care time is 104 minutes or more
+- Units: one unit at 104 minutes and one more for each further full 30 minutes (134 minutes is 2 units)
 """
 
 _STEP_5_HEAD = """
@@ -266,9 +275,10 @@ _OUTPUT = """
   code is the code it belongs on, "" for the visit code you selected; reason is one sentence naming what the note
   shows; evidence holds verbatim quotes from the note
 - add_on_codes: the add-on codes STEP 4 supports, whether or not they were billed, each
-  {"code", "name", "reason", "evidence"}: code is the CPT or HCPCS code only; name is a short name for the
-  service (for example "Depression screening"); reason is one sentence naming the documented trigger and time;
-  evidence holds verbatim quotes from the note
+  {"code", "name", "units", "reason", "evidence"}: code is the CPT or HCPCS code only; name is a short name for
+  the service (for example "Depression screening"); units is a whole number from 1 to 99 counted as STEP 4 says;
+  reason is one sentence naming the documented trigger, time and what each unit counts; evidence holds verbatim
+  quotes from the note
 """
 
 

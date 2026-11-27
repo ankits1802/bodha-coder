@@ -16,6 +16,7 @@ from app.core.security import digest, issue_token, random_code, random_token, sa
 from app.models import AddendumRequest, Note, NoteText, Practice, Provider, utcnow
 from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_provider_access
+from app.services.note_texts import current_texts, note_texts
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.rate_limits import PROVIDER_CODE_PER_REQUEST, hit
 from app.services.review_actions import note_for
@@ -38,6 +39,15 @@ class Answer:
     key: str
     choice: str
     comment: str | None
+
+
+@dataclass(frozen=True)
+class OtherRequest:
+    id: str
+    patient_name: str | None
+    service_date: date
+    sent_at: datetime
+    questions: int
 
 
 async def create_request(
@@ -173,6 +183,10 @@ async def verify_code(db: AsyncSession, token: str, code: str) -> str:
         raise Unauthorized("that code is not correct")
     request.code_hash = None
     await db.commit()
+    return _provider_token(request)
+
+
+def _provider_token(request: AddendumRequest) -> str:
     return issue_token(
         "provider",
         request.provider_id,
@@ -182,13 +196,52 @@ async def verify_code(db: AsyncSession, token: str, code: str) -> str:
     )
 
 
+async def other_requests(db: AsyncSession, actor: ProviderActor) -> list[OtherRequest]:
+    _, _, provider = await _load_for_provider(db, actor)
+    rows = (
+        await db.execute(
+            select(AddendumRequest, Note.patient_name, Note.service_date)
+            .join(Note, Note.id == AddendumRequest.note_id)
+            .where(
+                AddendumRequest.provider_id == actor.provider_id,
+                AddendumRequest.practice_id == actor.practice_id,
+                AddendumRequest.status == "sent",
+                AddendumRequest.expires_at > utcnow(),
+                AddendumRequest.id != actor.request_id,
+            )
+            .order_by(AddendumRequest.created_at)
+        )
+    ).all()
+    for request, _, _ in rows:
+        record_provider_access(db, actor, provider.name, "listed open requests", note_id=request.note_id)
+    await db.commit()
+    return [
+        OtherRequest(request.id, patient, service_date, request.created_at, len(request.questions))
+        for request, patient, service_date in rows
+    ]
+
+
+async def switch_request(db: AsyncSession, actor: ProviderActor, request_id: str) -> str:
+    _, _, provider = await _load_for_provider(db, actor)
+    target = await db.get(AddendumRequest, request_id)
+    if (
+        target is None
+        or target.provider_id != actor.provider_id
+        or target.practice_id != actor.practice_id
+        or target.status != "sent"
+        or target.expires_at <= utcnow()
+    ):
+        raise NotFound("request not found")
+    record_provider_access(db, actor, provider.name, "switched request", note_id=target.note_id)
+    await db.commit()
+    return _provider_token(target)
+
+
 async def provider_request(
     db: AsyncSession, actor: ProviderActor
 ) -> tuple[AddendumRequest, Note, Provider, list[NoteText]]:
     request, note, provider = await _load_for_provider(db, actor)
-    texts = list(
-        (await db.scalars(select(NoteText).where(NoteText.note_id == note.id).order_by(NoteText.revision))).all()
-    )
+    texts = current_texts(await note_texts(db, note.id))
     record_provider_access(db, actor, provider.name, "opened addendum request", note_id=note.id)
     await db.commit()
     return request, note, provider, texts

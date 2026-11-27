@@ -15,10 +15,12 @@ from app.core.errors import Conflict, Invalid, NotFound
 from app.core.roles import PRACTICE_ROLES
 from app.models import DEFAULT_CHECKS, MipsList, PlaceOfService, Practice, Provider
 from app.services.audit_log import record_activity
+from app.services.payers import has_active_payer, payer_list
+from app.services.provider_details import DETAIL_FIELDS, validated_details
 
 SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
     "practice_details": ("legal_name", "tax_id", "group_npi", "address", "phone", "billing_contact"),
-    "payers": ("contracted_payers", "clearinghouse", "eft_era_status"),
+    "payers": ("clearinghouse", "eft_era_status"),
     "payments": ("fee_schedule", "payment_posting", "write_off_rules"),
     "coding_rules": ("common_codes", "modifier_rules", "coding_preferences"),
     "charge_capture": ("charge_route", "turnaround", "reconciliation"),
@@ -32,6 +34,7 @@ SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
 PROVIDER_FIELDS = ("name", "credential", "specialty", "npi", "place_code", "email", "phone", "channel")
 CREDENTIALS = ("MD", "DO", "NP", "PA", "CNS", "CNM")
 IDLE_MINUTES_CHOICES = (5, 10, 15, 30)
+ACCESS_LOG_YEARS = range(6, 11)
 
 
 def section_complete(values: dict[str, Any], fields: tuple[str, ...]) -> bool:
@@ -42,14 +45,7 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
     providers = (
         await db.scalars(select(Provider).where(Provider.practice_id == practice.id, Provider.active.is_(True)))
     ).all()
-    sections = {
-        key: {
-            "fields": list(fields),
-            "values": practice.setup.get(key, {}),
-            "complete": section_complete(practice.setup.get(key, {}), fields),
-        }
-        for key, fields in SETUP_SECTIONS.items()
-    }
+    sections = {key: _section_view(practice, key, fields) for key, fields in SETUP_SECTIONS.items()}
     sections["providers"] = {"fields": [], "values": {}, "complete": bool(providers) and all(p.npi for p in providers)}
     return {
         "sections": sections,
@@ -57,7 +53,14 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
         "total": len(sections),
         "checks": practice_checks(practice),
         "missing_npi": sum(1 for p in providers if not p.npi),
+        "payers": payer_list(practice),
     }
+
+
+def _section_view(practice: Practice, key: str, fields: tuple[str, ...]) -> dict[str, Any]:
+    stored = practice.setup.get(key, {})
+    complete = section_complete(stored, fields) and (key != "payers" or has_active_payer(practice))
+    return {"fields": list(fields), "values": {field: stored.get(field, "") for field in fields}, "complete": complete}
 
 
 async def save_section(db: AsyncSession, actor: Actor, key: str, values: dict[str, str]) -> None:
@@ -70,7 +73,8 @@ async def save_section(db: AsyncSession, actor: Actor, key: str, values: dict[st
     practice = actor.practice
     if practice is None:
         raise NotFound("practice not found")
-    practice.setup = {**practice.setup, key: {field: values.get(field, "").strip() for field in fields}}
+    kept = practice.setup.get(key, {})
+    practice.setup = {**practice.setup, key: {**kept, **{field: values.get(field, "").strip() for field in fields}}}
     record_activity(db, actor, "setup saved", practice_id=practice.id, detail=key)
     await db.commit()
 
@@ -94,19 +98,27 @@ async def save_checks(db: AsyncSession, actor: Actor, checks: dict[str, bool]) -
     await db.commit()
 
 
-async def save_security(db: AsyncSession, actor: Actor, *, mfa_roles: list[str], idle_minutes: int) -> None:
+async def save_security(
+    db: AsyncSession, actor: Actor, *, mfa_roles: list[str], idle_minutes: int, access_log_years: int | None
+) -> None:
     if not set(mfa_roles) <= set(PRACTICE_ROLES) or idle_minutes not in IDLE_MINUTES_CHOICES:
         raise Invalid("choose roles and an inactivity limit from the list")
+    if access_log_years is not None and access_log_years not in ACCESS_LOG_YEARS:
+        raise Invalid("keep the access log for 6 to 10 years")
     practice = actor.practice
     if practice is None:
         raise NotFound("practice not found")
     practice.mfa_roles, practice.idle_minutes = sorted(set(mfa_roles)), idle_minutes
+    practice.access_log_years = access_log_years or practice.access_log_years
     record_activity(
         db,
         actor,
         "security changed",
         practice_id=practice.id,
-        detail=f"two-step: {', '.join(practice.mfa_roles) or 'none'}; sign-out {idle_minutes} min",
+        detail=(
+            f"two-step: {', '.join(practice.mfa_roles) or 'none'}; sign-out {idle_minutes} min; "
+            f"access log kept {practice.access_log_years} years"
+        ),
     )
     await db.commit()
 
@@ -127,8 +139,10 @@ async def validated_provider(db: AsyncSession, values: dict[str, Any]) -> dict[s
 
 async def save_provider(db: AsyncSession, actor: Actor, values: dict[str, Any], *, provider_id: str | None) -> Provider:
     clean = {**await validated_provider(db, values), "active": bool(values.get("active", True))}
+    if values.get("details") is not None:
+        clean["details"] = validated_details(values["details"])
     if provider_id is None:
-        provider = Provider(practice_id=actor.practice_id, **clean)
+        provider = Provider(practice_id=actor.practice_id, **{"details": {}, **clean})
         db.add(provider)
     else:
         provider = await db.get(Provider, provider_id)
@@ -145,10 +159,10 @@ async def import_providers(db: AsyncSession, actor: Actor, csv_text: str) -> int
     rows = list(csv.DictReader(io.StringIO(csv_text)))
     cleaned = []
     for number, row in enumerate(rows, start=2):
+        values = {key.strip().lower(): value for key, value in row.items() if key}
         try:
-            cleaned.append(
-                await validated_provider(db, {key.strip().lower(): value for key, value in row.items() if key})
-            )
+            details = validated_details({field: values[field] for field in DETAIL_FIELDS if field in values})
+            cleaned.append({**await validated_provider(db, values), "details": details})
         except Invalid as error:
             raise Invalid(f"row {number}: {error.message}") from error
     for values in cleaned:

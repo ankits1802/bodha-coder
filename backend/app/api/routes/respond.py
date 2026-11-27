@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.bodies import CodeRequestBody, CodeVerifyBody, RespondBody
+from app.api.bodies import CodeRequestBody, CodeVerifyBody, RespondBody, SwitchBody
 from app.api.wiring import Mail, Store
 from app.core.config import get_settings
 from app.core.deps import Db, ProviderActor, current_provider
@@ -48,6 +48,25 @@ async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
         "texts": [{"revision": t.revision, "source": t.source, "text": t.text} for t in texts],
         "addendum_text": request.addendum_text,
     }
+
+
+@router.get("/others")
+async def others(db: Db, actor: ProviderSession) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": item.id,
+            "patient_name": item.patient_name,
+            "service_date": item.service_date.isoformat(),
+            "sent_at": item.sent_at.isoformat(),
+            "questions": item.questions,
+        }
+        for item in await addenda.other_requests(db, actor)
+    ]
+
+
+@router.post("/switch")
+async def switch(body: SwitchBody, db: Db, actor: ProviderSession) -> dict[str, str]:
+    return {"provider_token": await addenda.switch_request(db, actor, body.request_id)}
 
 
 @router.get("/document")

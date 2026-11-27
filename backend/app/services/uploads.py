@@ -3,9 +3,10 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, note_document_key
@@ -15,11 +16,12 @@ from app.core.calendar import day_bounds
 from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
-from app.models import Batch, CodeSet, Note, PlaceOfService, Provider, new_id
+from app.models import Batch, CodeSet, Note, PlaceOfService, Provider, User, new_id
 from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
 
 PDF_MAGIC = b"%PDF"
+HISTORY_PAGE = 50
 
 
 @dataclass(frozen=True)
@@ -69,7 +71,7 @@ async def create_upload(
     if not files:
         raise Invalid("add at least one PDF")
     for file in files:
-        _check_pdf(file)
+        check_pdf(file.name, file.data)
         billed_codes_for(file)
     batch = Batch(
         practice_id=actor.practice_id,
@@ -141,8 +143,59 @@ async def _add_note(db: AsyncSession, store: ObjectStore, actor: Actor, batch: B
     return note
 
 
-def _check_pdf(file: UploadFile) -> None:
-    if not file.data.startswith(PDF_MAGIC):
-        raise Invalid(f"{file.name} is not a PDF")
-    if len(file.data) > get_settings().max_upload_mb * 1024 * 1024:
-        raise Invalid(f"{file.name} is larger than {get_settings().max_upload_mb} MB")
+def check_pdf(name: str, data: bytes) -> None:
+    if not data.startswith(PDF_MAGIC):
+        raise Invalid(f"{name} is not a PDF")
+    if len(data) > get_settings().max_upload_mb * 1024 * 1024:
+        raise Invalid(f"{name} is larger than {get_settings().max_upload_mb} MB")
+
+
+async def batch_history(db: AsyncSession, practice_id: str, *, offset: int) -> dict[str, Any]:
+    filters = (Batch.practice_id == practice_id, exists().where(Note.batch_id == Batch.id))
+    rows = (
+        await db.execute(
+            select(Batch, Provider.name, User.name)
+            .join(Provider, Provider.id == Batch.provider_id)
+            .join(User, User.id == Batch.created_by)
+            .where(*filters)
+            .order_by(Batch.created_at.desc(), Batch.id)
+            .offset(offset)
+            .limit(HISTORY_PAGE)
+        )
+    ).all()
+    counts = await _status_counts(db, [batch.id for batch, _, _ in rows])
+    return {
+        "items": [
+            _history_row(batch, provider, uploader, counts.get(batch.id, {})) for batch, provider, uploader in rows
+        ],
+        "total": await db.scalar(select(func.count()).select_from(Batch).where(*filters)) or 0,
+        "offset": offset,
+        "page_size": HISTORY_PAGE,
+    }
+
+
+async def _status_counts(db: AsyncSession, batch_ids: list[str]) -> dict[str, dict[str, int]]:
+    if not batch_ids:
+        return {}
+    rows = await db.execute(
+        select(Note.batch_id, Note.status, func.count())
+        .where(Note.batch_id.in_(batch_ids))
+        .group_by(Note.batch_id, Note.status)
+    )
+    found: dict[str, dict[str, int]] = {}
+    for batch_id, status, count in rows:
+        found.setdefault(batch_id, {})[status] = count
+    return found
+
+
+def _history_row(batch: Batch, provider: str, uploader: str, counts: dict[str, int]) -> dict[str, Any]:
+    return {
+        "id": batch.id,
+        "provider_name": provider,
+        "service_date": batch.service_date.isoformat(),
+        "place_code": batch.place_code,
+        "visit_type": batch.visit_type,
+        "uploaded_by": uploader,
+        "created_at": batch.created_at.isoformat(),
+        "counts": counts,
+    }

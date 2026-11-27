@@ -18,9 +18,27 @@ class ObjectStore(Protocol):
 
     async def delete(self, keys: list[str]) -> None: ...
 
+    async def delete_prefix(self, prefix: str) -> int: ...
+
+
+def practice_prefix(practice_id: str) -> str:
+    if not practice_id or "/" in practice_id:
+        raise ValueError(f"not a practice id: {practice_id!r}")
+    return f"practices/{practice_id}/"
+
+
+def note_prefix(practice_id: str, note_id: str) -> str:
+    if not note_id or "/" in note_id:
+        raise ValueError(f"not a note id: {note_id!r}")
+    return f"{practice_prefix(practice_id)}notes/{note_id}/"
+
 
 def note_document_key(practice_id: str, note_id: str) -> str:
     return f"practices/{practice_id}/notes/{note_id}/document.pdf"
+
+
+def note_document_revision_key(practice_id: str, note_id: str, revision: int) -> str:
+    return f"practices/{practice_id}/notes/{note_id}/document-r{revision}.pdf"
 
 
 def analysis_response_key(practice_id: str, note_id: str, revision: int) -> str:
@@ -31,10 +49,10 @@ DELETE_BATCH = 1000
 
 
 class S3ObjectStore:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, *, client: Any = None) -> None:
         self._bucket = settings.s3_bucket
         self._encryption = settings.s3_server_side_encryption
-        self._client: Any = boto3.client(
+        self._client: Any = client or boto3.client(
             "s3",
             endpoint_url=settings.s3_endpoint_url,
             region_name=settings.s3_region,
@@ -61,9 +79,23 @@ class S3ObjectStore:
             ExpiresIn=seconds,
         )
 
+    async def check_bucket(self) -> None:
+        await asyncio.to_thread(self._client.head_bucket, Bucket=self._bucket)
+
     async def delete(self, keys: list[str]) -> None:
         for start in range(0, len(keys), DELETE_BATCH):
             objects = [{"Key": key} for key in keys[start : start + DELETE_BATCH]]
             await asyncio.to_thread(
                 self._client.delete_objects, Bucket=self._bucket, Delete={"Objects": objects, "Quiet": True}
             )
+
+    async def delete_prefix(self, prefix: str) -> int:
+        if not prefix.endswith("/") or prefix == "/":
+            raise ValueError(f"refusing to delete under {prefix!r}: a prefix must name a folder")
+        keys = await asyncio.to_thread(self._keys_under, prefix)
+        await self.delete(keys)
+        return len(keys)
+
+    def _keys_under(self, prefix: str) -> list[str]:
+        pages = self._client.get_paginator("list_objects_v2").paginate(Bucket=self._bucket, Prefix=prefix)
+        return [item["Key"] for page in pages for item in page.get("Contents", [])]

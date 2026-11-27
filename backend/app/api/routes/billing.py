@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
 from app.api.bodies import ExportBody
@@ -17,14 +17,22 @@ Biller = Annotated[Actor, Depends(require(*BILLERS))]
 
 
 @router.get("/billing")
-async def billing_list(db: Db, actor: Biller, show: Literal["ready", "exported", "all"] = "ready") -> dict[str, Any]:
+async def billing_list(
+    db: Db,
+    actor: Biller,
+    show: Literal["ready", "exported", "all"] = "ready",
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict[str, Any]:
     exported = {"ready": False, "exported": True, "all": None}[show]
-    rows = await billing.billing_rows(db, actor.practice_id, exported=exported)
-    record_access(db, actor, "listed billing", detail=f"{len(rows)} rows")
+    rows = await billing.billing_rows(db, actor.practice_id, exported=exported, offset=offset, limit=billing.PAGE_SIZE)
+    record_access(db, actor, "listed billing", detail=f"{len(rows)} rows from {offset}")
     await db.commit()
     return {
         "items": rows,
         "summary": await billing.billing_summary(db, actor.practice_id, actor.zone),
+        "total": await billing.billing_total(db, actor.practice_id, exported=exported),
+        "offset": offset,
+        "page_size": billing.PAGE_SIZE,
         "limit": billing.ROW_LIMIT,
     }
 

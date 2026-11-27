@@ -75,6 +75,6 @@ whose macro still holds a placeholder is stored as `missing`.
   to nothing until the midyear files are vendored. Payment years other than 2027 show "No CMS-HCC
   model".
 - MCE age edits use the age the note states, not the age on February 1 of the payment year.
-- Units are not on the claim: an add-on billed more than once (96127 twice, 99292 twice) is added
-  once and the coder sets the units.
+- Units were not on the claim: an add-on billed more than once (96127 twice, 99292 twice) was added
+  once and the coder set the units. Superseded by [0014](0014-units-and-medicare-national-estimates.md).
 - Prompt version 2026.11.2.

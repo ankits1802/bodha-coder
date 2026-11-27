@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from app.ai.contracts import AddOnSuggestion, EmReview, ModifierSuggestion
-from app.codes.billing_codes import MODIFIER_PATTERN, Code, is_known_cpt
+from app.codes.billing_codes import MAX_UNITS, MIN_UNITS, MODIFIER_PATTERN, Code, is_known_cpt
 from app.codes.modifiers import modifier_meaning
 from app.services.finding import Finding
 
@@ -62,22 +62,29 @@ def _target(named: str, on_visit: str | None, billed_em: str | None) -> str | No
 
 
 def _add_on_finding(code: str, item: AddOnSuggestion) -> Finding:
-    key = f"{ADD_ON_PREFIX}{code}"
     if not is_known_cpt(code):
-        reason = " ".join(part for part in (f"{code} is not a 2026 physician fee schedule code.", item.reason) if part)
-        return Finding(
-            "code_review",
-            key,
-            "review",
-            "Add-on code not confirmed",
-            reason,
-            evidence=tuple(item.evidence),
-            detail={"code": code, "name": item.name},
-            default_choice="keep",
-        )
+        return _unconfirmed_add_on(code, item, f"{code} is not a 2026 physician fee schedule code.")
+    if not MIN_UNITS <= item.units <= MAX_UNITS:
+        return _unconfirmed_add_on(code, item, f"{item.units} units of {code} is outside {MIN_UNITS} to {MAX_UNITS}.")
     title = item.name.strip() or "Add-on code"
     evidence = tuple(item.evidence)
-    return Finding("code_review", key, "add", title, item.reason, None, code, evidence, detail={"add_on": True})
+    detail = {"add_on": True, "units": item.units}
+    return Finding(
+        "code_review", f"{ADD_ON_PREFIX}{code}", "add", title, item.reason, None, code, evidence, detail=detail
+    )
+
+
+def _unconfirmed_add_on(code: str, item: AddOnSuggestion, why: str) -> Finding:
+    return Finding(
+        "code_review",
+        f"{ADD_ON_PREFIX}{code}",
+        "review",
+        "Add-on code not confirmed",
+        " ".join(part for part in (why, item.reason) if part),
+        evidence=tuple(item.evidence),
+        detail={"code": code, "name": item.name, "units": item.units},
+        default_choice="keep",
+    )
 
 
 def _modifier_finding(

@@ -6,7 +6,7 @@ import { GroupRow, Table, Th } from "@/components/ui/Table";
 import type { QueueRow } from "@/lib/api/types";
 import { localIsoDate } from "@/lib/dates";
 import { groupLabel, groupRows } from "../groupRows";
-import { isSelectable } from "../queueRules";
+import { isSelectable, type Member } from "../queueRules";
 import { QUEUE_TEXT } from "../strings";
 import { QueueRowView, type RowControls } from "./QueueRowView";
 
@@ -17,8 +17,8 @@ interface QueueTableProps {
   onSelectAll: (noteIds: string[]) => void;
 }
 
-function SelectAll({ rows, selectedIds, onSelectAll }: Omit<QueueTableProps, "controls">) {
-  const eligible = rows.filter(isSelectable).map((row) => row.id);
+function SelectAll({ rows, selectedIds, member, onSelectAll }: Omit<QueueTableProps, "controls"> & { member: Member }) {
+  const eligible = rows.filter((row) => isSelectable(row, member)).map((row) => row.id);
   const allSelected = eligible.length > 0 && eligible.every((id) => selectedIds.includes(id));
   return (
     <input
@@ -34,7 +34,7 @@ function SelectAll({ rows, selectedIds, onSelectAll }: Omit<QueueTableProps, "co
 
 export function QueueTable({ rows, selectedIds, controls, onSelectAll }: QueueTableProps) {
   const [today] = useState(() => localIsoDate());
-  const columns = controls.selectable ? 7 : 6;
+  const columns = controls.selectable ? 8 : 7;
   const words = QUEUE_TEXT.columns;
   return (
     <Panel as="div">
@@ -43,7 +43,7 @@ export function QueueTable({ rows, selectedIds, controls, onSelectAll }: QueueTa
           <tr>
             {controls.selectable ? (
               <Th className="w-4">
-                <SelectAll rows={rows} selectedIds={selectedIds} onSelectAll={onSelectAll} />
+                <SelectAll rows={rows} selectedIds={selectedIds} member={controls.member} onSelectAll={onSelectAll} />
               </Th>
             ) : null}
             <Th>{words.patient}</Th>
@@ -51,6 +51,7 @@ export function QueueTable({ rows, selectedIds, controls, onSelectAll }: QueueTa
             <Th>{words.billed}</Th>
             <Th>{words.suggested}</Th>
             <Th>{words.status}</Th>
+            <Th>{words.assigned}</Th>
             <Th className="text-right">{words.due}</Th>
           </tr>
         </thead>

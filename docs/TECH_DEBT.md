@@ -22,8 +22,10 @@ The reporting-code table is vendored from ChartMate, where no coder has confirme
 ### Stored files can outlive their notes
 
 Files are validated before storage, but a database failure after storage leaves objects with no
-note, and when deleting a note's files fails after its records are gone the failure is only logged.
-Clear it with a sweep of unreferenced keys.
+note, and when deleting a note's or a deleted practice's files fails after its records are gone the
+failure is only logged. Deleting a note removes its current PDF and analysis replies but not the
+earlier PDFs a replacement kept. Clear it with a sweep of unreferenced keys and by deleting a note's
+whole folder (`ObjectStore.delete_prefix`).
 
 ### ESLint plugins declare an older ESLint peer
 

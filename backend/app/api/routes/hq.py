@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
-from app.api.bodies import DemoBody, PlaceBody, PracticeBody, PracticeUpdateBody
-from app.api.wiring import Mail, client_of
+from app.api.bodies import DeletePracticeBody, DemoBody, PlaceBody, PracticeBody, PracticeUpdateBody
+from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import hq
+from app.services import hq, records
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"])
@@ -47,6 +47,21 @@ async def edit_practice(practice_id: str, body: PracticeUpdateBody, db: Db, acto
     await hq.update_practice(db, actor, practice_id, body.model_dump(exclude_unset=True))
 
 
+@router.delete("/hq/practices/{practice_id}", status_code=204)
+async def delete_practice(practice_id: str, body: DeletePracticeBody, db: Db, store: Store, actor: HqActor) -> None:
+    await records.delete_practice(db, store, actor, practice_id, confirm_name=body.confirm_name)
+
+
+@router.post("/hq/practices/{practice_id}/admin-link")
+async def admin_link(practice_id: str, db: Db, mail: Mail, actor: HqActor) -> dict[str, str]:
+    return {"sent": await hq.send_admin_link(db, mail, actor, practice_id)}
+
+
+@router.post("/hq/practices/{practice_id}/renew")
+async def renew(practice_id: str, db: Db, actor: HqActor) -> dict[str, str]:
+    return {"renews_on": (await hq.renew_practice(db, actor, practice_id)).isoformat()}
+
+
 @router.get("/hq/places")
 async def places(db: Db, actor: HqActor) -> list[dict[str, Any]]:
     return [{"code": p.code, "name": p.name, "active": p.active} for p in await hq.places(db)]
@@ -58,17 +73,30 @@ async def set_place(code: str, body: PlaceBody, db: Db, actor: HqActor) -> None:
 
 
 @router.get("/hq/activity")
-async def activity(db: Db, actor: HqActor, practice_id: str | None = None) -> list[dict[str, Any]]:
-    return [
-        {
-            "at": row.created_at.isoformat(),
-            "actor": row.actor_name,
-            "action": row.action,
-            "practice_id": row.practice_id,
-            "detail": row.detail,
-        }
-        for row in await hq.activity(db, practice_id=practice_id)
-    ]
+async def activity(
+    db: Db,
+    actor: HqActor,
+    practice_id: str | None = None,
+    action: str | None = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict[str, Any]:
+    page = await hq.activity(db, practice_id=practice_id, action=action, offset=offset)
+    return {
+        "items": [
+            {
+                "at": row.created_at.isoformat(),
+                "actor": row.actor_name,
+                "action": row.action,
+                "practice_id": row.practice_id,
+                "detail": row.detail,
+            }
+            for row in page.rows
+        ],
+        "total": page.total,
+        "offset": offset,
+        "page_size": hq.ACTIVITY_PAGE,
+        "actions": page.actions,
+    }
 
 
 @router.get("/hq/demo-requests")

@@ -54,7 +54,8 @@ def encounter_context(inputs: ReviewInputs) -> dict[str, Any]:
         "visitType": inputs.visit_type,
         "dateOfService": inputs.service_date.isoformat(),
         "billedCodes": [
-            {"code": code.code, "type": code.type, "modifiers": list(code.modifiers)} for code in inputs.billed_codes
+            {"code": code.code, "type": code.type, "modifiers": list(code.modifiers), "units": code.units}
+            for code in inputs.billed_codes
         ],
     }
 

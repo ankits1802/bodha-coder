@@ -12,8 +12,10 @@ import type { InsightDays, Insights } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
 import { useSession } from "@/lib/session/useSession";
 import { DailyBars } from "./components/DailyBars";
+import { EstimateTable } from "./components/EstimateTable";
 import { InsightStats } from "./components/InsightStats";
 import { OutcomeBar } from "./components/OutcomeBar";
+import { PeopleTable } from "./components/PeopleTable";
 import { ProviderTable } from "./components/ProviderTable";
 import { DEFAULT_DAYS, INSIGHT_DAYS, dailyBars, isQuiet, parseDays, rangeStart } from "./insightMath";
 import { INSIGHTS_TEXT } from "./strings";
@@ -28,6 +30,8 @@ function InsightsBody({ insights, start, today }: { insights: Insights; start: s
       <DailyBars bars={dailyBars(insights.per_day, start, today)} />
       <OutcomeBar outcomes={insights.outcomes} />
       <ProviderTable providers={insights.providers} />
+      <EstimateTable estimates={insights.estimates} />
+      <PeopleTable people={insights.people} />
     </>
   );
 }

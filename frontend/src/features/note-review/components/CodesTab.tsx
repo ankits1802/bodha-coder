@@ -1,5 +1,5 @@
 import type { Choice, Finding, NoteDetail } from "@/lib/api/types";
-import { CODE_KINDS, codeLabel, isCodeFinding, latestBilled } from "../findings";
+import { CODE_KINDS, codeLabel, isCodeFinding, latestBilled, quoteCheck } from "../findings";
 import { REVIEW_TEXT } from "../strings";
 import { BilledCodesEditor } from "./BilledCodesEditor";
 import { DecisionControl } from "./DecisionControl";
@@ -27,6 +27,7 @@ export function CodesTab({ detail, editable, busyKey, onChoose, onSaved }: Codes
           <FindingRow
             key={finding.key}
             finding={finding}
+            quote={quoteCheck(finding, detail.texts)}
             decision={<DecisionControl finding={finding} editable={editable} busy={busyKey === finding.key} onChoose={onChoose} />}
           />
         ))}

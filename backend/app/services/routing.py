@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from app.codes.billing_codes import MAX_MODIFIERS, Code
+from app.codes.billing_codes import MAX_MODIFIERS, MIN_UNITS, Code
 from app.codes.em import is_em_code
 from app.services.finding import CODE_CHANGE_ACTIONS, SEVERE_AUDIT, Finding
 
@@ -130,7 +130,7 @@ def _apply(code: Code, item: Finding | None, choice: str) -> list[Code]:
     if item.action == "remove":
         return []
     if item.code_after and item.action in ("lower", "raise", "replace"):
-        return [Code(item.code_after, code.type, code.modifiers)]
+        return [replace(code, code=item.code_after)]
     return [code]
 
 
@@ -140,7 +140,7 @@ def _added_code(item: Finding) -> Code | None:
     if item.kind == "diagnosis":
         return Code(item.code_after, "ICD-10")
     if item.kind == "code_review":
-        return Code(item.code_after, "CPT")
+        return Code(item.code_after, "CPT", units=int(item.detail.get("units", MIN_UNITS)))
     return None
 
 
@@ -152,7 +152,7 @@ def _with_modifier(codes: list[Code], item: Finding) -> list[Code]:
         if code.type != "CPT" or not matches:
             continue
         if modifier and modifier not in code.modifiers and len(code.modifiers) < MAX_MODIFIERS:
-            codes = [*codes[:index], Code(code.code, code.type, (*code.modifiers, modifier)), *codes[index + 1 :]]
+            codes = [*codes[:index], replace(code, modifiers=(*code.modifiers, modifier)), *codes[index + 1 :]]
         return codes
     return codes
 

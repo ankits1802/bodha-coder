@@ -12,6 +12,7 @@ import type { NoteHeader } from "@/lib/api/types";
 import { VISIT_TYPES } from "@/lib/labels";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
+import { AssigneeControl } from "./AssigneeControl";
 
 interface NoteToolsProps {
   note: NoteHeader;
@@ -24,7 +25,6 @@ export function NoteTools({ note, permissions, onVisitType }: NoteToolsProps) {
   const [confirming, setConfirming] = useState(false);
   const remove = useAction(() => deleteNotes([note.id]));
   const words = REVIEW_TEXT.tools;
-  if (!permissions.deleteNote && !permissions.editVisitType) return null;
   const visitTypes: readonly string[] = VISIT_TYPES.includes(note.visit_type as (typeof VISIT_TYPES)[number])
     ? VISIT_TYPES
     : [note.visit_type, ...VISIT_TYPES];
@@ -35,6 +35,7 @@ export function NoteTools({ note, permissions, onVisitType }: NoteToolsProps) {
 
   return (
     <section aria-label={words.label} className="flex flex-wrap items-center gap-3">
+      <AssigneeControl note={note} />
       {permissions.editVisitType ? (
         <FilterSelect label={words.visitType} value={note.visit_type} onChange={(event) => onVisitType(event.target.value)}>
           {visitTypes.map((visitType) => (

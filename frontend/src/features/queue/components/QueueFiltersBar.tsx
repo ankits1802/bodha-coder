@@ -22,9 +22,11 @@ export function QueueFiltersBar({ filters, lanes, allTotal }: QueueFiltersBarPro
       search={filters.search}
       providerId={filters.providerId}
       providers={providers.state.status === "success" ? providers.state.data : []}
+      assigned={filters.assigned}
       onLane={(lane) => filters.update({ lane: lane ?? null, offset: null })}
       onSearch={(search) => filters.update({ search, offset: null })}
       onProvider={(providerId) => filters.update({ provider_id: providerId, offset: null })}
+      onAssigned={(assigned) => filters.update({ assigned, offset: null })}
     />
   );
 }

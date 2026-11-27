@@ -1,0 +1,26 @@
+{
+  "release": "RVU26D",
+  "calendarYear": "2026",
+  "title": "Physician Fee Schedule - October 2026 release",
+  "releasedOn": "2026-08-26",
+  "sourcePage": "https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files/rvu26d",
+  "sourceUrl": "https://www.cms.gov/files/zip/rvu26d-updated-08-26-2026.zip",
+  "retrievedOn": "2026-11-27",
+  "sourceZipBytes": 6181360,
+  "sourceZipSha256": "521ff0f4ecbf13b5d99dc1dc04d9f82e5361e55c6b4b6b3033043598bf8406e6",
+  "sourceFile": "PPRRVU2026_Oct_nonQPP.csv",
+  "sourceFileSha256": "4d0d3f19bd954ffc0f5b8439169d267da023d4f6911f4539bb6e98723cb1a626",
+  "conversionFactor": "33.4009",
+  "conversionFactorScope": "clinicians who are not Qualifying APM Participants (the nonQPP file)",
+  "qualifyingApmConversionFactor": "33.5675",
+  "payableStatuses": [
+    "A",
+    "R",
+    "T"
+  ],
+  "transform": "HCPCS rows of the nonQPP PPRRVU file with a blank modifier: status, work RVU, non-facility and facility practice expense RVUs (NA settings carry the other setting's value, as in the source) and malpractice RVU, sorted by code",
+  "artefact": "pfs_rvu_2026.tsv.gz",
+  "artefactSha256": "db4dd69876d502993a2ecc263c7a85812ded79384c8e8fe8e4d8e81e274f2e19",
+  "totalCodes": 17190,
+  "payableCodes": 7745
+}

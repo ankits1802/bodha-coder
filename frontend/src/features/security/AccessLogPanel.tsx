@@ -1,7 +1,9 @@
 "use client";
 
+import { SHARED_TEXT } from "@/components/shared/strings";
 import { Button } from "@/components/ui/Button";
 import { FilterSelect } from "@/components/ui/FilterSelect";
+import { Pager, offsetFrom } from "@/components/ui/Pager";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useQueryParams } from "@/hooks/useQueryParams";
@@ -23,11 +25,13 @@ export function AccessLogPanel() {
   const requested = query.get("day");
   const day = requested && isIsoDate(requested) ? requested : today;
   const person = query.get("user");
+  const offset = offsetFrom(query.get("offset"));
   const team = useRemote("security-team", getTeam);
-  const log = useRemote(`access-log:${day}:${person ?? ""}`, () => getAccessLog(day, person));
+  const log = useRemote(`access-log:${day}:${person ?? ""}:${offset}`, () => getAccessLog(day, person, offset));
   const words = SECURITY_TEXT.log;
   const members = team.state.status === "success" ? team.state.data.members : [];
-  const entries = log.state.status === "success" ? log.state.data : [];
+  const page = log.state.status === "success" ? log.state.data : null;
+  const entries = page ? page.items : [];
 
   function exportCsv(): void {
     saveFile(new Blob([accessLogCsv(entries)], { type: "text/csv" }), words.fileName(day));
@@ -35,7 +39,7 @@ export function AccessLogPanel() {
 
   const filters = (
     <>
-      <FilterSelect label={words.person} value={person ?? ""} onChange={(event) => query.update({ user: event.target.value || null })}>
+      <FilterSelect label={words.person} value={person ?? ""} onChange={(event) => query.update({ user: event.target.value || null, offset: null })}>
         <option value="">{words.anyone}</option>
         {members.map((member) => (
           <option key={member.id} value={member.id}>
@@ -51,7 +55,7 @@ export function AccessLogPanel() {
           max={today}
           onChange={(event) => {
             const value = event.target.value;
-            if (isIsoDate(value)) query.update({ day: value === today ? null : value });
+            if (isIsoDate(value)) query.update({ day: value === today ? null : value, offset: null });
           }}
           className={CONTROL}
         />
@@ -68,10 +72,24 @@ export function AccessLogPanel() {
       <RemoteView
         state={log.state}
         text={{ loading: words.loading, empty: words.empty, retry: words.retry }}
-        isEmpty={(data) => data.length === 0}
+        isEmpty={(data) => data.items.length === 0 && data.offset === 0}
         onRetry={log.reload}
       >
-        {(data) => <AccessLogTable entries={data} />}
+        {(data) => (
+          <>
+            <AccessLogTable entries={data.items} />
+            <div className="px-4 py-3 empty:hidden">
+              <Pager
+                offset={data.offset}
+                pageSize={data.page_size}
+                shown={data.items.length}
+                total={data.total}
+                text={SHARED_TEXT.pager}
+                onOffset={(next) => query.update({ offset: next > 0 ? String(next) : null })}
+              />
+            </div>
+          </>
+        )}
       </RemoteView>
     </Panel>
   );

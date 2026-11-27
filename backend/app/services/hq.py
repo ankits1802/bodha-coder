@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from dataclasses import dataclass
+from datetime import date, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -9,17 +10,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
 from app.codes.places import UnknownPlaceOfService, setting_for
-from app.core.calendar import zone_named
+from app.core.calendar import shift_years, today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import Activity, Analysis, DemoRequest, Note, PlaceOfService, Practice, Provider, User, utcnow
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
+from app.services.password_reset import send_reset_email
 from app.services.team import send_invite
+from app.services.worklists import count_of
 
 PLANS = ("trial", "basic", "professional", "enterprise")
 STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
+ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
 
 
 async def overview(db: AsyncSession) -> dict[str, Any]:
@@ -53,44 +57,50 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
 
 
 async def practices(db: AsyncSession) -> list[dict[str, Any]]:
-    users = dict(
-        (
-            await db.execute(
-                select(User.practice_id, func.count()).where(User.status != "blocked").group_by(User.practice_id)
-            )
-        ).all()
-    )
-    providers = dict(
-        (await db.execute(select(Provider.practice_id, func.count()).group_by(Provider.practice_id))).all()
-    )
-    waiting = dict(
-        (
-            await db.execute(
-                select(Note.practice_id, func.count())
-                .where(Note.status.in_(("queued", "reading", "ready")))
-                .group_by(Note.practice_id)
-            )
-        ).all()
-    )
+    counts = {
+        "users": await _count_by_practice(db, User.practice_id, User.status != "blocked"),
+        "providers": await _count_by_practice(db, Provider.practice_id),
+        "waiting": await _count_by_practice(db, Note.practice_id, Note.status.in_(("queued", "reading", "ready"))),
+    }
+    admins = await _first_admins(db)
     failures = await _recent_failures(db, utcnow() - timedelta(hours=24))
     rows = await db.scalars(select(Practice).order_by(Practice.name))
-    return [
-        {
-            "id": p.id,
-            "name": p.name,
-            "status": p.status,
-            "plan": p.plan,
-            "seats": p.seats,
-            "users": users.get(p.id, 0),
-            "providers": providers.get(p.id, 0),
-            "waiting": waiting.get(p.id, 0),
-            "renews_on": p.renews_on.isoformat() if p.renews_on else None,
-            "time_zone": p.time_zone,
-            "failed_24h": failures.get(p.id, (0, None))[0],
-            "last_failure": failures.get(p.id, (0, None))[1],
-        }
-        for p in rows
-    ]
+    return [_practice_row(p, counts, admins.get(p.id), failures.get(p.id, (0, None))) for p in rows]
+
+
+def _practice_row(
+    practice: Practice, counts: dict[str, dict[str, int]], admin: Any, failure: tuple[int, str | None]
+) -> dict[str, Any]:
+    return {
+        "id": practice.id,
+        "name": practice.name,
+        "status": practice.status,
+        "plan": practice.plan,
+        "seats": practice.seats,
+        **{key: found.get(practice.id, 0) for key, found in counts.items()},
+        "renews_on": practice.renews_on.isoformat() if practice.renews_on else None,
+        "time_zone": practice.time_zone,
+        "failed_24h": failure[0],
+        "last_failure": failure[1],
+        "admin_name": admin.name if admin else None,
+        "admin_email": admin.email if admin else None,
+        "admin_status": admin.status if admin else None,
+    }
+
+
+async def _count_by_practice(db: AsyncSession, column: Any, *conditions: Any) -> dict[str, int]:
+    rows = await db.execute(select(column, func.count()).where(*conditions).group_by(column))
+    return dict(rows.all())
+
+
+async def _first_admins(db: AsyncSession) -> dict[str, Any]:
+    rows = await db.execute(
+        select(User.practice_id, User.name, User.email, User.status)
+        .where(User.role == "admin", User.practice_id.is_not(None))
+        .order_by(User.practice_id, *ADMIN_ORDER)
+        .ext(distinct_on(User.practice_id))
+    )
+    return {row.practice_id: row for row in rows}
 
 
 async def _recent_failures(db: AsyncSession, since: Any) -> dict[str, tuple[int, str | None]]:
@@ -214,8 +224,55 @@ async def demo_requests(db: AsyncSession) -> list[DemoRequest]:
     return list((await db.scalars(select(DemoRequest).order_by(DemoRequest.created_at.desc()).limit(200))).all())
 
 
-async def activity(db: AsyncSession, *, practice_id: str | None) -> list[Activity]:
-    query = select(Activity).order_by(Activity.created_at.desc()).limit(ACTIVITY_PAGE)
+@dataclass(frozen=True)
+class ActivityPage:
+    rows: list[Activity]
+    total: int
+    actions: list[str]
+
+
+async def activity(db: AsyncSession, *, practice_id: str | None, action: str | None, offset: int) -> ActivityPage:
+    query = select(Activity)
     if practice_id:
         query = query.where(Activity.practice_id == practice_id)
-    return list((await db.scalars(query)).all())
+    if action:
+        query = query.where(Activity.action == action)
+    rows = await db.scalars(query.order_by(Activity.created_at.desc(), Activity.id).offset(offset).limit(ACTIVITY_PAGE))
+    actions = await db.scalars(select(Activity.action).distinct().order_by(Activity.action))
+    return ActivityPage(list(rows.all()), await count_of(db, query), list(actions.all()))
+
+
+async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, practice_id: str) -> str:
+    practice = await _practice(db, practice_id)
+    admin = await db.scalar(
+        select(User).where(User.practice_id == practice.id, User.role == "admin").order_by(*ADMIN_ORDER).limit(1)
+    )
+    if admin is None:
+        raise NotFound("this practice has no admin")
+    if admin.status == "invited":
+        record_activity(db, actor, "admin invite resent", practice_id=practice.id, detail=admin.name)
+        await send_invite(db, messenger, admin, practice_name=practice.name)
+        await db.commit()
+        return "invite"
+    if admin.status == "active":
+        record_activity(db, actor, "admin password reset sent", practice_id=practice.id, detail=admin.name)
+        await send_reset_email(db, messenger, admin)
+        return "reset"
+    raise Conflict("the practice admin is blocked")
+
+
+async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str) -> date:
+    practice = await _practice(db, practice_id)
+    today = today_in(zone_named(practice.time_zone))
+    start = max(today, practice.renews_on) if practice.renews_on else today
+    practice.renews_on = shift_years(start, 1)
+    record_activity(db, actor, "practice renewed", practice_id=practice.id, detail=f"renews {practice.renews_on}")
+    await db.commit()
+    return practice.renews_on
+
+
+async def _practice(db: AsyncSession, practice_id: str) -> Practice:
+    practice = await db.get(Practice, practice_id, with_for_update=True)
+    if practice is None:
+        raise NotFound("practice not found")
+    return practice

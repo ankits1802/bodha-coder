@@ -42,6 +42,10 @@ class MfaCodeBody(Body):
     code: str = Field(pattern=r"^\d{6}$")
 
 
+class PreferencesBody(Body):
+    notify_digest: bool
+
+
 class PreviewBody(Body):
     file_names: list[str] = Field(max_length=500)
 
@@ -82,6 +86,11 @@ class DeleteNotesBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=500)
 
 
+class AssignBody(Body):
+    note_ids: list[str] = Field(min_length=1, max_length=500)
+    user_id: str | None = Field(max_length=36)
+
+
 class VisitTypeBody(Body):
     visit_type: str = Field(min_length=1, max_length=40)
 
@@ -106,6 +115,18 @@ class ChecksBody(Body):
 class SecurityBody(Body):
     mfa_roles: list[str]
     idle_minutes: int
+    access_log_years: int | None = Field(default=None, ge=6, le=10)
+
+
+class ProviderDetailsBody(Body):
+    taxonomy_code: str | None = Field(default=None, max_length=10)
+    license_number: str | None = Field(default=None, max_length=40)
+    license_state: str | None = Field(default=None, max_length=2)
+    dea_number: str | None = Field(default=None, max_length=9)
+    bills_under: Literal["individual", "group"] | None = None
+    group_npi: str | None = Field(default=None, max_length=10)
+    supervising_physician: str | None = Field(default=None, max_length=120)
+    signature_on_file: bool = False
 
 
 class ProviderBody(Body):
@@ -117,6 +138,14 @@ class ProviderBody(Body):
     email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=32)
     channel: Literal["email", "sms"] | None = None
+    active: bool = True
+    details: ProviderDetailsBody | None = None
+
+
+class PayerBody(Body):
+    name: str = Field(min_length=1, max_length=120)
+    payer_id: str | None = Field(default=None, max_length=15)
+    plan_type: Literal["commercial", "medicare", "medicaid", "other"]
     active: bool = True
 
 
@@ -160,6 +189,10 @@ class RespondBody(Body):
     confirmed: bool
 
 
+class SwitchBody(Body):
+    request_id: str = Field(min_length=1, max_length=36)
+
+
 class PracticeBody(Body):
     name: str = Field(min_length=2, max_length=200)
     admin_name: str = Field(min_length=1, max_length=120)
@@ -176,6 +209,10 @@ class PracticeUpdateBody(Body):
     seats: int | None = Field(default=None, ge=1, le=10_000)
     renews_on: date | None = None
     time_zone: str | None = Field(default=None, max_length=64)
+
+
+class DeletePracticeBody(Body):
+    confirm_name: str = Field(min_length=1, max_length=200)
 
 
 class PlaceBody(Body):

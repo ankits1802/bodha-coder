@@ -7,7 +7,7 @@ export interface BatchCounts {
   failed: number;
 }
 
-export function batchCounts(batch: BatchProgress): BatchCounts {
+export function batchCounts(batch: Pick<BatchProgress, "counts">): BatchCounts {
   const counts = batch.counts;
   const total = Object.values(counts).reduce((sum, value) => sum + (value ?? 0), 0);
   const pending = (counts.queued ?? 0) + (counts.reading ?? 0);

@@ -32,6 +32,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "hqPractices", area: "hq", href: "/hq/practices", label: words.hqPractices, icon: "house", group: "platform" },
   { key: "hqActivity", area: "hq", href: "/hq/activity", label: words.hqActivity, icon: "clock", group: "platform" },
   { key: "hqDemos", area: "hq", href: "/hq/demos", label: words.hqDemos, icon: "inbox", group: "platform" },
+  { key: "hqSecurity", area: "hq", href: "/hq/security", label: words.hqSecurity, icon: "lock", group: "platform" },
 ];
 
 export const NAV_GROUP_ORDER: readonly NavGroup[] = ["work", "practice", "platform"];

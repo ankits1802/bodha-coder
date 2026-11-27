@@ -7,6 +7,8 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
 import { addProvider, editProvider } from "@/lib/api/practice";
 import type { Channel, Place, Provider, ProviderInput } from "@/lib/api/types";
+import { CredentialFields } from "./CredentialFields";
+import type { CredentialTextField } from "./credentialForm";
 import { ProviderFields } from "./ProviderFields";
 import { draftFrom, inputFrom, validateProvider, type ProviderDraft, type ProviderErrors, type ProviderTextField } from "./providerForm";
 import { PROVIDER_TEXT } from "./strings";
@@ -34,6 +36,10 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
     setDraft((current) => ({ ...current, [field]: field === "channel" ? (value as Channel) : value }));
   }
 
+  function changeDetail(field: CredentialTextField, value: string): void {
+    setDraft((current) => ({ ...current, details: { ...current.details, [field]: value } }));
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const found = validateProvider(draft);
@@ -58,13 +64,19 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
         </>
       }
     >
-      <form id={FORM_ID} noValidate onSubmit={submit} className="flex flex-col gap-4">
+      <form id={FORM_ID} noValidate onSubmit={submit} className="-m-1 flex max-h-[60svh] flex-col gap-4 overflow-y-auto p-1">
         <ProviderFields
           draft={draft}
           errors={errors}
           places={places}
           onChange={change}
           onActive={(active) => setDraft((current) => ({ ...current, active }))}
+        />
+        <CredentialFields
+          draft={draft.details}
+          errors={errors}
+          onChange={changeDetail}
+          onSignature={(onFile) => setDraft((current) => ({ ...current, details: { ...current.details, signature_on_file: onFile } }))}
         />
         {save.error ? <InlineAlert tone="bad">{save.error}</InlineAlert> : null}
       </form>

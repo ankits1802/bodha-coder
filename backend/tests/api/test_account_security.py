@@ -66,7 +66,7 @@ async def test_google_signs_in_a_known_email_and_sets_the_refresh_cookie(harness
     assert harness.client.cookies.get("bodha_refresh", **REFRESH)
     refreshed = await harness.client.post("/api/auth/refresh")
     assert refreshed.status_code == 200 and refreshed.json()["user"]["email"] == CODER
-    log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()
+    log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
     assert {"actor": "Sam Patel", "action": "signed in", "detail": "with Google"} in [
         {key: entry[key] for key in ("actor", "action", "detail")} for entry in log
     ]

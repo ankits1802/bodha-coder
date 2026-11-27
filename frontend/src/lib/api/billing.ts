@@ -1,8 +1,8 @@
 import { request, requestFile, type DownloadedFile } from "./client";
 import type { BillingList, BillingShow, InsightDays, Insights } from "./types";
 
-export function getBilling(show: BillingShow): Promise<BillingList> {
-  return request<BillingList>("/api/billing", { query: { show } });
+export function getBilling(show: BillingShow, offset: number): Promise<BillingList> {
+  return request<BillingList>("/api/billing", { query: { show, offset } });
 }
 
 export function exportClaims(noteIds: string[] | null, again = false): Promise<DownloadedFile> {

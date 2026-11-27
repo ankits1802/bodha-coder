@@ -9,6 +9,8 @@ export const SECURITY_TEXT = {
   noRoles: "No one",
   idle: "Sign out after inactivity",
   minutes: (value: number) => `${value} minutes`,
+  keepLog: "Keep the access log for",
+  years: (value: number) => `${value} years`,
   save: "Save",
   saved: "Saved",
   signedIn: {

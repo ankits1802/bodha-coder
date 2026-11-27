@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.core.security import is_sealed_mfa_secret, mfa_step_for, new_mfa_secret, open_mfa_secret, seal_mfa_secret
+from app.core.security import mfa_secret_is_current, mfa_step_for, new_mfa_secret, open_mfa_secret, seal_mfa_secret
 from app.models import User
 
 
@@ -18,7 +18,7 @@ def accept_code(user: User, code: str) -> bool:
     if step is None:
         return False
     user.mfa_last_step = step
-    if not is_sealed_mfa_secret(user.mfa_secret):
+    if not mfa_secret_is_current(user.mfa_secret):
         user.mfa_secret = seal_mfa_secret(secret)
     return True
 

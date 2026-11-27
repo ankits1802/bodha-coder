@@ -8,6 +8,7 @@ const NOTE_READERS: readonly Role[] = ["admin", "coder", "cdi", "compliance", "b
 const DECIDERS: readonly Role[] = ["admin", "coder", "cdi", "compliance"];
 const APPROVERS: readonly Role[] = ["admin", "coder", "compliance"];
 const ASKERS: readonly Role[] = ["admin", "coder", "cdi"];
+const ASSIGNERS: readonly Role[] = ["admin", "coder", "cdi"];
 const COMPLIANCE: readonly Role[] = ["admin", "compliance"];
 const BILLERS: readonly Role[] = ["admin", "biller"];
 const INSIGHT_READERS: readonly Role[] = ["admin", "compliance", "viewer"];
@@ -22,9 +23,21 @@ export type Area =
   | "setup"
   | "team"
   | "security"
+  | "help"
   | "hq";
 
-export type Action = "decide" | "approve" | "ask" | "complianceDecision" | "retry" | "flag" | "manageNotes" | "manageSecurity";
+export type Action =
+  | "decide"
+  | "approve"
+  | "ask"
+  | "complianceDecision"
+  | "retry"
+  | "flag"
+  | "manageNotes"
+  | "manageSecurity"
+  | "assign"
+  | "assignAnyone"
+  | "search";
 
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
@@ -36,6 +49,7 @@ const AREA_ROLES: Record<Area, readonly Role[]> = {
   setup: ADMINS,
   team: ADMINS,
   security: PRACTICE_ROLES,
+  help: PRACTICE_ROLES,
   hq: HQ,
 };
 
@@ -48,6 +62,9 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   flag: DECIDERS,
   manageNotes: UPLOADERS,
   manageSecurity: ADMINS,
+  assign: ASSIGNERS,
+  assignAnyone: ADMINS,
+  search: NOTE_READERS,
 };
 
 export function canUse(role: Role | null | undefined, area: Area): boolean {

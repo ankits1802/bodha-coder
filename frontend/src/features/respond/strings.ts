@@ -38,4 +38,10 @@ export const RESPOND_TEXT = {
   answeredTitle: "Already answered",
   signedFor: (day: string) => `Added to the note for ${day}`,
   closed: "This request is closed.",
+  others: "Other requests",
+  open: "Open",
+  openOther: (patient: string) => `Open the request about ${patient}`,
+  otherMeta: (day: string, count: number, sent: string) =>
+    `Seen ${day} · ${count === 1 ? "1 question" : `${count} questions`} · Sent ${sent}`,
+  nextRequest: "Next request",
 } as const;

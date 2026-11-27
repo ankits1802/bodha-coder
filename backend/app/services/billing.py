@@ -5,16 +5,20 @@ import io
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import Select, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.codes.billing_codes import Code, claim_changes
 from app.core.calendar import day_bounds, today_in
 from app.core.deps import Actor
 from app.core.errors import Invalid
 from app.models import AddendumRequest, CodeSet, Note, Provider, User, utcnow
 from app.services.audit_log import record_access
+from app.services.estimates import claim_amount
+from app.services.worklists import count_of
 
 ROW_LIMIT = 500
+PAGE_SIZE = 100
 FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 EXPORT_COLUMNS = (
     "note_id",
@@ -39,7 +43,22 @@ def _latest(kind: str) -> Any:
     return latest.subquery()
 
 
-async def billing_rows(db: AsyncSession, practice_id: str, *, exported: bool | None) -> list[dict[str, Any]]:
+async def billing_rows(
+    db: AsyncSession, practice_id: str, *, exported: bool | None, offset: int = 0, limit: int = ROW_LIMIT
+) -> list[dict[str, Any]]:
+    query = _billing_query(practice_id, exported=exported)
+    rows = (await db.execute(query.offset(offset).limit(limit))).all()
+    return [
+        _row(note, provider, approver, final_codes, billed_codes)
+        for note, provider, approver, final_codes, billed_codes in rows
+    ]
+
+
+async def billing_total(db: AsyncSession, practice_id: str, *, exported: bool | None) -> int:
+    return await count_of(db, _billing_query(practice_id, exported=exported).with_only_columns(Note.id))
+
+
+def _billing_query(practice_id: str, *, exported: bool | None) -> Select[Any]:
     final, billed = _latest("final"), _latest("billed")
     final_set, billed_set = CodeSet.__table__.alias("final_set"), CodeSet.__table__.alias("billed_set")
     query = (
@@ -65,11 +84,7 @@ async def billing_rows(db: AsyncSession, practice_id: str, *, exported: bool | N
     )
     if exported is not None:
         query = query.where(Note.exported_at.is_not(None) if exported else Note.exported_at.is_(None))
-    rows = (await db.execute(query.limit(ROW_LIMIT))).all()
-    return [
-        _row(note, provider, approver, final_codes, billed_codes)
-        for note, provider, approver, final_codes, billed_codes in rows
-    ]
+    return query
 
 
 async def billing_summary(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, int]:
@@ -92,8 +107,8 @@ async def billing_summary(db: AsyncSession, practice_id: str, zone: ZoneInfo) ->
 def _row(
     note: Note, provider: Provider, approver: str, final_codes: list[dict[str, Any]], billed_codes: list[dict[str, Any]]
 ) -> dict[str, Any]:
-    labels = ["-".join([item["code"], *item.get("modifiers", [])]) for item in final_codes]
-    changed = len({item["code"] for item in final_codes} ^ {item["code"] for item in billed_codes})
+    final = [Code.from_json(item) for item in final_codes]
+    billed = [Code.from_json(item) for item in billed_codes]
     return {
         "id": note.id,
         "patient_name": note.patient_name,
@@ -101,13 +116,14 @@ def _row(
         "provider_name": provider.name,
         "npi": provider.npi,
         "place_code": note.place_code,
-        "codes": labels,
-        "changed": changed,
+        "codes": [code.label() for code in final],
+        "changed": claim_changes(final, billed),
+        "estimate": claim_amount(final, note.place_code, note.service_date),
         "approved_by": approver,
         "approved_at": note.approved_at.isoformat() if note.approved_at else None,
         "exported_at": note.exported_at.isoformat() if note.exported_at else None,
-        "cpt": [label for label, item in zip(labels, final_codes, strict=True) if item["type"] == "CPT"],
-        "icd10": [item["code"] for item in final_codes if item["type"] == "ICD-10"],
+        "cpt": [code.as_text() for code in final if code.type == "CPT"],
+        "icd10": [code.code for code in final if code.type == "ICD-10"],
     }
 
 

@@ -32,7 +32,10 @@ class Settings(BaseSettings):
     pdf_link_seconds: int = 60
     max_upload_mb: int = 40
 
+    gemini_backend: Literal["developer", "vertex"] = "developer"
     gemini_api_key: str | None = None
+    google_cloud_project: str | None = None
+    google_cloud_location: str | None = None
     gemini_model: str = "gemini-3.8-flash"
     gemini_timeout_seconds: int = 90
     ai_workers: int = 8

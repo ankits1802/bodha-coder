@@ -27,6 +27,7 @@ async def expire_requests(db: AsyncSession) -> int:
             select(AddendumRequest)
             .where(AddendumRequest.status == "sent", AddendumRequest.expires_at <= utcnow())
             .limit(BATCH)
+            .with_for_update(skip_locked=True)
         )
     ).all()
     for request in lapsed:
@@ -39,20 +40,21 @@ async def expire_requests(db: AsyncSession) -> int:
 
 
 async def send_due_reminders(db: AsyncSession, messenger: Messenger) -> int:
-    now = utcnow()
-    due = (
-        await db.scalars(
+    sent = 0
+    for _ in range(BATCH):
+        now = utcnow()
+        request = await db.scalar(
             select(AddendumRequest)
             .where(
                 AddendumRequest.status == "sent",
                 AddendumRequest.remind_at <= now,
                 AddendumRequest.expires_at > now,
             )
-            .limit(BATCH)
+            .limit(1)
+            .with_for_update(skip_locked=True)
         )
-    ).all()
-    sent = 0
-    for request in due:
+        if request is None:
+            break
         sent += await _remind(db, messenger, request)
     return sent
 

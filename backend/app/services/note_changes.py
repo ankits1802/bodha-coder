@@ -5,7 +5,7 @@ import logging
 from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.object_store import ObjectStore
+from app.adapters.object_store import ObjectStore, note_prefix
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
 from app.models import AddendumRequest, Analysis, Batch, CodeSet, Decision, Note, NoteText, Suggestion
@@ -34,8 +34,7 @@ async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_
     if any(note.status not in DELETABLE for note in notes):
         raise Conflict("exported notes and notes being read cannot be deleted")
     ids = [note.id for note in notes]
-    responses = await db.scalars(select(Analysis.response_key).where(Analysis.note_id.in_(ids)))
-    keys = [note.file_key for note in notes] + [key for key in responses if key]
+    folders = [note_prefix(note.practice_id, note.id) for note in notes]
     for table in CHILD_TABLES:
         await db.execute(delete(table).where(table.note_id.in_(ids)))
     await db.execute(delete(Note).where(Note.id.in_(ids)))
@@ -44,13 +43,14 @@ async def delete_notes(db: AsyncSession, store: ObjectStore, actor: Actor, note_
     for note in notes:
         record_access(db, actor, "deleted note", note_id=note.id, detail=note.file_name)
     await db.commit()
-    await _remove_files(store, keys)
+    await _remove_files(store, folders)
     return ids
 
 
-async def _remove_files(store: ObjectStore, keys: list[str]) -> None:
+async def _remove_files(store: ObjectStore, folders: list[str]) -> None:
     try:
-        await store.delete(keys)
+        for folder in folders:
+            await store.delete_prefix(folder)
     except Exception:
         logger.exception("stored files of deleted notes were not removed")
 

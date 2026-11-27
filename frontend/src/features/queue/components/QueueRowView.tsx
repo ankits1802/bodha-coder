@@ -6,11 +6,13 @@ import { TextButton } from "@/components/ui/TextButton";
 import { Td, Tr } from "@/components/ui/Table";
 import type { Lane, QueueRow } from "@/lib/api/types";
 import { formatDueIn } from "@/lib/format";
-import { canOpen, isAwaitingProvider, isSelectable, noteHref, patientName } from "../queueRules";
+import { canOpen, isAwaitingProvider, isSelectable, noteHref, patientName, type Member } from "../queueRules";
 import { QUEUE_TEXT } from "../strings";
+import { AssigneeChip } from "./AssigneeChip";
 
 export interface RowControls {
   lane: Lane | undefined;
+  member: Member;
   selectable: boolean;
   canRemind: boolean;
   remindingId: string | null;
@@ -20,7 +22,7 @@ export interface RowControls {
 
 function SelectCell({ row, selected, controls }: { row: QueueRow; selected: boolean; controls: RowControls }) {
   const name = patientName(row);
-  if (isSelectable(row)) {
+  if (isSelectable(row, controls.member)) {
     return (
       <input
         type="checkbox"
@@ -85,6 +87,9 @@ export function QueueRowView({ row, selected, controls }: { row: QueueRow; selec
       </Td>
       <Td>
         <StatusCell row={row} controls={controls} />
+      </Td>
+      <Td className="w-12">
+        <AssigneeChip name={row.assignee_name} />
       </Td>
       <Td className={`text-right whitespace-nowrap tabular-nums ${due.overdue ? "text-bad-text" : "text-secondary"}`}>
         {due.text}

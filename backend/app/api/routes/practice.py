@@ -3,15 +3,16 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 
-from app.api.bodies import ChecksBody, ImportBody, MipsBody, ProviderBody, SectionBody, SecurityBody
-from app.core.calendar import day_bounds, today_in
+from app.api.bodies import ChecksBody, ImportBody, MipsBody, PayerBody, ProviderBody, SectionBody, SecurityBody
+from app.core.calendar import today_in
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, PRACTICE_ROLES
-from app.models import AccessLog, PlaceOfService, Provider
-from app.services import practice_setup
+from app.models import PlaceOfService, Provider
+from app.services import payers, practice_setup, records
+from app.services.provider_details import details_view
 
 router = APIRouter(tags=["practice"])
 Admin = Annotated[Actor, Depends(require(*ADMINS))]
@@ -23,7 +24,13 @@ async def setup(db: Db, actor: Admin) -> dict[str, Any]:
     overview = await practice_setup.setup_overview(db, practice) if practice else {}
     return {
         **overview,
-        "security": {"mfa_roles": practice.mfa_roles, "idle_minutes": practice.idle_minutes} if practice else None,
+        "security": {
+            "mfa_roles": practice.mfa_roles,
+            "idle_minutes": practice.idle_minutes,
+            "access_log_years": practice.access_log_years,
+        }
+        if practice
+        else None,
     }
 
 
@@ -39,7 +46,25 @@ async def save_checks(body: ChecksBody, db: Db, actor: Admin) -> None:
 
 @router.put("/practice/security", status_code=204)
 async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
-    await practice_setup.save_security(db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes)
+    await practice_setup.save_security(
+        db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes, access_log_years=body.access_log_years
+    )
+
+
+@router.post("/practice/payers")
+async def add_payer(body: PayerBody, db: Db, actor: Admin) -> dict[str, str]:
+    payer = await payers.add_payer(db, actor, body.model_dump())
+    return {"id": payer["id"]}
+
+
+@router.put("/practice/payers/{payer_key}", status_code=204)
+async def change_payer(payer_key: str, body: PayerBody, db: Db, actor: Admin) -> None:
+    await payers.change_payer(db, actor, payer_key, body.model_dump())
+
+
+@router.delete("/practice/payers/{payer_key}", status_code=204)
+async def remove_payer(payer_key: str, db: Db, actor: Admin) -> None:
+    await payers.remove_payer(db, actor, payer_key)
 
 
 @router.get("/providers")
@@ -47,19 +72,22 @@ async def providers(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_RO
     rows = await db.scalars(select(Provider).where(Provider.practice_id == actor.practice_id).order_by(Provider.name))
     return [
         {
-            field: getattr(row, field)
-            for field in (
-                "id",
-                "name",
-                "credential",
-                "specialty",
-                "npi",
-                "place_code",
-                "email",
-                "phone",
-                "channel",
-                "active",
-            )
+            **{
+                field: getattr(row, field)
+                for field in (
+                    "id",
+                    "name",
+                    "credential",
+                    "specialty",
+                    "npi",
+                    "place_code",
+                    "email",
+                    "phone",
+                    "channel",
+                    "active",
+                )
+            },
+            "details": details_view(row.details or {}),
         }
         for row in rows
     ]
@@ -99,30 +127,11 @@ async def save_mips(body: MipsBody, db: Db, actor: Admin) -> dict[str, list[str]
 
 
 @router.get("/access-log")
-async def access_log(db: Db, actor: Admin, day: date | None = None, user_id: str | None = None) -> list[dict[str, Any]]:
-    start, end = day_bounds(day or today_in(actor.zone), actor.zone)
-    query = (
-        select(AccessLog)
-        .where(
-            AccessLog.practice_id == actor.practice_id,
-            AccessLog.created_at >= start,
-            AccessLog.created_at < end,
-        )
-        .order_by(AccessLog.created_at.desc())
-        .limit(500)
-    )
-    if user_id:
-        query = query.where(AccessLog.actor_id == user_id)
-    return [
-        {
-            "at": row.created_at.isoformat(),
-            "actor": row.actor_name,
-            "actor_kind": row.actor_kind,
-            "action": row.action,
-            "note_id": row.note_id,
-            "detail": row.detail,
-            "ip": row.ip,
-            "user_agent": row.user_agent,
-        }
-        for row in await db.scalars(query)
-    ]
+async def access_log(
+    db: Db,
+    actor: Admin,
+    day: date | None = None,
+    user_id: str | None = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict[str, Any]:
+    return await records.access_log_page(db, actor, day=day or today_in(actor.zone), user_id=user_id, offset=offset)

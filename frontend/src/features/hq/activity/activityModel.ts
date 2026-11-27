@@ -22,18 +22,12 @@ export function practiceLabel(practiceId: string | null, names: Map<string, stri
   return names.get(practiceId) ?? practiceId;
 }
 
-export function actionsIn(entries: HqActivityEntry[]): string[] {
-  return [...new Set(entries.map((entry) => entry.action))].sort();
+export function actionChoices(actions: readonly string[], current: string | null): string[] {
+  return current && !actions.includes(current) ? [...actions, current].sort() : [...actions];
 }
 
-export interface ActivityFilter {
-  search: string;
-  action: string | null;
-}
-
-export function matchesFilter(entry: HqActivityEntry, filter: ActivityFilter, names: Map<string, string>): boolean {
-  if (filter.action && entry.action !== filter.action) return false;
-  const needle = filter.search.trim().toLowerCase();
+export function matchesSearch(entry: HqActivityEntry, search: string, names: Map<string, string>): boolean {
+  const needle = search.trim().toLowerCase();
   if (!needle) return true;
   const haystack = [entry.actor, entry.action, entry.detail ?? "", practiceLabel(entry.practice_id, names)];
   return haystack.some((value) => value.toLowerCase().includes(needle));

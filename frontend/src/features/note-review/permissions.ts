@@ -1,3 +1,4 @@
+import { DELETABLE_STATUSES } from "@/components/shared/noteStatus";
 import type { NoteDetail, Role } from "@/lib/api/types";
 import { canDo } from "@/lib/roles";
 import { openQuestions } from "./findings";
@@ -16,7 +17,6 @@ export interface ReviewPermissions {
   editVisitType: boolean;
 }
 
-const DELETABLE: readonly string[] = ["queued", "ready", "failed", "approved"];
 const EDITABLE: readonly string[] = ["queued", "ready", "failed"];
 
 export function reviewPermissions(role: Role | null | undefined, detail: NoteDetail): ReviewPermissions {
@@ -33,7 +33,7 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     reopen: status === "approved" && canDo(role, "approve"),
     remind: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
     cancelRequest: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
-    deleteNote: DELETABLE.includes(status) && canDo(role, "manageNotes"),
+    deleteNote: DELETABLE_STATUSES.includes(status) && canDo(role, "manageNotes"),
     editVisitType: EDITABLE.includes(status) && canDo(role, "manageNotes"),
   };
 }

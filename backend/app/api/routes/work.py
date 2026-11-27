@@ -9,8 +9,11 @@ from app.core.roles import COMPLIANCE, NOTE_READERS, PRACTICE_ROLES
 from app.models import LANES
 from app.services import worklists
 from app.services.audit_log import record_access
+from app.services.search import SEARCH_LIMIT, search_notes
 
 router = APIRouter(tags=["work"])
+Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
+ASSIGNED_FILTER = r"^(me|none|[0-9a-f-]{36})$"
 
 
 @router.get("/today")
@@ -25,15 +28,21 @@ async def today(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES)
 async def queue(
     *,
     db: Db,
-    actor: Annotated[Actor, Depends(require(*NOTE_READERS))],
+    actor: Reader,
     lane: Annotated[str | None, Query(pattern="^(" + "|".join(LANES) + ")$")] = None,
     search: Annotated[str | None, Query(max_length=100)] = None,
     provider_id: str | None = None,
     batch_id: str | None = None,
+    assigned: Annotated[str | None, Query(pattern=ASSIGNED_FILTER)] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
     query = worklists.queue_query(
-        actor.practice_id, lane=lane, search=search, provider_id=provider_id, batch_id=batch_id
+        actor.practice_id,
+        lane=lane,
+        search=search,
+        provider_id=provider_id,
+        batch_id=batch_id,
+        assigned=actor.user.id if assigned == "me" else assigned,
     )
     rows = await worklists.queue_rows(db, query, offset=offset)
     record_access(db, actor, "listed notes", detail=f"lane {lane or 'all'}, {len(rows)} rows")
@@ -47,6 +56,11 @@ async def queue(
         "failed": await worklists.failed_count(db, actor.practice_id),
         "page_size": worklists.PAGE_SIZE,
     }
+
+
+@router.get("/search")
+async def find_notes(db: Db, actor: Reader, q: Annotated[str, Query(max_length=200)]) -> dict[str, Any]:
+    return {"items": await search_notes(db, actor, q), "limit": SEARCH_LIMIT}
 
 
 @router.get("/compliance")

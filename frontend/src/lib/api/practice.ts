@@ -3,6 +3,8 @@ import type {
   AccessLogEntry,
   Checks,
   MipsOverview,
+  Page,
+  PayerInput,
   PracticeSetup,
   ProviderInput,
   SecuritySettings,
@@ -48,6 +50,20 @@ export function saveMips(measureIds: string[], expectedMeasureIds: string[]): Pr
   });
 }
 
-export function getAccessLog(day: string | null, userId: string | null): Promise<AccessLogEntry[]> {
-  return request<AccessLogEntry[]>("/api/access-log", { query: { day, user_id: userId } });
+export function getAccessLog(day: string | null, userId: string | null, offset: number): Promise<Page<AccessLogEntry>> {
+  return request<Page<AccessLogEntry>>("/api/access-log", { query: { day, user_id: userId, offset } });
+}
+
+const payerPath = (payerId: string): string => `/api/practice/payers/${encodeURIComponent(payerId)}`;
+
+export function addPayer(payer: PayerInput): Promise<{ id: string }> {
+  return request<{ id: string }>("/api/practice/payers", { body: payer });
+}
+
+export function changePayer(payerId: string, payer: PayerInput): Promise<void> {
+  return requestNothing(payerPath(payerId), { method: "PUT", body: payer });
+}
+
+export function removePayer(payerId: string): Promise<void> {
+  return requestNothing(payerPath(payerId), { method: "DELETE" });
 }

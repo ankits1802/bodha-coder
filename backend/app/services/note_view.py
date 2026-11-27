@@ -10,10 +10,12 @@ from app.core.config import get_settings
 from app.core.deps import Actor
 from app.models import AddendumRequest, Analysis, CodeSet, Decision, NoteText, Provider, User
 from app.services.audit_log import record_access
+from app.services.estimates import note_estimate
+from app.services.note_texts import current_texts
 from app.services.placement import current_decisions, current_findings
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
-from app.services.worklists import summary
+from app.services.worklists import assignee_name, summary
 
 
 async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str, Any]:
@@ -22,16 +24,15 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
     findings = await current_findings(db, note)
     choices = choices_for(findings, await current_decisions(db, note.id))
     analysis = await db.get(Analysis, note.current_analysis_id) if note.current_analysis_id else None
+    claim = await current_claim(db, note) if analysis else ()
     record_access(db, actor, "opened note", note_id=note.id)
     await db.commit()
     return {
         "note": {
             **summary(note, provider.name),
+            "assignee_name": await assignee_name(db, note),
             "patient_age": note.patient_age,
             "patient_sex": note.patient_sex,
-            "place_code": note.place_code,
-            "visit_type": note.visit_type,
-            "flag_reason": note.flag_reason,
             "provider": {
                 "id": provider.id,
                 "name": provider.name,
@@ -52,7 +53,8 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
             }
             for finding in findings
         ],
-        "claim": [code.label() for code in await current_claim(db, note)] if analysis else [],
+        "claim": [code.label() for code in claim],
+        "estimate": await note_estimate(db, note, claim) if analysis else None,
         "history": await _history(db, note.id, note.practice_id),
         "requests": await _requests(db, note.id),
     }
@@ -71,7 +73,8 @@ async def _texts(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
     rows = await db.scalars(select(NoteText).where(NoteText.note_id == note_id).order_by(NoteText.revision))
     return [
         {"revision": row.revision, "source": row.source, "text": row.text, "created_at": row.created_at.isoformat()}
-        for row in rows
+        for row in current_texts(rows.all())
+        if row.text
     ]
 
 

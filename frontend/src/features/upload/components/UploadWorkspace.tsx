@@ -20,9 +20,10 @@ const EMPTY_PLAN: UploadPlan = { provider_id: "", service_date: "", place_code: 
 interface UploadWorkspaceProps {
   providers: Provider[];
   places: Place[];
+  onUploaded: () => void;
 }
 
-export function UploadWorkspace({ providers, places }: UploadWorkspaceProps) {
+export function UploadWorkspace({ providers, places, onUploaded }: UploadWorkspaceProps) {
   const [plan, setPlan] = useState<UploadPlan>(EMPTY_PLAN);
   const [result, setResult] = useState<UploadResult | null>(null);
   const files = useUploadEntries();
@@ -37,7 +38,9 @@ export function UploadWorkspace({ providers, places }: UploadWorkspaceProps) {
 
   async function start(): Promise<void> {
     const outcome = await upload.run(makeUploadForm(plan, files.entries));
-    if (outcome.ok) setResult(outcome.value);
+    if (!outcome.ok) return;
+    setResult(outcome.value);
+    onUploaded();
   }
 
   function more(): void {

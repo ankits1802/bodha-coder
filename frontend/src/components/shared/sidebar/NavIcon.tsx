@@ -1,6 +1,20 @@
 import type { ReactNode } from "react";
 
-export type NavIconName = "calendar" | "upload" | "list" | "shield" | "card" | "bars" | "house" | "people" | "lock" | "gauge" | "clock" | "inbox";
+export type NavIconName =
+  | "calendar"
+  | "upload"
+  | "list"
+  | "shield"
+  | "card"
+  | "bars"
+  | "house"
+  | "people"
+  | "lock"
+  | "gauge"
+  | "clock"
+  | "inbox"
+  | "search"
+  | "help";
 
 const STROKE = { fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round", strokeLinejoin: "round" } as const;
 
@@ -62,6 +76,19 @@ const PATHS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M2.5 9.5 4.2 3.5h7.6l1.7 6v3h-11z" {...STROKE} />
       <path d="M2.5 9.5h3.2l.8 1.5h3l.8-1.5h3.2" {...STROKE} />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="7" cy="7" r="4.5" {...STROKE} />
+      <path d="M10.4 10.4L13.8 13.8" {...STROKE} />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="8" cy="8" r="6" {...STROKE} />
+      <path d="M6.2 6.3a1.9 1.9 0 0 1 3.6.7c0 1.2-1.8 1.5-1.8 2.6" {...STROKE} />
+      <circle cx="8" cy="11.6" r=".8" fill="currentColor" />
     </>
   ),
 };

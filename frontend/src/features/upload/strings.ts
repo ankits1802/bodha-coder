@@ -57,6 +57,18 @@ export const UPLOAD_TEXT = {
     ready: (count: number) => (count === 1 ? "1 note ready" : `${count} notes ready`),
     start: (count: number) => (count === 1 ? "Start reading 1 note" : `Start reading ${count} notes`),
   },
+  history: {
+    title: "Recent uploads",
+    loading: "Loading uploads",
+    empty: "No uploads yet",
+    retry: "Try again",
+    tableLabel: "Recent uploads",
+    columns: { uploaded: "Uploaded", provider: "Provider", seen: "Date of service", place: "Place", by: "By", notes: "Notes", status: "Status" },
+    openBatch: (provider: string, day: string) => `Open ${provider}, ${day} in the review queue`,
+    read: "Read",
+    reading: (count: string) => `${count} being read`,
+    failed: (count: string) => `${count} could not be read`,
+  },
   done: {
     accepted: (count: number) => (count === 1 ? "1 note is being read." : `${count} notes are being read.`),
     duplicates: (names: string) => `Already uploaded: ${names}`,
