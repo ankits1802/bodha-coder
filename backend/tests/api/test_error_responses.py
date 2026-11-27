@@ -7,6 +7,7 @@ from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError
 from app.main import app
 
 ERROR_REF = {"$ref": "#/components/schemas/ErrorResponse"}
+DECLARED_BODIES = {("get", "/api/health/ready", "503")}
 
 
 def _operations() -> list[tuple[str, str, dict[str, Any]]]:
@@ -17,11 +18,15 @@ def _operations() -> list[tuple[str, str, dict[str, Any]]]:
     ]
 
 
-def _error_schemas(operation: dict[str, Any]) -> dict[str, Any]:
+def _is_error(method: str, path: str, status: str) -> bool:
+    return status == "default" or (status[0] in "45" and (method, path, status) not in DECLARED_BODIES)
+
+
+def _error_schemas(method: str, path: str, operation: dict[str, Any]) -> dict[str, Any]:
     return {
         status: response.get("content", {}).get("application/json", {}).get("schema")
         for status, response in operation["responses"].items()
-        if not status.startswith("2")
+        if _is_error(method, path, status)
     }
 
 
@@ -38,11 +43,11 @@ async def _send(method: str, path: str) -> tuple[int, Any]:
 
 
 def test_every_operation_describes_its_errors_with_the_shared_shape():
+    errors = {(method, path): _error_schemas(method, path, operation) for method, path, operation in _operations()}
     wrong = [
         f"{method.upper()} {path}"
-        for method, path, operation in _operations()
-        if "default" not in _error_schemas(operation)
-        or set(map(str, _error_schemas(operation).values())) != {str(ERROR_REF)}
+        for (method, path), schemas in errors.items()
+        if "default" not in schemas or any(schema != ERROR_REF for schema in schemas.values())
     ]
     assert wrong == []
     assert "HTTPValidationError" not in app.openapi()["components"]["schemas"]
