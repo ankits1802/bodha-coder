@@ -140,6 +140,14 @@ and two-step requirements apply per practice
 provider codes and demo requests are rate limited per address and account, so uvicorn must see the
 visitor's address (`--proxy-headers` and `--forwarded-allow-ips`, above).
 
+A group with several locations can be one organization: HQ groups the practices and names its admins,
+who see every practice, its plan and combined insights, add locations and people, and can pay for the
+practices together with one subscription billed per active provider across them. Being an organization
+admin opens no practice's records; an audited, emailed self-grant does. A practice or organization that
+verifies its email domain (a DNS TXT record or a link to an admin mailbox) can let colleagues who sign up
+with that domain ask to join or join automatically
+([0044](docs/decisions/0044-organizations-and-domain-join.md)).
+
 ### Plans and billing
 
 | Setting | Values |
