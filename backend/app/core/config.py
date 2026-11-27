@@ -12,6 +12,7 @@ BILLING_SETTINGS = (
     "stripe_price_essentials_annual",
     "stripe_price_professional_monthly",
     "stripe_price_professional_annual",
+    "stripe_portal_configuration",
     "paypal_client_id",
     "paypal_client_secret",
     "paypal_webhook_id",
@@ -103,6 +104,7 @@ class Settings(BaseSettings):
     stripe_price_essentials_annual: str | None = None
     stripe_price_professional_monthly: str | None = None
     stripe_price_professional_annual: str | None = None
+    stripe_portal_configuration: str | None = None
     paypal_client_id: str | None = None
     paypal_client_secret: SecretStr | None = None
     paypal_webhook_id: str | None = None

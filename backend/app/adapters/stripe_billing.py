@@ -89,16 +89,20 @@ class StripeSdk:
 class StripeBilling:
     name = STRIPE
 
-    def __init__(self, api: StripeApi, *, webhook_secret: str) -> None:
+    def __init__(self, api: StripeApi, *, webhook_secret: str, portal_configuration: str | None = None) -> None:
         self._api = api
         self._webhook_secret = webhook_secret
+        self._portal_configuration = portal_configuration
 
     async def checkout_url(self, request: CheckoutRequest) -> str:
         session = await self._api.create_checkout_session(checkout_params(request))
         return str(session["url"])
 
     async def manage_url(self, ref: SubscriptionRef, *, return_url: str) -> str:
-        portal = await self._api.create_portal_session({"customer": ref.customer_id, "return_url": return_url})
+        params = {"customer": ref.customer_id, "return_url": return_url}
+        if self._portal_configuration:
+            params["configuration"] = self._portal_configuration
+        portal = await self._api.create_portal_session(params)
         return str(portal["url"])
 
     async def cancel_at_period_end(self, ref: SubscriptionRef) -> None:

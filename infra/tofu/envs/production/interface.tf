@@ -62,11 +62,12 @@ variable "domain_live" {
 
 variable "billing" {
   type = object({
-    stripe_prices      = optional(map(string), {})
-    paypal_client_id   = optional(string, "")
-    paypal_webhook_id  = optional(string, "")
-    paypal_environment = optional(string, "sandbox")
-    paypal_plans       = optional(map(string), {})
+    stripe_prices               = optional(map(string), {})
+    stripe_portal_configuration = optional(string, "")
+    paypal_client_id            = optional(string, "")
+    paypal_webhook_id           = optional(string, "")
+    paypal_environment          = optional(string, "sandbox")
+    paypal_plans                = optional(map(string), {})
   })
   default = {}
 

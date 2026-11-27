@@ -186,3 +186,18 @@ async def test_cancelling_keeps_access_to_the_end_of_the_period():
     api = RecordingStripe()
     await StripeBilling(api, webhook_secret=SECRET).cancel_at_period_end(SubscriptionRef("sub_1", "cus_1", None))
     assert api.calls == [("update", ("sub_1", {"cancel_at_period_end": True}))]
+
+
+async def test_the_billing_portal_opens_with_bodha_s_own_configuration_when_one_is_set() -> None:
+    api = RecordingStripe()
+    ref = SubscriptionRef(customer_id="cus_9", subscription_id="sub_9")
+
+    await StripeBilling(api, webhook_secret=SECRET, portal_configuration="bpc_bodha").manage_url(
+        ref, return_url="https://x/plan"
+    )
+    await StripeBilling(api, webhook_secret=SECRET).manage_url(ref, return_url="https://x/plan")
+
+    assert api.calls == [
+        ("portal", {"customer": "cus_9", "return_url": "https://x/plan", "configuration": "bpc_bodha"}),
+        ("portal", {"customer": "cus_9", "return_url": "https://x/plan"}),
+    ]

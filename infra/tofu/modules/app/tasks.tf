@@ -28,6 +28,7 @@ locals {
   paypal_on = var.billing.paypal_client_id != ""
   billing_environment = concat(
     [for plan, id in var.billing.stripe_prices : { name = "STRIPE_PRICE_${upper(plan)}", value = id }],
+    var.billing.stripe_portal_configuration == "" ? [] : [{ name = "STRIPE_PORTAL_CONFIGURATION", value = var.billing.stripe_portal_configuration }],
     [for plan, id in var.billing.paypal_plans : { name = "PAYPAL_PLAN_${upper(plan)}", value = id }],
     local.paypal_on ? [
       { name = "PAYPAL_CLIENT_ID", value = var.billing.paypal_client_id },

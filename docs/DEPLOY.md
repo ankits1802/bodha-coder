@@ -268,6 +268,7 @@ sets plans by hand as before.
 |---|---|---|
 | `STRIPE_SECRET_KEY` | empty | the restricted or secret API key (`sk_live_…`, `sk_test_…` in test mode) |
 | `STRIPE_WEBHOOK_SECRET` | empty | the signing secret of the webhook endpoint (`whsec_…`) |
+| `STRIPE_PORTAL_CONFIGURATION` | empty | the customer portal configuration for Bodha (`bpc_…`); needed when the Stripe account serves other products, so the portal shows only Bodha's plans and branding |
 | `STRIPE_PRICE_ESSENTIALS_MONTHLY`, `STRIPE_PRICE_ESSENTIALS_ANNUAL`, `STRIPE_PRICE_PROFESSIONAL_MONTHLY`, `STRIPE_PRICE_PROFESSIONAL_ANNUAL` | empty | the Stripe price ids (`price_…`) |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | empty | the REST app's credentials |
 | `PAYPAL_WEBHOOK_ID` | empty | the id of the app's webhook, used to verify each event |
