@@ -92,6 +92,26 @@ resource "aws_cloudfront_vpc_origin" "this" {
   }
 }
 
+data "aws_security_group" "cloudfront_vpc_origins" {
+  vpc_id = var.vpc_id
+
+  filter {
+    name   = "group-name"
+    values = ["CloudFront-VPCOrigins-Service-SG"]
+  }
+
+  depends_on = [aws_cloudfront_vpc_origin.this]
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_from_cloudfront" {
+  security_group_id            = var.security_groups.alb
+  description                  = "CloudFront VPC origin"
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  referenced_security_group_id = data.aws_security_group.cloudfront_vpc_origins.id
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   comment         = var.name
