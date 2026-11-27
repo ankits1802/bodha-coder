@@ -59,3 +59,45 @@ Clear it by adding the function and its deployment.
 Claim lines point to the first four diagnoses because Bodha does not record which diagnosis supports which
 procedure. Clear it by letting the coder link diagnoses to lines in note review.
 
+### Python dependencies are pinned only at the top level
+
+`pyproject.toml` pins direct dependencies, but their own dependencies float, so two image builds can differ.
+Clear it with a lock or constraints file generated on Linux and used by CI and the Docker build.
+
+### Blind audits are blind only on the audit screens
+
+A reviewer who can read notes can still open the same note in the queue and see Bodha's suggestions and the
+coder's decisions. Clear it by hiding a sampled note's review from its assigned reviewer until they submit.
+
+### Latest code sets are queried in more than one place
+
+`services/code_sets.py` holds the single-note queries, but `insights` and `visit_levels` each keep a batched
+"latest code set per note" query. Clear it by moving the batched form into `code_sets.py`.
+
+### New ICD-10 codes have no HCC until the midyear mapping is vendored
+
+The CMS-HCC V28 payment year 2027 initial mapping covers codes valid through FY2026, and age edits use the
+age in the note rather than the age on 1 February of the payment year. Clear it by vendoring the midyear
+files and taking the date of birth into account when it is known.
+
+### Intake is attributed to the first admin
+
+Notes ingested from a watched folder are recorded as uploaded by the practice's first active admin, and a
+dropped file keeps its original name in storage until the next poll. Clear it with a system uploader and an
+upload rule that renames files on arrival.
+
+### Remittance duplicates are found by name
+
+A remittance file is recognised as a repeat only when its name and bytes match an earlier upload. Clear it by
+keying duplicates on the file's checksum alone.
+
+### The note review top bar spells out its shortcuts
+
+"Previous note (K)" and "Next note (J)" are written in `ReviewTopBar.tsx` instead of coming from the shortcut
+registry. Clear it by reading them from the registry like the overlay does.
+
+### Evaluation replies are keyed outside the storage adapter
+
+The object key for evaluation replies is built in `services/evaluation_runs.py` rather than with the other key
+builders in `adapters/object_store.py`. Clear it by moving the builder there.
+
