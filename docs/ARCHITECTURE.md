@@ -58,6 +58,9 @@ triggers, database timestamps, hash chains and a least-privilege runtime role (R
 | `provider_attestations` | each provider signature or level answer: the wording ticked, the note text revision ids shown, the text signed or shown, the answer (`signed`, `confirm`, `disagree`), comment, address and device | written once; the database refuses updates and deletes |
 | `review_comments`, `review_comment_removals` | comments on a finding key or the note (author, role, mentions) and the removal of one (who, role, when) | written once; a removal hides, never deletes; the database refuses updates and deletes |
 | `audit_packages` | each audit package downloaded: stored key, SHA-256, size, file count, who, role, address, device | written once; the database refuses updates and deletes |
+| `signatures` | each signature captured for a person (`user_id`) or a provider (`provider_id` with `practice_id`): source (`drawn`, `typed`, `uploaded`), typed name, image key, SHA-256, size, the Gemini check (or none for typed), address, device | written once; the database refuses updates, deletes and truncation |
+| `signature_adoptions` | each time a person adopts a signature or a provider asks Bodha to remember one; the latest per owner is the signature in use | written once; the database refuses updates, deletes and truncation |
+| `signing_events` | each signing (approval, compliance decision, provider addendum, provider level statement, sign-up agreement): the signer, typed name, role or credential, signature, document and record SHA-256s, time, address, device, verification `code`, the canonical `envelope`, its SHA-256, and the KMS `seal` with its key and algorithm | written once; the database refuses updates, deletes and truncation; removed only by a purge |
 | `access_log` | every PHI read, change and export (who, what, when, from where); `actor_kind` is `user`, `provider` or `system` (intake and auto-approval); `chain_seq`, `prev_hash`, `row_hash` link each practice's entries | append-only, hash-chained per practice; entries past the practice's retention (7 to 10 years, never under 2557 days) are purged |
 | `activity` | administrative changes (setup, team, MIPS list, HQ), `changes` with before and after values for HQ practice updates | append-only, one hash chain; never deleted |
 | `audit_chain_anchors` | where a purged chain prefix ended (chain, last sequence and hash, rows removed) | append-only |
@@ -103,6 +106,8 @@ and one `analysis_failures` row per failed attempt.
 | `ses-inbound/{recipient}/{message}` | a raw email stored by SES for email intake; removed by the intake function once kept and handled ([infra/ses_intake](../infra/ses_intake/README.md)) |
 | `ses-retained/{recipient}/{message}` | every raw email received for intake, kept by the intake function before it reads it |
 | `archives/practices/{practice}/access-log.csv` | a purged practice's whole access log with its chain columns; its SHA-256 is in HQ activity |
+| `people/{user}/signatures/{signature}.png` | a person's captured signature (one set per person across practices); removed when a purge removes the person |
+| `practices/{practice}/signatures/{signature}.png` | a provider's signature captured on the secure link |
 
 Keys carry ids only, never names. PDFs are opened through signed links that expire after
 `PDF_LINK_SECONDS`. The bucket is meant to run S3 Object Lock in governance mode with seven-year
@@ -327,6 +332,22 @@ discussion behind it, each as its own record. Every route below is scoped to the
 | Append-only | migration 0012 adds a trigger refusing UPDATE on `approved_claims`, `claim_exports`, `claim_export_items`, `provider_attestations`, `review_comments`, `review_comment_removals` and `audit_packages` |
 
 Decision: [0036](decisions/0036-review-audit-trail.md).
+
+## Signatures and sealed records
+
+Each approval, compliance decision, provider statement and sign-up agreement carries the signer's
+signature and is sealed so anyone can check later that the stored records still match what was signed.
+
+| Piece | How it works |
+|---|---|
+| Capture | `GET /api/signature`, `POST /api/signature/drafts` `{source, typed_name, image}` (a PNG data URL) and `POST /api/signature/drafts/{id}/adopt`, for admins, coders, CDI and compliance; `POST /api/respond/signature/drafts` for a provider session. `services.signatures.capture` reads the PNG (`signature_images`), decodes it (`pdf_writer.image_size`), checks drawn and uploaded images with `ai.signature_check` through the `ImageModel` the API builds (`adapters.image_models`), stores it by id and writes `signatures`; 20 drafts an hour per owner. The web pieces are in `components/shared/signature` (pad, typed and photo inputs, the two-step setup and its dialog) |
+| Signing | `services.approval.approve`, bulk approve and compliance confirm or keep need the approver's adopted signature (409 `signature_required` otherwise) and call `sealing.seal_snapshot` after the snapshot; `addenda.answer` and `level_changes.answer_level_change` take `signature_id` or the remembered signature and call `sealing.seal_attestation` after the statement; self sign-up calls `sealing.seal_agreement`. The client's `useSignatureGate` opens the capture on `signature_required` and repeats the request |
+| Envelope | `services.signature_envelope`: canonical JSON of the facts (`envelope_of`), SHA-256, verification codes; `sealed_records` builds the canonical source record of each event type and its SHA-256 |
+| Seal | `adapters.seal_keys.RecordSigner`, built once by `adapters.record_signers.build_record_signer`: `KmsRecordSigner` (`SIGNING_KEY_ID`, `Sign` with `ECDSA_SHA_256` over the digest, public keys cached per key) or, outside production without a key, `DevelopmentRecordSigner` |
+| Verify | `GET /api/verify/{code}` (no sign-in, 30 a quarter hour per address): `seal_verification.verify_code` recomputes the record SHA-256, re-hashes the stored signature image, rebuilds the envelope and checks the seal; it answers `valid`, the `problems` and non-PHI facts. The page is `/verify?code=` |
+| Certificates | `certificates.note_certificates` and `certificate_layout`: one "Certificate of review" per signing event, appended to the defense packet and stored as `certificates/{code}.pdf` in the audit package with `signing-events.json` |
+
+Decision: [0040](decisions/0040-e-signatures-and-sealed-records.md).
 
 ## Claim edits
 

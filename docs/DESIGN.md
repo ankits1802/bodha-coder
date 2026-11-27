@@ -66,6 +66,18 @@ Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar.
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.
 
+## Signatures
+
+| Rule | How |
+|---|---|
+| Capture | A segmented control (Draw, Type, Upload), the Full name field, then a 5:2 white frame: the pad, the typed name, or the photo. Undo and Clear are plain buttons under the pad. Continue (primary) checks the image; the preview then offers Redo (plain) and Adopt signature (primary). No helper sentence |
+| Type | The one place another face appears: the typed name is drawn in the system script font (`--font-signature`), because it stands for handwriting. Every label around it stays in the system font |
+| Keyboard | The segmented control is the first stop; arrows reach Type, so a person can sign with the keyboard alone |
+| First approval | Approving without an adopted signature opens Add your signature in a dialog; adopting it finishes the approval with no other click. Later approvals look exactly as before |
+| Security page | A Signature panel shows the adopted signature with Replace (secondary), which opens the same dialog |
+| Secure link | The provider's signature sits in the addendum or level panel above the confirmation box, with Remember my signature for this practice; Sign and add to note or Send stays the only primary |
+| Verify page | `/verify`: the large title, a code field with Verify (primary), then a panel with Seal verified or Seal does not match as a dot and a word, what no longer matches, the facts as a list, and Check a PDF (secondary), answered with a dot and a word |
+
 ## Tour
 
 The first sign-in to each console opens a guided tour of every area the person's role can reach

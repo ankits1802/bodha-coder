@@ -199,7 +199,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 
 | Task role | Allows |
 |---|---|
-| `api` | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket` on the documents bucket; `kms:GenerateDataKey`, `kms:Decrypt` on its key; `ses:SendEmail` on the sending identity and configuration set; `sns:Publish` |
+| `api` | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket` on the documents bucket; `kms:GenerateDataKey`, `kms:Decrypt` on its key; `kms:Sign`, `kms:Verify`, `kms:GetPublicKey` on the signing key; `ses:SendEmail` on the sending identity and configuration set; `sns:Publish` |
 | `worker` | the same S3 and KMS actions, `ses:SendEmail`, `sns:Publish` |
 | `migrate` | nothing beyond the database |
 | `web` | nothing |
@@ -224,12 +224,18 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_TENANT`, `YAHOO_CLIENT_ID` | yes | | | plain |
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
+| `SIGNING_KEY_ID` (the ARN of the `ECC_NIST_P256` `SIGN_VERIFY` KMS key that seals signed records) | yes | | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS`, `MODEL_PRICES` | | yes | | plain |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
 The `web` service needs `SITE_URL=https://www.bodhaai.co` and `ADMIN_URL=https://admin.bodhaai.co` as
 well (read at request time; see [HQ on its own host](#hq-on-its-own-host)).
+
+With `APP_ENVIRONMENT=production` the API refuses to start without `SIGNING_KEY_ID`; elsewhere an unset
+key seals with a fixed development key that production never accepts
+([0040](decisions/0040-e-signatures-and-sealed-records.md)). The key's region is read from its ARN. The
+task role needs `kms:Sign`, `kms:Verify` and `kms:GetPublicKey` on that key and nothing else on it.
 
 `S3_SERVER_SIDE_ENCRYPTION` must be empty on AWS: the app then sends no encryption header and the
 bucket's default SSE-KMS key applies. The default `AES256` would store objects under SSE-S3 instead,

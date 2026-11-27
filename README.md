@@ -114,6 +114,7 @@ Every email is sent as plain text with an HTML version; no message contains pati
 | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | a Yahoo app with OpenID Connect. Sign in with Yahoo stays off until both are set |
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS` | self sign-up on or off (on by default), and the length (14 days) and seats (5) of a new trial |
 | `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | the documents a new practice agrees to and the version stored with its acceptance. Production refuses to start self sign-up without the terms and the BAA |
+| `SIGNING_KEY_ID` | the AWS KMS key (ARN of an `ECC_NIST_P256` sign and verify key) that seals every signed approval, compliance decision, provider statement and sign-up agreement. Production refuses to start without it; elsewhere an unset key seals with a fixed development key that production never accepts. Anyone can check a seal at `/verify` ([0040](docs/decisions/0040-e-signatures-and-sealed-records.md)) |
 
 Register `{APP_URL}/api/auth/{provider}/callback` (for example
 `https://www.bodhaai.co/api/auth/microsoft/callback`) as each service's redirect URI, and
