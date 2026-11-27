@@ -7,12 +7,14 @@ from fastapi.responses import Response
 
 from app.api.bodies import ExportBody
 from app.core.deps import Actor, Db, require
+from app.core.errors import Invalid
 from app.core.roles import BILLERS, INSIGHT_READERS
 from app.models import utcnow
 from app.services import billing, insights
 from app.services.audit_log import record_access
 
 router = APIRouter(tags=["billing"])
+INSIGHT_PERIODS = (7, 14, 30, 90)
 Biller = Annotated[Actor, Depends(require(*BILLERS))]
 
 
@@ -46,6 +48,8 @@ async def export(body: ExportBody, db: Db, actor: Biller) -> Response:
 
 @router.get("/insights")
 async def insight(
-    db: Db, actor: Annotated[Actor, Depends(require(*INSIGHT_READERS))], days: Literal[7, 14, 30, 90] = 14
+    db: Db, actor: Annotated[Actor, Depends(require(*INSIGHT_READERS))], days: int = 14
 ) -> dict[str, Any]:
+    if days not in INSIGHT_PERIODS:
+        raise Invalid(f"days must be one of {', '.join(str(period) for period in INSIGHT_PERIODS)}")
     return await insights.insights(db, actor.practice_id, days=days, time_zone=actor.zone.key)

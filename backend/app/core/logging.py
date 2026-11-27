@@ -128,11 +128,19 @@ def _incoming_request_id(scope: Scope) -> str | None:
     return None
 
 
+def route_template(path: str, route_path: str | None) -> str:
+    if not route_path:
+        return UNMATCHED_ROUTE
+    parts, template = path.rstrip("/").split("/"), route_path.rstrip("/").split("/")
+    prefix = parts[: max(1, len(parts) - len(template) + 1)]
+    return "/".join(prefix + template[1:]) or "/"
+
+
 def _log_request(scope: Scope, status: int, seconds: float, request_id: str) -> None:
     route = scope.get("route")
     fields = {
         "method": scope["method"],
-        "route": getattr(route, "path", None) or UNMATCHED_ROUTE,
+        "route": route_template(scope["path"], getattr(route, "path", None)),
         "status": status,
         "duration_ms": round(seconds * 1000, 1),
         "request_id": request_id,
