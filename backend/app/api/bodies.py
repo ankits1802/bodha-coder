@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
-from app.models import ACCESS_DETAIL_LENGTH, BILLING_INTERVALS, BILLING_PROVIDERS
+from app.models import ACCESS_DETAIL_LENGTH, BILLING_INTERVALS, BILLING_PROVIDERS, TOUR_OUTCOMES, TOUR_VERSION_LIMIT
 from app.services.plans import CHECKOUT_PLANS
 
 
@@ -48,6 +48,11 @@ class MfaCodeBody(Body):
 
 class PreferencesBody(Body):
     notify_digest: bool
+
+
+class TourBody(Body):
+    version: int = Field(ge=1, le=TOUR_VERSION_LIMIT)
+    outcome: Literal[TOUR_OUTCOMES]
 
 
 class PreviewBody(Body):

@@ -6,6 +6,7 @@ import { useSession } from "@/lib/session/useSession";
 import { PlanBanner } from "../plan-banner/PlanBanner";
 import { useShortcuts } from "../shortcuts/useShortcuts";
 import { SHARED_TEXT } from "../strings";
+import { TourHost } from "../tour/TourHost";
 import { Sidebar } from "./Sidebar";
 import { useSidebarCollapsed } from "./useSidebarCollapsed";
 
@@ -53,6 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+      <TourHost user={user} onMenu={setMenuOpen} />
     </div>
   );
 }

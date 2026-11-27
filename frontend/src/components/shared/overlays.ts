@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-export type Overlay = "search" | "shortcuts";
+export type Overlay = "search" | "shortcuts" | "tour";
 
 let current: Overlay | null = null;
 const listeners = new Set<() => void>();

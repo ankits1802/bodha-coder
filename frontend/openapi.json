@@ -10917,6 +10917,78 @@
         "title": "TodaySummary",
         "type": "object"
       },
+      "TourBody": {
+        "additionalProperties": false,
+        "properties": {
+          "outcome": {
+            "enum": [
+              "completed",
+              "skipped"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "version": {
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "outcome"
+        ],
+        "title": "TourBody",
+        "type": "object"
+      },
+      "TourRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "skipped_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped At"
+          },
+          "tour": {
+            "enum": [
+              "hq",
+              "practice"
+            ],
+            "title": "Tour",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tour",
+          "version",
+          "completed_at",
+          "skipped_at"
+        ],
+        "title": "TourRecord",
+        "type": "object"
+      },
       "TrainingBody": {
         "additionalProperties": false,
         "properties": {
@@ -11407,6 +11479,161 @@
         "summary": "Access Log",
         "tags": [
           "practice"
+        ]
+      }
+    },
+    "/api/account/tours": {
+      "get": {
+        "operationId": "tours_taken_api_account_tours_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TourRecord"
+                  },
+                  "title": "Response Tours Taken Api Account Tours Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Tours Taken",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/account/tours/{tour}": {
+      "put": {
+        "operationId": "record_tour_api_account_tours__tour__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tour",
+            "required": true,
+            "schema": {
+              "enum": [
+                "hq",
+                "practice"
+              ],
+              "title": "Tour",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TourBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TourRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Record Tour",
+        "tags": [
+          "account"
         ]
       }
     },

@@ -43,6 +43,7 @@ from app.models.tables import (
     UserIdentity,
     UserToken,
 )
+from app.models.tours import TOUR_OUTCOMES, TOUR_VERSION_LIMIT, TOURS, PersonTour
 
 __all__ = [
     "ACCESS_DETAIL_LENGTH",
@@ -60,6 +61,9 @@ __all__ = [
     "ROLES",
     "SUBSCRIPTION_STATUSES",
     "SUGGESTION_KINDS",
+    "TOUR_OUTCOMES",
+    "TOUR_VERSION_LIMIT",
+    "TOURS",
     "AccessLog",
     "Activity",
     "AddendumRequest",
@@ -77,6 +81,7 @@ __all__ = [
     "MipsList",
     "Note",
     "NoteText",
+    "PersonTour",
     "PlaceOfService",
     "Practice",
     "Provider",

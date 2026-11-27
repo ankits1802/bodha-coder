@@ -23,6 +23,10 @@ export type SignedInDevice = Schemas["SignedInDevice"];
 export type RecoveryCodeStatus = Schemas["RecoveryCodeStatus"];
 export type RecoveryCodes = Schemas["RecoveryCodes"];
 export type Preferences = Schemas["Preferences"];
+export type TourRecord = Schemas["TourRecord"];
+export type TourKey = TourRecord["tour"];
+export type TourBody = Schemas["TourBody"];
+export type TourOutcome = TourBody["outcome"];
 
 export type Created = Schemas["Created"];
 export type ErrorBody = Schemas["ErrorResponse"];

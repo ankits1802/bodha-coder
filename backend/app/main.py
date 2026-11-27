@@ -26,6 +26,7 @@ from app.api.routes import (
     respond,
     signup,
     team,
+    tours,
     uploads,
     work,
 )
@@ -67,6 +68,7 @@ for module in (
     identity,
     signup,
     account,
+    tours,
     work,
     notes,
     uploads,

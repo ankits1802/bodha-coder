@@ -158,6 +158,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `health.py` | `Health`, `Readiness`, `PASSED`, `FAILED` |
 | `signup.py` | `PendingIdentity` (email, name, provider) |
 | `plan.py` | `PlanCatalog`, `PlanTerms`, `PlanStatus`, `PlanSubscription`, `RedirectLink`, `BillingProviderName`, `BillingInterval` |
+| `tours.py` | `TourRecord` (`tour`, `version`, `completed_at`, `skipped_at`), `Tour` (`practice` or `hq`, from `models.TOURS`) |
 
 ## frontend/src (shared)
 
@@ -169,7 +170,9 @@ dictionaries and the model validates them (see Architecture, API types).
 | `components/shared/toast/` | `showToast(message, action?)`, `dismissToast`, `runToastAction`, `useToast`, `TOAST_SECONDS`; `ToastHost` (in the practice layout; `u` runs the action). Undo for reversible actions instead of a confirmation |
 | `components/shared/noteDetail.ts` | `useNoteDetail(noteId)`, `prefetchNoteDetail(noteId)`, `forgetNoteDetail(noteId)` (one cache key for a note's detail across note review, compliance and Today) |
 | `components/shared/shortcuts/ShortcutList.tsx`, `ShortcutsDialog.tsx` | the shortcut list (help page and the `?` dialog) |
-| `components/shared/overlays.ts` | `openOverlay("search" \| "shortcuts")`, `closeOverlay`, `useOpenOverlay` |
+| `components/shared/overlays.ts` | `openOverlay("search" \| "shortcuts" \| "tour")`, `closeOverlay`, `useOpenOverlay` |
+| `components/shared/tour/` | `TourHost` (mounted once by `AppShell`: opens the tour when this `TOUR_VERSION` of the account's tour is unrecorded and records Skip or Done), `TourButton` (the account area's "Take the tour"), `startTour()`, `tourStepsFor(user)` (steps from `navFor`, `canSearch`, `canReach` and `canDo`), `tourKeyFor(user)`, `isTourDue(records, tour)`, `cardSpot(spot, card, viewport)` and `spotlightBox` (a card beside its target that never covers it, or `null`), `TOURS_KEY`. A step's target is the element with that `data-tour` value: a sidebar link's `href`, a sidebar action's icon name, `tour` for the replay button |
+| `lib/media.ts` | `prefersReducedMotion()`, `hasFinePointer()`, `isWideScreen()` (the sidebar breakpoint, 64rem) |
 | `components/shared/noteStatus.ts` | `noteStatus`, `DELETABLE_STATUSES`, `ASSIGNABLE_STATUSES` |
 | `hooks/useAssignees.ts` | `useAssignees(user)` (who the user may assign notes to) |
 | `hooks/useRemote.ts` | `useRemote(key, load, keepSeconds = 0)` (loading, error and success; serves a fresh cached or prefetched value at once and shares a request already running for the key) |

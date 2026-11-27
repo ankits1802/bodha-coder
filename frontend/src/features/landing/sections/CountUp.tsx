@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { prefersReducedMotion } from "../motion/progress";
+import { prefersReducedMotion } from "@/lib/media";
 
 const DURATION = 1400;
 

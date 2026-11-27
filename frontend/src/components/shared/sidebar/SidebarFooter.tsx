@@ -6,6 +6,7 @@ import type { User } from "@/lib/api/types";
 import { ROLE_LABELS } from "@/lib/labels";
 import { signOut } from "@/lib/session/signOut";
 import { SHARED_TEXT } from "../strings";
+import { TourButton } from "../tour/TourButton";
 import { ActionEntry } from "./NavEntry";
 
 export function SidebarFooter({ user, collapsed }: { user: User; collapsed: boolean }) {
@@ -15,6 +16,7 @@ export function SidebarFooter({ user, collapsed }: { user: User; collapsed: bool
         <span title={`${user.name} · ${ROLE_LABELS[user.role]}`}>
           <Avatar name={user.name} />
         </span>
+        <TourButton user={user} collapsed />
         <ActionEntry icon="signOut" label={SHARED_TEXT.signOut} collapsed onClick={() => void signOut()} />
       </div>
     );
@@ -28,6 +30,7 @@ export function SidebarFooter({ user, collapsed }: { user: User; collapsed: bool
           <span className="text-caption text-secondary">{ROLE_LABELS[user.role]}</span>
         </span>
       </div>
+      <TourButton user={user} collapsed={false} />
       <Button variant="plain" size="sm" className="self-start" onClick={() => void signOut()}>
         {SHARED_TEXT.signOut}
       </Button>

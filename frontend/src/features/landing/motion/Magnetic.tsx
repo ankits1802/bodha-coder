@@ -2,7 +2,7 @@
 
 import { useRef, type PointerEvent, type ReactNode } from "react";
 import { haptic } from "@/lib/haptics";
-import { hasFinePointer, prefersReducedMotion } from "./progress";
+import { hasFinePointer, prefersReducedMotion } from "@/lib/media";
 
 const PULL = 0.28;
 const LIMIT = 14;

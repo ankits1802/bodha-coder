@@ -65,6 +65,21 @@ Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar.
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.
 
+## Tour
+
+The first sign-in to each console opens a guided tour of every area the person's role can reach
+([0039](decisions/0039-first-sign-in-tour.md)).
+
+| Rule | How |
+|---|---|
+| Spotlight | The page dims with the scrim colour except a ring around the real element (its sidebar entry, the search action or the account area's "Take the tour"), padded 6 px with the field radius and a white 2 px outline. Each area's page opens behind its step |
+| Card | White panel, 20 rem wide or the screen less 2 rem: "3 of 12", a headline title, one line of at most twelve words, Skip tour (plain) at the left and Back (secondary) and Next or Done (primary, the only purple) at the right. No helper copy beyond the line |
+| Placement | Right of the target, else below, above or left, wherever the whole card fits with 16 px to spare; it never covers the target. With no room, or when a step has no element (welcome, note review), the card is centred over the dimmed page |
+| Keyboard | Focus starts on Next and stays in the card; Right and Left move, Enter moves on, Escape skips. Each new step is read out with "highlighted" when an element is lit |
+| Small screens | Below the sidebar breakpoint the menu opens first and the card sits below or above the entry |
+| Motion | The ring and card slide with `transform` only under `motion-safe`; reduced motion jumps and scrolls without smoothing |
+| Replay | "Take the tour" on Help and in the account area (a compass icon in the collapsed sidebar) |
+
 ## Motion and haptics
 
 Motion explains what Bodha does: a reading beam, evidence inked like a marker, a struck code replaced by
