@@ -12,6 +12,18 @@ export const SHARED_TEXT = {
   platformAdministration: "Platform administration",
   notAllowed: "Your role can't open this page.",
   goHome: "Go to my work",
+  meta: {
+    description:
+      "Pre-bill coding and compliance review: every visit note checked against the codes you bill, too high or too low, with the sentence behind each change.",
+    shareAlt: "Bodha Coder: bill the level you can defend.",
+  },
+  errors: {
+    notFoundCode: "404",
+    notFound: "This page doesn't exist.",
+    failed: "Something went wrong.",
+    home: "Go to Bodha Coder",
+    retry: "Try again",
+  },
   pager: {
     label: "Pages",
     previous: "Previous",

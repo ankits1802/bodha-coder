@@ -30,3 +30,11 @@ ever comes out different ([0022](decisions/0022-typed-responses.md)). Clear it b
 The CMS-HCC V28 payment year 2027 initial mapping covers codes valid through FY2026, so FY2027 codes map to
 no HCC. On 2026-11-27 CMS had published no PY2027 midyear or final mapping. Clear it by vendoring that
 mapping like the initial files (manifest and checksums) once CMS posts it, for the dates of service it covers.
+
+### The content security policy allows inline scripts
+
+`next.config.ts` sends a Content-Security-Policy that blocks framing, plugins, foreign scripts, styles,
+fonts, images and connections, but `script-src` keeps `'unsafe-inline'` because Next.js inlines its
+bootstrap scripts. Clear it with per-request nonces set in `src/proxy.ts`, which makes every page
+render dynamically; measure the landing page's speed before and after.
+
