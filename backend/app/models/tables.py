@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, IdMixin, utcnow
+from app.models.base import Base, IdMixin, one_of, timestamp, utcnow
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
 ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
@@ -48,19 +48,10 @@ LANE_REASONS = (
 DEFAULT_TIME_ZONE = "America/Chicago"
 
 
-def _one_of(column: str, values: tuple[str, ...]) -> CheckConstraint:
-    allowed = ", ".join(f"'{value}'" for value in values)
-    return CheckConstraint(f"{column} IN ({allowed})", name=f"{column}_allowed")
-
-
-def _timestamp(*, nullable: bool = True) -> Any:
-    return mapped_column(DateTime(timezone=True), nullable=nullable)
-
-
 class Practice(IdMixin, Base):
     __tablename__ = "practices"
     __table_args__ = (
-        _one_of("status", ("trial", "active", "ended", "blocked")),
+        one_of("status", ("trial", "active", "ended", "blocked")),
         CheckConstraint("access_log_years >= 6", name="access_log_years_min"),
     )
     name: Mapped[str] = mapped_column(String(200))
@@ -75,11 +66,12 @@ class Practice(IdMixin, Base):
     private_messages: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
     access_log_years: Mapped[int] = mapped_column(Integer, default=6)
+    intake: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
 class User(IdMixin, Base):
     __tablename__ = "users"
-    __table_args__ = (_one_of("role", ROLES), _one_of("status", ("invited", "active", "blocked")))
+    __table_args__ = (one_of("role", ROLES), one_of("status", ("invited", "active", "blocked")))
     practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
     email: Mapped[str] = mapped_column(String(254), unique=True)
     name: Mapped[str] = mapped_column(String(120))
@@ -92,26 +84,26 @@ class User(IdMixin, Base):
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
     notify_digest: Mapped[bool] = mapped_column(Boolean, default=True)
     token_version: Mapped[int] = mapped_column(Integer, default=0)
-    last_active_at: Mapped[datetime | None] = _timestamp()
+    last_active_at: Mapped[datetime | None] = timestamp()
 
 
 class UserToken(IdMixin, Base):
     __tablename__ = "user_tokens"
-    __table_args__ = (_one_of("purpose", ("invite", "reset")),)
+    __table_args__ = (one_of("purpose", ("invite", "reset")),)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     purpose: Mapped[str] = mapped_column(String(16))
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
-    expires_at: Mapped[datetime] = _timestamp(nullable=False)
-    used_at: Mapped[datetime | None] = _timestamp()
+    expires_at: Mapped[datetime] = timestamp(nullable=False)
+    used_at: Mapped[datetime | None] = timestamp()
 
 
 class Session(IdMixin, Base):
     __tablename__ = "sessions"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     refresh_hash: Mapped[str] = mapped_column(String(64), unique=True)
-    expires_at: Mapped[datetime] = _timestamp(nullable=False)
+    expires_at: Mapped[datetime] = timestamp(nullable=False)
     last_used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    revoked_at: Mapped[datetime | None] = _timestamp()
+    revoked_at: Mapped[datetime | None] = timestamp()
     user_agent: Mapped[str | None] = mapped_column(String(300))
     ip: Mapped[str | None] = mapped_column(String(64))
 
@@ -120,7 +112,7 @@ class RecoveryCode(IdMixin, Base):
     __tablename__ = "recovery_codes"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     code_hash: Mapped[str] = mapped_column(String(64))
-    used_at: Mapped[datetime | None] = _timestamp()
+    used_at: Mapped[datetime | None] = timestamp()
 
 
 class RateEvent(IdMixin, Base):
@@ -142,7 +134,7 @@ class PlaceOfService(Base):
 
 class Provider(IdMixin, Base):
     __tablename__ = "providers"
-    __table_args__ = (_one_of("channel", ("email", "sms")),)
+    __table_args__ = (one_of("channel", ("email", "sms")),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     credential: Mapped[str] = mapped_column(String(16))
@@ -154,6 +146,7 @@ class Provider(IdMixin, Base):
     channel: Mapped[str] = mapped_column(String(8), default="email")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    auto_approve: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Batch(IdMixin, Base):
@@ -171,7 +164,7 @@ class Note(IdMixin, Base):
     __table_args__ = (
         UniqueConstraint("practice_id", "file_sha256"),
         Index("ix_notes_work", "practice_id", "status", "lane", "due_at"),
-        _one_of("status", NOTE_STATUSES),
+        one_of("status", NOTE_STATUSES),
         CheckConstraint("lane IS NULL OR lane IN ('approve', 'coder', 'provider', 'compliance')", name="lane_allowed"),
         CheckConstraint(
             "lane_reason IS NULL OR lane_reason IN (" + ", ".join(f"'{item}'" for item in LANE_REASONS) + ")",
@@ -201,15 +194,16 @@ class Note(IdMixin, Base):
     compliance_cleared_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
     current_analysis_id: Mapped[str | None] = mapped_column(String(36))
     approved_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
-    approved_at: Mapped[datetime | None] = _timestamp()
-    exported_at: Mapped[datetime | None] = _timestamp()
-    due_at: Mapped[datetime] = _timestamp(nullable=False)
+    approved_at: Mapped[datetime | None] = timestamp()
+    exported_at: Mapped[datetime | None] = timestamp()
+    due_at: Mapped[datetime] = timestamp(nullable=False)
     assigned_to: Mapped[str | None] = mapped_column(ForeignKey("users.id"), index=True)
+    payer: Mapped[str | None] = mapped_column(String(64))
 
 
 class NoteText(IdMixin, Base):
     __tablename__ = "note_texts"
-    __table_args__ = (UniqueConstraint("note_id", "revision"), _one_of("source", ("document", "addendum")))
+    __table_args__ = (UniqueConstraint("note_id", "revision"), one_of("source", ("document", "addendum")))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     revision: Mapped[int] = mapped_column(Integer)
     source: Mapped[str] = mapped_column(String(12))
@@ -222,7 +216,7 @@ class Analysis(IdMixin, Base):
     __table_args__ = (
         UniqueConstraint("note_id", "revision"),
         Index("ix_analyses_queue", "status", "requested_at"),
-        _one_of("status", ANALYSIS_STATUSES),
+        one_of("status", ANALYSIS_STATUSES),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     revision: Mapped[int] = mapped_column(Integer)
@@ -234,8 +228,8 @@ class Analysis(IdMixin, Base):
     prompt_version: Mapped[str | None] = mapped_column(String(20))
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    started_at: Mapped[datetime | None] = _timestamp()
-    finished_at: Mapped[datetime | None] = _timestamp()
+    started_at: Mapped[datetime | None] = timestamp()
+    finished_at: Mapped[datetime | None] = timestamp()
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
     response_key: Mapped[str | None] = mapped_column(String(300))
@@ -245,7 +239,7 @@ class Analysis(IdMixin, Base):
 
 class Suggestion(IdMixin, Base):
     __tablename__ = "suggestions"
-    __table_args__ = (UniqueConstraint("analysis_id", "key"), _one_of("kind", SUGGESTION_KINDS))
+    __table_args__ = (UniqueConstraint("analysis_id", "key"), one_of("kind", SUGGESTION_KINDS))
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), index=True)
     kind: Mapped[str] = mapped_column(String(16))
@@ -264,7 +258,7 @@ class Decision(IdMixin, Base):
     __tablename__ = "decisions"
     __table_args__ = (
         Index("ix_decisions_note_key", "note_id", "suggestion_key", "created_at"),
-        _one_of("choice", CHOICES),
+        one_of("choice", CHOICES),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
@@ -275,7 +269,7 @@ class Decision(IdMixin, Base):
 
 class CodeSet(IdMixin, Base):
     __tablename__ = "code_sets"
-    __table_args__ = (UniqueConstraint("note_id", "kind", "revision"), _one_of("kind", CODE_SET_KINDS))
+    __table_args__ = (UniqueConstraint("note_id", "kind", "revision"), one_of("kind", CODE_SET_KINDS))
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     kind: Mapped[str] = mapped_column(String(8))
     revision: Mapped[int] = mapped_column(Integer)
@@ -287,8 +281,8 @@ class CodeSet(IdMixin, Base):
 class AddendumRequest(IdMixin, Base):
     __tablename__ = "addendum_requests"
     __table_args__ = (
-        _one_of("status", ("sent", "answered", "expired", "cancelled")),
-        _one_of("channel", ("email", "sms")),
+        one_of("status", ("sent", "answered", "expired", "cancelled")),
+        one_of("channel", ("email", "sms")),
     )
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), index=True)
@@ -299,15 +293,16 @@ class AddendumRequest(IdMixin, Base):
     addendum_text: Mapped[str | None] = mapped_column(Text)
     channel: Mapped[str] = mapped_column(String(8))
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
-    expires_at: Mapped[datetime] = _timestamp(nullable=False)
+    expires_at: Mapped[datetime] = timestamp(nullable=False)
     code_hash: Mapped[str | None] = mapped_column(String(64))
-    code_expires_at: Mapped[datetime | None] = _timestamp()
+    code_expires_at: Mapped[datetime | None] = timestamp()
     code_attempts: Mapped[int] = mapped_column(Integer, default=0)
     hold_claim: Mapped[bool] = mapped_column(Boolean, default=True)
-    remind_at: Mapped[datetime | None] = _timestamp()
+    remind_at: Mapped[datetime | None] = timestamp()
+    escalated_at: Mapped[datetime | None] = timestamp()
     status: Mapped[str] = mapped_column(String(12), default="sent")
     sent_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
-    answered_at: Mapped[datetime | None] = _timestamp()
+    answered_at: Mapped[datetime | None] = timestamp()
 
 
 class MipsList(IdMixin, Base):
@@ -322,7 +317,7 @@ class AccessLog(IdMixin, Base):
     __tablename__ = "access_log"
     __table_args__ = (
         Index("ix_access_log_practice_time", "practice_id", "created_at"),
-        _one_of("actor_kind", ("user", "provider")),
+        one_of("actor_kind", ("user", "provider")),
     )
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
     actor_kind: Mapped[str] = mapped_column(String(8))

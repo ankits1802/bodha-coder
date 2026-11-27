@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import DateTime, MetaData, String
+from sqlalchemy import CheckConstraint, DateTime, MetaData, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 NAMING = {
@@ -28,3 +29,12 @@ class Base(DeclarativeBase):
 class IdMixin:
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+def one_of(column: str, values: tuple[str, ...]) -> CheckConstraint:
+    allowed = ", ".join(f"'{value}'" for value in values)
+    return CheckConstraint(f"{column} IN ({allowed})", name=f"{column}_allowed")
+
+
+def timestamp(*, nullable: bool = True) -> Any:
+    return mapped_column(DateTime(timezone=True), nullable=nullable)
