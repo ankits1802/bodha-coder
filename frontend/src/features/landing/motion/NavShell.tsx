@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { haptic } from "@/lib/haptics";
-import { prefersReducedMotion } from "./progress";
+import { prefersReducedMotion } from "@/lib/media";
 
 const SCROLLED_AFTER = 8;
 

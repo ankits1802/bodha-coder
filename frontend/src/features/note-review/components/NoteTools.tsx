@@ -13,6 +13,7 @@ import { VOID_REASON_MAX, VOID_REASON_MIN } from "@/lib/validation";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import { AssigneeControl } from "./AssigneeControl";
+import { AuditPackageButton } from "./AuditPackageButton";
 import { PayerSelect } from "./PayerSelect";
 
 interface NoteToolsProps {
@@ -52,6 +53,7 @@ export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToo
       ) : null}
       {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
       <DefensePacketButton noteId={note.id} size="sm" />
+      {permissions.auditPackage ? <AuditPackageButton noteId={note.id} /> : null}
       {permissions.voidNote ? (
         <Button size="sm" variant="plain" onClick={() => setVoiding(true)}>
           {words.void}

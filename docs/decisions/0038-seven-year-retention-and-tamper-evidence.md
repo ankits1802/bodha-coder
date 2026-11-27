@@ -6,7 +6,7 @@ Context: the owner requires every record to be kept at least seven years (2557 d
 to payer, OIG, RAC and HIPAA audits. An audit review found hard deletes of notes and practices, an
 access log kept six years, timestamps written by the application, no database guard against edits,
 AI runs that could not be reproduced, overwritten field values and an access log auditors could not
-search. Migration 0014 and the services below close those gaps. It supersedes the deletion and
+search. Migration 0015 and the services below close those gaps. It supersedes the deletion and
 access-log parts of [0011](0011-practice-deletion-and-retention.md).
 
 ## No hard deletes
@@ -49,7 +49,7 @@ access-log parts of [0011](0011-practice-deletion-and-retention.md).
 
 ## Retention minimums
 
-- `practices.access_log_years` is 7 to 10 (default 7); migration 0014 raises every value below 7 and
+- `practices.access_log_years` is 7 to 10 (default 7); migration 0015 raises every value below 7 and
   the check constraint is `>= 7`.
 - The daily access-log purge asks `bodha_purge_access_log(practice, cutoff)` for each practice, with the
   cutoff the earlier of the practice-calendar day `access_log_years` back and the database time minus
@@ -92,10 +92,10 @@ access-log parts of [0011](0011-practice-deletion-and-retention.md).
   rows"), wrong `prev_hash` ("broken link") or wrong `row_hash` ("changed row");
   `bodha_verify_audit_log()` checks every chain. HQ runs it from `POST /api/hq/audit-log/verify`, which
   records `audit log verified` in the activity chain with the result, so each check also leaves a
-  dated checkpoint. Existing rows were chained by migration 0014 in `(created_at, id)` order. The lock
+  dated checkpoint. Existing rows were chained by migration 0015 in `(created_at, id)` order. The lock
   serialises writes per practice; a transaction that writes the access log then waits on a row lock
   held by one waiting for that practice's chain is a deadlock Postgres breaks by failing one request.
-- **Least privilege.** Migration 0014 creates `bodha_runtime` when `RUNTIME_DATABASE_PASSWORD` is set
+- **Least privilege.** Migration 0015 creates `bodha_runtime` when `RUNTIME_DATABASE_PASSWORD` is set
   (from a SCRAM-SHA-256 verifier computed in Python, so the password never appears in SQL text) and, in
   any database where the role exists, grants CONNECT, schema USAGE, SELECT and INSERT on every table,
   UPDATE on every table that is not append-only, DELETE only on the credential and configuration tables
@@ -147,10 +147,18 @@ the filters used, never their values.
   CloudTrail; the migrate task on `MIGRATION_DATABASE_URL`, api and worker on the `bodha_runtime`
   `DATABASE_URL`; `APP_VERSION` from the image tag; the intake function allowed to put under
   `ses-retained/`.
-- Migrations 0011 to 0013, written in parallel, are re-chained before 0014. Any table they add that
-  holds practice data must be added to `bodha_purge_practice`'s steps (a missing one makes the purge
-  fail on a foreign key, never silently skip). Tables that exist when 0014 runs get SELECT, INSERT and
-  UPDATE (append-only ones no UPDATE); one the runtime must delete from needs an explicit grant, and an
-  append-only one needs adding to the trigger lists.
+- Migration 0015 follows 0011 to 0014 (spend, tours, the review audit trail, multi-practice membership)
+  and covers their tables: the review records and `auth_events` are append-only under the same triggers
+  (0013's update-only guard is replaced, and restored on downgrade), `practice_memberships` is never
+  deleted, `analyses.cost_microusd` and `price_snapshot` are written once, and `bodha_purge_practice`
+  removes them in foreign-key order, keeping the accounts of people who belong to another practice.
+  `auth_events` has no chain of its own: every event of a known person is also written to that person's
+  practices' access logs or HQ activity, which are chained; a failed sign-in for an unknown email is
+  only in `auth_events`. A later migration that adds a table holding practice data must add it to
+  `bodha_purge_practice` (a missing one makes the purge fail on a foreign key, never skip it); tables
+  that exist when 0015 runs get SELECT, INSERT and UPDATE (append-only ones no UPDATE), and one the
+  runtime must delete from needs an explicit grant.
+- Closing a practice also ends its memberships; approved claim snapshots, exports, statements and
+  comments stay. HQ cannot appoint an admin to, renew or edit a closed practice.
 - A practice purge builds the access-log archive in memory and runs in the HQ request; a practice with
   millions of entries would need it streamed or run as a task.

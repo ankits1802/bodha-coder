@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     Computed,
@@ -19,11 +20,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.models.accounts import PRACTICE_MEMBER_ROLES
 from app.models.base import Base, IdMixin, LedgerMixin, one_of, timestamp, utcnow
+from app.models.review_audit import OVERRIDE_NOTE_LENGTH, REQUEST_PURPOSES, override_checks
 
 DEFAULT_CHECKS = {"em": True, "icd": True, "cdi": True, "audit": True, "mips": False, "hcc": False}
-ROLES = ("hq", "admin", "coder", "cdi", "compliance", "biller", "viewer")
 HQ_REALM = "hq"
+ROLES = (HQ_REALM, *PRACTICE_MEMBER_ROLES)
 PRACTICE_REALM = "practice"
 REALMS = (HQ_REALM, PRACTICE_REALM)
 REALM_OF_ROLE = f"CASE WHEN role = '{HQ_REALM}' THEN '{HQ_REALM}' ELSE '{PRACTICE_REALM}' END"
@@ -87,6 +90,8 @@ class Practice(IdMixin, Base):
     closed_at: Mapped[datetime | None] = timestamp()
     closed_by: Mapped[str | None] = mapped_column(String(36))
     purged_at: Mapped[datetime | None] = timestamp()
+    confirm_level_changes: Mapped[bool] = mapped_column(Boolean, default=False)
+    hold_until_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class User(IdMixin, Base):
@@ -98,7 +103,8 @@ class User(IdMixin, Base):
         UniqueConstraint("id", "realm"),
     )
     __mapper_args__ = {"eager_defaults": True}
-    practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
+    legacy_practice_id: Mapped[str | None] = mapped_column("practice_id", ForeignKey("practices.id"), index=True)
+    last_practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"))
     email: Mapped[str] = mapped_column(String(254))
     name: Mapped[str] = mapped_column(String(120))
     role: Mapped[str] = mapped_column(String(16))
@@ -139,6 +145,7 @@ class UserToken(IdMixin, Base):
 class Session(IdMixin, Base):
     __tablename__ = "sessions"
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), index=True)
     refresh_hash: Mapped[str] = mapped_column(String(64), unique=True)
     expires_at: Mapped[datetime] = timestamp(nullable=False)
     last_used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -268,6 +275,7 @@ class Analysis(LedgerMixin, Base):
     __table_args__ = (
         UniqueConstraint("note_id", "revision"),
         Index("ix_analyses_queue", "status", "requested_at"),
+        Index("ix_analyses_finished_at", "finished_at"),
         one_of("status", ANALYSIS_STATUSES),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
@@ -284,6 +292,8 @@ class Analysis(LedgerMixin, Base):
     finished_at: Mapped[datetime | None] = timestamp()
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
+    cost_microusd: Mapped[int | None] = mapped_column(BigInteger)
+    price_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     response_key: Mapped[str | None] = mapped_column(String(300))
     report: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(String(300))
@@ -316,23 +326,34 @@ class Decision(LedgerMixin, Base):
     __table_args__ = (
         Index("ix_decisions_note_key", "note_id", "suggestion_key", "created_at"),
         one_of("choice", CHOICES),
+        *override_checks(),
     )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     analysis_id: Mapped[str] = mapped_column(ForeignKey("analyses.id"))
     suggestion_key: Mapped[str] = mapped_column(String(80))
     choice: Mapped[str] = mapped_column(String(8))
     actor_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    override_reason: Mapped[str | None] = mapped_column(String(24))
+    override_note: Mapped[str | None] = mapped_column(String(OVERRIDE_NOTE_LENGTH))
 
 
 class CodeSet(LedgerMixin, Base):
     __tablename__ = "code_sets"
-    __table_args__ = (UniqueConstraint("note_id", "kind", "revision"), one_of("kind", CODE_SET_KINDS))
+    __table_args__ = (
+        UniqueConstraint("note_id", "kind", "revision"),
+        one_of("kind", CODE_SET_KINDS),
+        *override_checks(),
+    )
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"))
     kind: Mapped[str] = mapped_column(String(8))
     revision: Mapped[int] = mapped_column(Integer)
     codes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
     reason: Mapped[str] = mapped_column(String(40))
     actor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    actor_role: Mapped[str | None] = mapped_column(String(16))
+    override_reason: Mapped[str | None] = mapped_column(String(24))
+    override_note: Mapped[str | None] = mapped_column(String(OVERRIDE_NOTE_LENGTH))
 
 
 class AddendumRequest(IdMixin, Base):
@@ -340,6 +361,7 @@ class AddendumRequest(IdMixin, Base):
     __table_args__ = (
         one_of("status", ("sent", "answered", "expired", "cancelled")),
         one_of("channel", ("email", "sms")),
+        one_of("purpose", REQUEST_PURPOSES),
     )
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     note_id: Mapped[str] = mapped_column(ForeignKey("notes.id"), index=True)
@@ -360,6 +382,8 @@ class AddendumRequest(IdMixin, Base):
     status: Mapped[str] = mapped_column(String(12), default="sent")
     sent_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
     answered_at: Mapped[datetime | None] = timestamp()
+    purpose: Mapped[str] = mapped_column(String(12), default="questions")
+    approved_claim_id: Mapped[str | None] = mapped_column(ForeignKey("approved_claims.id"))
 
 
 class MipsList(IdMixin, Base):
@@ -368,11 +392,3 @@ class MipsList(IdMixin, Base):
     measure_ids: Mapped[list[str]] = mapped_column(JSONB)
     updated_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
-
-class DemoRequest(IdMixin, Base):
-    __tablename__ = "demo_requests"
-    name: Mapped[str] = mapped_column(String(120))
-    email: Mapped[str] = mapped_column(String(254))
-    organization: Mapped[str] = mapped_column(String(200))
-    message: Mapped[str | None] = mapped_column(Text)

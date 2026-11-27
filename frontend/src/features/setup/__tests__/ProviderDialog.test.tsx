@@ -47,6 +47,7 @@ function signIn(canSendTexts: boolean): void {
       idle_minutes: 15,
       time_zone: "America/Chicago",
     },
+    practices: [],
   };
   setSession({ access_token: "token", user });
 }

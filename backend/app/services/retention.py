@@ -14,11 +14,11 @@ from app.core.calendar import day_bounds, shift_years, zone_named
 from app.core.config import get_settings
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
-from app.models import AccessLog, AddendumRequest, Analysis, Note, Practice, User, utcnow
+from app.models import AccessLog, AddendumRequest, Analysis, Note, Practice, PracticeMembership, User, utcnow
 from app.services.access_log_reports import write_csv
 from app.services.audit_log import record_activity
-from app.services.auth import end_all_sessions
 from app.services.plan_limits import is_live, subscription_for
+from app.services.user_sessions import end_practice_sessions
 
 __all__ = [
     "CLOSABLE_STATUSES",
@@ -37,6 +37,9 @@ PRACTICE_CLOSED, PRACTICE_PURGED = "practice closed", "practice purged"
 CLOSABLE_STATUSES = ("ended", "blocked")
 CSV_TYPE = "text/csv; charset=utf-8"
 PURGE_ACCESS_LOG = text("SELECT bodha_purge_access_log(:practice, :cutoff)").bindparams(
+    bindparam("practice", type_=String), bindparam("cutoff", type_=DateTime(timezone=True))
+)
+PURGE_AUTH_EVENTS = text("SELECT bodha_purge_auth_events(:practice, :cutoff)").bindparams(
     bindparam("practice", type_=String), bindparam("cutoff", type_=DateTime(timezone=True))
 )
 PURGE_PRACTICE = text("SELECT bodha_purge_practice(:practice, :days)").bindparams(
@@ -72,6 +75,8 @@ async def purge_access_logs(db: AsyncSession, now: datetime) -> int:
     for practice_id, time_zone, years in practices:
         cutoff = min(retention_cutoff(now, zone_named(time_zone), years), floor)
         removed += await db.scalar(PURGE_ACCESS_LOG, {"practice": practice_id, "cutoff": cutoff}) or 0
+        await db.scalar(PURGE_AUTH_EVENTS, {"practice": practice_id, "cutoff": cutoff})
+    await db.scalar(PURGE_AUTH_EVENTS, {"practice": None, "cutoff": floor})
     await db.commit()
     return removed
 
@@ -82,8 +87,7 @@ async def close_practice(db: AsyncSession, actor: Actor, practice_id: str, *, co
         raise Conflict("end or block the practice before closing it")
     if is_live(await subscription_for(db, practice_id)):
         raise Conflict("cancel the practice's subscription before closing it")
-    for user in (await db.scalars(select(User).where(User.practice_id == practice.id))).all():
-        await end_all_sessions(db, user)
+    await _end_memberships(db, actor, practice.id)
     await db.execute(
         update(AddendumRequest)
         .where(AddendumRequest.practice_id == practice.id, AddendumRequest.status == "sent")
@@ -119,6 +123,17 @@ async def purge_practice(
     await db.commit()
     await _remove_practice_files(store, practice.id)
     return archive
+
+
+async def _end_memberships(db: AsyncSession, actor: Actor, practice_id: str) -> None:
+    members = select(User).join(PracticeMembership, PracticeMembership.user_id == User.id)
+    for user in (await db.scalars(members.where(PracticeMembership.practice_id == practice_id))).all():
+        await end_practice_sessions(db, user, practice_id, reason=PRACTICE_CLOSED, client=actor.client)
+    await db.execute(
+        update(PracticeMembership)
+        .where(PracticeMembership.practice_id == practice_id, PracticeMembership.ended_at.is_(None))
+        .values(ended_at=utcnow())
+    )
 
 
 async def _confirmed_practice(db: AsyncSession, practice_id: str, confirm_name: str, *, verb: str) -> Practice:

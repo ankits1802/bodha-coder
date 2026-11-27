@@ -6,47 +6,77 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import Actor
-from app.models import Note, NoteChange
+from app.models import Analysis, CodeSet, Decision, Provider
+from app.services.attestations import attestation_view, note_attestations
+from app.services.claim_exports import export_view, note_exports
+from app.services.claim_snapshots import note_snapshots, snapshot_view
+from app.services.memberships import member_names
+from app.services.note_change_history import note_change_rows
+from app.services.pointer_decisions import read_pointer_key
 
-__all__ = ["LABELLED_FIELDS", "note_change_rows", "record_note_change"]
-
-LABELLED_FIELDS = ("assignee", "payer")
-
-
-def record_note_change(
-    db: AsyncSession,
-    actor: Actor,
-    note: Note,
-    field: str,
-    *,
-    old: str | None,
-    new: str | None,
-    reason: str | None = None,
-) -> None:
-    db.add(
-        NoteChange(note_id=note.id, actor_id=actor.user.id, field=field, old_value=old, new_value=new, reason=reason)
-    )
+__all__ = ["note_history"]
 
 
-async def note_change_rows(db: AsyncSession, note_id: str, labels: Mapping[str, str]) -> list[dict[str, Any]]:
-    rows = await db.scalars(
-        select(NoteChange).where(NoteChange.note_id == note_id).order_by(NoteChange.created_at, NoteChange.id)
-    )
-    return [
-        {
-            "field": row.field,
-            "old": _shown(row.field, row.old_value, labels),
-            "new": _shown(row.field, row.new_value, labels),
-            "reason": row.reason,
-            "by": labels.get(row.actor_id or ""),
-            "at": row.created_at.isoformat(),
-        }
-        for row in rows
-    ]
+async def note_history(db: AsyncSession, note_id: str, practice_id: str) -> dict[str, list[dict[str, Any]]]:
+    names = await member_names(db, practice_id)
+    analyses = await db.scalars(select(Analysis).where(Analysis.note_id == note_id).order_by(Analysis.revision))
+    code_sets = await db.scalars(select(CodeSet).where(CodeSet.note_id == note_id).order_by(CodeSet.created_at))
+    decisions = await db.scalars(select(Decision).where(Decision.note_id == note_id).order_by(Decision.created_at))
+    return {
+        "analyses": [_analysis(row) for row in analyses],
+        "code_sets": [_code_set(row, names) for row in code_sets],
+        "decisions": [_decision(row, names) for row in decisions],
+        "snapshots": [snapshot_view(row) for row in await note_snapshots(db, note_id)],
+        "exports": [
+            {**export_view(export), "snapshot_revision": item.snapshot_revision}
+            for export, item in await note_exports(db, note_id)
+        ],
+        "attestations": await _attestations(db, note_id),
+        "changes": await note_change_rows(db, note_id, practice_id),
+    }
 
 
-def _shown(field: str, value: str | None, labels: Mapping[str, str]) -> str | None:
-    if value is None or field not in LABELLED_FIELDS:
-        return value
-    return labels.get(value, value)
+def _analysis(row: Analysis) -> dict[str, Any]:
+    return {
+        "revision": row.revision,
+        "reason": row.reason,
+        "status": row.status,
+        "model": row.model,
+        "finished_at": row.finished_at.isoformat() if row.finished_at else None,
+        "error": row.error,
+    }
+
+
+def _code_set(row: CodeSet, names: Mapping[str, str]) -> dict[str, Any]:
+    return {
+        "kind": row.kind,
+        "revision": row.revision,
+        "codes": row.codes,
+        "reason": row.reason,
+        "by": names.get(row.actor_id or ""),
+        "role": row.actor_role,
+        "at": row.created_at.isoformat(),
+        "override_reason": row.override_reason,
+        "override_note": row.override_note,
+    }
+
+
+def _decision(row: Decision, names: Mapping[str, str]) -> dict[str, Any]:
+    parsed = read_pointer_key(row.suggestion_key)
+    return {
+        "key": row.suggestion_key,
+        "choice": row.choice,
+        "by": names.get(row.actor_id),
+        "role": row.actor_role,
+        "at": row.created_at.isoformat(),
+        "pointers": {"code": parsed[0], "diagnoses": list(parsed[1])} if parsed else None,
+        "override_reason": row.override_reason,
+        "override_note": row.override_note,
+    }
+
+
+async def _attestations(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
+    rows = await note_attestations(db, note_id)
+    providers = {row.provider_id for row in rows}
+    names = dict((await db.execute(select(Provider.id, Provider.name).where(Provider.id.in_(providers)))).all())
+    return [attestation_view(row, names.get(row.provider_id, "")) for row in rows]

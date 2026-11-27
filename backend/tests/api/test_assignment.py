@@ -1,4 +1,4 @@
-from tests.builders import invite_member, practice_with_provider, reviewed_note, sign_in
+from tests.builders import DOCUMENTED, invite_member, practice_with_provider, reviewed_note, sign_in
 
 CODER = {"name": "Priya Nair", "email": "priya@lakeside.example.com", "role": "coder"}
 
@@ -82,7 +82,9 @@ async def test_approving_keeps_the_assignment(harness, icd_catalog):
     admin_id = await _my_id(harness, practice.admin)
     assert (await _assign(harness, practice.admin, [note_id], admin_id)).status_code == 200
     await harness.client.put(
-        f"/api/notes/{note_id}/decisions", headers=practice.admin, json={"choices": {"dx:I10": "keep"}}
+        f"/api/notes/{note_id}/decisions",
+        headers=practice.admin,
+        json={"choices": {"dx:I10": "keep"}, "reasons": {"dx:I10": DOCUMENTED}},
     )
 
     approved = await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)

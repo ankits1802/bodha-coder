@@ -50,6 +50,7 @@ control uses the action colour.
 | Control | Behaviour |
 |---|---|
 | Select | A field-shaped button with the chosen label and a chevron. It opens a floating list below the field, or above it when there is no room, at most 320 px tall and scrolling, never clipped by a dialog or a table. The chosen option carries a check mark and status options carry their dot. Arrow keys, Home, End and Page keys move; typing jumps to the first matching label; Enter or Space chooses; Escape closes and returns focus; Tab chooses and moves on, like a native select; a click outside closes. Lists of more than twelve options open with a search box that filters by label and says No matches. Forms use the full field, filter bars the compact pill, table rows the borderless inline form. |
+| Practice switcher | At the top of the sidebar, only for a person in two or more practices: the current practice's name with a downward chevron (its initials in a small tile when the sidebar is collapsed) opens a menu of the practice names with the current one checked. Focus starts on the current practice; arrow keys move, Enter chooses, Escape or Tab closes and returns focus. Choosing another practice reloads the app on that practice's home. |
 | Date picker | A text field showing the day as the app writes it (27 Nov 2026) with a calendar button. Typed days are read day first (27/11/2026), as ISO or in the written form; a day that cannot be read or lies outside the allowed range turns the field red when it loses focus and is not passed on. The calendar starts weeks on Monday, rings today, fills the chosen day in dark, disables days outside the range, and offers month and year lists and Today. Arrows move by day and week, Page Up and Page Down by month (with Shift by year), Home and End to the ends of the week, Enter picks, Escape closes; focus returns to the calendar button. A date range keeps its end on or after its start. |
 
 ## Feedback and flow
@@ -64,6 +65,21 @@ focus, not only on submit.
 Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.
+
+## Tour
+
+The first sign-in to each console opens a guided tour of every area the person's role can reach
+([0039](decisions/0039-first-sign-in-tour.md)).
+
+| Rule | How |
+|---|---|
+| Spotlight | The page dims with the scrim colour except a ring around the real element (its sidebar entry, the search action or the account area's "Take the tour"), padded 6 px with the field radius and a white 2 px outline. Each area's page opens behind its step |
+| Card | White panel, 20 rem wide or the screen less 2 rem: "3 of 12", a headline title, one line of at most twelve words, Skip tour (plain) at the left and Back (secondary) and Next or Done (primary, the only purple) at the right. No helper copy beyond the line |
+| Placement | Right of the target, else below, above or left, wherever the whole card fits with 16 px to spare; it never covers the target. With no room, or when a step has no element (welcome, note review), the card is centred over the dimmed page |
+| Keyboard | Focus starts on Next and stays in the card; Right and Left move, Enter moves on, Escape skips. Each new step is read out with "highlighted" when an element is lit |
+| Small screens | Below the sidebar breakpoint the menu opens first and the card sits below or above the entry |
+| Motion | The ring and card slide with `transform` only under `motion-safe`; reduced motion jumps and scrolls without smoothing |
+| Replay | "Take the tour" on Help and in the account area (a compass icon in the collapsed sidebar) |
 
 ## Motion and haptics
 

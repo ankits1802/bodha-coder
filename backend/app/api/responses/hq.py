@@ -3,11 +3,13 @@ from typing import Literal
 from app.api.responses.base import View
 from app.api.responses.team import MemberStatus
 from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, PRACTICE_STATUSES, SUBSCRIPTION_STATUSES
+from app.services.hq_admins import OUTCOMES
 from app.services.plans import PLAN_KEYS
 from app.services.practice_accounts import SIGNUP_SOURCES
 
 __all__ = [
     "ActivityChange",
+    "AdminAppointed",
     "AdminLinkSent",
     "AuditChain",
     "AuditVerification",
@@ -28,6 +30,8 @@ class HqOverview(View):
     people: int
     read_last_24h: int
     tokens_last_24h: int
+    cost_last_24h_usd: float
+    unpriced_last_24h: int
     failed_last_24h: int
     waiting: int
     running: int
@@ -68,12 +72,16 @@ class HqTeamMember(View):
     last_active_at: str | None
 
 
+class AdminAppointed(View):
+    outcome: Literal[OUTCOMES]
+
+
 class AdminLinkSent(View):
     sent: Literal["invite", "reset"]
 
 
 class Renewal(View):
-    renews_on: str
+    renews_on: str | None
 
 
 class HqPlace(View):

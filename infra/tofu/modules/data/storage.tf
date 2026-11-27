@@ -96,8 +96,13 @@ resource "aws_s3_bucket_lifecycle_configuration" "documents" {
 
     filter {}
 
+    noncurrent_version_transition {
+      noncurrent_days = 90
+      storage_class   = "GLACIER_IR"
+    }
+
     noncurrent_version_expiration {
-      noncurrent_days = 30
+      noncurrent_days = var.retention_days
     }
 
     expiration {

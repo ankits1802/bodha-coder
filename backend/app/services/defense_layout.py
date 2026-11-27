@@ -9,6 +9,13 @@ from zoneinfo import ZoneInfo
 from app.adapters.pdf_writer import PdfBlock, PdfDocument, PdfFacts, PdfHeading, PdfPageBreak, PdfTable, PdfText
 from app.codes.billing_codes import Code
 from app.codes.fees import ClaimEstimate
+from app.services.defense_record_layout import (
+    ADDENDUM_LABEL,
+    CHOICE_LABELS,
+    PacketRecords,
+    packet_moment,
+    record_blocks,
+)
 from app.services.finding import Finding
 
 __all__ = [
@@ -24,10 +31,8 @@ __all__ = [
 ]
 
 TITLE = "Audit defense packet"
-ADDENDUM_LABEL = "Addendum (amendment to the original note)"
 NOT_RECORDED = "Not recorded"
 KIND_LABELS = {"em": "Visit level", "diagnosis": "Diagnosis", "code_review": "Procedure code", "modifier": "Modifier"}
-CHOICE_LABELS = {"accept": "Accepted", "keep": "Kept", "add": "Added", "ask": "Asked the provider", "skip": "Skipped"}
 MDM_ELEMENTS = (
     ("problems", "Problems addressed"),
     ("data", "Data reviewed and analysed"),
@@ -61,6 +66,7 @@ class DecidedFinding:
     choice: str
     decided_by: str | None
     decided_at: datetime | None
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -93,6 +99,7 @@ class PacketFacts:
     analyses: tuple[tuple[str, ...], ...]
     analysis_label: str
     generated: PacketEvent
+    records: PacketRecords
 
 
 def patient_initials(name: str | None) -> str:
@@ -103,6 +110,7 @@ def patient_initials(name: str | None) -> str:
 def packet_document(facts: PacketFacts) -> PdfDocument:
     blocks: list[PdfBlock] = [*_cover(facts), PdfPageBreak(), *_visit(facts), *_claim(facts), *_em_basis(facts)]
     blocks += [*_decided(facts), *_checks(facts), *_requests(facts), *_history(facts), *_analyses(facts)]
+    blocks += record_blocks(facts.records, facts.zone)
     return PdfDocument(TITLE, f"Bodha Assure · {TITLE} · {facts.visit.practice_name}", tuple(blocks))
 
 
@@ -110,13 +118,9 @@ def _day(moment: date) -> str:
     return moment.strftime("%d %b %Y")
 
 
-def _moment(moment: datetime, zone: ZoneInfo) -> str:
-    return moment.astimezone(zone).strftime("%d %b %Y %H:%M %Z")
-
-
 def _cover(facts: PacketFacts) -> list[PdfBlock]:
     approved = facts.approved
-    status = f"Approved {_moment(approved.at, facts.zone)} by {approved.who}" if approved else "Not approved"
+    status = f"Approved {packet_moment(approved.at, facts.zone)} by {approved.who}" if approved else "Not approved"
     rows = (
         ("Practice", facts.visit.practice_name),
         ("Provider", facts.visit.provider_label),
@@ -128,7 +132,7 @@ def _cover(facts: PacketFacts) -> list[PdfBlock]:
         ("Visit type", facts.visit.visit_type),
         ("Claim", status),
         ("Analysis", facts.analysis_label),
-        ("Prepared", f"{_moment(facts.generated.at, facts.zone)} by {facts.generated.who}"),
+        ("Prepared", f"{packet_moment(facts.generated.at, facts.zone)} by {facts.generated.who}"),
     )
     return [PdfHeading(TITLE, 1), PdfFacts(rows)]
 
@@ -209,13 +213,16 @@ def _decided(facts: PacketFacts) -> list[PdfBlock]:
     for item in facts.decided:
         finding = item.finding
         change = " → ".join(code for code in (finding.code_before, finding.code_after) if code)
-        when = f" by {item.decided_by}, {_moment(item.decided_at, facts.zone)}" if item.decided_at else " by default"
+        when = (
+            f" by {item.decided_by}, {packet_moment(item.decided_at, facts.zone)}" if item.decided_at else " by default"
+        )
         line = " · ".join(part for part in (KIND_LABELS.get(finding.kind, finding.kind), change) if part)
         blocks += [
             PdfHeading(finding.title or line, 3),
             PdfText(f"{line} · {CHOICE_LABELS[item.choice]}{when}", "secondary"),
         ]
         blocks += [PdfText(finding.reasoning)] if finding.reasoning else []
+        blocks += [PdfText(f"Override reason: {item.reason}")] if item.reason else []
         blocks += _quotes(finding.evidence)
     return blocks
 
@@ -229,20 +236,22 @@ def _requests(facts: PacketFacts) -> list[PdfBlock]:
     if not facts.requests:
         return [*blocks, PdfText("No questions were sent to the provider.", "secondary")]
     for request in facts.requests:
-        sent = f"Sent {_moment(request.sent_at, facts.zone)} by {request.sent_by} · {request.channel}"
+        sent = f"Sent {packet_moment(request.sent_at, facts.zone)} by {request.sent_by} · {request.channel}"
         blocks += [
             PdfHeading(f"{request.provider_label} · {request.status.capitalize()}", 3),
             PdfText(sent, "secondary"),
         ]
         blocks.append(PdfTable(("Question", "Answer"), request.answers, (3, 2)))
         if request.addendum_text and request.signed_at:
-            signed = f"{ADDENDUM_LABEL} · signed {_moment(request.signed_at, facts.zone)} by {request.provider_label}"
+            signed = (
+                f"{ADDENDUM_LABEL} · signed {packet_moment(request.signed_at, facts.zone)} by {request.provider_label}"
+            )
             blocks += [PdfHeading(signed, 3), PdfText(request.addendum_text, "quote")]
     return blocks
 
 
 def _history(facts: PacketFacts) -> list[PdfBlock]:
-    rows = tuple((_moment(event.at, facts.zone), event.who, event.what) for event in facts.history)
+    rows = tuple((packet_moment(event.at, facts.zone), event.who, event.what) for event in facts.history)
     return [PdfHeading("Decision history"), PdfTable(("When", "Who", "What"), rows, (2, 2, 5))]
 
 

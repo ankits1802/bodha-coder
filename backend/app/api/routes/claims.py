@@ -8,12 +8,12 @@ from pydantic import Field
 
 from app.api.blinding import SightedReader
 from app.api.bodies import Body
-from app.api.responses.base import ExactRoute
+from app.api.responses.base import ExactRoute, attachment
 from app.api.responses.claims import ClaimChecks, ClaimLinesExport
+from app.api.wiring import Store
 from app.core.deps import Actor, Db, require
 from app.core.roles import BILLERS
-from app.models import utcnow
-from app.services import claim_checks, claim_lines
+from app.services import claim_checks, claim_exports
 
 router = APIRouter(tags=["claims"], route_class=ExactRoute)
 Biller = Annotated[Actor, Depends(require(*BILLERS))]
@@ -29,16 +29,9 @@ class ClaimLinesBody(Body):
     response_model=ClaimLinesExport,
     responses={200: {"content": {"text/csv": {"schema": {"type": "string"}}}}},
 )
-async def lines(body: ClaimLinesBody, db: Db, actor: Biller) -> Response | dict[str, Any]:
-    claims = await claim_lines.claim_lines(db, actor, body.note_ids)
-    if body.format == "json":
-        return claim_lines.claims_json(claims)
-    name = f"bodha-claim-lines-{utcnow():%Y%m%d-%H%M}.csv"
-    return Response(
-        claim_lines.claims_csv(claims),
-        media_type="text/csv",
-        headers={"Content-Disposition": f'attachment; filename="{name}"'},
-    )
+async def lines(body: ClaimLinesBody, db: Db, store: Store, actor: Biller) -> Response:
+    exported = await claim_exports.export_claim_lines(db, store, actor, body.note_ids, as_json=body.format == "json")
+    return attachment(exported.content, exported.media_type, exported.export.file_name)
 
 
 @router.get("/notes/{note_id}/claim-checks", response_model=ClaimChecks)

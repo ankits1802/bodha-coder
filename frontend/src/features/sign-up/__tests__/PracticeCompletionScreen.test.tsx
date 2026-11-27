@@ -41,6 +41,7 @@ describe("PracticeCompletionScreen", () => {
       email: "omar@harbor.example.com",
       name: "Omar Haddad",
       provider: "microsoft",
+      has_account: false,
     });
   });
 

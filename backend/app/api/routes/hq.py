@@ -7,14 +7,17 @@ from fastapi import APIRouter, Depends, Query, Request
 from app.api.bodies import (
     ConfirmPracticeBody,
     DemoBody,
+    HqAdminBody,
     HqInviteBody,
     HqMemberBody,
     PlaceBody,
     PracticeBody,
     PracticeUpdateBody,
+    RenewBody,
 )
 from app.api.responses.base import Created, ExactRoute
 from app.api.responses.hq import (
+    AdminAppointed,
     AdminLinkSent,
     AuditVerification,
     DemoRequestRow,
@@ -30,7 +33,7 @@ from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import audit_chain, hq, hq_team, retention
+from app.services import audit_chain, hq, hq_admins, hq_team, retention
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"], route_class=ExactRoute)
@@ -91,9 +94,16 @@ async def admin_link(practice_id: str, db: Db, mail: Mail, actor: HqActor) -> di
     return {"sent": await hq.send_admin_link(db, mail, actor, practice_id)}
 
 
+@router.post("/hq/practices/{practice_id}/admins", response_model=AdminAppointed)
+async def appoint_admin(practice_id: str, body: HqAdminBody, db: Db, mail: Mail, actor: HqActor) -> dict[str, str]:
+    appointment = hq_admins.Appointment(body.name, str(body.email), body.reason)
+    return {"outcome": await hq_admins.appoint_admin(db, mail, actor, practice_id, appointment)}
+
+
 @router.post("/hq/practices/{practice_id}/renew", response_model=Renewal)
-async def renew(practice_id: str, db: Db, actor: HqActor) -> dict[str, str]:
-    return {"renews_on": (await hq.renew_practice(db, actor, practice_id)).isoformat()}
+async def renew(practice_id: str, body: RenewBody, db: Db, actor: HqActor) -> dict[str, str | None]:
+    until = await hq.renew_practice(db, actor, practice_id, body.until)
+    return {"renews_on": until.isoformat() if until else None}
 
 
 @router.get("/hq/places", response_model=list[HqPlace])
@@ -184,6 +194,6 @@ async def demo_requests(db: Db, actor: HqActor) -> list[dict[str, Any]]:
 
 @router.post("/demo-requests", status_code=204)
 async def demo_request(body: DemoBody, request: Request, db: Db) -> None:
-    await hit(db, DEMO_PER_IP, client_of(request)[0])
+    await hit(db, DEMO_PER_IP, client_of(request).ip)
     db.add(DemoRequest(name=body.name, email=str(body.email), organization=body.organization, message=body.message))
     await db.commit()

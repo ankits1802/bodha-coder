@@ -23,6 +23,9 @@ function finding(overrides: Partial<Finding>): Finding {
     default_choice: "accept",
     choice: "accept",
     allowed: ["accept", "keep"],
+    departing_choices: [],
+    override: null,
+    override_needed: false,
     ...overrides,
   };
 }

@@ -5,7 +5,7 @@ import { clearSession, setSession } from "@/lib/session/store";
 import { HelpScreen } from "../HelpScreen";
 
 function signIn(role: Role): void {
-  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, billing_only: false, practice: null } });
+  setSession({ access_token: "token", user: { id: "user-1", name: "Priya Nair", email: "priya@example.com", role, billing_only: false, practice: null, practices: [] } });
 }
 
 function headings(): string[] {

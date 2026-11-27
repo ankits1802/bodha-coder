@@ -10,6 +10,7 @@ export const SHARED_TEXT = {
   brand: "Bodha Assure",
   tagline: "Clinical coding review",
   platformAdministration: "Platform administration",
+  practiceSwitcher: { label: (name: string) => `Practice: ${name}` },
   password: { show: "Show password", hide: "Hide password" },
   identityProviders: {
     label: "Sign-in services",
@@ -77,6 +78,7 @@ export const SHARED_TEXT = {
     security: "Security",
     hqOverview: "Overview",
     hqPractices: "Practices",
+    hqSpend: "Spend",
     hqActivity: "Activity log",
     hqDemos: "Demo requests",
     hqTeam: "Team",

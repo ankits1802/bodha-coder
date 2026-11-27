@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
-import { hasFinePointer, prefersReducedMotion } from "./progress";
+import { hasFinePointer, prefersReducedMotion } from "@/lib/media";
 
 function observe(entries: IntersectionObserverEntry[]): void {
   for (const entry of entries) {

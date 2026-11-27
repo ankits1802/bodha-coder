@@ -40,6 +40,7 @@ export function NavEntry({ href, icon, label, active, collapsed, count, onNaviga
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
         title={collapsed ? label : undefined}
+        data-tour={href}
         className={entryClasses(collapsed, active)}
       >
         <NavIcon name={icon} />
@@ -56,6 +57,7 @@ export function ActionEntry({ icon, label, collapsed, onClick }: { icon: NavIcon
       type="button"
       onClick={onClick}
       title={collapsed ? label : undefined}
+      data-tour={icon}
       className={`cursor-pointer text-left ${collapsed ? "" : "w-full"} ${entryClasses(collapsed, false)}`}
     >
       <NavIcon name={icon} />

@@ -1,15 +1,14 @@
 from app.ai.errors import ModelRequestRejected
 from app.core.config import get_settings
-from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.builders import practice_with_provider, sign_in, upload_note
+from tests.builders import analysis_deps, practice_with_provider, sign_in, upload_note
 from tests.fakes import FailingReviewer
 
 REASON = "The Gemini account has no credits left (HTTP 402)."
 
 
 async def _fail_next_read(harness, icd_catalog) -> None:
-    deps = AnalysisDeps(FailingReviewer(ModelRequestRejected(REASON, status=402)), None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, FailingReviewer(ModelRequestRejected(REASON, status=402)))
     assert await process_one(deps, get_settings()) is True
 
 

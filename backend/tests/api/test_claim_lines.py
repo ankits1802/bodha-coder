@@ -2,7 +2,7 @@ from sqlalchemy import update
 
 from app.core.db import SessionFactory
 from app.models import Note
-from tests.builders import invite_member, reviewed_note, sign_in
+from tests.builders import DOCUMENTED, invite_member, reviewed_note, sign_in
 
 ELENA = {
     "name": "Elena Varga",
@@ -22,7 +22,7 @@ CSV_HEADER = (
 
 async def _bill(harness, practice, note_id: str, codes: str) -> None:
     edited = await harness.client.put(
-        f"/api/notes/{note_id}/billed-codes", headers=practice.admin, json={"codes": codes}
+        f"/api/notes/{note_id}/billed-codes", headers=practice.admin, json={"codes": codes, "reason": DOCUMENTED}
     )
     assert edited.status_code == 200, edited.text
 
@@ -124,7 +124,7 @@ async def test_claim_lines_point_every_line_to_the_first_four_diagnoses(harness,
     }
 
 
-async def test_claim_lines_as_csv_leave_the_visit_ready_to_export(harness, icd_catalog):
+async def test_claim_lines_as_csv_mark_the_visit_exported(harness, icd_catalog):
     practice, note_id, patient = await _approved_with_group_billing(harness, icd_catalog)
 
     response = await harness.client.post(
@@ -139,8 +139,8 @@ async def test_claim_lines_as_csv_leave_the_visit_ready_to_export(harness, icd_c
     assert header == CSV_HEADER
     assert first == f"{shared},1,99214,,,,,1,ABCD,{diagnoses}"
     assert second == f"{shared},2,96127,,,,,2,ABCD,{diagnoses}"
-    billing = (await harness.client.get("/api/billing", headers=practice.admin)).json()
-    assert (billing["summary"]["ready"], billing["items"][0]["exported_at"]) == (1, None)
+    billing = (await harness.client.get("/api/billing?show=exported", headers=practice.admin)).json()
+    assert billing["summary"]["ready"] == 0 and billing["items"][0]["exported_at"] is not None
 
 
 async def test_claim_lines_need_an_approved_visit_and_a_biller(harness, icd_catalog):
@@ -159,7 +159,9 @@ CLAIM_DIAGNOSES = ["E11.65", "N18.30", "I12.9", "R20.2"]
 
 
 async def _link(harness, headers, note_id: str, lines: list[dict]):
-    return await harness.client.put(f"/api/notes/{note_id}/pointers", headers=headers, json={"lines": lines})
+    return await harness.client.put(
+        f"/api/notes/{note_id}/pointers", headers=headers, json={"lines": lines, "reason": DOCUMENTED}
+    )
 
 
 async def _billed_with_screening(harness, icd_catalog):

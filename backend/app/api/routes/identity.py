@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Request
@@ -28,6 +28,8 @@ from app.services import auth, identity_sign_in, signup
 
 router = APIRouter(prefix="/auth", tags=["auth"], route_class=ExactRoute)
 SIGNED_IN_FRAGMENT = "signed_in"
+SIGN_IN = identity_sign_in.SIGN_IN_INTENT
+Intent = Literal[identity_sign_in.INTENTS]
 SIGN_UP_PAGE = "/sign-up/practice"
 
 
@@ -40,9 +42,9 @@ async def providers(found: IdentityProviders, site: CurrentSite) -> dict[str, An
 
 
 @router.get("/{provider}/start", response_class=RedirectResponse, status_code=302)
-async def provider_start(chosen: ChosenProvider, site: CurrentSite) -> RedirectResponse:
+async def provider_start(chosen: ChosenProvider, site: CurrentSite, intent: Intent = SIGN_IN) -> RedirectResponse:
     try:
-        started = await identity_sign_in.start(chosen, site)
+        started = await identity_sign_in.start(chosen, site, intent=intent)
     except ProviderUnreachable:
         return _to_sign_in(site, urlencode({"error": "failed", "provider": chosen.name}))
     response = RedirectResponse(started.url, status_code=302)
@@ -61,10 +63,9 @@ async def provider_callback(
     code: str | None = None,
     state: str | None = None,
 ) -> RedirectResponse:
-    ip, agent = client_of(request)
     returned = identity_sign_in.ProviderReturn(code=code, state=state, cookie=started)
     try:
-        result = await identity_sign_in.finish(db, chosen, returned, site, ip=ip, agent=agent)
+        result = await identity_sign_in.finish(db, chosen, returned, site, client=client_of(request))
     except identity_sign_in.SignInRefused as error:
         response = _refused(site, error.reason, chosen.name)
     except PlanEnded:

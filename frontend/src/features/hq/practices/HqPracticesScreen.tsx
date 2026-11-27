@@ -13,6 +13,7 @@ import { getHqPractices } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
 import { HQ_TEXT } from "../strings";
 import { AddPracticeDialog } from "./AddPracticeDialog";
+import { AppointAdminDialog } from "./AppointAdminDialog";
 import { EditPracticeDialog } from "./EditPracticeDialog";
 import { PlacesPanel } from "./PlacesPanel";
 import { PracticeActionDialog } from "./PracticeActionDialog";
@@ -30,6 +31,7 @@ export function HqPracticesScreen() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<HqPractice | null>(null);
   const [action, setAction] = useState<PracticeAction | null>(null);
+  const [appointing, setAppointing] = useState<HqPractice | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const list = remote.state.status === "success" ? remote.state.data : null;
   const providerTotal = list ? list.reduce((sum, practice) => sum + practice.providers, 0) : 0;
@@ -71,6 +73,10 @@ export function HqPracticesScreen() {
             <PracticesTable
               practices={data.filter((practice) => inPracticeFilter(practice, filter))}
               onEdit={setEditing}
+              onAppoint={(practice) => {
+                setNotice(null);
+                setAppointing(practice);
+              }}
               onAction={(kind, practice) => {
                 setNotice(null);
                 setAction({ kind, practice });
@@ -82,6 +88,16 @@ export function HqPracticesScreen() {
       <PlacesPanel />
       {adding ? <AddPracticeDialog onClose={() => setAdding(false)} onAdded={() => { setAdding(false); remote.reload(); }} /> : null}
       {editing ? <EditPracticeDialog practice={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); remote.reload(); }} /> : null}
+      {appointing ? (
+        <AppointAdminDialog
+          practice={appointing}
+          onClose={() => setAppointing(null)}
+          onAppointed={() => {
+            setAppointing(null);
+            finished(words.notices.adminAppointed(appointing.name));
+          }}
+        />
+      ) : null}
       {action ? <PracticeActionDialog key={`${action.kind}:${action.practice.id}`} action={action} onDone={finished} onClose={() => setAction(null)} /> : null}
     </>
   );

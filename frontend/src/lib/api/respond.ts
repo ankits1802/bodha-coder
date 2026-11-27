@@ -1,5 +1,15 @@
 import { request } from "./client";
-import type { AddendumAnswer, CodeSent, DocumentLink, OtherRequest, ProviderRequest, ProviderToken, RespondResult } from "./types";
+import type {
+  AddendumAnswer,
+  CodeSent,
+  DocumentLink,
+  LevelChangeBody,
+  LevelChangeResult,
+  OtherRequest,
+  ProviderRequest,
+  ProviderToken,
+  RespondResult,
+} from "./types";
 
 export function sendProviderCode(token: string): Promise<CodeSent> {
   return request<CodeSent>("/api/respond/code", { body: { token }, auth: "none" });
@@ -17,8 +27,15 @@ export function getProviderDocument(providerToken: string): Promise<DocumentLink
   return request<DocumentLink>("/api/respond/document", { auth: { bearer: providerToken } });
 }
 
-export function submitAnswers(providerToken: string, answers: AddendumAnswer[]): Promise<RespondResult> {
-  return request<RespondResult>("/api/respond", { body: { answers, confirmed: true }, auth: { bearer: providerToken } });
+export function submitAnswers(providerToken: string, answers: AddendumAnswer[], attestation: string): Promise<RespondResult> {
+  return request<RespondResult>("/api/respond", {
+    body: { answers, confirmed: true, attestation },
+    auth: { bearer: providerToken },
+  });
+}
+
+export function answerLevelChange(providerToken: string, body: LevelChangeBody): Promise<LevelChangeResult> {
+  return request<LevelChangeResult>("/api/respond/level-change", { body, auth: { bearer: providerToken } });
 }
 
 export function getOtherRequests(providerToken: string): Promise<OtherRequest[]> {

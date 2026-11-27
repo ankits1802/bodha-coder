@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CodeChip } from "@/components/ui/CodeChip";
 import { Dialog } from "@/components/ui/Dialog";
-import type { ClaimDiagnosis, PointerLine } from "@/lib/api/types";
+import type { ClaimDiagnosis, OverrideChoice, PointerLine } from "@/lib/api/types";
+import { EMPTY_OVERRIDE, toOverride } from "../overrideReasons";
 import { REVIEW_TEXT } from "../strings";
+import { OverrideReasonPicker } from "./OverrideReasonPicker";
 
 const WORDS = REVIEW_TEXT.pointers;
 export const MAX_POINTERS = 4;
@@ -15,7 +17,7 @@ interface PointerEditorProps {
   diagnoses: ClaimDiagnosis[];
   pending: boolean;
   error: string | null;
-  onSave: (pointers: string[]) => void;
+  onSave: (pointers: string[], override: OverrideChoice) => void;
   onClose: () => void;
 }
 
@@ -45,16 +47,25 @@ function DiagnosisOption({ diagnosis, position, full, onToggle }: { diagnosis: C
 
 export function PointerEditor({ line, diagnoses, pending, error, onSave, onClose }: PointerEditorProps) {
   const [chosen, setChosen] = useState<string[]>(line.pointers);
+  const [reason, setReason] = useState(EMPTY_OVERRIDE);
+  const [tried, setTried] = useState(false);
   const title = WORDS.title(line.label);
+
+  function save(pointers: string[]): void {
+    setTried(true);
+    const override = toOverride(reason);
+    if (override) onSave(pointers, override);
+  }
+
   const footer = (
     <>
       {line.stored ? (
-        <Button variant="plain" className="mr-auto" onClick={() => onSave([])} disabled={pending}>
+        <Button variant="plain" className="mr-auto" onClick={() => save([])} disabled={pending}>
           {WORDS.useDefault}
         </Button>
       ) : null}
       <Button onClick={onClose}>{WORDS.cancel}</Button>
-      <Button variant="primary" onClick={() => onSave(chosen)} pending={pending} disabled={chosen.length === 0}>
+      <Button variant="primary" onClick={() => save(chosen)} pending={pending} disabled={chosen.length === 0}>
         {WORDS.save}
       </Button>
     </>
@@ -74,6 +85,7 @@ export function PointerEditor({ line, diagnoses, pending, error, onSave, onClose
           />
         ))}
       </fieldset>
+      <OverrideReasonPicker label={REVIEW_TEXT.override.label(title)} value={reason} showProblem={tried} onChange={setReason} />
       {error ? (
         <p role="alert" className="m-0 text-footnote text-bad-text">
           {error}

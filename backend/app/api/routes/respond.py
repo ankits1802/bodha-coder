@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from app.api.bodies import CodeRequestBody, CodeVerifyBody, RespondBody, SwitchBody
+from app.api.bodies import CodeRequestBody, CodeVerifyBody, LevelChangeBody, RespondBody, SwitchBody
 from app.api.responses.base import DocumentLink, ExactRoute
 from app.api.responses.respond import CodeSent, OtherRequest, ProviderRequest, ProviderToken, RespondResult
-from app.api.wiring import Mail, Store
+from app.api.responses.review_records import LevelChangeResult
+from app.api.wiring import Mail, Store, client_of
 from app.core.config import get_settings
 from app.core.deps import Db, ProviderActor, current_provider
 from app.models import PlaceOfService, Practice, User
-from app.services import addenda
+from app.services import addenda, level_changes
+from app.services.attestations import attestation_for
 
 router = APIRouter(prefix="/respond", tags=["provider"], route_class=ExactRoute)
 ProviderSession = Annotated[ProviderActor, Depends(current_provider)]
@@ -23,8 +25,8 @@ async def send_code(body: CodeRequestBody, db: Db, mail: Mail) -> dict[str, str]
 
 
 @router.post("/verify", response_model=ProviderToken)
-async def verify(body: CodeVerifyBody, db: Db) -> dict[str, str]:
-    return {"provider_token": await addenda.verify_code(db, body.token, body.code)}
+async def verify(body: CodeVerifyBody, db: Db, request: Request) -> dict[str, str]:
+    return {"provider_token": await addenda.verify_code(db, body.token, body.code, client_of(request))}
 
 
 @router.get("", response_model=ProviderRequest)
@@ -49,6 +51,9 @@ async def request_detail(db: Db, actor: ProviderSession) -> dict[str, Any]:
         "questions": request.questions,
         "texts": [{"revision": t.revision, "source": t.source, "text": t.text} for t in texts],
         "addendum_text": request.addendum_text,
+        "purpose": request.purpose,
+        "attestation": attestation_for(request.purpose),
+        "level_change": await level_changes.level_view(db, request),
     }
 
 
@@ -80,5 +85,12 @@ async def document(db: Db, store: Store, actor: ProviderSession) -> dict[str, st
 @router.post("", response_model=RespondResult)
 async def respond(body: RespondBody, db: Db, actor: ProviderSession) -> dict[str, str]:
     answers = [addenda.Answer(item.key, item.choice, item.comment) for item in body.answers]
-    request = await addenda.answer(db, actor, answers, confirmed=body.confirmed)
+    request = await addenda.answer(db, actor, answers, confirmed=body.confirmed, attestation=body.attestation)
     return {"status": request.status, "addendum_text": request.addendum_text or ""}
+
+
+@router.post("/level-change", response_model=LevelChangeResult)
+async def answer_level_change(body: LevelChangeBody, db: Db, mail: Mail, actor: ProviderSession) -> dict[str, str]:
+    reply = level_changes.LevelAnswer(body.answer, body.comment, body.confirmed, body.attestation)
+    request = await level_changes.answer_level_change(db, mail, actor, reply)
+    return {"status": request.status, "answer": body.answer}

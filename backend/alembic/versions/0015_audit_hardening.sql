@@ -13,7 +13,7 @@ BEGIN
     END IF;
     RETURN NEW;
   END IF;
-  RAISE EXCEPTION 'bodha: % on % is refused, its rows are kept unchanged', TG_OP, TG_TABLE_NAME
+  RAISE EXCEPTION 'bodha: % refused on %; retained rows are never deleted and append-only rows never change', TG_OP, TG_TABLE_NAME
     USING ERRCODE = 'insufficient_privilege';
 END
 $body$
@@ -240,6 +240,7 @@ DECLARE
   previous text := coalesce(current_setting('bodha.maintenance', true), '');
   floor_days integer := greatest(coalesce(wait_days, 2557), 2557);
   closed timestamptz;
+  only_here text[];
   step text;
   counted integer;
   removed integer := 0;
@@ -252,6 +253,13 @@ BEGIN
     RAISE EXCEPTION 'bodha: practice % closed less than % days ago', practice, floor_days
       USING ERRCODE = 'object_not_in_prerequisite_state';
   END IF;
+  only_here := ARRAY(
+    SELECT member.user_id FROM practice_memberships AS member
+    WHERE member.practice_id = practice AND NOT EXISTS (
+      SELECT 1 FROM practice_memberships AS other
+      WHERE other.user_id = member.user_id AND other.practice_id <> practice
+    )
+  );
   PERFORM set_config('bodha.maintenance', 'on', true);
   FOREACH step IN ARRAY ARRAY[
     'DELETE FROM remittance_lines WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)
@@ -261,11 +269,18 @@ BEGIN
     'DELETE FROM audit_runs WHERE practice_id = $1',
     'DELETE FROM eval_cases WHERE practice_id = $1',
     'DELETE FROM eval_runs WHERE practice_id = $1',
+    'DELETE FROM review_comment_removals WHERE practice_id = $1',
+    'DELETE FROM review_comments WHERE practice_id = $1',
+    'DELETE FROM provider_attestations WHERE practice_id = $1',
+    'DELETE FROM audit_packages WHERE practice_id = $1',
+    'DELETE FROM claim_export_items WHERE practice_id = $1',
+    'DELETE FROM claim_exports WHERE practice_id = $1',
     'DELETE FROM note_changes WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)',
     'DELETE FROM decisions WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)',
     'DELETE FROM suggestions WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)',
     'DELETE FROM note_texts WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)',
     'DELETE FROM addendum_requests WHERE practice_id = $1',
+    'DELETE FROM approved_claims WHERE practice_id = $1',
     'DELETE FROM analysis_failures WHERE analysis_id IN
        (SELECT analyses.id FROM analyses JOIN notes ON notes.id = analyses.note_id WHERE notes.practice_id = $1)',
     'DELETE FROM analyses WHERE note_id IN (SELECT id FROM notes WHERE practice_id = $1)',
@@ -277,17 +292,39 @@ BEGIN
     'DELETE FROM access_log WHERE practice_id = $1',
     'DELETE FROM audit_chain_anchors WHERE chain = ''access_log:'' || $1',
     'DELETE FROM subscriptions WHERE practice_id = $1',
-    'DELETE FROM user_tokens WHERE user_id IN (SELECT id FROM users WHERE practice_id = $1)',
-    'DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE practice_id = $1)',
-    'DELETE FROM recovery_codes WHERE user_id IN (SELECT id FROM users WHERE practice_id = $1)',
-    'DELETE FROM user_identities WHERE user_id IN (SELECT id FROM users WHERE practice_id = $1)',
-    'DELETE FROM users WHERE practice_id = $1'
+    'DELETE FROM sessions WHERE practice_id = $1 OR user_id = ANY($2)',
+    'DELETE FROM auth_events WHERE practice_id = $1 OR user_id = ANY($2)',
+    'DELETE FROM practice_memberships WHERE practice_id = $1',
+    'DELETE FROM user_tokens WHERE user_id = ANY($2)',
+    'DELETE FROM recovery_codes WHERE user_id = ANY($2)',
+    'DELETE FROM user_identities WHERE user_id = ANY($2)',
+    'UPDATE users SET last_practice_id = NULL WHERE last_practice_id = $1',
+    'UPDATE users SET practice_id = NULL WHERE practice_id = $1 AND NOT id = ANY($2)',
+    'DELETE FROM users WHERE id = ANY($2)'
   ]::text[] LOOP
-    EXECUTE step USING practice;
+    EXECUTE step USING practice, only_here;
     GET DIAGNOSTICS counted = ROW_COUNT;
     removed := removed + counted;
   END LOOP;
   UPDATE practices SET status = 'purged', purged_at = clock_timestamp() WHERE id = practice;
+  PERFORM set_config('bodha.maintenance', previous, true);
+  RETURN removed;
+END
+$body$
+;
+CREATE FUNCTION bodha_purge_auth_events(practice text, cutoff timestamptz) RETURNS integer
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $body$
+DECLARE
+  previous text := coalesce(current_setting('bodha.maintenance', true), '');
+  removed integer;
+BEGIN
+  IF cutoff IS NULL OR cutoff > clock_timestamp() - make_interval(days => 2557) THEN
+    RAISE EXCEPTION 'bodha: sign-in events younger than 2557 days are kept' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  PERFORM set_config('bodha.maintenance', 'on', true);
+  DELETE FROM auth_events
+  WHERE created_at < cutoff AND (practice_id = practice OR (practice IS NULL AND practice_id IS NULL));
+  GET DIAGNOSTICS removed = ROW_COUNT;
   PERFORM set_config('bodha.maintenance', previous, true);
   RETURN removed;
 END
@@ -352,4 +389,20 @@ BEGIN
   END LOOP;
 END
 $body$
+;
+CREATE TRIGGER bodha_write_once BEFORE UPDATE ON analyses FOR EACH ROW EXECUTE FUNCTION bodha_write_once(
+  'id', 'note_id', 'revision', 'reason', 'created_at', 'report', 'response_key', 'prompt_key',
+  'prompt_sha256', 'document_key', 'app_version', 'generation', 'model', 'prompt_version', 'input_tokens',
+  'output_tokens', 'finished_at', 'cost_microusd', 'price_snapshot'
+)
+;
+CREATE TRIGGER bodha_write_once BEFORE UPDATE ON remittances FOR EACH ROW EXECUTE FUNCTION bodha_write_once(
+  'id', 'created_at', 'practice_id', 'file_key', 'file_name', 'payer', 'paid_on', 'uploaded_by',
+  'file_sha256'
+)
+;
+CREATE TRIGGER bodha_write_once BEFORE UPDATE ON addendum_requests FOR EACH ROW EXECUTE FUNCTION bodha_write_once(
+  'id', 'created_at', 'practice_id', 'note_id', 'analysis_id', 'provider_id', 'questions', 'sent_by',
+  'answers', 'addendum_text', 'answered_at', 'purpose', 'approved_claim_id'
+)
 ;

@@ -20,22 +20,26 @@ from app.api.routes import (
     health,
     hq,
     identity,
+    memberships,
     notes,
     plan,
     practice,
     respond,
     signup,
     team,
+    tours,
     uploads,
     work,
 )
 from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
 from app.api.routes.defensibility import router as defensibility_router
+from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.intake import router as intake_router
 from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
+from app.api.routes.review_records import router as review_records_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError, Invalid
@@ -66,6 +70,8 @@ for module in (
     identity,
     signup,
     account,
+    tours,
+    memberships,
     work,
     notes,
     uploads,
@@ -84,6 +90,8 @@ app.include_router(remittances_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
+app.include_router(expenditure_router, prefix="/api")
+app.include_router(review_records_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

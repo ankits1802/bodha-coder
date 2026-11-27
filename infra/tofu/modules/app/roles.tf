@@ -79,6 +79,12 @@ data "aws_iam_policy_document" "app" {
   }
 
   statement {
+    sid       = "SigningKey"
+    actions   = ["kms:Sign", "kms:Verify", "kms:GetPublicKey", "kms:DescribeKey"]
+    resources = [var.signing_key_arn]
+  }
+
+  statement {
     sid       = "DocumentKey"
     actions   = ["kms:GenerateDataKey", "kms:Decrypt"]
     resources = [var.kms_key_arn]

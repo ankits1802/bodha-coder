@@ -1,12 +1,13 @@
 from typing import Literal
 
 from app.adapters.oidc_providers import PROVIDER_NAMES
-from app.api.responses.base import Omittable, Role, View
+from app.api.responses.base import Omittable, PracticeRole, Role, View
 
 __all__ = [
     "Checks",
     "MfaChallenge",
     "MfaEnrolment",
+    "PracticeChoice",
     "PracticeSummary",
     "Preferences",
     "RecoveryCodeStatus",
@@ -38,6 +39,12 @@ class PracticeSummary(View):
     time_zone: str
 
 
+class PracticeChoice(View):
+    id: str
+    name: str
+    role: PracticeRole
+
+
 class User(View):
     id: str
     name: str
@@ -45,6 +52,7 @@ class User(View):
     role: Role
     billing_only: bool
     practice: PracticeSummary | None
+    practices: list[PracticeChoice]
 
 
 class SignedIn(View):

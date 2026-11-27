@@ -64,7 +64,7 @@ async def _remind(db: AsyncSession, messenger: Messenger, request: AddendumReque
     provider = await db.get_one(Provider, request.provider_id)
     practice = await db.get_one(Practice, request.practice_id)
     try:
-        await send_link(messenger, provider, request.channel, token, practice, reminder=True)
+        await send_link(messenger, provider, request.channel, token, practice, reminder=True, purpose=request.purpose)
     except (Invalid, Unavailable) as error:
         logger.warning("reminder for request %s not sent: %s", request.id, error.message)
         request.remind_at = now + RETRY_AFTER_FAILURE

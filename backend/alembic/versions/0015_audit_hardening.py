@@ -9,12 +9,12 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
-revision = "0014"
-down_revision = "0010"
+revision = "0015"
+down_revision = "0014"
 branch_labels = None
 depends_on = None
 
-FUNCTIONS = Path(__file__).with_name("0014_audit_hardening.sql")
+FUNCTIONS = Path(__file__).with_name("0015_audit_hardening.sql")
 RUNTIME_ROLE = "bodha_runtime"
 PASSWORD_VARIABLE = "RUNTIME_DATABASE_PASSWORD"
 SCRAM_ITERATIONS = 4096
@@ -22,6 +22,19 @@ NOW = sa.text("clock_timestamp()")
 OLD_ACCESS_LOG_YEARS, ACCESS_LOG_YEARS = 6, 7
 OLD_NOTE_STATUSES = "'queued', 'reading', 'ready', 'failed', 'approved', 'exported'"
 OLD_PRACTICE_STATUSES = "'trial', 'active', 'ended', 'blocked'"
+REVIEW_RECORDS = (
+    "approved_claims",
+    "claim_exports",
+    "claim_export_items",
+    "provider_attestations",
+    "review_comments",
+    "review_comment_removals",
+    "audit_packages",
+)
+REVIEW_GUARD = (
+    "CREATE FUNCTION refuse_review_record_update() RETURNS trigger LANGUAGE plpgsql AS $$\n"
+    "BEGIN\n    RAISE EXCEPTION '% rows are append-only and are never updated', TG_TABLE_NAME;\nEND\n$$"
+)
 APPEND_ONLY = (
     "decisions",
     "code_sets",
@@ -35,6 +48,8 @@ APPEND_ONLY = (
     "analysis_failures",
     "note_changes",
     "audit_chain_anchors",
+    "auth_events",
+    *REVIEW_RECORDS,
 )
 CHAINED = ("access_log", "activity")
 STAMPED = {
@@ -42,57 +57,24 @@ STAMPED = {
     "analyses": "created_at",
     "billing_events": "received_at",
 }
-WRITE_ONCE = {
-    "analyses": (
-        "id",
-        "note_id",
-        "revision",
-        "reason",
-        "created_at",
-        "report",
-        "response_key",
-        "prompt_key",
-        "prompt_sha256",
-        "document_key",
-        "app_version",
-        "generation",
-        "model",
-        "prompt_version",
-        "input_tokens",
-        "output_tokens",
-        "finished_at",
-    ),
-    "remittances": (
-        "id",
-        "created_at",
-        "practice_id",
-        "file_key",
-        "file_name",
-        "payer",
-        "paid_on",
-        "uploaded_by",
-        "file_sha256",
-    ),
-    "addendum_requests": (
-        "id",
-        "created_at",
-        "practice_id",
-        "note_id",
-        "analysis_id",
-        "provider_id",
-        "questions",
-        "sent_by",
-        "answers",
-        "addendum_text",
-        "answered_at",
-    ),
-}
-NO_DELETE = ("notes", "practices", "users", "providers", "subscriptions", "audit_runs", "audit_samples", "eval_runs")
+WRITE_ONCE = ("analyses", "remittances", "addendum_requests")
+NO_DELETE = (
+    "notes",
+    "practices",
+    "users",
+    "providers",
+    "subscriptions",
+    "audit_runs",
+    "audit_samples",
+    "eval_runs",
+    "practice_memberships",
+)
 RETAINED = (*APPEND_ONLY, *WRITE_ONCE, *NO_DELETE)
 DELETABLE = ("recovery_codes", "user_tokens", "sessions", "rate_events", "user_identities", "mips_lists", "eval_cases")
 FUNCTION_SIGNATURES = (
     "bodha_purge_practice(text, integer)",
     "bodha_purge_access_log(text, timestamptz)",
+    "bodha_purge_auth_events(text, timestamptz)",
     "bodha_practice_closure()",
     "bodha_verify_audit_log()",
     "bodha_verify_chain(text)",
@@ -109,7 +91,7 @@ FUNCTION_SIGNATURES = (
     "bodha_reject_change()",
     "bodha_maintenance(oid)",
 )
-RUNTIME_FUNCTIONS = FUNCTION_SIGNATURES[:2]
+RUNTIME_FUNCTIONS = FUNCTION_SIGNATURES[:3]
 
 
 def upgrade() -> None:
@@ -256,12 +238,13 @@ def _row_trigger(name: str, event: str, table: str, function: str) -> None:
 
 
 def _create_triggers() -> None:
+    for table in REVIEW_RECORDS:
+        _run(f"DROP TRIGGER {table}_append_only ON {table}")
+    _run("DROP FUNCTION refuse_review_record_update()")
     for table in APPEND_ONLY:
         _row_trigger("bodha_append_only", "UPDATE OR DELETE", table, "bodha_reject_change()")
     for table in (*WRITE_ONCE, *NO_DELETE):
         _row_trigger("bodha_no_delete", "DELETE", table, "bodha_reject_change()")
-    for table, columns in WRITE_ONCE.items():
-        _row_trigger("bodha_write_once", "UPDATE", table, f"bodha_write_once({', '.join(map(_literal, columns))})")
     for table, column in STAMPED.items():
         _row_trigger("bodha_stamp", "INSERT", table, f"bodha_stamp({_literal(column)})")
     for table in CHAINED:
@@ -326,6 +309,9 @@ def downgrade() -> None:
     _run("DROP TRIGGER IF EXISTS bodha_closure ON practices")
     for signature in FUNCTION_SIGNATURES:
         _run(f"DROP FUNCTION IF EXISTS {signature}")
+    _run(REVIEW_GUARD)
+    for table in REVIEW_RECORDS:
+        _row_trigger(f"{table}_append_only", "UPDATE", table, "refuse_review_record_update()")
     _restore_rows()
     for table, column in {**STAMPED, **{table: "created_at" for table in CHAINED}}.items():
         op.alter_column(table, column, server_default=None)

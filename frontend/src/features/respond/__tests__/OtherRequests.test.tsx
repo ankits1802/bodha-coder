@@ -8,6 +8,7 @@ vi.mock("@/lib/api/respond", () => ({
   getProviderRequest: vi.fn(),
   getProviderDocument: vi.fn(),
   submitAnswers: vi.fn(),
+  answerLevelChange: vi.fn(),
   getOtherRequests: vi.fn(),
   switchRequest: vi.fn(),
 }));
@@ -28,6 +29,9 @@ const ANSWERED: ProviderRequest = {
   questions: [{ key: "dx:N18.30", text: "What stage is the kidney disease?", context: [], options: ["Yes", "No", "Other"] }],
   texts: [{ revision: 1, source: "document", text: "CKD, stable." }],
   addendum_text: "Addendum by Elena Varga, MD, 27 Nov 2026.\nWhat stage is the kidney disease? Yes.",
+  purpose: "questions",
+  attestation: "This is clinically accurate",
+  level_change: null,
 };
 
 const PIKE: OtherRequest = {

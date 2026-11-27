@@ -210,7 +210,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 |---|---|---|---|---|
 | `DATABASE_URL` (`postgresql+asyncpg://bodha_runtime:…@<endpoint>:5432/bodha?ssl=require`, the runtime role) | yes | yes | | secret |
 | `MIGRATION_DATABASE_URL` (`postgresql+asyncpg://bodha_app:…@<endpoint>:5432/bodha?ssl=require`, the schema owner; `DATABASE_URL` is used when unset) | | | yes | secret |
-| `RUNTIME_DATABASE_PASSWORD` (the `bodha_runtime` password; read only by migration 0014, which creates or updates the role) | | | yes | secret |
+| `RUNTIME_DATABASE_PASSWORD` (the `bodha_runtime` password; read only by migration 0015, which creates or updates the role) | | | yes | secret |
 | `APP_VERSION` (the image tag, recorded on every analysis) | yes | yes | | plain |
 | `RETENTION_DAYS` (optional; days a closed practice's records are kept before HQ may purge them, and the floor of the access-log purge; default and minimum 2557) | yes | yes | | plain |
 | `SECRET_KEY` | yes | yes | yes | secret |
@@ -225,7 +225,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
-| `GEMINI_MODEL`, `AI_WORKERS` | | yes | | plain |
+| `GEMINI_MODEL`, `AI_WORKERS`, `MODEL_PRICES` | | yes | | plain |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
 The `web` service needs `SITE_URL=https://www.bodhaai.co` and `ADMIN_URL=https://admin.bodhaai.co` as
@@ -237,6 +237,15 @@ and `aws:kms` without a key id would use the AWS managed key rather than the buc
 `S3_ENDPOINT_URL`, `AWS_ENDPOINT_URL` or access keys on AWS: the task role supplies credentials.
 `ssl=require` encrypts the database connection; verifying the server certificate needs the RDS CA
 bundle in the image.
+
+### Model prices
+
+What each review costs is worked out when it is stored ([0035](decisions/0035-model-spend-per-provider.md))
+and shown on HQ's Spend page.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `MODEL_PRICES` | `{"gemini-3.8-flash": {"input": 0.50, "output": 3.00}}` | a JSON object from each model name, exactly as analyses record it, to its price in USD per million input and output tokens (output includes thinking tokens). An estimate: set it from Google's current price list for the region and tier in use. A model it leaves out records no cost, the worker logs that model's name once, and HQ's Spend page counts those reviews as without a price. A new price applies to reviews stored after the worker restarts; stored costs keep the price they were stored with |
 
 ### Self sign-up and sign-in services
 
@@ -386,7 +395,7 @@ admin's email, the practice id, the plan and the provider count.
   for seven years (Backups, below).
 - The master user's password is managed by RDS in Secrets Manager and used only by people. `bodha_app`
   owns the schema and runs migrations (`MIGRATION_DATABASE_URL`). The `api` and `worker` services
-  connect as `bodha_runtime` (`DATABASE_URL`), which migration 0014 creates when the `migrate` task has
+  connect as `bodha_runtime` (`DATABASE_URL`), which migration 0015 creates when the `migrate` task has
   `RUNTIME_DATABASE_PASSWORD` (use letters and digits only; the migration writes a SCRAM-SHA-256
   verifier, so the password itself never appears in SQL), and which may only read and insert, update
   tables that are not append-only, delete credentials (sessions, sign-in links, recovery codes,
@@ -543,6 +552,10 @@ account is created once with the same image and `python -m app.scripts.bootstrap
 task reading `bootstrap-hq`; further HQ owners are invited with `python -m app.scripts.invite_hq` or on
 `/hq/team`. Migration 0010 gives `user_identities.realm` the default `practice` so the release before it
 can still link practice accounts while both run; an HQ link from that release is refused until it ends.
+Migration 0014 keeps `users.practice_id` and `users.role` for the release before it and mirrors that
+release's user writes into `practice_memberships` with the `users_legacy_membership` trigger; the release
+after it drops the trigger and both columns
+([0037](decisions/0037-multi-practice-membership.md#rolling-deploy)).
 
 ### Backups and the restore drill
 

@@ -1,4 +1,4 @@
-from tests.builders import FILE_NAME, practice_with_provider, read_next_note, reviewed_note, upload_note
+from tests.builders import DOCUMENTED, FILE_NAME, practice_with_provider, read_next_note, reviewed_note, upload_note
 
 
 async def test_an_uploaded_note_is_read_and_waits_for_a_coder(harness, icd_catalog):
@@ -32,7 +32,9 @@ async def test_an_uploaded_note_is_read_and_waits_for_a_coder(harness, icd_catal
 async def test_a_decided_note_is_approved_and_exported_once(harness, icd_catalog):
     practice, note_id = await reviewed_note(harness, icd_catalog)
     decided = await harness.client.put(
-        f"/api/notes/{note_id}/decisions", headers=practice.admin, json={"choices": {"dx:I10": "keep"}}
+        f"/api/notes/{note_id}/decisions",
+        headers=practice.admin,
+        json={"choices": {"dx:I10": "keep"}, "reasons": {"dx:I10": DOCUMENTED}},
     )
     assert decided.json()["claim"] == ["99214", "I10", "E11.65", "N18.30", "I12.9", "R20.2"]
     assert decided.json()["history"]["decisions"][0]["key"] == "dx:I10"
@@ -68,7 +70,7 @@ async def test_editing_billed_codes_keeps_every_revision(harness, icd_catalog):
     edited = await harness.client.put(
         f"/api/notes/{note_id}/billed-codes",
         headers=practice.admin,
-        json={"codes": "99214, I12.9, E11.65, N18.30, R20.2"},
+        json={"codes": "99214, I12.9, E11.65, N18.30, R20.2", "reason": DOCUMENTED},
     )
     history = edited.json()["history"]
     assert [(c["kind"], c["revision"]) for c in history["code_sets"]] == [("billed", 1), ("billed", 2)]

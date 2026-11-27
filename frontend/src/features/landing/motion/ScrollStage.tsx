@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { actFor, enterProgress, pinProgress, prefersReducedMotion, throughProgress, type ProgressMode } from "./progress";
+import { prefersReducedMotion } from "@/lib/media";
+import { actFor, enterProgress, pinProgress, throughProgress, type ProgressMode } from "./progress";
 
 interface ScrollStageProps {
   mode: ProgressMode;

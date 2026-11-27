@@ -56,6 +56,9 @@ export const SECURITY: LegalDocumentData = {
         "A note that arrives by email keeps the original message as it was received.",
         "These records are append-only in the database: it rejects any change or deletion by the application, and records the time of each entry with its own clock.",
         "The access log and our activity record are hash-chained: the database stores with each entry a SHA-256 hash of the previous entry’s hash and the entry’s content, and we can verify the chain and find the first entry that does not match.",
+        "A decision that departs from Bodha’s suggestion, and every hand edit of the billed codes or diagnosis links, carries the reason the person chose, with who, their role and when.",
+        "Approving a claim freezes it as its own record: the codes, the decisions with their reasons, the approver and the model, prompt and document it came from. Claim exports use that record and keep the exact file with its SHA-256.",
+        "Provider confirmations, the wording the provider accepted and review comments are kept as written; the database refuses to change or delete these records.",
       ),
     ),
     section(

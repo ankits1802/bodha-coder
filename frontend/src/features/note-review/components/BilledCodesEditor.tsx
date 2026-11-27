@@ -7,9 +7,11 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { useAction } from "@/hooks/useAction";
 import { saveBilledCodes } from "@/lib/api/notes";
-import type { NoteDetail } from "@/lib/api/types";
+import type { NoteDetail, OverrideChoice } from "@/lib/api/types";
 import { parseCodeList } from "@/lib/validation";
+import { EMPTY_OVERRIDE, toOverride } from "../overrideReasons";
 import { REVIEW_TEXT } from "../strings";
+import { OverrideReasonPicker } from "./OverrideReasonPicker";
 
 interface BilledCodesEditorProps {
   noteId: string;
@@ -21,15 +23,21 @@ interface BilledCodesEditorProps {
 export function BilledCodesEditor({ noteId, codes, editable, onSaved }: BilledCodesEditorProps) {
   const words = REVIEW_TEXT.billed;
   const [draft, setDraft] = useState<string | null>(null);
-  const save = useAction((text: string) => saveBilledCodes(noteId, text));
+  const [reason, setReason] = useState(EMPTY_OVERRIDE);
+  const [tried, setTried] = useState(false);
+  const save = useAction((text: string, override: OverrideChoice) => saveBilledCodes(noteId, text, override));
   const invalid = draft === null ? [] : parseCodeList(draft).invalid;
   const error = invalid.length > 0 ? words.invalid(invalid.join(", ")) : save.error;
 
   async function submit(): Promise<void> {
-    if (draft === null || invalid.length > 0) return;
-    const outcome = await save.run(draft);
+    setTried(true);
+    const override = toOverride(reason);
+    if (draft === null || invalid.length > 0 || !override) return;
+    const outcome = await save.run(draft, override);
     if (!outcome.ok) return;
     setDraft(null);
+    setReason(EMPTY_OVERRIDE);
+    setTried(false);
     onSaved(outcome.value);
   }
 
@@ -60,6 +68,9 @@ export function BilledCodesEditor({ noteId, codes, editable, onSaved }: BilledCo
       <Field label={words.label} error={error} className="min-w-0 flex-[1_1_18rem]">
         {(control) => <Input {...control} value={draft} onChange={(event) => setDraft(event.target.value)} className="tabular-nums" />}
       </Field>
+      <div className="w-full">
+        <OverrideReasonPicker label={REVIEW_TEXT.override.label(words.subject)} value={reason} showProblem={tried} onChange={setReason} />
+      </div>
       <Button type="submit" size="sm" pending={save.pending} disabled={invalid.length > 0}>
         {words.save}
       </Button>

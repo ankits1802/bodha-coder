@@ -5,13 +5,15 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel } from "@/components/ui/Panel";
 import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import type { Finding, NoteDetail } from "@/lib/api/types";
+import type { Choice, Finding, NoteDetail } from "@/lib/api/types";
 import { choiceFor, decisionOrder } from "../decisionFlow";
 import { riskSummary } from "../findings";
+import { departsWith } from "../overrideReasons";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import type { Decisions } from "../useDecisions";
 import { useFindingFocus } from "../useFindingFocus";
+import type { OverridePrompt } from "../useOverridePrompt";
 import type { ReviewActions } from "../useReviewActions";
 import { AuditTab } from "./AuditTab";
 import { CodesTab } from "./CodesTab";
@@ -40,11 +42,12 @@ interface ReviewPanelProps {
   permissions: ReviewPermissions;
   actions: ReviewActions;
   decisions: Decisions;
+  prompt: OverridePrompt;
   onReplace: (detail: NoteDetail) => void;
   onAsk: (() => void) | null;
 }
 
-export function ReviewPanel({ detail, permissions, actions, decisions, onReplace, onAsk }: ReviewPanelProps) {
+export function ReviewPanel({ detail, permissions, actions, decisions, prompt, onReplace, onAsk }: ReviewPanelProps) {
   const query = useQueryParams();
   const tabs = tabsFor(detail);
   const tab = parseTab(query.get("tab"), tabs);
@@ -56,13 +59,14 @@ export function ReviewPanel({ detail, permissions, actions, decisions, onReplace
     const finding = detail.findings.find((item) => item.key === focus.currentKey);
     const choice = finding ? choiceFor(finding, accept) : null;
     if (!finding || !choice) return;
-    decisions.choose(finding, choice);
-    focus.moveAfter(finding.key);
+    prompt.request(finding, choice);
+    if (!departsWith(finding, choice)) focus.moveAfter(finding.key);
   }
 
+  const deciding = permissions.decide && focus.currentKey !== null && prompt.pending === null;
   useShortcuts("review", {
-    acceptFinding: permissions.decide && focus.currentKey ? () => decideCurrent(true) : undefined,
-    rejectFinding: permissions.decide && focus.currentKey ? () => decideCurrent(false) : undefined,
+    acceptFinding: deciding ? () => decideCurrent(true) : undefined,
+    rejectFinding: deciding ? () => decideCurrent(false) : undefined,
   });
 
   async function remind(): Promise<void> {
@@ -73,8 +77,18 @@ export function ReviewPanel({ detail, permissions, actions, decisions, onReplace
     editable: permissions.decide,
     savingKey: decisions.savingKey,
     currentKey: focus.currentKey,
-    onChoose: decisions.choose,
-    onPicked: (finding: Finding) => focus.moveAfter(finding.key),
+    onChoose: prompt.request,
+    onPicked: (finding: Finding, choice: Choice) => {
+      if (!departsWith(finding, choice)) focus.moveAfter(finding.key);
+    },
+    prompt: {
+      ...prompt,
+      confirm: (override) => {
+        const finding = prompt.pending?.finding;
+        prompt.confirm(override);
+        if (finding) focus.moveAfter(finding.key);
+      },
+    },
   };
   const panels: Record<ReviewTab, ReactNode> = {
     codes: <CodesTab detail={detail} decision={decision} onSaved={onReplace} />,

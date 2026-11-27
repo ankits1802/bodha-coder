@@ -1,4 +1,4 @@
-import type { IdentitySignupRequest, SignupRequest } from "@/lib/api/types";
+import type { IdentitySignupRequest, NewPracticeRequest, SignupRequest } from "@/lib/api/types";
 import { isEmail } from "@/lib/validation";
 import { SIGN_UP_TEXT } from "./strings";
 
@@ -41,6 +41,10 @@ export function signupRequest(draft: SignUpDraft): SignupRequest {
 
 export function identitySignupRequest(draft: SignUpDraft): IdentitySignupRequest {
   return { name: draft.name.trim(), practice_name: draft.practice_name.trim(), time_zone: draft.time_zone, agreed: true };
+}
+
+export function newPracticeRequest(draft: SignUpDraft): NewPracticeRequest {
+  return { practice_name: draft.practice_name.trim(), time_zone: draft.time_zone, agreed: true };
 }
 
 export function blankDraft(timeZone: string, values: Partial<SignUpDraft> = {}): SignUpDraft {

@@ -39,7 +39,7 @@ const KIRAN: HqTeamMember = { ...RAVI, id: "u-kiran", name: "Kiran Shah", email:
 function signedInAs(member: HqTeamMember): void {
   setSession({
     access_token: "token",
-    user: { id: member.id, name: member.name, email: member.email, role: "hq", billing_only: false, practice: null },
+    user: { id: member.id, name: member.name, email: member.email, role: "hq", billing_only: false, practice: null, practices: [] },
   });
 }
 

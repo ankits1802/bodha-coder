@@ -16,6 +16,7 @@ from app.api.bodies import (
     MipsBody,
     PayerBody,
     ProviderBody,
+    ReviewSettingsBody,
     SectionBody,
     SecurityBody,
 )
@@ -30,6 +31,7 @@ from app.api.responses.practice import (
     PracticeSetup,
 )
 from app.api.responses.practice import Provider as ProviderView
+from app.api.responses.review_records import ReviewSettings
 from app.api.wiring import BillingProviders
 from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
@@ -54,6 +56,7 @@ async def setup(db: Db, actor: Admin) -> dict[str, Any]:
             "idle_minutes": practice.idle_minutes,
             "access_log_years": practice.access_log_years,
         },
+        "review": practice_setup.review_settings(practice),
     }
 
 
@@ -71,6 +74,13 @@ async def save_checks(body: ChecksBody, db: Db, actor: Admin) -> None:
 async def save_security(body: SecurityBody, db: Db, actor: Admin) -> None:
     await practice_setup.save_security(
         db, actor, mfa_roles=body.mfa_roles, idle_minutes=body.idle_minutes, access_log_years=body.access_log_years
+    )
+
+
+@router.put("/practice/review-settings", response_model=ReviewSettings)
+async def save_review_settings(body: ReviewSettingsBody, db: Db, actor: Admin) -> dict[str, bool]:
+    return await practice_setup.save_review_settings(
+        db, actor, confirm=body.confirm_level_changes, hold=body.hold_until_confirmed
     )
 
 

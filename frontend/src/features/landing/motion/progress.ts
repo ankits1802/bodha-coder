@@ -29,15 +29,3 @@ export function throughProgress(top: number, height: number, viewport: number): 
 export function actFor(progress: number, acts: number): number {
   return Math.min(acts - 1, Math.floor(progress * acts));
 }
-
-function matches(query: string): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
-}
-
-export function prefersReducedMotion(): boolean {
-  return matches("(prefers-reduced-motion: reduce)");
-}
-
-export function hasFinePointer(): boolean {
-  return matches("(pointer: fine)");
-}

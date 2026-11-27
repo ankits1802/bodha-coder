@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { AuthFrame } from "@/components/shared/AuthFrame";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { NEW_PRACTICE_PATH } from "@/lib/api/auth";
+import type { User } from "@/lib/api/types";
 import { homeFor } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { CredentialsForm } from "./CredentialsForm";
@@ -15,16 +17,23 @@ import { RecoveryCodesStep } from "./RecoveryCodesStep";
 import { SIGN_IN_TEXT } from "./strings";
 import { useSignInFlow } from "./useSignInFlow";
 
+export function pageAfterSignIn(user: User, next: string | null): string {
+  const opensNewPractice = next === NEW_PRACTICE_PATH && user.role !== "hq" && !user.billing_only;
+  return opensNewPractice ? NEW_PRACTICE_PATH : homeFor(user);
+}
+
 export function SignInScreen() {
   const router = useRouter();
   const { user } = useSession();
-  const idle = useSearchParams().get("reason") === "idle";
+  const params = useSearchParams();
+  const idle = params.get("reason") === "idle";
+  const next = params.get("next");
   const flow = useSignInFlow();
   const { step } = flow;
 
   useEffect(() => {
-    if (user) router.replace(homeFor(user));
-  }, [user, router]);
+    if (user) router.replace(pageAfterSignIn(user, next));
+  }, [user, router, next]);
 
   return (
     <AuthFrame>

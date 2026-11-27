@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 import { CodeList } from "@/components/shared/CodeList";
 import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
-import type { AnalysisStatus, DecisionRecord, NoteDetail } from "@/lib/api/types";
+import type { AnalysisStatus, DecisionRecord, NoteDetail, OverrideReason } from "@/lib/api/types";
+import { useSession } from "@/lib/session/useSession";
+import { canUse } from "@/lib/roles";
 import { codeLabel } from "../findings";
 import { REVIEW_TEXT } from "../strings";
 import { HistoryChanges } from "./HistoryChanges";
+import { HistoryComments } from "./HistoryComments";
 import { HistoryEntry, HistoryList, joinMeta } from "./HistoryEntry";
+import { AttestationHistory, ExportHistory, SnapshotHistory } from "./HistoryRecords";
 import { HistoryRequests } from "./HistoryRequests";
 import { TabSection } from "./TabSection";
 
@@ -23,8 +27,14 @@ function reasonLabel(reason: string): string {
   return words.reason[reason] ?? reason;
 }
 
-function byLabel(name: string | null): string {
-  return words.by(name ?? words.system);
+function byLabel(name: string | null, role: string | null = null): string {
+  return words.by(role && name ? `${name} (${role})` : (name ?? words.system));
+}
+
+function overrideLabel(reason: OverrideReason | null, note: string | null): string | null {
+  if (!reason) return null;
+  const label = REVIEW_TEXT.override.reasons[reason];
+  return REVIEW_TEXT.override.given(note ? `${label} · ${note}` : label);
 }
 
 function Readings({ detail }: { detail: NoteDetail }) {
@@ -60,7 +70,7 @@ function CodeRevisions({ detail }: { detail: NoteDetail }) {
               <span className="text-footnote text-secondary">{words.revision(set.revision)}</span>
             </>
           }
-          meta={joinMeta([reasonLabel(set.reason), byLabel(set.by)])}
+          meta={joinMeta([reasonLabel(set.reason), byLabel(set.by, set.role), overrideLabel(set.override_reason, set.override_note)])}
         >
           <CodeList codes={set.codes.map(codeLabel)} />
         </HistoryEntry>
@@ -84,7 +94,11 @@ function Decisions({ detail }: { detail: NoteDetail }) {
           key={`${decision.key}-${decision.at}-${index}`}
           at={decision.at}
           title={<span className="font-medium">{decisionTitle(decision, titles)}</span>}
-          meta={joinMeta([decision.pointers ? null : words.chose(REVIEW_TEXT.choices[decision.choice]), byLabel(decision.by)])}
+          meta={joinMeta([
+            decision.pointers ? null : words.chose(REVIEW_TEXT.choices[decision.choice]),
+            byLabel(decision.by, decision.role),
+            overrideLabel(decision.override_reason, decision.override_note),
+          ])}
         />
       ))}
     </HistoryList>
@@ -101,8 +115,12 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 export function HistoryTab({ detail }: { detail: NoteDetail }) {
   const { history, requests } = detail;
+  const { user } = useSession();
   return (
     <>
+      <Section title={words.comments} count={1}>
+        <HistoryComments findings={detail.findings} />
+      </Section>
       <Section title={words.analyses} count={history.analyses.length}>
         <Readings detail={detail} />
       </Section>
@@ -117,6 +135,15 @@ export function HistoryTab({ detail }: { detail: NoteDetail }) {
       </Section>
       <Section title={words.requests} count={requests.length}>
         <HistoryRequests requests={requests} />
+      </Section>
+      <Section title={words.attestations} count={history.attestations.length}>
+        <AttestationHistory attestations={history.attestations} />
+      </Section>
+      <Section title={words.snapshots} count={history.snapshots.length}>
+        <SnapshotHistory snapshots={history.snapshots} />
+      </Section>
+      <Section title={words.exports} count={history.exports.length}>
+        <ExportHistory exports={history.exports} canDownload={canUse(user?.role, "billing")} />
       </Section>
     </>
   );

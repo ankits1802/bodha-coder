@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAction } from "@/hooks/useAction";
-import { resendInvite, resetMemberMfa, sendPasswordReset, updateMember } from "@/lib/api/team";
+import { removeMember, resendInvite, resetMemberMfa, sendPasswordReset, updateMember } from "@/lib/api/team";
 import type { PracticeRole, TeamMember } from "@/lib/api/types";
 import { TEAM_TEXT, type ConfirmKind, type SendKind } from "./strings";
 
@@ -13,6 +13,7 @@ export interface PendingConfirm {
 
 function runConfirmed({ kind, member }: PendingConfirm): Promise<void> {
   if (kind === "reset") return resetMemberMfa(member.id);
+  if (kind === "remove") return removeMember(member.id);
   return updateMember(member.id, { blocked: kind === "block" });
 }
 

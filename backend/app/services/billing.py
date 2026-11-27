@@ -10,12 +10,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code, claim_changes
 from app.core.calendar import day_bounds, today_in
-from app.core.deps import Actor
-from app.core.errors import Invalid
-from app.models import AddendumRequest, CodeSet, Note, Provider, User, utcnow
-from app.services.audit_log import record_access
+from app.models import AddendumRequest, ApprovedClaim, Note, Provider
+from app.services.claim_holds import held_for_confirmation
 from app.services.estimates import claim_amount
 from app.services.worklists import count_of
+
+__all__ = [
+    "AUTO_APPROVER",
+    "EXPORT_COLUMNS",
+    "PAGE_SIZE",
+    "ROW_LIMIT",
+    "billing_csv",
+    "billing_rows",
+    "billing_summary",
+    "billing_total",
+    "safe_cell",
+]
 
 ROW_LIMIT = 500
 AUTO_APPROVER = "Bodha (auto)"
@@ -35,24 +45,13 @@ EXPORT_COLUMNS = (
 )
 
 
-def _latest(kind: str) -> Any:
-    latest = (
-        select(CodeSet.note_id, func.max(CodeSet.revision).label("revision"))
-        .where(CodeSet.kind == kind)
-        .group_by(CodeSet.note_id)
-    )
-    return latest.subquery()
-
-
 async def billing_rows(
     db: AsyncSession, practice_id: str, *, exported: bool | None, offset: int = 0, limit: int = ROW_LIMIT
 ) -> list[dict[str, Any]]:
     query = _billing_query(practice_id, exported=exported)
     rows = (await db.execute(query.offset(offset).limit(limit))).all()
-    return [
-        _row(note, provider, approver, final_codes, billed_codes)
-        for note, provider, approver, final_codes, billed_codes in rows
-    ]
+    held = await held_for_confirmation(db, [note.id for note, _, _ in rows])
+    return [_row(note, provider, snapshot, held=note.id in held) for note, provider, snapshot in rows]
 
 
 async def billing_total(db: AsyncSession, practice_id: str, *, exported: bool | None) -> int:
@@ -60,26 +59,16 @@ async def billing_total(db: AsyncSession, practice_id: str, *, exported: bool | 
 
 
 def _billing_query(practice_id: str, *, exported: bool | None) -> Select[Any]:
-    final, billed = _latest("final"), _latest("billed")
-    final_set, billed_set = CodeSet.__table__.alias("final_set"), CodeSet.__table__.alias("billed_set")
+    latest = (
+        select(ApprovedClaim.note_id, func.max(ApprovedClaim.revision).label("revision"))
+        .group_by(ApprovedClaim.note_id)
+        .subquery()
+    )
     query = (
-        select(Note, Provider, User.name, final_set.c.codes, billed_set.c.codes)
+        select(Note, Provider, ApprovedClaim)
         .join(Provider, Provider.id == Note.provider_id)
-        .outerjoin(User, User.id == Note.approved_by)
-        .join(final, final.c.note_id == Note.id)
-        .join(
-            final_set,
-            and_(final_set.c.note_id == Note.id, final_set.c.revision == final.c.revision, final_set.c.kind == "final"),
-        )
-        .join(billed, billed.c.note_id == Note.id)
-        .join(
-            billed_set,
-            and_(
-                billed_set.c.note_id == Note.id,
-                billed_set.c.revision == billed.c.revision,
-                billed_set.c.kind == "billed",
-            ),
-        )
+        .join(latest, latest.c.note_id == Note.id)
+        .join(ApprovedClaim, and_(ApprovedClaim.note_id == Note.id, ApprovedClaim.revision == latest.c.revision))
         .where(Note.practice_id == practice_id, Note.status.in_(("approved", "exported")))
         .order_by(Note.service_date.desc(), Note.approved_at.desc())
     )
@@ -105,11 +94,9 @@ async def billing_summary(db: AsyncSession, practice_id: str, zone: ZoneInfo) ->
     }
 
 
-def _row(
-    note: Note, provider: Provider, approver: str, final_codes: list[dict[str, Any]], billed_codes: list[dict[str, Any]]
-) -> dict[str, Any]:
-    final = [Code.from_json(item) for item in final_codes]
-    billed = [Code.from_json(item) for item in billed_codes]
+def _row(note: Note, provider: Provider, snapshot: ApprovedClaim, *, held: bool) -> dict[str, Any]:
+    final = [Code.from_json(item) for item in snapshot.content.get("codes", [])]
+    billed = [Code.from_json(item) for item in snapshot.content.get("billed", [])]
     return {
         "id": note.id,
         "patient_name": note.patient_name,
@@ -120,32 +107,18 @@ def _row(
         "codes": [code.label() for code in final],
         "changed": claim_changes(final, billed),
         "estimate": claim_amount(final, note.place_code, note.service_date),
-        "approved_by": approver or AUTO_APPROVER,
+        "approved_by": snapshot.approver_name or AUTO_APPROVER,
         "approved_at": note.approved_at.isoformat() if note.approved_at else None,
         "exported_at": note.exported_at.isoformat() if note.exported_at else None,
         "cpt": [code.as_text() for code in final if code.type == "CPT"],
         "icd10": [code.code for code in final if code.type == "ICD-10"],
+        "snapshot_id": snapshot.id,
+        "snapshot_revision": snapshot.revision,
+        "held": held,
     }
 
 
-async def export_csv(db: AsyncSession, actor: Actor, note_ids: list[str] | None, *, again: bool = False) -> str:
-    if again and not note_ids:
-        raise Invalid("choose the visits to download again")
-    rows = await billing_rows(db, actor.practice_id, exported=again)
-    chosen = [row for row in rows if note_ids is None or row["id"] in note_ids]
-    if not chosen:
-        raise Invalid("nothing to export")
-    if not again:
-        stamp = utcnow()
-        for note in (await db.scalars(select(Note).where(Note.id.in_([row["id"] for row in chosen])))).all():
-            note.status, note.exported_at = "exported", stamp
-    action = "downloaded an export again" if again else "exported claims"
-    record_access(db, actor, action, detail=f"{len(chosen)} visits")
-    await db.commit()
-    return _csv(chosen)
-
-
-def _csv(rows: list[dict[str, Any]]) -> str:
+def billing_csv(rows: list[dict[str, Any]]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(EXPORT_COLUMNS)

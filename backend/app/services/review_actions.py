@@ -2,26 +2,28 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import ReviewReport
 from app.codes.billing_codes import Code, InvalidPointers, parse_code_list, with_pointers
 from app.codes.icd import IcdCatalog, format_icd
 from app.core.deps import Actor
-from app.core.errors import Conflict, Forbidden, Invalid, NotFound
-from app.models import AddendumRequest, Analysis, CodeSet, Decision, Note, utcnow
+from app.core.errors import Conflict, Invalid, NotFound
+from app.models import LEVEL_CHANGE_PURPOSE, AddendumRequest, Analysis, CodeSet, Decision, Note, utcnow
 from app.services.analysis import latest_codes, next_revision, request_analysis, save_findings
 from app.services.analysis_records import billed_context
 from app.services.audit_log import record_access
 from app.services.findings import Finding, build_findings
-from app.services.note_history import record_note_change
+from app.services.note_change_history import record_note_change
+from app.services.override_reasons import OverrideReason, departs_from_bodha, reason_text
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.pointer_decisions import POINTER_CHOICE, POINTER_KEY, pointer_key, read_pointer_key
 from app.services.routing import choices_for, claim
 
 INFO_KINDS = ("cdi_gap", "audit_risk", "audit_finding", "mips")
 RETRY_LIMIT = 500
+OVERRIDE_ACTION = "override reason"
 
 
 def allowed_choices(finding: Finding) -> tuple[str, ...]:
@@ -43,28 +45,58 @@ async def note_for(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     return note
 
 
-async def decide(db: AsyncSession, actor: Actor, note_id: str, choices: Mapping[str, str]) -> Note:
-    note = await _open_note(db, actor, note_id)
+def new_decision(note: Note, actor: Actor, key: str, choice: str, reason: OverrideReason | None) -> Decision:
+    return Decision(
+        note_id=note.id,
+        analysis_id=note.current_analysis_id,
+        suggestion_key=key,
+        choice=choice,
+        actor_id=actor.user.id,
+        actor_role=actor.role,
+        override_reason=reason.reason if reason else None,
+        override_note=reason.note if reason else None,
+    )
+
+
+async def decide(
+    db: AsyncSession,
+    actor: Actor,
+    note_id: str,
+    choices: Mapping[str, str],
+    reasons: Mapping[str, OverrideReason] | None = None,
+) -> Note:
+    note = await open_note(db, actor, note_id)
     findings = {finding.key: finding for finding in await current_findings(db, note)}
+    given = dict(reasons or {})
+    stray = sorted(set(given) - set(choices))
+    if stray:
+        raise Invalid(f"a reason needs a choice: {', '.join(stray)}")
     for key, choice in choices.items():
-        finding = findings.get(key)
-        if finding is None:
-            raise Invalid(f"unknown suggestion {key}")
-        if choice not in allowed_choices(finding):
-            raise Invalid(f"{choice} is not allowed for {key}")
-        db.add(
-            Decision(
-                note_id=note.id,
-                analysis_id=note.current_analysis_id,
-                suggestion_key=key,
-                choice=choice,
-                actor_id=actor.user.id,
-            )
-        )
+        finding = _decidable(findings, key, choice)
+        reason = given.get(key)
+        if reason is not None and not departs_from_bodha(finding, choice):
+            raise Invalid(f"{choice} on {key} follows Bodha and takes no override reason")
+        db.add(new_decision(note, actor, key, choice, reason))
+        if reason is not None:
+            record_access(db, actor, OVERRIDE_ACTION, note_id=note.id, detail=override_detail(key, choice, reason))
     await db.flush()
     await refresh_placement(db, note)
     await db.commit()
     return note
+
+
+def override_detail(subject: str, choice: str | None, reason: OverrideReason) -> str:
+    said = reason_text(reason.reason, reason.note) or ""
+    return " · ".join(part for part in (subject, choice, said) if part)[:300]
+
+
+def _decidable(findings: Mapping[str, Finding], key: str, choice: str) -> Finding:
+    finding = findings.get(key)
+    if finding is None:
+        raise Invalid(f"unknown suggestion {key}")
+    if choice not in allowed_choices(finding):
+        raise Invalid(f"{choice} is not allowed for {key}")
+    return finding
 
 
 async def current_claim(db: AsyncSession, note: Note) -> tuple[Code, ...]:
@@ -84,111 +116,33 @@ async def stored_pointers(db: AsyncSession, note_id: str) -> dict[str, tuple[str
 
 
 async def save_pointers(
-    db: AsyncSession, actor: Actor, note_id: str, lines: Sequence[tuple[str, Sequence[str]]]
+    db: AsyncSession, actor: Actor, note_id: str, lines: Sequence[tuple[str, Sequence[str]]], reason: OverrideReason
 ) -> Note:
-    note = await _open_note(db, actor, note_id)
+    note = await open_note(db, actor, note_id)
     linked = _checked_pointers(await current_claim(db, note), lines)
     for code, pointers in linked.items():
-        db.add(
-            Decision(
-                note_id=note.id,
-                analysis_id=note.current_analysis_id,
-                suggestion_key=pointer_key(code, pointers),
-                choice=POINTER_CHOICE,
-                actor_id=actor.user.id,
-            )
-        )
+        db.add(new_decision(note, actor, pointer_key(code, pointers), POINTER_CHOICE, reason))
     detail = "; ".join(f"{code} {' '.join(pointers)}".strip() for code, pointers in linked.items())
-    record_access(db, actor, "linked diagnoses", note_id=note.id, detail=detail)
+    record_access(db, actor, "linked diagnoses", note_id=note.id, detail=override_detail(detail, None, reason))
     await db.commit()
     return note
-
-
-async def approve(db: AsyncSession, actor: Actor, note_id: str, *, reason: str = "approved") -> Note:
-    note = await _open_note(db, actor, note_id)
-    findings = await current_findings(db, note)
-    if any(item.action == "review" and item.code_before for item in findings):
-        raise Conflict("fix the billed codes Bodha could not confirm before approving")
-    if await _held_for_provider(db, note.id):
-        raise Conflict("this claim is held until the provider answers")
-    codes = await current_claim(db, note)
-    if not codes:
-        raise Conflict("there are no codes to bill")
-    db.add(
-        CodeSet(
-            note_id=note.id,
-            kind="final",
-            revision=await next_revision(db, CodeSet, note.id, kind="final"),
-            codes=[code.as_json() for code in codes],
-            reason=reason,
-            actor_id=actor.user.id,
-        )
-    )
-    note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
-    note.approved_by, note.approved_at = actor.user.id, utcnow()
-    record_access(db, actor, "approved", note_id=note.id, detail=", ".join(code.label() for code in codes))
-    await db.commit()
-    return note
-
-
-async def approve_many(db: AsyncSession, actor: Actor, note_ids: list[str]) -> list[str]:
-    approved: list[str] = []
-    for note_id in note_ids:
-        note = await note_for(db, actor, note_id)
-        if note.lane != "approve":
-            raise Conflict("only notes whose codes match the note can be approved together")
-        await approve(db, actor, note_id)
-        approved.append(note_id)
-    return approved
 
 
 async def flag(db: AsyncSession, actor: Actor, note_id: str, reason: str) -> Note:
-    note = await _open_note(db, actor, note_id)
+    note = await open_note(db, actor, note_id)
     flagged = reason.strip()[:2000]
     record_note_change(db, actor, note, "flag", old=note.flag_reason, new=flagged)
     note.flag_reason, note.flagged_by, note.compliance_cleared_by = flagged, actor.user.id, None
     await refresh_placement(db, note)
-    record_access(db, actor, "flagged for compliance", note_id=note.id)
+    record_access(db, actor, "flagged for compliance", note_id=note.id, detail=reason.strip()[:300])
     await db.commit()
     return note
 
 
-async def compliance_decision(
-    db: AsyncSession, actor: Actor, note_id: str, *, decision: str, reason: str | None
+async def update_billed(
+    db: AsyncSession, actor: Actor, note_id: str, text: str, icd: IcdCatalog, *, reason: OverrideReason
 ) -> Note:
-    note = await _open_note(db, actor, note_id)
-    if note.lane != "compliance":
-        raise Conflict("this note is not waiting for compliance")
-    if note.flagged_by == actor.user.id:
-        raise Forbidden("a note can't be cleared by the person who flagged it")
-    if decision == "return":
-        record_note_change(db, actor, note, "flag", old=note.flag_reason, new=None, reason=reason)
-        note.flag_reason, note.compliance_cleared_by = None, actor.user.id
-        await refresh_placement(db, note)
-        record_access(db, actor, "returned to coder", note_id=note.id, detail=reason)
-        await db.commit()
-        return note
-    if decision == "keep":
-        if not reason:
-            raise Invalid("explain why the billed level is kept")
-        db.add(
-            Decision(
-                note_id=note.id,
-                analysis_id=note.current_analysis_id,
-                suggestion_key="em",
-                choice="keep",
-                actor_id=actor.user.id,
-            )
-        )
-        await db.flush()
-    if reason:
-        record_access(db, actor, f"compliance {decision}", note_id=note.id, detail=reason)
-    note.compliance_cleared_by = actor.user.id
-    return await approve(db, actor, note_id, reason=f"compliance {decision}")
-
-
-async def update_billed(db: AsyncSession, actor: Actor, note_id: str, text: str, icd: IcdCatalog) -> Note:
-    note = await _open_note(db, actor, note_id)
+    note = await open_note(db, actor, note_id)
     parsed = parse_code_list(text)
     if parsed.invalid:
         raise Invalid(f"not valid codes: {', '.join(parsed.invalid)}")
@@ -200,13 +154,17 @@ async def update_billed(db: AsyncSession, actor: Actor, note_id: str, text: str,
             codes=[code.as_json() for code in parsed.codes],
             reason="edited",
             actor_id=actor.user.id,
+            actor_role=actor.role,
+            override_reason=reason.reason,
+            override_note=reason.note,
         )
     )
     current = await db.get(Analysis, note.current_analysis_id) if note.current_analysis_id else None
     if current is None or current.report is None:
         raise Conflict("Bodha has not finished reading this note")
     await _rederive(db, note, current, parsed.codes, icd)
-    record_access(db, actor, "edited billed codes", note_id=note.id)
+    labels = ", ".join(code.label() for code in parsed.codes)
+    record_access(db, actor, "edited billed codes", note_id=note.id, detail=override_detail(labels, None, reason))
     await db.commit()
     return note
 
@@ -251,7 +209,7 @@ async def retry(db: AsyncSession, actor: Actor, note_id: str) -> Note:
 
 async def reopen(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     note = await note_for(db, actor, note_id)
-    await _reopen(db, actor, note)
+    await reopen_note(db, actor, note)
     await db.commit()
     return note
 
@@ -259,17 +217,30 @@ async def reopen(db: AsyncSession, actor: Actor, note_id: str) -> Note:
 async def reopen_many(db: AsyncSession, actor: Actor, note_ids: list[str]) -> list[str]:
     notes = [await note_for(db, actor, note_id) for note_id in dict.fromkeys(note_ids)]
     for note in notes:
-        await _reopen(db, actor, note)
+        await reopen_note(db, actor, note)
     await db.commit()
     return [note.id for note in notes]
 
 
-async def _reopen(db: AsyncSession, actor: Actor, note: Note) -> None:
+async def reopen_note(db: AsyncSession, actor: Actor, note: Note) -> None:
     if note.status != "approved":
         raise Conflict("only an approved note that has not been exported can be reopened")
     note.status, note.approved_by, note.approved_at = "ready", None, None
+    await cancel_level_confirmations(db, note.id)
     await refresh_placement(db, note)
     record_access(db, actor, "reopened", note_id=note.id)
+
+
+async def cancel_level_confirmations(db: AsyncSession, note_id: str) -> None:
+    await db.execute(
+        update(AddendumRequest)
+        .where(
+            AddendumRequest.note_id == note_id,
+            AddendumRequest.purpose == LEVEL_CHANGE_PURPOSE,
+            AddendumRequest.status == "sent",
+        )
+        .values(status="cancelled", remind_at=None)
+    )
 
 
 async def retry_failed(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> list[str]:
@@ -309,17 +280,8 @@ def _checked_pointers(
     return checked
 
 
-async def _open_note(db: AsyncSession, actor: Actor, note_id: str) -> Note:
+async def open_note(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     note = await note_for(db, actor, note_id)
     if note.status != "ready":
         raise Conflict("this note is not open for review")
     return note
-
-
-async def _held_for_provider(db: AsyncSession, note_id: str) -> bool:
-    held = await db.scalar(
-        select(AddendumRequest.id).where(
-            AddendumRequest.note_id == note_id, AddendumRequest.status == "sent", AddendumRequest.hold_claim.is_(True)
-        )
-    )
-    return held is not None

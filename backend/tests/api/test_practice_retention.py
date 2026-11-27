@@ -8,10 +8,10 @@ from sqlalchemy import Integer, String, bindparam, func, select, text, update
 from sqlalchemy.exc import DBAPIError
 
 from app.core.db import SessionFactory
-from app.models import AccessLog, Activity, Analysis, Decision, Note, Practice, User
+from app.models import AccessLog, Activity, Analysis, Decision, Note, Practice, PracticeMembership
 from tests.builders import maintenance, practice_with_provider, read_next_note, reviewed_note, sign_in, upload_note
 
-KEPT_TABLES = (Note, Analysis, Decision, User, AccessLog)
+KEPT_TABLES = (Note, Analysis, Decision, PracticeMembership, AccessLog)
 PURGE = text("SELECT bodha_purge_practice(:practice, :days)").bindparams(
     bindparam("practice", type_=String), bindparam("days", type_=Integer)
 )
@@ -23,7 +23,7 @@ async def _counts(practice_id: str) -> dict[str, int]:
         Note: Note.practice_id == practice_id,
         Analysis: Analysis.note_id.in_(notes),
         Decision: Decision.note_id.in_(notes),
-        User: User.practice_id == practice_id,
+        PracticeMembership: PracticeMembership.practice_id == practice_id,
         AccessLog: AccessLog.practice_id == practice_id,
     }
     async with SessionFactory() as db:
@@ -67,6 +67,11 @@ async def test_closing_a_practice_signs_everyone_out_and_keeps_every_record_and_
     assert (await harness.client.get("/api/today", headers=practice.admin)).status_code == 401
     assert await _counts(practice.id) == before
     assert set(harness.store.objects) == files
+    async with SessionFactory() as db:
+        ends = await db.scalars(
+            select(PracticeMembership.ended_at).where(PracticeMembership.practice_id == practice.id)
+        )
+        assert all(ended is not None for ended in ends.all())
     row = (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]
     closed_on = (await _closed_at(practice.id)).date()
     assert (row["status"], row["closed_at"][:10]) == ("closed", closed_on.isoformat())
@@ -132,3 +137,15 @@ async def test_closing_is_final_in_the_database(harness, icd_catalog):
     async with SessionFactory() as db:
         with pytest.raises(DBAPIError, match="closing a practice is final"):
             await db.execute(update(Practice).where(Practice.id == practice.id).values(closed_at=None))
+
+
+async def test_a_closed_practice_takes_no_new_admin_renewal_or_edit(harness, icd_catalog):
+    practice, hq, path = await _closed_practice(harness, icd_catalog)
+    await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
+    appointment = {"name": "Lee Park", "email": "lee@lakeside.example.com", "reason": "practice owner asked by email"}
+
+    added = await harness.client.post(f"{path}/admins", headers=hq, json=appointment)
+    renewed = await harness.client.post(f"{path}/renew", headers=hq, json={"until": "2099-01-31"})
+    edited = await harness.client.patch(path, headers=hq, json={"seats": 4})
+
+    assert (added.status_code, renewed.status_code, edited.status_code) == (409, 409, 409)

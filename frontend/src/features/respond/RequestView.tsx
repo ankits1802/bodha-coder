@@ -11,6 +11,7 @@ import { getProviderDocument, getProviderRequest, submitAnswers } from "@/lib/ap
 import type { AddendumAnswer, ProviderRequest, RespondResult } from "@/lib/api/types";
 import { openDocument } from "@/lib/openDocument";
 import { AnswerForm } from "./AnswerForm";
+import { LevelSide } from "./LevelSide";
 import { NotePanel } from "./NotePanel";
 import { OtherRequestsPanel } from "./OtherRequestsPanel";
 import { watchExpiry } from "./providerSession";
@@ -78,20 +79,29 @@ function Side({ request, result, pending, error, next, onSign }: SideProps) {
     );
   }
   return (
-    <AnswerForm questions={request.questions} providerName={request.provider_name} pending={pending} error={error} onSign={onSign} />
+    <AnswerForm
+      questions={request.questions}
+      providerName={request.provider_name}
+      attestation={request.attestation}
+      pending={pending}
+      error={error}
+      onSign={onSign}
+    />
   );
 }
 
 export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewProps) {
   const remote = useRemote(`respond:${providerToken}`, () => watchExpiry(getProviderRequest(providerToken), onExpired));
-  const sign = useAction((answers: AddendumAnswer[]) => watchExpiry(submitAnswers(providerToken, answers), onExpired));
+  const sign = useAction((answers: AddendumAnswer[], attestation: string) =>
+    watchExpiry(submitAnswers(providerToken, answers, attestation), onExpired),
+  );
   const pdf = useAction(() => openDocument(() => watchExpiry(getProviderDocument(providerToken), onExpired)));
   const others = useOtherRequests(providerToken, onExpired, onSwitch);
   const [result, setResult] = useState<RespondResult | null>(null);
   const request = remote.state.status === "success" ? remote.state.data : null;
 
-  async function submit(answers: AddendumAnswer[]): Promise<void> {
-    const outcome = await sign.run(answers);
+  async function submit(answers: AddendumAnswer[], attestation: string): Promise<void> {
+    const outcome = await sign.run(answers, attestation);
     if (outcome.ok) setResult(outcome.value);
   }
 
@@ -106,14 +116,18 @@ export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewP
               <div className="flex flex-wrap items-start gap-6">
                 <NotePanel request={data} />
                 <div className="order-first flex min-w-0 flex-[1_1_26rem] flex-col gap-4 lg:order-none">
-                  <Side
-                    request={data}
-                    result={result}
-                    pending={sign.pending}
-                    error={sign.error}
-                    next={nextButton(others)}
-                    onSign={(answers) => void submit(answers)}
-                  />
+                  {data.level_change ? (
+                    <LevelSide request={data} change={data.level_change} providerToken={providerToken} next={nextButton(others)} onExpired={onExpired} />
+                  ) : (
+                    <Side
+                      request={data}
+                      result={result}
+                      pending={sign.pending}
+                      error={sign.error}
+                      next={nextButton(others)}
+                      onSign={(answers) => void submit(answers, data.attestation)}
+                    />
+                  )}
                   <OtherRequestsPanel others={others} />
                 </div>
               </div>

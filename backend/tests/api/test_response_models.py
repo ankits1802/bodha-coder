@@ -12,6 +12,8 @@ FILE_ROUTES = {
     ("post", "/api/billing/export"): "text/csv",
     ("get", "/api/notes/{note_id}/defense-packet"): "application/pdf",
     ("get", "/api/notes/{note_id}/addendum.txt"): "text/plain",
+    ("post", "/api/notes/{note_id}/audit-package"): "application/zip",
+    ("get", "/api/billing/exports/{export_id}/file"): "application/octet-stream",
 }
 
 

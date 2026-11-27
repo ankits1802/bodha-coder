@@ -14,6 +14,7 @@ export const CODER: User = {
     idle_minutes: 15,
     time_zone: "America/Chicago",
   },
+  practices: [{ id: "practice-1", name: "Lakeside Primary Care", role: "coder" }],
 };
 
 const LANES: QueuePage["lanes"] = {

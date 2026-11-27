@@ -18,6 +18,9 @@ class BillingRow(View):
     exported_at: str | None
     cpt: list[str]
     icd10: list[str]
+    snapshot_id: str
+    snapshot_revision: int
+    held: bool
 
 
 class BillingSummary(View):

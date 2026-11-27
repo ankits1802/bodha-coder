@@ -29,7 +29,7 @@ export const PRIVACY_SHARE = [
         ["Account information", `While your organization’s account exists, and after it closes for as long as its records are kept: at least ${SERVICE_FACTS.recordRetentionYears} years after the account closes. Removed when the organization’s records are purged.`],
         ["Access log", `The period your organization chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears}, never less than ${SERVICE_FACTS.accessLogYears}. Older entries are removed each day. When an organization’s records are purged, we keep an export of its access log.`],
         ["Signed-in devices", `Until you sign out, the session expires after ${SERVICE_FACTS.refreshDays} days, or ${SERVICE_FACTS.sessionIdleMinutes} minutes pass without use.`],
-        ["Sign-in credentials", "Recovery codes and sign-in, invitation and password reset links stop working once used, replaced or expired, and two-step verification secrets once replaced. None of them is kept for the periods on this page."],
+        ["Sign-in credentials", "Recovery codes and sign-in, invitation and password reset links stop working once used, replaced or expired, and two-step verification secrets once replaced. They are not among the records kept for the periods on this page."],
         ["Service logs", `${SERVICE_FACTS.logYears} years.`],
         ["Security signals", "Removed once the longest rate-limit window, one hour, has passed."],
         ["Demo requests and correspondence", "As long as needed to respond and follow up, and no longer than two years after our last contact."],

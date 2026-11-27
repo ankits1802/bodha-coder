@@ -7,6 +7,8 @@ export type CheckKey = keyof Checks;
 export type PracticeSummary = Schemas["PracticeSummary"];
 export type User = Schemas["User"];
 export type Role = User["role"];
+export type PracticeChoice = Schemas["PracticeChoice"];
+export type NewPracticeRequest = Schemas["NewPracticeBody"];
 export type SignedIn = Schemas["SignedIn"];
 export type MfaVerified = SignedIn;
 export type MfaChallenge = Schemas["MfaChallenge"];
@@ -23,6 +25,10 @@ export type SignedInDevice = Schemas["SignedInDevice"];
 export type RecoveryCodeStatus = Schemas["RecoveryCodeStatus"];
 export type RecoveryCodes = Schemas["RecoveryCodes"];
 export type Preferences = Schemas["Preferences"];
+export type TourRecord = Schemas["TourRecord"];
+export type TourKey = TourRecord["tour"];
+export type TourBody = Schemas["TourBody"];
+export type TourOutcome = TourBody["outcome"];
 
 export type Created = Schemas["Created"];
 export type ErrorBody = Schemas["ErrorResponse"];
@@ -144,6 +150,11 @@ export type MemberStatus = TeamMember["status"];
 export type TeamList = Schemas["TeamList"];
 
 export type ProviderRequest = Schemas["ProviderRequest"];
+export type RequestPurpose = ProviderRequest["purpose"];
+export type LevelChangeView = Schemas["LevelChangeView"];
+export type LevelChangeBody = Schemas["LevelChangeBody"];
+export type LevelAnswer = LevelChangeBody["answer"];
+export type LevelChangeResult = Schemas["LevelChangeResult"];
 export type RespondResult = Schemas["RespondResult"];
 export type OtherRequest = Schemas["OtherRequest"];
 export type CodeSent = Schemas["CodeSent"];
@@ -155,6 +166,8 @@ export type PracticeStatus = HqPractice["status"];
 export type Plan = HqPractice["plan"];
 export type AdminLinkSent = Schemas["AdminLinkSent"];
 export type AdminLink = AdminLinkSent["sent"];
+export type AdminAppointment = Schemas["HqAdminBody"];
+export type AdminAppointed = Schemas["AdminAppointed"];
 export type Renewal = Schemas["Renewal"];
 export type DemoRequestRow = Schemas["DemoRequestRow"];
 export type HqPlace = Schemas["HqPlace"];
@@ -165,6 +178,10 @@ export type AuditChain = Schemas["AuditChain"];
 export type AuditVerification = Schemas["AuditVerification"];
 export type PracticePurged = Schemas["PracticePurged"];
 export type HqTeamMember = Schemas["HqTeamMember"];
+export type HqExpenditure = Schemas["Expenditure"];
+export type SpendFigures = Schemas["SpendFigures"];
+export type PracticeSpend = Schemas["PracticeSpend"];
+export type ProviderSpend = Schemas["ProviderSpend"];
 export type HqInvite = Schemas["HqInviteBody"];
 export type HqMemberUpdate = Schemas["HqMemberBody"];
 
@@ -254,6 +271,21 @@ export type TrainingSuggestion = Schemas["TrainingSuggestion"];
 export type TrainingFeedback = Schemas["TrainingFeedback"];
 
 export type ComplianceDecision = Schemas["ComplianceBody"]["decision"];
+export type OverrideChoice = Schemas["OverrideBody"];
+export type OverrideReason = OverrideChoice["reason"];
+export type OverrideView = Schemas["OverrideView"];
+export type SnapshotRecord = Schemas["SnapshotRecord"];
+export type ExportRecord = Schemas["ExportRecord"];
+export type ExportFormat = ExportRecord["format"];
+export type NoteExportRecord = Schemas["NoteExportRecord"];
+export type ExportPage = Schemas["ExportPage"];
+export type AttestationRecord = Schemas["AttestationRecord"];
+export type AttestationAnswer = AttestationRecord["answer"];
+export type NoteComment = Schemas["NoteComment"];
+export type NoteComments = Schemas["NoteComments"];
+export type CommentPerson = Schemas["CommentPerson"];
+export type CommentInput = Schemas["CommentBody"];
+export type ReviewSettings = Schemas["ReviewSettings"];
 export type QuestionEdit = Schemas["QuestionBody"];
 export type AskBody = Schemas["AskBody"];
 export type DemoRequest = Schemas["DemoBody"];
@@ -334,4 +366,9 @@ export interface HqActivityQuery {
   practice_id: string | null;
   action: string | null;
   offset: number;
+}
+
+export interface SpendRange {
+  from: string;
+  to: string;
 }

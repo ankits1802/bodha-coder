@@ -1,6 +1,14 @@
 from typing import Any, Literal
 
 from app.api.responses.base import Channel, NoteStatus, Omittable, RequestStatus, TextSource, View
+from app.api.responses.review_records import (
+    AttestationRecord,
+    NoteExportRecord,
+    OverrideReason,
+    OverrideView,
+    RequestPurpose,
+    SnapshotRecord,
+)
 from app.api.responses.work import NoteSummary
 from app.codes.billing_codes import CodeType
 from app.codes.fees import RateSetting
@@ -149,6 +157,9 @@ class Finding(View):
     default_choice: Choice
     choice: Choice
     allowed: list[Choice]
+    departing_choices: list[Choice]
+    override: OverrideView | None
+    override_needed: bool
 
 
 class EstimateLine(View):
@@ -193,7 +204,10 @@ class CodeSetRevision(View):
     codes: list[CodeJson]
     reason: str
     by: str | None
+    role: str | None
     at: str
+    override_reason: OverrideReason | None
+    override_note: str | None
 
 
 class PointerChoice(View):
@@ -205,8 +219,11 @@ class DecisionRecord(View):
     key: str
     choice: Choice
     by: str | None
+    role: str | None
     at: str
     pointers: PointerChoice | None
+    override_reason: OverrideReason | None
+    override_note: str | None
 
 
 class NoteChangeRecord(View):
@@ -223,6 +240,9 @@ class NoteHistory(View):
     code_sets: list[CodeSetRevision]
     decisions: list[DecisionRecord]
     changes: list[NoteChangeRecord]
+    snapshots: list[SnapshotRecord]
+    exports: list[NoteExportRecord]
+    attestations: list[AttestationRecord]
 
 
 class AddendumQuestion(View):
@@ -246,6 +266,7 @@ class AddendumRequestView(View):
     answers: list[AddendumAnswer] | None
     addendum_text: str | None
     hold_claim: bool
+    purpose: RequestPurpose
     sent_at: str
     answered_at: str | None
 

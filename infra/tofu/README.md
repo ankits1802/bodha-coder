@@ -61,7 +61,17 @@ certificate is `ISSUED`, set `admin_live = true` and apply; CloudFront then answ
 with it, `ADMIN_URL` reaches the api, worker and web tasks, and a release (or forced deployment)
 puts it in effect. Register `https://admin.<domain>/api/auth/<provider>/callback` with each sign-in
 provider, then invite owners with a one-off task running
-`python -m app.scripts.invite_hq "Full Name <email>" ...`.
+`python -m app.scripts.invite_hq "Full Name <email>" ...` on the worker task definition, whose role may send email (the migrate and bootstrap roles may not). A re-run of `deploy.yml` for a commit whose images exist skips the builds and only releases.
+
+## Retention
+
+Everything is kept at least `retention_days` (2557, seven years; the variable refuses less):
+document versions under S3 Object Lock in governance mode (old versions move to Glacier Instant
+Retrieval after 90 days), monthly database snapshots in the `records` backup vault whose lock refuses
+shorter retention, CloudWatch log groups, and a CloudTrail trail with log file validation and S3 data
+events for the documents bucket, written to its own Object Lock bucket. Governance mode lets a role
+with `s3:BypassGovernanceRetention` or `backup:DeleteBackupVaultLockConfiguration` act in a documented
+emergency (misfiled PHI, a court order); the application roles have neither.
 
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.

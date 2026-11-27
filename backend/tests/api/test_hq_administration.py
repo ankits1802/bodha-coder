@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select, update
@@ -9,20 +9,27 @@ from app.models import (
     Activity,
     AddendumRequest,
     Analysis,
+    ApprovedClaim,
+    AuditPackage,
     Batch,
+    ClaimExport,
+    ClaimExportItem,
     CodeSet,
     Decision,
     Note,
     NoteText,
     Practice,
+    PracticeMembership,
     Provider,
     RecoveryCode,
+    ReviewComment,
     Session,
     Suggestion,
     User,
     UserToken,
 )
 from tests.builders import (
+    DOCUMENTED,
     accept_invite,
     create_hq_user,
     maintenance,
@@ -34,7 +41,21 @@ from tests.builders import (
     upload_note,
 )
 
-PRACTICE_ROWS = (Practice, User, Provider, Batch, Note, AddendumRequest, AccessLog, Activity)
+PRACTICE_ROWS = (
+    Practice,
+    PracticeMembership,
+    Provider,
+    Batch,
+    Note,
+    AddendumRequest,
+    AccessLog,
+    Activity,
+    ApprovedClaim,
+    ClaimExport,
+    ClaimExportItem,
+    ReviewComment,
+    AuditPackage,
+)
 NOTE_ROWS = (NoteText, Analysis, Suggestion, Decision, CodeSet)
 USER_ROWS = (UserToken, Session, RecoveryCode)
 
@@ -47,7 +68,8 @@ async def _hq(harness) -> dict[str, str]:
 async def _owned_ids(practice_id: str) -> tuple[list[str], list[str]]:
     async with SessionFactory() as db:
         note_ids = list((await db.scalars(select(Note.id).where(Note.practice_id == practice_id))).all())
-        user_ids = list((await db.scalars(select(User.id).where(User.practice_id == practice_id))).all())
+        members = select(PracticeMembership.user_id).where(PracticeMembership.practice_id == practice_id)
+        user_ids = list((await db.scalars(members)).all())
         return note_ids, user_ids
 
 
@@ -58,6 +80,7 @@ async def _row_counts(practice_id: str, owned: tuple[list[str], list[str]]) -> d
             **{table: (table.id if table is Practice else table.practice_id) == practice_id for table in PRACTICE_ROWS},
             **{table: table.note_id.in_(note_ids) for table in NOTE_ROWS},
             **{table: table.user_id.in_(user_ids) for table in USER_ROWS},
+            User: User.id.in_(user_ids),
         }
         counts = {}
         for table, condition in conditions.items():
@@ -103,27 +126,38 @@ async def test_hq_sends_an_invited_admin_a_new_invite_and_an_active_admin_a_rese
     assert {"admin password reset sent", "admin invite resent"} <= set(actions)
 
 
-async def test_renewing_adds_a_year_to_the_later_of_today_and_the_renewal_date(harness):
+async def test_renewing_sets_the_chosen_end_date_or_no_end_date_and_refuses_today_or_earlier(harness):
     hq = await _hq(harness)
     practice_id = await new_practice(harness, name="Lakeside", admin_email="admin@lakeside.example.com", hq_headers=hq)
     path = f"/api/hq/practices/{practice_id}"
-
-    await harness.client.patch(path, headers=hq, json={"renews_on": "2099-06-30"})
-    assert (await harness.client.post(f"{path}/renew", headers=hq)).json() == {"renews_on": "2100-06-30"}
-
-    await harness.client.patch(path, headers=hq, json={"renews_on": "2020-03-15"})
     today = datetime.now(ZoneInfo("America/Chicago")).date()
-    expected = date(today.year + 1, today.month, 28 if (today.month, today.day) == (2, 29) else today.day)
-    assert (await harness.client.post(f"{path}/renew", headers=hq)).json() == {"renews_on": expected.isoformat()}
-    assert (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]["renews_on"] == expected.isoformat()
+
+    chosen = await harness.client.post(f"{path}/renew", headers=hq, json={"until": "2099-06-30"})
+    assert chosen.json() == {"renews_on": "2099-06-30"}
+    forever = await harness.client.post(f"{path}/renew", headers=hq, json={"until": None})
+    assert forever.json() == {"renews_on": None}
+    assert (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]["renews_on"] is None
+
+    refused = await harness.client.post(f"{path}/renew", headers=hq, json={"until": today.isoformat()})
+    assert (refused.status_code, refused.json()["message"]) == (422, "choose a renewal date after today")
+    tomorrow = await harness.client.post(
+        f"{path}/renew", headers=hq, json={"until": (today + timedelta(days=1)).isoformat()}
+    )
+    assert tomorrow.status_code == 200
     renewed = (await harness.client.get("/api/hq/activity", headers=hq, params={"action": "practice renewed"})).json()
-    assert [item["detail"] for item in renewed["items"]] == [f"renews {expected.isoformat()}", "renews 2100-06-30"]
+    assert [item["detail"] for item in renewed["items"]] == [
+        f"renews {(today + timedelta(days=1)).isoformat()}",
+        "no end date",
+        "renews 2099-06-30",
+    ]
 
 
 async def _practice_with_every_record(harness, icd_catalog):
     lakeside, note_id = await reviewed_note(harness, icd_catalog)
     decided = await harness.client.put(
-        f"/api/notes/{note_id}/decisions", headers=lakeside.admin, json={"choices": {"dx:I10": "keep"}}
+        f"/api/notes/{note_id}/decisions",
+        headers=lakeside.admin,
+        json={"choices": {"dx:I10": "keep"}, "reasons": {"dx:I10": DOCUMENTED}},
     )
     assert decided.status_code == 200, decided.text
     asked = await harness.client.post(
@@ -133,6 +167,13 @@ async def _practice_with_every_record(harness, icd_catalog):
     )
     assert asked.status_code == 200, asked.text
     assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=lakeside.admin)).status_code == 200
+    commented = await harness.client.post(
+        f"/api/notes/{note_id}/comments", headers=lakeside.admin, json={"body": "Level checked."}
+    )
+    assert commented.status_code == 200, commented.text
+    packaged = await harness.client.post(f"/api/notes/{note_id}/audit-package", headers=lakeside.admin)
+    assert packaged.status_code == 200, packaged.text
+    assert (await harness.client.post("/api/billing/export", headers=lakeside.admin, json={})).status_code == 200
     return lakeside
 
 

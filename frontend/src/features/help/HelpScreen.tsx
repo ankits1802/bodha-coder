@@ -3,6 +3,9 @@
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { SCOPE_ORDER } from "@/components/shared/shortcuts/registry";
 import { ShortcutList } from "@/components/shared/shortcuts/ShortcutList";
+import { startTour } from "@/components/shared/tour/startTour";
+import { TOUR_TEXT } from "@/components/shared/tour/strings";
+import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import type { Role } from "@/lib/api/types";
@@ -34,7 +37,7 @@ export function HelpScreen() {
   const { user } = useSession();
   return (
     <AreaGuard area="help">
-      <PageHeader title={HELP_TEXT.title} />
+      <PageHeader title={HELP_TEXT.title} actions={<Button onClick={startTour}>{TOUR_TEXT.take}</Button>} />
       {user ? helpSectionsFor(user.role).map((section) => <HelpSection key={section} section={section} role={user.role} />) : null}
     </AreaGuard>
   );

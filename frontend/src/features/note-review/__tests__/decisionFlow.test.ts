@@ -19,6 +19,9 @@ function finding(overrides: Partial<Finding>): Finding {
     default_choice: "keep",
     choice: "keep",
     allowed: ["keep"],
+    departing_choices: [],
+    override: null,
+    override_needed: false,
     ...overrides,
   };
 }

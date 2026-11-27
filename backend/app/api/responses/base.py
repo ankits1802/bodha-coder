@@ -28,6 +28,7 @@ __all__ = [
     "Role",
     "TextSource",
     "View",
+    "attachment",
     "file_download",
 ]
 
@@ -67,3 +68,8 @@ class DocumentLink(View):
 def file_download(media_type: str) -> dict[str, Any]:
     content = {media_type: {"schema": {"type": "string", "format": "binary"}}}
     return {"response_class": Response, "responses": {200: {"description": "A file", "content": content}}}
+
+
+def attachment(content: bytes, media_type: str, file_name: str) -> Response:
+    disposition = f'attachment; filename="{file_name}"'
+    return Response(content, media_type=media_type, headers={"Content-Disposition": disposition})

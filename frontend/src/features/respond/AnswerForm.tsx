@@ -11,12 +11,13 @@ import { RESPOND_TEXT } from "./strings";
 interface AnswerFormProps {
   questions: AddendumQuestion[];
   providerName: string;
+  attestation: string;
   pending: boolean;
   error: string | null;
   onSign: (answers: AddendumAnswer[]) => void;
 }
 
-export function AnswerForm({ questions, providerName, pending, error, onSign }: AnswerFormProps) {
+export function AnswerForm({ questions, providerName, attestation, pending, error, onSign }: AnswerFormProps) {
   const [drafts, setDrafts] = useState<Drafts>({});
   const [confirmed, setConfirmed] = useState(false);
   const [today] = useState(() => new Date());
@@ -52,6 +53,7 @@ export function AnswerForm({ questions, providerName, pending, error, onSign }: 
         pending={pending}
         error={error}
         providerName={providerName}
+        attestation={attestation}
         onSign={sign}
       />
     </div>

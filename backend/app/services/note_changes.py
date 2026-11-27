@@ -8,7 +8,7 @@ from app.core.errors import Conflict, NotFound
 from app.models import AddendumRequest, Note
 from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
-from app.services.note_history import record_note_change
+from app.services.note_change_history import record_note_change
 from app.services.note_voids import refuse_voided
 from app.services.payers import payer_list
 from app.services.placement import refresh_placement

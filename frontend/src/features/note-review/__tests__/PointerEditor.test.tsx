@@ -12,6 +12,7 @@ const DIAGNOSES: ClaimDiagnosis[] = [
   { code: "Z79.4", letter: "E" },
 ];
 const LINKED: PointerLine = { code: "96127", label: "96127 ×2", pointers: ["N18.30"], stored: true };
+const GUIDELINE = { reason: "coding_guideline", note: null };
 
 function renderEditor(line: PointerLine, onSave = vi.fn()) {
   render(<PointerEditor line={line} diagnoses={DIAGNOSES} pending={false} error={null} onSave={onSave} onClose={vi.fn()} />);
@@ -42,7 +43,11 @@ describe("PointerEditor", () => {
     expect(screen.getByRole("checkbox", { name: "A E11.65 2nd" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "E Z79.4" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(onSave).toHaveBeenCalledWith(["I12.9", "E11.65", "R20.2"]);
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText("Choose a reason.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /Coding guideline/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSave).toHaveBeenCalledWith(["I12.9", "E11.65", "R20.2"], GUIDELINE);
   });
 
   it("is used from the keyboard", async () => {
@@ -56,9 +61,12 @@ describe("PointerEditor", () => {
     await user.keyboard(" ");
 
     expect(screen.getByRole("checkbox", { name: "C I12.9 2nd" })).toBeChecked();
+    screen.getByRole("radio", { name: /Documentation supports/ }).focus();
+    await user.keyboard("4");
+    expect(screen.getByRole("radio", { name: /Coding guideline/ })).toBeChecked();
     screen.getByRole("button", { name: "Save" }).focus();
     await user.keyboard("{Enter}");
-    expect(onSave).toHaveBeenCalledWith(["N18.30", "I12.9"]);
+    expect(onSave).toHaveBeenCalledWith(["N18.30", "I12.9"], GUIDELINE);
   });
 
   it("returns a linked line to the default and cannot save an empty choice", () => {
@@ -66,8 +74,9 @@ describe("PointerEditor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "B N18.30 1st" }));
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 
+    fireEvent.click(screen.getByRole("radio", { name: /Coding guideline/ }));
     fireEvent.click(screen.getByRole("button", { name: "Use default" }));
-    expect(onSave).toHaveBeenCalledWith([]);
+    expect(onSave).toHaveBeenCalledWith([], GUIDELINE);
   });
 
   it("offers no default for a line that already follows it", () => {

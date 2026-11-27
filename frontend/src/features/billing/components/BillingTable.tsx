@@ -13,7 +13,8 @@ import { groupByServiceDate, momentLabel } from "../billingRows";
 import { BILLING_TEXT } from "../strings";
 import { DefensePacketButton } from "@/components/shared/defense/DefensePacketButton";
 
-function ReviewCell({ changed }: { changed: number }) {
+function ReviewCell({ changed, held }: { changed: number; held: boolean }) {
+  if (held) return <StatusDot tone="warn">{BILLING_TEXT.heldForConfirmation}</StatusDot>;
   if (changed > 0) return <StatusDot tone="low">{BILLING_TEXT.changed(formatCount(changed))}</StatusDot>;
   return <StatusDot tone="ok">{BILLING_TEXT.asBilled}</StatusDot>;
 }
@@ -44,7 +45,7 @@ function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
       </Td>
       <Td className="text-right text-secondary tabular-nums">{formatMoney(row.estimate)}</Td>
       <Td>
-        <ReviewCell changed={row.changed} />
+        <ReviewCell changed={row.changed} held={row.held} />
       </Td>
       <Td>
         <ApprovedCell row={row} today={today} />

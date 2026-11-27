@@ -6,15 +6,17 @@ from urllib.parse import parse_qs, urlsplit
 
 import pyotp
 from httpx import AsyncClient
-from sqlalchemy import text, update
+from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.core.config import get_settings
 from app.core.db import SessionFactory
+from app.core.model_prices import PriceBook
 from app.core.security import hash_password
-from app.models import User
-from app.services.analysis import AnalysisDeps
+from app.models import Practice as PracticeRow
+from app.models import PracticeMembership, User
+from app.services.analysis import AnalysisDeps, Reviewer
 from app.worker import process_one
 from tests.fakes import (
     NOTE_TEXT,
@@ -29,6 +31,7 @@ from tests.fakes import (
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
 PASSWORD = "correct-horse-staple"
+DOCUMENTED = {"reason": "documentation", "note": None}
 ADMIN_SITE = "https://admin.test"
 
 
@@ -107,6 +110,17 @@ async def new_practice(
     assert response.status_code == 200, response.text
     await accept_invite(harness)
     return response.json()["id"]
+
+
+async def practice_people() -> list[tuple[PracticeRow, User, PracticeMembership]]:
+    async with SessionFactory() as db:
+        rows = await db.execute(
+            select(PracticeRow, User, PracticeMembership)
+            .join(PracticeMembership, PracticeMembership.practice_id == PracticeRow.id)
+            .join(User, User.id == PracticeMembership.user_id)
+            .order_by(PracticeRow.created_at, PracticeMembership.created_at)
+        )
+        return list(rows.tuples().all())
 
 
 def marisol_report() -> ReviewReport:
@@ -190,8 +204,9 @@ async def back_from_google(harness: Harness, code: str):
     return await back_from(harness, "google", code)
 
 
-async def back_from(harness: Harness, provider: str, code: str, *, site: str = ""):
-    start = await harness.client.get(f"{site}/api/auth/{provider}/start")
+async def back_from(harness: Harness, provider: str, code: str, *, site: str = "", intent: str | None = None):
+    query = {"intent": intent} if intent else None
+    start = await harness.client.get(f"{site}/api/auth/{provider}/start", params=query)
     assert start.status_code == 302, start.text
     state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
     return await harness.client.get(f"{site}/api/auth/{provider}/callback", params={"code": code, "state": state})
@@ -216,9 +231,16 @@ async def upload_note(harness: Harness, practice: Practice, *, file_name: str = 
     )
 
 
+def analysis_deps(
+    harness: Harness, icd_catalog, reviewer: Reviewer, *, prices: PriceBook | None = None
+) -> AnalysisDeps:
+    book = prices if prices is not None else PriceBook(get_settings().model_prices)
+    return AnalysisDeps(reviewer, None, harness.store, icd_catalog, book)
+
+
 async def read_next_note(harness: Harness, icd_catalog, report: ReviewReport | None = None) -> ScriptedReviewer:
     reviewer = ScriptedReviewer(report or marisol_report())
-    deps = AnalysisDeps(reviewer, None, harness.store, icd_catalog)
+    deps = analysis_deps(harness, icd_catalog, reviewer)
     assert await process_one(deps, get_settings()) is True
     return reviewer
 

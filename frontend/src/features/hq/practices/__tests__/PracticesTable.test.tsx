@@ -33,7 +33,7 @@ const SELF: HqPractice = { ...BASE, id: "p2", name: "Harbor Pediatrics", status:
 
 describe("PracticesTable", () => {
   it("marks a practice that signed itself up with a dot, the words and the day", () => {
-    render(<PracticesTable practices={[BASE, SELF]} onEdit={vi.fn()} onAction={vi.fn()} />);
+    render(<PracticesTable practices={[BASE, SELF]} onEdit={vi.fn()} onAction={vi.fn()} onAppoint={vi.fn()} />);
     const harbor = screen.getByText("Harbor Pediatrics").closest("tr");
     const northside = screen.getByText("Northside Clinic").closest("tr");
     if (!harbor || !northside) throw new Error("rows not rendered");
@@ -44,7 +44,7 @@ describe("PracticesTable", () => {
 
   it("shows how a paying practice pays and whether the payment is in good standing", () => {
     const paying: HqPractice = { ...BASE, billing_provider: "paypal", billing_status: "past_due", billing_interval: "annual" };
-    render(<PracticesTable practices={[paying, SELF]} onEdit={vi.fn()} onAction={vi.fn()} />);
+    render(<PracticesTable practices={[paying, SELF]} onEdit={vi.fn()} onAction={vi.fn()} onAppoint={vi.fn()} />);
     const northside = screen.getByText("Northside Clinic").closest("tr");
     const harbor = screen.getByText("Harbor Pediatrics").closest("tr");
     if (!harbor || !northside) throw new Error("rows not rendered");
@@ -54,7 +54,7 @@ describe("PracticesTable", () => {
 
   it("shows a closed practice with the day its records are kept until and offers nothing to change", () => {
     const closed: HqPractice = { ...BASE, status: "closed", closed_at: "2026-11-28T15:00:00Z", purge_after: "2099-11-28" };
-    render(<PracticesTable practices={[closed]} onEdit={vi.fn()} onAction={vi.fn()} />);
+    render(<PracticesTable practices={[closed]} onEdit={vi.fn()} onAction={vi.fn()} onAppoint={vi.fn()} />);
     const row = screen.getByText("Northside Clinic").closest("tr");
     if (!row) throw new Error("row not rendered");
     expect(within(row).getByText("Closed")).toBeInTheDocument();

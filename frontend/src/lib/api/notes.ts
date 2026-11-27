@@ -11,6 +11,7 @@ import type {
   NoteLane,
   NotePayer,
   NoteState,
+  OverrideChoice,
   PayerOption,
   QueuedNotes,
   ReopenedNotes,
@@ -35,12 +36,16 @@ export function replaceNoteDocument(noteId: string, file: File): Promise<NoteSta
   return request<NoteState>(notePath(noteId, "/document"), { method: "POST", form });
 }
 
-export function saveDecisions(noteId: string, choices: Record<string, Choice>): Promise<NoteDetail> {
-  return request<NoteDetail>(notePath(noteId, "/decisions"), { method: "PUT", body: { choices } });
+export function saveDecisions(
+  noteId: string,
+  choices: Record<string, Choice>,
+  reasons: Record<string, OverrideChoice> = {},
+): Promise<NoteDetail> {
+  return request<NoteDetail>(notePath(noteId, "/decisions"), { method: "PUT", body: { choices, reasons } });
 }
 
-export function saveBilledCodes(noteId: string, codes: string): Promise<NoteDetail> {
-  return request<NoteDetail>(notePath(noteId, "/billed-codes"), { method: "PUT", body: { codes } });
+export function saveBilledCodes(noteId: string, codes: string, reason: OverrideChoice): Promise<NoteDetail> {
+  return request<NoteDetail>(notePath(noteId, "/billed-codes"), { method: "PUT", body: { codes, reason } });
 }
 
 export function approveNote(noteId: string): Promise<NoteState> {

@@ -18,6 +18,12 @@ const numberFormat = new Intl.NumberFormat(LOCALE);
 const percentFormat = new Intl.NumberFormat(LOCALE, { style: "percent", maximumFractionDigits: 1 });
 const tenthsFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
 const moneyFormat = new Intl.NumberFormat(MONEY_LOCALE, { style: "currency", currency: MEDICARE_CURRENCY });
+const unitCostFormat = new Intl.NumberFormat(MONEY_LOCALE, {
+  style: "currency",
+  currency: MEDICARE_CURRENCY,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
 const wholeDollarFormat = new Intl.NumberFormat(MONEY_LOCALE, {
   style: "currency",
   currency: MEDICARE_CURRENCY,
@@ -85,6 +91,10 @@ export function formatPercent(value: number | null): string {
 
 export function formatMoney(value: number | null): string {
   return value === null ? FORMAT_WORDS.empty : moneyFormat.format(value);
+}
+
+export function formatUnitCost(value: number | null): string {
+  return value === null ? FORMAT_WORDS.empty : unitCostFormat.format(value);
 }
 
 export function formatWholeDollars(cents: number): string {

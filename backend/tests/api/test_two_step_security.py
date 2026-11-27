@@ -53,6 +53,13 @@ async def stored_code_hashes(email: str) -> list[str]:
         return list(await db.scalars(select(RecoveryCode.code_hash).where(RecoveryCode.user_id == user.id)))
 
 
+async def unused_code_count(email: str) -> int:
+    user = await stored_user(email)
+    async with SessionFactory() as db:
+        unused = select(RecoveryCode.id).where(RecoveryCode.user_id == user.id, RecoveryCode.used_at.is_(None))
+        return len((await db.scalars(unused)).all())
+
+
 def bearer(body: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {body['access_token']}"}
 
@@ -143,5 +150,6 @@ async def test_an_admin_two_step_reset_also_clears_recovery_codes(harness):
     assert len(await stored_code_hashes(email)) == 10
     reset = await harness.client.post(f"/api/team/{invited.json()['id']}/reset-mfa", headers=practice.admin)
     assert reset.status_code == 204
-    assert await stored_code_hashes(email) == []
+    assert len(await stored_code_hashes(email)) == 10
+    assert await unused_code_count(email) == 0
     assert (await login(harness, email))["mfa"] == "setup"

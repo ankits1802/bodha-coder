@@ -15,7 +15,7 @@ from app.ai.contracts import (
 )
 from app.core.db import SessionFactory
 from app.models import AuditRun, AuditSample, Note, User, utcnow
-from tests.builders import Harness, Practice, read_next_note, upload_note
+from tests.builders import DOCUMENTED, Harness, Practice, read_next_note, upload_note
 from tests.fakes import NOTE_TEXT
 
 SERVICE_DAY = "2026-11-25"
@@ -69,7 +69,12 @@ async def approved_note(harness: Harness, practice: Practice, icd_catalog, index
     note_id = await read_note(harness, practice, icd_catalog, index)
     if choices:
         decided = await harness.client.put(
-            f"/api/notes/{note_id}/decisions", headers=practice.admin, json={"choices": choices}
+            f"/api/notes/{note_id}/decisions",
+            headers=practice.admin,
+            json={
+                "choices": choices,
+                "reasons": {key: DOCUMENTED for key, value in choices.items() if value == "keep"},
+            },
         )
         assert decided.status_code == 200, decided.text
     approved = await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)

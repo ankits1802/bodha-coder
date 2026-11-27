@@ -65,6 +65,9 @@ class FakeStore:
     async def get(self, key: str) -> bytes:
         return self.objects[key]
 
+    async def exists(self, key: str) -> bool:
+        return key in self.objects
+
     async def signed_url(self, key: str, *, seconds: int) -> str:
         return f"https://storage.test/{key}?expires={seconds}"
 

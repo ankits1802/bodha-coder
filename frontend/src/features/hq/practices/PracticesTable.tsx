@@ -13,6 +13,7 @@ interface PracticesTableProps {
   practices: HqPractice[];
   onEdit: (practice: HqPractice) => void;
   onAction: (kind: PracticeActionKind, practice: HqPractice) => void;
+  onAppoint: (practice: HqPractice) => void;
 }
 
 type RowActions = Omit<PracticesTableProps, "practices">;
@@ -25,7 +26,7 @@ function closedMenu(practice: HqPractice, { onAction }: RowActions): MenuItem[] 
 }
 
 function menuFor(practice: HqPractice, actions: RowActions): MenuItem[] {
-  const { onEdit, onAction } = actions;
+  const { onEdit, onAction, onAppoint } = actions;
   if (isClosed(practice)) return closedMenu(practice, actions);
   const blocked = practice.status === "blocked";
   const items: MenuItem[] = [
@@ -36,6 +37,7 @@ function menuFor(practice: HqPractice, actions: RowActions): MenuItem[] {
       disabled: !canSendAdminLink(practice),
       onSelect: () => onAction("adminLink", practice),
     },
+    { key: "appointAdmin", label: words.menu.appointAdmin, onSelect: () => onAppoint(practice) },
     { key: "renew", label: words.menu.renew, onSelect: () => onAction("renew", practice) },
     blocked
       ? { key: "unblock", label: words.menu.unblock, onSelect: () => onAction("unblock", practice) }
@@ -117,7 +119,7 @@ function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowAct
   );
 }
 
-export function PracticesTable({ practices, onEdit, onAction }: PracticesTableProps) {
+export function PracticesTable({ practices, ...actions }: PracticesTableProps) {
   const columns = words.columns;
   return (
     <Table label={words.tableLabel} minWidth="lg">
@@ -136,7 +138,7 @@ export function PracticesTable({ practices, onEdit, onAction }: PracticesTablePr
       </thead>
       <tbody>
         {practices.map((practice) => (
-          <PracticeRow key={practice.id} practice={practice} onEdit={onEdit} onAction={onAction} />
+          <PracticeRow key={practice.id} practice={practice} {...actions} />
         ))}
       </tbody>
     </Table>

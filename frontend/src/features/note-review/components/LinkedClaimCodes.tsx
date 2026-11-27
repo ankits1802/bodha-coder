@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ClaimEstimates, PointerLine } from "@/lib/api/types";
+import type { ClaimEstimates, OverrideChoice, PointerLine } from "@/lib/api/types";
 import { REVIEW_TEXT } from "../strings";
 import { useClaimPointers } from "../useClaimPointers";
 import { ClaimCodes } from "./ClaimEstimate";
@@ -19,8 +19,8 @@ export function LinkedClaimCodes({ noteId, claim, estimate, editable }: LinkedCl
   const [editing, setEditing] = useState<PointerLine | null>(null);
   const data = links.state.status === "success" ? links.state.data : null;
 
-  async function save(pointers: string[]): Promise<void> {
-    if (editing && (await links.save(editing.code, pointers))) setEditing(null);
+  async function save(pointers: string[], override: OverrideChoice): Promise<void> {
+    if (editing && (await links.save(editing.code, pointers, override))) setEditing(null);
   }
 
   function close(): void {
@@ -43,7 +43,7 @@ export function LinkedClaimCodes({ noteId, claim, estimate, editable }: LinkedCl
           diagnoses={data.diagnoses}
           pending={links.pending}
           error={links.error}
-          onSave={(pointers) => void save(pointers)}
+          onSave={(pointers, override) => void save(pointers, override)}
           onClose={close}
         />
       ) : null}

@@ -36,10 +36,11 @@ describe("LinkedClaimCodes", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "96127 ×2 AB, diagnoses E11.65, N18.30" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "A E11.65 1st" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Payer policy/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("button", { name: "96127 ×2 B, diagnoses N18.30" })).toBeInTheDocument();
-    expect(saveLinePointers).toHaveBeenCalledWith("note-1", "96127", ["N18.30"]);
+    expect(saveLinePointers).toHaveBeenCalledWith("note-1", "96127", ["N18.30"], { reason: "payer_policy", note: null });
     await waitFor(() => expect(screen.queryByRole("button", { name: "Save" })).toBeNull());
   });
 
@@ -49,6 +50,7 @@ describe("LinkedClaimCodes", () => {
     render(<LinkedClaimCodes noteId="note-1" claim={CLAIM} estimate={null} editable />);
 
     fireEvent.click(await screen.findByRole("button", { name: "99214 AB, diagnoses E11.65, N18.30" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Documentation supports/ }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("N18.30 is not a diagnosis on the claim");

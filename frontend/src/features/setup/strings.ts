@@ -68,6 +68,13 @@ export const SETUP_TEXT = {
     group_npi: "Enter the 10-digit NPI",
     tax_id: "Enter the 9-digit EIN, like 12-3456789",
   } as Record<string, string>,
+  review: {
+    title: "Level changes",
+    confirm: "Ask the provider to confirm E/M level changes",
+    hold: "Hold the claim until confirmed",
+    save: "Save",
+    saved: "Saved",
+  },
   checks: {
     title: "Checks",
     save: "Save checks",

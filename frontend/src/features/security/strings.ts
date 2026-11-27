@@ -13,6 +13,16 @@ export const SECURITY_TEXT = {
   years: (value: number) => `${value} years`,
   save: "Save",
   saved: "Saved",
+  practices: {
+    title: "Practices",
+    listLabel: "Your practices",
+    current: (role: string) => `${role} · This practice`,
+    leave: "Leave",
+    leaveFor: (name: string) => `Leave ${name}`,
+    confirmTitle: (name: string) => `Leave ${name}?`,
+    cancel: "Cancel",
+    newPractice: "New practice",
+  },
   signedIn: {
     title: "Signed-in devices",
     loading: "Loading devices",

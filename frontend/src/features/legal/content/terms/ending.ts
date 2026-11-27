@@ -53,7 +53,7 @@ export const TERMS_ENDING = [
       `Monthly database backups are kept for ${SERVICE_FACTS.backupYears} years, and every version of a stored file is kept under a ${SERVICE_FACTS.documentLockYears}-year retention lock from when it was stored, so residual copies of purged data remain until those periods end. Until then they stay encrypted, are used only to restore the Service after a failure or as the law requires, and remain protected by these Terms and the BAA. On request, we will confirm in writing the date by which every copy is gone.`,
     ),
     paragraph(
-      `The access log is kept for the period your administrator chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears} years, and never less than ${SERVICE_FACTS.accessLogYears} years. Sign-in credentials, such as recovery codes, sign-in links and sessions, are not kept for these periods. The BAA governs PHI for as long as we keep it.`,
+      `The access log is kept for the period your administrator chooses: ${SERVICE_FACTS.accessLogYears} years by default and up to ${SERVICE_FACTS.accessLogMaxYears} years, and never less than ${SERVICE_FACTS.accessLogYears} years. Sign-in credentials, such as recovery codes, sign-in links and sessions, are not among the records kept for these periods. The BAA governs PHI for as long as we keep it.`,
     ),
   ),
 ];

@@ -39,6 +39,7 @@ const COMPLIANCE: User = {
     idle_minutes: 15,
     time_zone: "America/Chicago",
   },
+  practices: [],
 };
 
 const PAGE: AccessLogPage = {

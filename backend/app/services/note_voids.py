@@ -10,7 +10,7 @@ from app.core.roles import ADMINS
 from app.models import VOIDED, AddendumRequest, Analysis, Note, utcnow
 from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
-from app.services.note_history import record_note_change
+from app.services.note_change_history import record_note_change
 
 __all__ = [
     "REASON_LENGTH",
@@ -87,7 +87,7 @@ async def _check_voidable(db: AsyncSession, actor: Actor, note: Note) -> None:
     if note.status in IN_FLIGHT:
         raise Conflict("a note being read or already voided cannot be voided")
     unread = note.status in VOIDABLE_UNREAD and note.current_analysis_id is None
-    if actor.user.role not in ADMINS and not unread:
+    if actor.role not in ADMINS and not unread:
         raise Forbidden("only an admin can void a note Bodha has read")
     open_request = await db.scalar(
         select(AddendumRequest.id).where(AddendumRequest.note_id == note.id, AddendumRequest.status == "sent")

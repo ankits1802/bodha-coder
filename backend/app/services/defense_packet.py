@@ -23,7 +23,6 @@ from app.models import (
     Note,
     PlaceOfService,
     Provider,
-    User,
     utcnow,
 )
 from app.services.analysis import latest_codes
@@ -37,25 +36,36 @@ from app.services.defense_layout import (
     PacketVisit,
     packet_document,
 )
+from app.services.defense_records import packet_records
 from app.services.estimates import claim_estimate
 from app.services.finding import Finding
+from app.services.memberships import member_names
+from app.services.override_reasons import reason_text
 from app.services.placement import SETTLED_STATUSES, current_findings
 from app.services.pointer_decisions import read_pointer_key
 from app.services.review_actions import current_claim, note_for
 from app.services.risk_adjustment import RISK_SUMMARY_KEY
 from app.services.routing import CHANGE_KINDS, choices_for
 
-__all__ = ["DECIDED_CHOICES", "HISTORY_ACTIONS", "DefensePacket", "defense_packet", "packet_file_name"]
+__all__ = ["DECIDED_CHOICES", "HISTORY_ACTIONS", "DefensePacket", "build_packet", "defense_packet", "packet_file_name"]
 
 DECIDED_CHOICES = ("accept", "keep", "add")
 HISTORY_ACTIONS = (
     "approved",
     "asked provider",
+    "asked provider to confirm level",
     "cancelled provider request",
     "changed visit type",
+    "compliance confirm",
+    "compliance keep",
+    "confirmed visit level",
+    "disagreed with visit level",
     "edited billed codes",
     "flagged for compliance",
+    "linked diagnoses",
+    "override reason",
     "reopened",
+    "reopened after disagreement",
     "replaced PDF",
     "returned to coder",
     "signed addendum",
@@ -75,16 +85,21 @@ def packet_file_name(note: Note) -> str:
 
 async def defense_packet(db: AsyncSession, actor: Actor, note_id: str) -> DefensePacket:
     note = await note_for(db, actor, note_id)
-    facts = await _facts(db, actor, note)
-    content = await asyncio.to_thread(render_pdf, packet_document(facts))
+    packet = await build_packet(db, actor, note)
     record_access(db, actor, DOWNLOADED, note_id=note.id)
     await db.commit()
+    return packet
+
+
+async def build_packet(db: AsyncSession, actor: Actor, note: Note) -> DefensePacket:
+    facts = await _facts(db, actor, note)
+    content = await asyncio.to_thread(render_pdf, packet_document(facts))
     return DefensePacket(packet_file_name(note), content)
 
 
 async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
     provider = await db.get_one(Provider, note.provider_id)
-    names = dict((await db.execute(select(User.id, User.name).where(User.practice_id == note.practice_id))).all())
+    names = await member_names(db, note.practice_id)
     findings = await current_findings(db, note)
     decisions = list(
         (await db.scalars(select(Decision).where(Decision.note_id == note.id).order_by(Decision.created_at))).all()
@@ -111,6 +126,7 @@ async def _facts(db: AsyncSession, actor: Actor, note: Note) -> PacketFacts:
         analyses=tuple(_analysis_row(row, note) for row in analyses),
         analysis_label=_analysis_label(current),
         generated=PacketEvent(utcnow(), actor.user.name, DOWNLOADED),
+        records=await packet_records(db, note, findings, decisions, names),
     )
 
 
@@ -150,7 +166,8 @@ def _decided(
             continue
         row = latest.get(finding.key)
         by = names.get(row.actor_id) if row else None
-        decided.append(DecidedFinding(finding, choices[finding.key], by, row.created_at if row else None))
+        reason = reason_text(row.override_reason, row.override_note) if row else None
+        decided.append(DecidedFinding(finding, choices[finding.key], by, row.created_at if row else None, reason))
     return tuple(decided)
 
 
@@ -205,6 +222,11 @@ def _answers(request: AddendumRequest) -> tuple[tuple[str, str], ...]:
 
 
 def _decision_text(row: Decision, titles: Mapping[str, str]) -> str:
+    reason = reason_text(row.override_reason, row.override_note)
+    return " · ".join(part for part in (_decision_subject(row, titles), reason and f"Reason: {reason}") if part)
+
+
+def _decision_subject(row: Decision, titles: Mapping[str, str]) -> str:
     parsed = read_pointer_key(row.suggestion_key)
     if parsed is None:
         return f"{CHOICE_LABELS.get(row.choice, row.choice)} · {titles.get(row.suggestion_key, row.suggestion_key)}"
@@ -242,7 +264,9 @@ async def _history(
 
 def _code_set_text(row: CodeSet) -> str:
     codes = ", ".join(Code.from_json(item).label() for item in row.codes)
-    return f"{row.kind.capitalize()} codes, revision {row.revision} ({row.reason}): {codes}"
+    reason = reason_text(row.override_reason, row.override_note)
+    text = f"{row.kind.capitalize()} codes, revision {row.revision} ({row.reason}): {codes}"
+    return f"{text} · Reason: {reason}" if reason else text
 
 
 def _analysis_row(row: Analysis, note: Note) -> tuple[str, ...]:
