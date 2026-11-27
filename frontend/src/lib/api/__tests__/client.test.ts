@@ -11,7 +11,7 @@ const coder: User = {
   email: "priya@example.com",
   role: "coder",
   billing_only: false,
-  practice: { id: "p1", name: "Lakeside", checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false }, idle_minutes: 15, time_zone: "America/Chicago" },
+  practice: { id: "p1", name: "Lakeside", checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false }, can_send_texts: true, idle_minutes: 15, time_zone: "America/Chicago" },
 };
 
 function json(status: number, body: unknown): Response {

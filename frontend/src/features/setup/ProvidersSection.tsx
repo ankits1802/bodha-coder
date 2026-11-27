@@ -6,6 +6,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { TextButton } from "@/components/ui/TextButton";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { useCanSendTexts } from "@/hooks/useCanSendTexts";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import type { Provider } from "@/lib/api/types";
@@ -23,6 +24,7 @@ interface ProvidersSectionProps {
 export function ProvidersSection({ missingNpi, onChanged }: ProvidersSectionProps) {
   const providers = useRemote("setup-providers", getProviders);
   const places = useRemote("setup-places", getPlaces);
+  const canSendTexts = useCanSendTexts();
   const query = useQueryParams();
   const onlyMissing = query.get("npi") === "missing";
   const [editing, setEditing] = useState<Provider | "new" | null>(null);
@@ -83,6 +85,7 @@ export function ProvidersSection({ missingNpi, onChanged }: ProvidersSectionProp
           <ProvidersTable
             providers={onlyMissing ? list.filter((provider) => provider.active && !provider.npi) : list}
             placeNames={placeNames}
+            canSendTexts={canSendTexts}
             onEdit={setEditing}
           />
         )}

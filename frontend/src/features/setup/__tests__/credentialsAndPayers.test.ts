@@ -60,7 +60,7 @@ describe("credentialing details", () => {
       active: true,
       details: { ...detailsFrom(EMPTY), bills_under: "group", group_npi: "1234567893" },
     };
-    const providerDraft = draftFrom(provider);
+    const providerDraft = draftFrom(provider, true);
     expect(inputFrom(providerDraft).details).toEqual(provider.details);
     const wrong = { ...providerDraft, details: { ...providerDraft.details, dea_number: "AB12" } };
     expect(validateProvider(wrong)).toEqual({ dea_number: "Use 2 letters and 7 digits" });

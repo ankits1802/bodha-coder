@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/Button";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import { TextButton } from "@/components/ui/TextButton";
 import type { Provider } from "@/lib/api/types";
+import { usableChannel } from "@/lib/channels";
 import { FORMAT_WORDS } from "@/lib/format";
 import { CHANNEL_LABELS } from "@/lib/labels";
 import { PROVIDER_TEXT } from "./strings";
@@ -9,6 +10,7 @@ import { PROVIDER_TEXT } from "./strings";
 interface ProvidersTableProps {
   providers: Provider[];
   placeNames: Map<string, string>;
+  canSendTexts: boolean;
   onEdit: (provider: Provider) => void;
 }
 
@@ -17,7 +19,7 @@ function placeOf(code: string | null, placeNames: Map<string, string>): string {
   return placeNames.get(code) ?? code;
 }
 
-export function ProvidersTable({ providers, placeNames, onEdit }: ProvidersTableProps) {
+export function ProvidersTable({ providers, placeNames, canSendTexts, onEdit }: ProvidersTableProps) {
   const columns = PROVIDER_TEXT.columns;
   return (
     <Table label={PROVIDER_TEXT.tableLabel} minWidth="md">
@@ -52,7 +54,7 @@ export function ProvidersTable({ providers, placeNames, onEdit }: ProvidersTable
               )}
             </Td>
             <Td className="text-secondary">{placeOf(provider.place_code, placeNames)}</Td>
-            <Td className="text-secondary">{CHANNEL_LABELS[provider.channel]}</Td>
+            <Td className="text-secondary">{CHANNEL_LABELS[usableChannel(provider.channel, canSendTexts)]}</Td>
             <Td className="text-right">
               <Button variant="plain" size="sm" aria-label={PROVIDER_TEXT.editFor(provider.name)} onClick={() => onEdit(provider)}>
                 {columns.edit}

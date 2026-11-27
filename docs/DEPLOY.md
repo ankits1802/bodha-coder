@@ -211,7 +211,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_TENANT`, `YAHOO_CLIENT_ID` | yes | | | plain |
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
-| `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
+| `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS` | | yes | | plain |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
@@ -370,7 +370,13 @@ admin's email, the practice id, the plan and the provider count.
 ### Text messages: SNS
 
 - Register an origination identity in AWS End User Messaging SMS: a toll-free number with
-  completed toll-free verification, or a 10DLC campaign, for US recipients.
+  completed toll-free verification, or a 10DLC campaign, for US recipients. Set
+  `SNS_ORIGINATION_NUMBER` to that number in E.164 form (`+18885550100`); every text is sent from it.
+- Texts are offered only when they can be sent ([0029](decisions/0029-texts-only-when-set-up.md)):
+  `SMS_TRANSPORT=sns` with `SNS_ORIGINATION_NUMBER`, or `twilio` with `TWILIO_ACCOUNT_SID`,
+  `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`, or any transport with `APP_ENVIRONMENT=development`. Otherwise
+  the text choice is hidden, a request to text a provider answers 409, and a provider who prefers texts
+  is sent email.
 - Move the account out of the SMS sandbox, raise the monthly spend limit from its default, set the
   default message type to transactional, and keep opt-out handling on.
 

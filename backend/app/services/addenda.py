@@ -18,6 +18,7 @@ from app.services.analysis import next_revision, request_analysis
 from app.services.audit_log import record_access, record_provider_access
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import current_decisions, current_findings, refresh_placement
+from app.services.provider_channels import EMAIL, contact_for, require_channel, usable_channel
 from app.services.query_governance import refuse_repeat_queries
 from app.services.rate_limits import PROVIDER_CODE_PER_REQUEST, hit
 from app.services.review_actions import note_for
@@ -65,9 +66,7 @@ async def create_request(
     await refuse_repeat_queries(db, note, [edit.key for edit in edits])
     provider = await db.get_one(Provider, note.provider_id)
     questions = await _chosen_questions(db, note, edits)
-    destination = provider.email if channel == "email" else provider.phone
-    if not destination:
-        raise Invalid(f"{provider.name} has no {channel} on file")
+    require_channel(provider, channel)
     token = random_token()
     request = AddendumRequest(
         practice_id=note.practice_id,
@@ -117,10 +116,16 @@ async def send_link(
     link = f"{get_settings().app_url}/respond#{token}"
     lead = "Reminder: " if reminder else ""
     body = f"{lead}{practice.name} has questions about one of your visit notes. Open securely: {link}"
-    if channel == "email":
-        await messenger.email(provider.email or "", subject=f"Questions from {practice.name}", body=body)
+    await _deliver(messenger, provider, channel, subject=f"Questions from {practice.name}", body=body)
+
+
+async def _deliver(messenger: Messenger, provider: Provider, preferred: str, *, subject: str, body: str) -> str:
+    channel = usable_channel(preferred, name=provider.name, email=provider.email)
+    if channel == EMAIL:
+        await messenger.email(provider.email or "", subject=subject, body=body)
     else:
         await messenger.sms(provider.phone or "", body=body)
+    return channel
 
 
 async def remind(db: AsyncSession, messenger: Messenger, actor: Actor, note_id: str) -> None:
@@ -158,12 +163,9 @@ async def send_code(db: AsyncSession, messenger: Messenger, token: str) -> str:
         0,
     )
     body = f"Your Bodha Coder verification code is {code}. It expires in {CODE_MINUTES} minutes."
-    if request.channel == "email":
-        await messenger.email(provider.email or "", subject="Your verification code", body=body)
-    else:
-        await messenger.sms(provider.phone or "", body=body)
+    channel = await _deliver(messenger, provider, request.channel, subject="Your verification code", body=body)
     await db.commit()
-    return _masked(provider.email if request.channel == "email" else provider.phone)
+    return _masked(contact_for(provider, channel))
 
 
 def _masked(destination: str | None) -> str:

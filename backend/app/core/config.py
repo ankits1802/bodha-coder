@@ -20,6 +20,10 @@ BILLING_SETTINGS = (
     "paypal_plan_professional_monthly",
     "paypal_plan_professional_annual",
 )
+TEXT_SETTINGS = {
+    "twilio": ("twilio_account_sid", "twilio_auth_token", "twilio_from"),
+    "sns": ("sns_origination_number",),
+}
 
 
 class SignupNotReady(RuntimeError):
@@ -83,6 +87,7 @@ class Settings(BaseSettings):
     twilio_account_sid: str | None = None
     twilio_auth_token: str | None = None
     twilio_from: str | None = None
+    sns_origination_number: str | None = None
 
     self_signup_enabled: bool = True
     trial_days: int = Field(default=14, ge=1)
@@ -135,6 +140,13 @@ class Settings(BaseSettings):
         if self.gemini_backend == "demo" and self.app_environment == "production":
             raise ValueError("GEMINI_BACKEND=demo is refused when APP_ENVIRONMENT is production")
         return self
+
+    @property
+    def can_send_texts(self) -> bool:
+        if self.app_environment == "development":
+            return True
+        required = TEXT_SETTINGS.get(self.sms_transport, ())
+        return bool(required) and all(getattr(self, name) for name in required)
 
     def refuse_unready_signup(self) -> None:
         if self.app_environment == "production" and self.self_signup_enabled and not (self.baa_url and self.terms_url):

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
+import { useCanSendTexts } from "@/hooks/useCanSendTexts";
 import { askProvider } from "@/lib/api/notes";
 import type { AskBody, Channel, Finding, NoteDetail } from "@/lib/api/types";
+import { usableChannel } from "@/lib/channels";
 import { formatCalendarDay } from "@/lib/format";
 import { askBody, initialDrafts, isAskValid, type QuestionDraft } from "../askRequest";
 import { REVIEW_TEXT } from "../strings";
@@ -24,8 +26,9 @@ export function AskProviderDialog({ detail, questions, onClose, onSent }: AskPro
   const words = REVIEW_TEXT.askDialog;
   const { note } = detail;
   const formId = useId();
+  const canSendTexts = useCanSendTexts();
   const [drafts, setDrafts] = useState<Record<string, QuestionDraft>>(() => initialDrafts(questions));
-  const [channel, setChannel] = useState<Channel>(note.provider.channel);
+  const [channel, setChannel] = useState<Channel>(() => usableChannel(note.provider.channel, canSendTexts));
   const [hold, setHold] = useState(true);
   const [tried, setTried] = useState(false);
   const send = useAction((body: AskBody) => askProvider(note.id, body));
@@ -69,7 +72,7 @@ export function AskProviderDialog({ detail, questions, onClose, onSent }: AskPro
           showErrors={tried}
           onChange={(key, draft) => setDrafts((current) => ({ ...current, [key]: draft }))}
         />
-        <AskOptions channel={channel} onChannel={setChannel} hold={hold} onHold={setHold} />
+        <AskOptions channel={channel} onChannel={setChannel} canSendTexts={canSendTexts} hold={hold} onHold={setHold} />
         {send.error ? <InlineAlert tone="bad">{send.error}</InlineAlert> : null}
       </form>
     </Dialog>

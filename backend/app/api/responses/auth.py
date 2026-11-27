@@ -33,6 +33,7 @@ class PracticeSummary(View):
     id: str
     name: str
     checks: Checks
+    can_send_texts: bool
     idle_minutes: int
     time_zone: str
 

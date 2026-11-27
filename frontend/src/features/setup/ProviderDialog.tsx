@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
+import { useCanSendTexts } from "@/hooks/useCanSendTexts";
 import { addProvider, editProvider } from "@/lib/api/practice";
 import type { Channel, Place, Provider, ProviderInput } from "@/lib/api/types";
 import { CredentialFields } from "./CredentialFields";
@@ -35,7 +36,8 @@ function saveProvider(provider: Provider | null, input: ProviderInput): Promise<
 }
 
 export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderDialogProps) {
-  const [draft, setDraft] = useState<ProviderDraft>(() => draftFrom(provider));
+  const canSendTexts = useCanSendTexts();
+  const [draft, setDraft] = useState<ProviderDraft>(() => draftFrom(provider, canSendTexts));
   const [touched, setTouched] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
   const found = validateProvider(draft);
@@ -79,6 +81,7 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
           draft={draft}
           errors={errors}
           places={places}
+          canSendTexts={canSendTexts}
           onChange={change}
           onActive={(active) => setDraft((current) => ({ ...current, active }))}
           onTouched={(field) => setTouched((current) => (current.includes(field) ? current : [...current, field]))}

@@ -17,6 +17,7 @@ from app.models import DEFAULT_CHECKS, MipsList, PlaceOfService, Practice, Provi
 from app.services.audit_log import record_activity
 from app.services.payers import has_active_payer, payer_list
 from app.services.plan_limits import ensure_provider_room
+from app.services.provider_channels import CHANNELS, CONTACT_FIELDS, EMAIL, TEXT, usable_channel
 from app.services.provider_details import DETAIL_FIELDS, validated_details
 
 SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
@@ -36,6 +37,7 @@ PROVIDER_FIELDS = ("name", "credential", "specialty", "npi", "place_code", "emai
 CREDENTIALS = ("MD", "DO", "NP", "PA", "CNS", "CNM")
 IDLE_MINUTES_CHOICES = (5, 10, 15, 30)
 ACCESS_LOG_YEARS = range(6, 11)
+NO_CONTACT = "questions need an email or phone to be sent to"
 
 
 def section_complete(values: dict[str, Any], fields: tuple[str, ...]) -> bool:
@@ -132,9 +134,12 @@ async def validated_provider(db: AsyncSession, values: dict[str, Any]) -> dict[s
         raise Invalid(f"{clean['npi']} is not a valid NPI")
     if clean["place_code"] and await db.get(PlaceOfService, clean["place_code"]) is None:
         raise Invalid(f"unknown place of service {clean['place_code']}")
-    clean["channel"] = clean["channel"] or ("sms" if clean["phone"] and not clean["email"] else "email")
-    if clean["channel"] not in ("email", "sms") or not clean["email" if clean["channel"] == "email" else "phone"]:
-        raise Invalid("questions need an email or phone to be sent to")
+    preferred = clean["channel"] or (TEXT if clean["phone"] and not clean["email"] else EMAIL)
+    if preferred not in CHANNELS:
+        raise Invalid(NO_CONTACT)
+    clean["channel"] = usable_channel(preferred, name=clean["name"], email=clean["email"])
+    if not clean[CONTACT_FIELDS[clean["channel"]]]:
+        raise Invalid(NO_CONTACT)
     return clean
 
 

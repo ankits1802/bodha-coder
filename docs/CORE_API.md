@@ -6,7 +6,7 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `config.py` | `Settings` (billing settings in `BILLING_SETTINGS` read blank as unset; refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default; `refuse_unready_signup()` raises `SignupNotReady` when production has self sign-up on without `BAA_URL` and `TERMS_URL`, called first in the API lifespan; blank `TERMS_URL`, `BAA_URL`, `PRIVACY_URL` read as unset), `get_settings()` |
+| `config.py` | `Settings` (billing settings in `BILLING_SETTINGS` read blank as unset; refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default; `refuse_unready_signup()` raises `SignupNotReady` when production has self sign-up on without `BAA_URL` and `TERMS_URL`, called first in the API lifespan; blank `TERMS_URL`, `BAA_URL`, `PRIVACY_URL` read as unset; `can_send_texts` is true in development and otherwise only when `SMS_TRANSPORT` is `twilio` or `sns` with every setting `TEXT_SETTINGS` names for it), `get_settings()` |
 | `db.py` | `engine`, `SessionFactory`, `get_session` |
 | `security.py` | `hash_password`, `verify_password`, `issue_token`, `read_token`, `digest`, `same_digest`, `random_token`, `random_code`, TOTP helpers (`mfa_step_for`, `mfa_uri`, `new_mfa_secret`), `seal_mfa_secret` / `open_mfa_secret` / `is_sealed_mfa_secret` (Fernet, `MFA_ENCRYPTION_KEY`), `MfaKeyUnavailable` |
 | `errors.py` | `AppError` (400) and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable`, `RateLimited` (429) |
@@ -59,7 +59,7 @@ Check here before writing a helper.
 | `object_store.py` | `ObjectStore` protocol (`put`, `get`, `signed_url`, `delete`, `delete_prefix` refusing anything that is not a folder), `S3ObjectStore` (S3 and R2; `client=` for a stubbed client), key builders `note_document_key`, `note_document_revision_key`, `analysis_response_key`, `evaluation_response_key(practice_id, run_id, case_id, attempt)`, `practice_prefix`, `note_prefix` |
 | `object_listing.py` | `ListingStore` protocol (an `ObjectStore` with `list_keys(prefix)`, `object_pages(prefix)` yielding one list of `StoredObject` (key, `LastModified`) per S3 page, and `list_folders(prefix)` (the folders directly under it); folders only), `S3ListingStore` (an `S3ObjectStore` that also lists) |
 | `messenger.py` | `Messenger` protocol, `build_messenger` (email: SES, SMTP or outbox; texts: SNS, Twilio or outbox), `OutboxMessenger` |
-| `email_senders.py`, `sms_senders.py` | `SesEmail`, `SmtpEmail`, `SnsSms`, `TwilioSms` |
+| `email_senders.py`, `sms_senders.py` | `SesEmail`, `SmtpEmail`, `SnsSms` (transactional, from `SNS_ORIGINATION_NUMBER` when set: `message_attributes`), `TwilioSms` |
 | `mail_layout.py` | `html_from_text` (the HTML version of every email) |
 | `pdf_text.py` | `read_pdf_text`, `DocumentUnreadable` |
 | `pdf_writer.py` | `render_pdf(PdfDocument) -> bytes` (reportlab, Helvetica, page footer), blocks `PdfHeading`, `PdfText` (`body`, `secondary`, `quote`, `label`), `PdfFacts`, `PdfTable` (`weights`), `PdfPageBreak` |
@@ -103,6 +103,7 @@ Check here before writing a helper.
 | `records.py` | `replace_document`, `NewDocument`, `access_log_page`, `retention_cutoff(now, zone, years)`, `purge_access_logs(db, now) -> int`, `delete_practice`, `PRACTICE_DELETED` |
 | `file_sweep.py` | `sweep_orphan_files(db, store, now) -> int` (the daily orphan sweep; a `ListingStore`), `classify_key(practice_id, key) -> StoredFile` (document, reply, remittance, evaluation, intake or unknown), `ORPHAN_AGE` (24 hours) |
 | `provider_details.py` | `validated_details`, `details_view`, `DETAIL_FIELDS` (provider credentialing) |
+| `provider_channels.py` | how provider questions travel: `require_channel(provider, channel)` (409 `TEXTS_UNAVAILABLE` for a text while `can_send_texts` is false; 422 when the provider has no address for the channel), `usable_channel(preferred, name=, email=)` (a preferred text becomes email while texts cannot be sent; 422 naming a provider with no email), `contact_for`, `CHANNELS`, `CONTACT_FIELDS`, `EMAIL`, `TEXT` |
 | `payers.py` | `payer_list`, `has_active_payer`, `add_payer`, `change_payer`, `remove_payer`, `PLAN_TYPES` |
 | `worklists.py` | `queue_query(..., assigned=)` (`UNASSIGNED` for none), `queue_rows`, `lane_counts(db, practice_id, now=)`, `summary`, `user_names`, `assignee_name`, `QUEUE_STATUSES`, `DUE_SOON` |
 | `assignment.py` | `assign_notes(db, actor, note_ids, user_id)` (the assignment rules; records `assigned`) |
@@ -139,7 +140,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `view.py` | `View` (base model, `extra="forbid"`) |
 | `errors.py` | `ErrorResponse` (`error`, `message`), `error_responses(path, endpoint, dependencies)` (the error responses a route can return, read from its dependency tree) |
 | `base.py` | re-exports `View` and `ErrorResponse`; `ExactRoute` (the `route_class` of every router: responses carry exactly the keys the service built, and errors are described by `error_responses`), `Omittable[T]` (a key a service may leave out: optional, never `null`, declared `= None`), `file_download(media_type)` (route options for a file response), `Created` (`id`), `DocumentLink` (`url`), the shared literals `NoteStatus`, `Lane`, `Role`, `PracticeRole`, `Channel`, `TextSource`, `RequestStatus`, `PlanType` (derived from the model and service constants) |
-| `auth.py` | `User`, `PracticeSummary`, `Checks`, `SignedIn` (`recovery_codes` omittable), `MfaChallenge`, `MfaEnrolment`, `SignInProviders` (`providers`, `signup`), `SignUpOptions`, `IdentityProviderName`, `SignedInDevice`, `RecoveryCodeStatus`, `RecoveryCodes`, `Preferences` |
+| `auth.py` | `User`, `PracticeSummary` (`can_send_texts` tells screens whether to offer texts), `Checks`, `SignedIn` (`recovery_codes` omittable), `MfaChallenge`, `MfaEnrolment`, `SignInProviders` (`providers`, `signup`), `SignUpOptions`, `IdentityProviderName`, `SignedInDevice`, `RecoveryCodeStatus`, `RecoveryCodes`, `Preferences` |
 | `work.py` | `NoteSummary`, `QueueRow`, `ComplianceRow`, `LaneCount`, `LaneCounts`, `BatchProgress`, `TodaySummary`, `QueuePage`, `SearchResults`, `ComplianceList`, `LaneReason`, `EmAction` |
 | `notes.py` | `NoteDetail` and its parts (`NoteHeader`, `TextRevision`, `NoteText`, `AnalysisView`, `Finding`, `FindingAction`, `ClaimEstimates`, `NoteHistory`, `CodeJson` (`units` and `pointers` omittable), `AddendumRequestView`, `AddendumQuestion`, `AddendumAnswer`) |
 | `note_actions.py` | results of note actions (`NoteState`, `NoteLane`, `ComplianceOutcome`, `ApprovedNotes`, `AssignedNotes`, `DeletedNotes`, `QueuedNotes`, `NotePayer`, `RequestCancelled`, `RequestCreated`) and `ClaimPointers` |
@@ -175,6 +176,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `components/ui/PasswordInput.tsx` | `PasswordInput` (every password field: a show or hide button inside the field with `aria-pressed`; focus stays in the field; `look` `boxed` or `bare`) |
 | `components/shared/sign-in-providers/` | `ProviderButtons` ("Continue with …" for each enabled service), `ProviderMark` (inline Google, Microsoft and Yahoo marks), `providerName` |
 | `hooks/useSignInOptions.ts` | `useSignInOptions()` (`GET /api/auth/providers`), `loadedOptions` |
+| `hooks/useCanSendTexts.ts`, `lib/channels.ts` | `useCanSendTexts()` (the signed-in practice's `can_send_texts`), `isOfferedChannel(channel, canSendTexts)`, `usableChannel(preferred, canSendTexts)` (email while texts cannot be sent; used by asking a provider and the provider form and table) |
 | `lib/timeZones.ts` | `TIME_ZONE_LABELS`, `TIME_ZONES`, `DEFAULT_TIME_ZONE`, `zoneOptions(current)`, `preferredTimeZone(detected)` (the browser's zone when listed, else Central) |
 | `components/ui/Skeleton.tsx` | `SkeletonFrame` (a `status` region with the loading label), `SkeletonBlock` |
 | `components/ui/Pager.tsx` | `Pager` (offset pages with a total; text from `SHARED_TEXT.pager`), `offsetFrom(param)` |

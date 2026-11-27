@@ -11,6 +11,7 @@ interface ProviderFieldsProps {
   draft: ProviderDraft;
   errors: ProviderErrors;
   places: Place[];
+  canSendTexts: boolean;
   onChange: (field: ProviderTextField, value: string) => void;
   onActive: (active: boolean) => void;
   onTouched: (field: ProviderTextField) => void;
@@ -18,7 +19,7 @@ interface ProviderFieldsProps {
 
 const CHANNELS: readonly Channel[] = ["email", "sms"];
 
-export function ProviderFields({ draft, errors, places, onChange, onActive, onTouched }: ProviderFieldsProps) {
+export function ProviderFields({ draft, errors, places, canSendTexts, onChange, onActive, onTouched }: ProviderFieldsProps) {
   const words = PROVIDER_TEXT.dialog;
   const text = (field: ProviderTextField, label: string, type = "text", optional = true) => (
     <Field label={label} error={errors[field]} optional={optional ? words.optional : undefined}>
@@ -59,18 +60,20 @@ export function ProviderFields({ draft, errors, places, onChange, onActive, onTo
           />
         )}
       </Field>
-      <Field label={words.channel}>
-        {(control) => (
-          <Select
-            {...control}
-            value={draft.channel}
-            options={CHANNELS.map((channel) => ({ value: channel, label: CHANNEL_LABELS[channel] }))}
-            onChange={(value) => onChange("channel", value)}
-          />
-        )}
-      </Field>
-      {text("email", words.email, "email")}
-      {text("phone", words.phone, "tel")}
+      {canSendTexts ? (
+        <Field label={words.channel}>
+          {(control) => (
+            <Select
+              {...control}
+              value={draft.channel}
+              options={CHANNELS.map((channel) => ({ value: channel, label: CHANNEL_LABELS[channel] }))}
+              onChange={(value) => onChange("channel", value)}
+            />
+          )}
+        </Field>
+      ) : null}
+      {text("email", words.email, "email", draft.channel !== "email")}
+      {canSendTexts ? text("phone", words.phone, "tel", draft.channel !== "sms") : null}
       <div className="flex items-center justify-between gap-3 sm:col-span-2">
         <span aria-hidden="true" className="text-subhead font-medium">
           {words.active}

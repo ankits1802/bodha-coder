@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
-from app.core.errors import Unavailable
+from app.core.errors import Invalid, Unavailable
 from app.core.security import digest, random_token
 from app.models import AddendumRequest, Note, Practice, Provider, utcnow
 from app.services.addenda import send_link
@@ -65,7 +65,7 @@ async def _remind(db: AsyncSession, messenger: Messenger, request: AddendumReque
     practice = await db.get_one(Practice, request.practice_id)
     try:
         await send_link(messenger, provider, request.channel, token, practice, reminder=True)
-    except Unavailable as error:
+    except (Invalid, Unavailable) as error:
         logger.warning("reminder for request %s not sent: %s", request.id, error.message)
         request.remind_at = now + RETRY_AFTER_FAILURE
         await db.commit()

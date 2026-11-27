@@ -88,7 +88,30 @@ async def test_sns_sends_transactional_text_messages():
                 "MessageAttributes": {"AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}},
             },
         )
-        await SnsSms(_settings(), client=client).sms("+15550100", body="Your Bodha code is 123456")
+        await SnsSms(_settings(sns_origination_number=None), client=client).sms(
+            "+15550100", body="Your Bodha code is 123456"
+        )
+        stub.assert_no_pending_responses()
+
+
+async def test_sns_sends_from_the_registered_origination_number():
+    client = _client("sns")
+    with Stubber(client) as stub:
+        stub.add_response(
+            "publish",
+            {"MessageId": "s-2"},
+            {
+                "PhoneNumber": "+15550100",
+                "Message": "Open securely: link",
+                "MessageAttributes": {
+                    "AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"},
+                    "AWS.MM.SMS.OriginationNumber": {"DataType": "String", "StringValue": "+18885550100"},
+                },
+            },
+        )
+        await SnsSms(_settings(sns_origination_number="+18885550100"), client=client).sms(
+            "+15550100", body="Open securely: link"
+        )
         stub.assert_no_pending_responses()
 
 

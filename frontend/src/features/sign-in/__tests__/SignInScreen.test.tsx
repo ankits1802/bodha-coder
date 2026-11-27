@@ -45,6 +45,7 @@ const ADMIN: User = {
     id: "practice-1",
     name: "Lakeside Primary Care",
     checks: { em: true, icd: true, cdi: true, audit: true, mips: false, hcc: false },
+    can_send_texts: true,
     idle_minutes: 15,
     time_zone: "America/Chicago",
   },

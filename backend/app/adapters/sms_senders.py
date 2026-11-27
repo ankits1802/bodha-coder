@@ -12,6 +12,7 @@ from app.core.config import Settings
 
 TWILIO_URL = "https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
 TRANSACTIONAL = {"AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}}
+ORIGINATION_ATTRIBUTE = "AWS.MM.SMS.OriginationNumber"
 
 
 class TwilioSms:
@@ -38,13 +39,14 @@ class TwilioSms:
 class SnsSms:
     def __init__(self, settings: Settings, *, client: Any = None) -> None:
         self._client = client or boto3.client("sns", region_name=settings.aws_messaging_region)
+        self._attributes = message_attributes(settings.sns_origination_number)
 
     async def sms(self, to: str, *, body: str) -> None:
         await asyncio.to_thread(self._send, to, body)
 
     def _send(self, to: str, body: str) -> None:
         try:
-            self._client.publish(PhoneNumber=to, Message=body, MessageAttributes=TRANSACTIONAL)
+            self._client.publish(PhoneNumber=to, Message=body, MessageAttributes=self._attributes)
         except NoCredentialsError as error:
             raise MessengerNotConfigured("text messages are not set up") from error
         except ClientError as error:
@@ -52,3 +54,9 @@ class SnsSms:
             raise MessageNotSent(f"the text message was not sent ({code})") from error
         except BotoCoreError as error:
             raise MessageNotSent("the text message was not sent") from error
+
+
+def message_attributes(origination_number: str | None) -> dict[str, Any]:
+    if not origination_number:
+        return TRANSACTIONAL
+    return {**TRANSACTIONAL, ORIGINATION_ATTRIBUTE: {"DataType": "String", "StringValue": origination_number}}

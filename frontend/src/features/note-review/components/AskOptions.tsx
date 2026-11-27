@@ -1,14 +1,21 @@
-import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { SegmentedControl, type Segment } from "@/components/ui/SegmentedControl";
 import type { Channel } from "@/lib/api/types";
+import { isOfferedChannel } from "@/lib/channels";
 import { CHANNEL_LABELS } from "@/lib/labels";
 import { REVIEW_TEXT } from "../strings";
 
 interface AskOptionsProps {
   channel: Channel;
   onChannel: (channel: Channel) => void;
+  canSendTexts: boolean;
   hold: boolean;
   onHold: (hold: boolean) => void;
 }
+
+const CHANNEL_SEGMENTS: readonly Segment<Channel>[] = [
+  { value: "sms", label: CHANNEL_LABELS.sms },
+  { value: "email", label: CHANNEL_LABELS.email },
+];
 
 function HoldChoice({ checked, label, onSelect }: { checked: boolean; label: string; onSelect: () => void }) {
   return (
@@ -19,7 +26,7 @@ function HoldChoice({ checked, label, onSelect }: { checked: boolean; label: str
   );
 }
 
-export function AskOptions({ channel, onChannel, hold, onHold }: AskOptionsProps) {
+export function AskOptions({ channel, onChannel, canSendTexts, hold, onHold }: AskOptionsProps) {
   const words = REVIEW_TEXT.askDialog;
   return (
     <>
@@ -30,10 +37,7 @@ export function AskOptions({ channel, onChannel, hold, onHold }: AskOptionsProps
             label={words.sendBy}
             value={channel}
             onChange={onChannel}
-            segments={[
-              { value: "sms", label: CHANNEL_LABELS.sms },
-              { value: "email", label: CHANNEL_LABELS.email },
-            ]}
+            segments={CHANNEL_SEGMENTS.filter((segment) => isOfferedChannel(segment.value, canSendTexts))}
           />
           <span className="text-secondary">{words.secureLink}</span>
         </div>

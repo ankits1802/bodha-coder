@@ -1,4 +1,5 @@
 import type { Channel, Provider, ProviderInput } from "@/lib/api/types";
+import { usableChannel } from "@/lib/channels";
 import { isEmail, isNpiShaped } from "@/lib/validation";
 import { credentialDraftFrom, detailsFrom, validateCredentials, type CredentialDraft, type CredentialErrors } from "./credentialForm";
 import { PROVIDER_TEXT } from "./strings";
@@ -19,7 +20,7 @@ export interface ProviderDraft {
 export type ProviderTextField = Exclude<keyof ProviderDraft, "active" | "details">;
 export type ProviderErrors = Partial<Record<ProviderTextField, string>> & CredentialErrors;
 
-export function draftFrom(provider: Provider | null): ProviderDraft {
+export function draftFrom(provider: Provider | null, canSendTexts: boolean): ProviderDraft {
   return {
     name: provider?.name ?? "",
     credential: provider?.credential ?? "MD",
@@ -28,7 +29,7 @@ export function draftFrom(provider: Provider | null): ProviderDraft {
     place_code: provider?.place_code ?? "",
     email: provider?.email ?? "",
     phone: provider?.phone ?? "",
-    channel: provider?.channel ?? "email",
+    channel: usableChannel(provider?.channel ?? "email", canSendTexts),
     active: provider?.active ?? true,
     details: credentialDraftFrom(provider?.details),
   };

@@ -3050,6 +3050,7 @@ export interface components {
             total: number;
         };
         PracticeSummary: {
+            can_send_texts: boolean;
             checks: components["schemas"]["Checks"];
             id: string;
             idle_minutes: number;

@@ -135,6 +135,7 @@ def user_view(user: User, practice: Practice | None) -> dict[str, Any]:
             "id": practice.id,
             "name": practice.name,
             "checks": practice_checks(practice),
+            "can_send_texts": get_settings().can_send_texts,
             "idle_minutes": practice.idle_minutes,
             "time_zone": practice.time_zone,
         },
