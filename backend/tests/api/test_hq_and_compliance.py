@@ -1,4 +1,6 @@
-from tests.builders import create_hq_user, reviewed_note, sign_in
+from tests.builders import create_hq_user, invite_member, reviewed_note, sign_in
+
+KEEP_REASON = "Risk of the chosen management was discussed with the patient at length"
 
 
 async def _hq(harness) -> dict[str, str]:
@@ -66,6 +68,33 @@ async def test_a_flagged_note_shows_why_and_who_flagged_it(harness, icd_catalog)
         "Practice Admin",
     )
     assert (row["place_code"], row["visit_type"]) == ("11", "Established patient")
+
+
+async def test_compliance_keeps_the_billed_level_with_its_reason_in_the_access_log(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    path = f"/api/notes/{note_id}"
+    flagged = await harness.client.post(f"{path}/flag", headers=practice.admin, json={"reason": "Exam text copied"})
+    assert flagged.status_code == 200, flagged.text
+    await invite_member(harness, practice, name="Jordan Diaz", email="jordan@lakeside.example.com", role="compliance")
+    compliance = await sign_in(harness.client, "jordan@lakeside.example.com", secret_box=practice.secrets)
+    kept = await harness.client.post(
+        f"{path}/compliance", headers=compliance, json={"decision": "keep", "reason": KEEP_REASON}
+    )
+    assert kept.status_code == 200, kept.text
+    detail = (await harness.client.get(path, headers=practice.admin)).json()
+    finals = [entry["reason"] for entry in detail["history"]["code_sets"] if entry["kind"] == "final"]
+    assert (detail["note"]["status"], finals) == ("approved", ["compliance keep"])
+    log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
+    kept_entries = [(row["actor"], row["detail"]) for row in log if row["action"] == "compliance keep"]
+    assert kept_entries == [("Jordan Diaz", KEEP_REASON)]
+
+
+async def test_a_compliance_reason_longer_than_an_access_log_detail_is_refused(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    refused = await harness.client.post(
+        f"/api/notes/{note_id}/compliance", headers=practice.admin, json={"decision": "keep", "reason": "x" * 301}
+    )
+    assert refused.status_code == 422
 
 
 async def test_hq_reads_demo_requests_and_renames_a_practice(harness):

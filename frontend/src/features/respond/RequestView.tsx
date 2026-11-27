@@ -105,7 +105,7 @@ export function RequestView({ providerToken, onExpired, onSwitch }: RequestViewP
               <RequestHeader request={data} pdfPending={pdf.pending} pdfError={pdf.error} onOpenPdf={() => void pdf.run()} />
               <div className="flex flex-wrap items-start gap-6">
                 <NotePanel request={data} />
-                <div className="flex min-w-0 flex-[1_1_26rem] flex-col gap-4">
+                <div className="order-first flex min-w-0 flex-[1_1_26rem] flex-col gap-4 lg:order-none">
                   <Side
                     request={data}
                     result={result}

@@ -45,11 +45,11 @@ function ClaimCode({ code, line, letters, onEdit }: ClaimCodeProps) {
     <button
       type="button"
       aria-haspopup="dialog"
-      aria-label={REVIEW_TEXT.pointers.line(code, line.pointers.join(", "))}
+      aria-label={REVIEW_TEXT.pointers.line(code, pointed, line.pointers.join(", "))}
       onClick={() => onEdit(line)}
       className="inline-flex cursor-pointer items-center gap-1.25 rounded-chip"
     >
-      <CodeChip code={code} />
+      <CodeChip code={code} />{" "}
       <Letters value={pointed} />
     </button>
   );

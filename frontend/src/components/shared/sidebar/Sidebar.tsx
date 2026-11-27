@@ -30,7 +30,9 @@ function NavEntry({ item, active, count, onNavigate }: { item: NavItem; active: 
       >
         <NavIcon name={item.icon} />
         {item.label}
-        {count !== undefined ? <span className="ml-auto text-caption text-tertiary tabular-nums">{count}</span> : null}
+        {count !== undefined ? (
+          <span className={`ml-auto text-caption tabular-nums ${active ? "text-label-soft" : "text-tertiary"}`}>{count}</span>
+        ) : null}
       </Link>
     </li>
   );

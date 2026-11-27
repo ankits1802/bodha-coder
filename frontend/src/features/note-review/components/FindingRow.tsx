@@ -11,15 +11,22 @@ interface FindingRowProps {
   finding: Finding;
   decision?: ReactNode;
   quote?: QuoteCheck | null;
+  current?: boolean;
   children?: ReactNode;
 }
 
-export function FindingRow({ finding, decision, quote = null, children }: FindingRowProps) {
+const CURRENT = "bg-row-selected shadow-[inset_3px_0_0_var(--color-focus)]";
+
+export function FindingRow({ finding, decision, quote = null, current = false, children }: FindingRowProps) {
   const status = findingStatus(finding);
   const quoted = quote ? quoteStatus(quote) : null;
   const options = stringList(finding.detail.options);
   return (
-    <li className="flex flex-col gap-3 border-t border-hairline px-5 py-4 first:border-t-0">
+    <li
+      data-finding-key={finding.key}
+      aria-current={current || undefined}
+      className={`flex flex-col gap-3 border-t border-hairline px-5 py-4 first:border-t-0 ${current ? CURRENT : ""}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2.5">
         <div className="flex min-w-0 flex-[1_1_17rem] flex-col gap-1.25">
           <span className="flex flex-wrap items-center gap-2">

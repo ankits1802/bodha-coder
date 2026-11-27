@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field } from "@/components/ui/Field";
 import { TextArea } from "@/components/ui/Input";
+import { COMPLIANCE_REASON_MAX } from "@/lib/validation";
 import { COMPLIANCE_TEXT } from "../strings";
 
 const FORM_ID = "compliance-keep-form";
@@ -42,7 +43,7 @@ export function KeepDialog({ open, pending, error, onClose, onKeep }: KeepDialog
       >
         <Field label={COMPLIANCE_TEXT.keepReason} error={error}>
           {(control) => (
-            <TextArea {...control} required maxLength={2000} value={reason} onChange={(event) => setReason(event.target.value)} />
+            <TextArea {...control} required maxLength={COMPLIANCE_REASON_MAX} value={reason} onChange={(event) => setReason(event.target.value)} />
           )}
         </Field>
       </form>

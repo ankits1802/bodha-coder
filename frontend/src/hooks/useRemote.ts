@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { RemoteStatus } from "@/components/ui/RemoteView";
 import { messageOf } from "@/lib/api/errors";
+import { loadRemote, readRemote, writeRemote } from "./remoteCache";
 
 type Settled<T> = Exclude<RemoteStatus<T>, { status: "loading" }>;
 
@@ -21,15 +22,23 @@ export interface Remote<T> {
 
 const LOADING = { status: "loading" } as const;
 
-export function useRemote<T>(key: string | null, load: () => Promise<T>): Remote<T> {
+export function useRemote<T>(key: string | null, load: () => Promise<T>, keepSeconds = 0): Remote<T> {
   const [round, setRound] = useState(0);
   const [snapshot, setSnapshot] = useState<Snapshot<T> | null>(null);
-  const fetchData = useEffectEvent(load);
+  const forced = useRef(false);
+  const fetchData = useEffectEvent((target: string, join: boolean) => loadRemote(target, load, keepSeconds, join));
 
   useEffect(() => {
     if (key === null) return;
+    const fresh = forced.current;
+    forced.current = false;
+    const hit = fresh ? undefined : readRemote<T>(key);
+    if (hit !== undefined) {
+      setSnapshot({ key, round, state: { status: "success", data: hit } });
+      return;
+    }
     let live = true;
-    fetchData().then(
+    fetchData(key, !fresh).then(
       (data) => {
         if (live) setSnapshot({ key, round, state: { status: "success", data } });
       },
@@ -42,15 +51,21 @@ export function useRemote<T>(key: string | null, load: () => Promise<T>): Remote
     };
   }, [key, round]);
 
-  const reload = useCallback(() => setRound((value) => value + 1), []);
+  const reload = useCallback(() => {
+    forced.current = true;
+    setRound((value) => value + 1);
+  }, []);
   const replace = useCallback(
     (data: T) => {
-      if (key !== null) setSnapshot({ key, round, state: { status: "success", data } });
+      if (key === null) return;
+      writeRemote(key, data);
+      setSnapshot({ key, round, state: { status: "success", data } });
     },
     [key, round],
   );
 
   const current = snapshot !== null && snapshot.key === key;
-  const state: RemoteStatus<T> = current ? snapshot.state : LOADING;
+  const cached = !current && key !== null ? readRemote<T>(key) : undefined;
+  const state: RemoteStatus<T> = current ? snapshot.state : cached !== undefined ? { status: "success", data: cached } : LOADING;
   return { state, refreshing: current && snapshot.round !== round, reload, replace };
 }

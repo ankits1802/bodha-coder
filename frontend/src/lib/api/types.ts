@@ -80,6 +80,7 @@ export type ApprovedNotes = Schemas["ApprovedNotes"];
 export type AssignedNotes = Schemas["AssignedNotes"];
 export type DeletedNotes = Schemas["DeletedNotes"];
 export type QueuedNotes = Schemas["QueuedNotes"];
+export type ReopenedNotes = Schemas["ReopenedNotes"];
 export type RequestCreated = Schemas["RequestCreated"];
 export type PointerLine = Schemas["PointerLine"];
 export type ClaimDiagnosis = Schemas["ClaimDiagnosis"];

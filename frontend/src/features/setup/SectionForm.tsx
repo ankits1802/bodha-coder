@@ -9,7 +9,7 @@ import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { useAction } from "@/hooks/useAction";
 import { saveSetupSection } from "@/lib/api/practice";
 import type { SetupSection, SetupSectionKey } from "@/lib/api/types";
-import { fieldLabel, sameValues, valuesFor } from "./setupModel";
+import { fieldError, fieldLabel, sameValues, valuesFor } from "./setupModel";
 import { SETUP_TEXT } from "./strings";
 
 interface SectionFormProps {
@@ -21,13 +21,17 @@ interface SectionFormProps {
 export function SectionForm({ sectionKey, section, onSaved }: SectionFormProps) {
   const stored = valuesFor(section.fields, section.values);
   const [values, setValues] = useState(stored);
+  const [touched, setTouched] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const save = useAction(saveSetupSection);
   const dirty = !sameValues(values, stored);
   const formId = `setup-${sectionKey}`;
+  const errorOf = (field: string) => (touched.includes(field) ? fieldError(field, values[field] ?? "") : null);
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
+    setTouched(section.fields);
+    if (section.fields.some((field) => fieldError(field, values[field] ?? ""))) return;
     const outcome = await save.run(sectionKey, values);
     if (!outcome.ok) return;
     setSaved(true);
@@ -42,11 +46,16 @@ export function SectionForm({ sectionKey, section, onSaved }: SectionFormProps) 
   return (
     <Panel aria-labelledby={`${formId}-title`}>
       <PanelHeader title={<span id={`${formId}-title`}>{SETUP_TEXT.sections[sectionKey]}</span>} />
-      <form id={formId} onSubmit={submit} className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
+      <form id={formId} onSubmit={submit} noValidate className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
         {section.fields.map((field) => (
-          <Field key={field} label={fieldLabel(field)}>
+          <Field key={field} label={fieldLabel(field)} error={errorOf(field)}>
             {(control) => (
-              <Input {...control} value={values[field] ?? ""} onChange={(event) => change(field, event.target.value)} />
+              <Input
+                {...control}
+                value={values[field] ?? ""}
+                onChange={(event) => change(field, event.target.value)}
+                onBlur={() => setTouched((current) => (current.includes(field) ? current : [...current, field]))}
+              />
             )}
           </Field>
         ))}

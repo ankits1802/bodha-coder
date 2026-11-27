@@ -16,3 +16,23 @@ async def test_an_approved_note_can_be_reopened_until_it_is_exported(harness, ic
     assert (await harness.client.post(f"{path}/approve", headers=practice.admin)).status_code == 200
     await harness.client.post("/api/billing/export", headers=practice.admin, json={})
     assert (await harness.client.post(f"{path}/reopen", headers=practice.admin)).status_code == 409
+
+
+async def test_approvals_are_undone_together_or_not_at_all(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    path = f"/api/notes/{note_id}"
+    assert (await harness.client.post(f"{path}/approve", headers=practice.admin)).status_code == 200
+
+    missing = await harness.client.post(
+        "/api/notes/reopen", headers=practice.admin, json={"note_ids": [note_id, "no-such-note"]}
+    )
+    assert missing.status_code == 404
+    assert (await harness.client.get(path, headers=practice.admin)).json()["note"]["status"] == "approved"
+
+    reopened = await harness.client.post("/api/notes/reopen", headers=practice.admin, json={"note_ids": [note_id]})
+    assert reopened.json() == {"reopened": [note_id]}
+    assert (await harness.client.get(path, headers=practice.admin)).json()["note"]["status"] == "ready"
+    again = await harness.client.post("/api/notes/reopen", headers=practice.admin, json={"note_ids": [note_id]})
+    assert again.status_code == 409
+    log = (await harness.client.get("/api/access-log", headers=practice.admin)).json()["items"]
+    assert [row["action"] for row in log].count("reopened") == 1

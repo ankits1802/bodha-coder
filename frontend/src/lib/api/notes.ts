@@ -14,6 +14,7 @@ import type {
   NoteState,
   PayerOption,
   QueuedNotes,
+  ReopenedNotes,
   RequestCancelled,
   RequestCreated,
 } from "./types";
@@ -88,6 +89,10 @@ export function cancelRequest(noteId: string): Promise<RequestCancelled> {
 
 export function reopenNote(noteId: string): Promise<NoteState> {
   return request<NoteState>(notePath(noteId, "/reopen"), { method: "POST" });
+}
+
+export function reopenNotes(noteIds: string[]): Promise<ReopenedNotes> {
+  return request<ReopenedNotes>("/api/notes/reopen", { body: { note_ids: noteIds } });
 }
 
 export function retryFailedNotes(noteIds: string[] | null): Promise<QueuedNotes> {

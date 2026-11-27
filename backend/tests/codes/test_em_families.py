@@ -1,6 +1,6 @@
 import pytest
 
-from app.codes.em import EM_FAMILIES, compare_em, describe_em, is_em_code
+from app.codes.em import EM_FAMILIES, compare_em, describe_em, em_ladder, is_em_code
 from app.codes.modifiers import allowed_modifiers, modifier_meaning
 
 
@@ -43,3 +43,13 @@ def test_visit_and_procedure_codes_accept_different_modifiers():
     assert "XS" in allowed_modifiers("20610")
     assert modifier_meaning("99214", "95") == "Audio-video telehealth"
     assert modifier_meaning("20610", "25") is None
+
+
+def test_the_ladder_lists_every_level_of_the_code_family_in_order():
+    assert em_ladder("99310") == (
+        ("99307", "Straightforward"),
+        ("99308", "Low"),
+        ("99309", "Moderate"),
+        ("99310", "High"),
+    )
+    assert em_ladder("J01.90") == ()

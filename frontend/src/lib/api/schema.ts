@@ -767,6 +767,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reopen_many_api_notes_reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes/retry": {
         parameters: {
             query?: never;
@@ -2031,6 +2047,9 @@ export interface components {
         BulkApproveBody: {
             note_ids: string[];
         };
+        BulkReopenBody: {
+            note_ids: string[];
+        };
         CdiOverview: {
             codeLinkingOpportunities: components["schemas"]["CodeLinkingOpportunity"][] | null;
             overallCDIScore: number | null;
@@ -3146,6 +3165,9 @@ export interface components {
         };
         Renewal: {
             renews_on: string;
+        };
+        ReopenedNotes: {
+            reopened: string[];
         };
         RequestCancelled: {
             lane: string;
@@ -5840,6 +5862,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletedNotes"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    reopen_many_api_notes_reopen_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkReopenBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReopenedNotes"];
                 };
             };
             401: {

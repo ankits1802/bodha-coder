@@ -6,7 +6,7 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `config.py` | `Settings`, `get_settings()` |
+| `config.py` | `Settings` (refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default), `get_settings()` |
 | `db.py` | `engine`, `SessionFactory`, `get_session` |
 | `security.py` | `hash_password`, `verify_password`, `issue_token`, `read_token`, `digest`, `same_digest`, `random_token`, `random_code`, TOTP helpers (`mfa_step_for`, `mfa_uri`, `new_mfa_secret`), `seal_mfa_secret` / `open_mfa_secret` / `is_sealed_mfa_secret` (Fernet, `MFA_ENCRYPTION_KEY`), `MfaKeyUnavailable` |
 | `errors.py` | `AppError` and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable`, `RateLimited` (429) |
@@ -21,8 +21,8 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `icd.py` | `load_catalog()`, `IcdCatalog.for_service_date`, `IcdRelease.get / more_specific / is_unspecified`, `format_icd`, `fiscal_year_for` |
-| `em.py` | `EM_FAMILIES` (each `EmFamily` with its levels and add-ons, such as 99292), `compare_em`, `describe_em`, `is_em_code` |
+| `icd.py` | `load_catalog()`, `IcdCatalog.for_service_date`, `IcdCatalog.describe(code, service_date)`, `IcdRelease.get / more_specific / is_unspecified`, `format_icd`, `fiscal_year_for` |
+| `em.py` | `EM_FAMILIES` (each `EmFamily` with its levels and add-ons, such as 99292), `compare_em`, `describe_em`, `is_em_code`, `em_ladder(code)` (each level of the code's family as code and MDM level) |
 | `modifiers.py` | `VISIT_MODIFIERS`, `PROCEDURE_MODIFIERS`, `allowed_modifiers(code)`, `modifier_meaning(code, modifier)` |
 | `hcc.py` | `load_hcc_model(payment_year)`, `hcc_model_for(payment_year)` (None when not vendored), `HccModel.hccs_for / payment_hccs / score / label / factor / is_trumped`, `HccPatient`, `payment_year_for(service_date)`, `payment_year_age(birth_date, payment_year)` (age on 1 February of the payment year; None for a birth after that day), `segment_for(age)`, `sex_code`, `HccDataCorrupt` (CMS-HCC V28, checksummed manifest) |
 | `billing_codes.py` | `Code` (`units`, `pointers` (up to `MAX_POINTERS` distinct ICD-10-CM codes, procedure lines only; JSON `pointers`, absent when none), `label()` `96127 ×2`, `as_text()` `96127x2`, `as_json` / `from_json`), `InvalidUnits`, `InvalidPointers`, `with_pointers(codes, pointers)` (stored choices onto their lines, diagnoses no longer on the claim dropped), `parse_code_list` (reads units), `claim_changes(final, billed)`, `parse_note_filename`, `is_known_cpt` |
@@ -49,6 +49,7 @@ Check here before writing a helper.
 | `cdi.py`, `audit.py`, `mips.py` | CDI, audit checklist and MIPS section models (ChartMate field names); MIPS `MeasureStatus` |
 | `hcc.py` | `HccScanOutput` (suspected conditions from the model), `HccReview` (stored, with the payment year), `hcc_review` |
 | `prompts/cdi.py` | `COMPLIANT_QUERY_RULES`, the AHIMA/ACDIS query rules every provider question follows |
+| `prompts/context.py` | `CONTEXT_HEADING`, `labelled_addendum(revision, text)` (how an addendum is shown to the model; used by the analysis and evaluation runs), `ADDENDUM_HEADING_PATTERN` (finds that label in note text) |
 | `prompts/` | one module per section, plus the shared frame and context |
 
 ## backend/app/adapters
@@ -63,6 +64,7 @@ Check here before writing a helper.
 | `pdf_text.py` | `read_pdf_text`, `DocumentUnreadable` |
 | `pdf_writer.py` | `render_pdf(PdfDocument) -> bytes` (reportlab, Helvetica, page footer), blocks `PdfHeading`, `PdfText` (`body`, `secondary`, `quote`, `label`), `PdfFacts`, `PdfTable` (`weights`), `PdfPageBreak` |
 | `gemini.py` | `GeminiClient` (the `ModelClient` for Gemini on the Developer API or Vertex AI, `GEMINI_BACKEND`), `VERTEX_PDF_TOO_LARGE` |
+| `demo_model.py`, `demo_answers.py` | `DemoModelClient(DemoCodeBook)` (the `ModelClient` for `GEMINI_BACKEND=demo`: canned review bundles, model `DEMO_MODEL`), `demo_outcome(document)` (first SHA-256 byte modulo five over `DEMO_OUTCOMES`), `read_request(prompt, pdf)`; `DemoCodeBook` takes `em_ladder` and an ICD-10-CM describer from the worker, as adapters do not import `codes` |
 | `google_oidc.py` | `GoogleSignIn` protocol, `GoogleOidc`, `build_google_sign_in`, `GoogleIdentity`, `GoogleRefused`, `GoogleUnreachable`, `pkce_challenge` |
 
 ## backend/app/services (shared by several routes)
@@ -106,7 +108,7 @@ Check here before writing a helper.
 | `visit_levels.py` | `visit_codes(db, note_ids)` (the E/M code of the final code set once approved, otherwise of the latest billed set), `visit_code(codes)`, `is_leveled(code)` (families of three or more levels), `is_top_level(code)` (the two highest levels) |
 | `claim_checks.py` | `claim_checks(db, actor, note_id)` (NCCI edits and payer flags for the note's current claim, with `initial_visit_repeated` from the patient's other notes; records `checked claim edits`), `edits_for(tables, codes, note)`, `stay_history(db, note)` (the same patient's earlier notes as `EarlierVisit`s) |
 | `claim_lines.py` | `claim_lines(db, actor, note_ids)` (approved, not exported; records `built claim lines`), `build_claim(party, codes, primaries=)` (diagnosis letters A to L, at most 12; stored pointers as letters), `line_pointers(codes, primaries)` (stored, else an add-on's primary's, else the first four), `add_on_primaries(tables, codes, service_date)` (NCCI add-on to its primary on the claim), `note_pointers(db, actor, note_id)` and `pointers_view` (the pointer editor's data), `claims_json`, `claims_csv` (formula-safe), `billing_npi(npi, details)`, `CLAIM_LINE_COLUMNS` |
-| `review_actions.py` | `current_claim(db, note)` (billed codes, latest decisions and stored pointers), `stored_pointers(db, note_id)`, `save_pointers(db, actor, note_id, lines)` (records `linked diagnoses`), `approve`, `note_for` and the other review actions |
+| `review_actions.py` | `current_claim(db, note)` (billed codes, latest decisions and stored pointers), `stored_pointers(db, note_id)`, `save_pointers(db, actor, note_id, lines)` (records `linked diagnoses`), `approve`, `reopen`, `reopen_many(db, actor, note_ids)` (undoes approvals together or not at all; records `reopened`), `note_for` and the other review actions; a compliance decision's reason is written to the access log (`compliance keep`, `compliance confirm`) |
 | `agreement.py` | `ClaimElements` (E/M code, ICD-10 set, modifier set), `elements_of(codes)`, `elements_from_json`, `em_level(code)` (MDM level or `Time`), `em_direction`, `compare_elements(reference, compared)` (one note), `summarize(comparisons)` (Wilson rates for per-note elements, per-note bootstrap for ICD-10 precision and recall), `visit_agreement(comparisons)` (E/M exact rate) |
 | `code_sets.py` | `latest_codes(db, note_id, kind)`, `latest_codes_for(db, kind, note_ids) -> dict[note id, codes]` (the latest set of each note in one query; used by `insights` and `visit_levels`), `next_revision(db, model, note_id, **filters)` (the same queries as `analysis.py`, which should import them from here) |
 | `autonomy.py` | `provider_eligibility(db, provider) -> Eligibility` (latest `done` audit run), `MIN_AUDIT_NOTES`, `MIN_EM_LOWER_BOUND`, `MAX_BODHA_HIGHER_SHARE` |
@@ -138,13 +140,19 @@ dictionaries and the model validates them (see Architecture, API types).
 
 | Module | Provides |
 |---|---|
-| `components/shared/shortcuts/registry.ts` | `SHORTCUTS` (the one list of keyboard shortcuts, by scope `global`, `queue`, `review`), `comboFor`, `shortcutsIn(scope, role)`, `scopeForPath`, `isTyping`, `comboKeys`, `shortcutKeys(id, mac)` (`A`, `⌘+K`), `shortcutTitle(id, mac)` (`Previous note (K)`, for buttons and key hints) |
+| `components/shared/shortcuts/registry.ts` | `SHORTCUTS` (the one list of keyboard shortcuts, by scope `global`, `today`, `queue`, `review`: `n` starts reviewing on Today; `y` and `n` accept or reject the selected finding, `q` (or `p`) asks the provider, `u` undoes the last toast action), `comboFor`, `shortcutsIn(scope, role)`, `scopeForPath`, `isTyping`, `comboKeys`, `shortcutKeys(id, mac)` (`A`, `⌘+K`), `shortcutTitle(id, mac)` (`Previous note (K)`, for buttons and key hints) |
 | `components/shared/shortcuts/useIsMac.ts` | `useIsMac()` (Command or Ctrl in key labels) |
-| `components/shared/shortcuts/useShortcuts.ts` | `useShortcuts(scope, handlers)` (ignores plain keys while typing and while a dialog is open) |
+| `components/shared/shortcuts/useShortcuts.ts` | `useShortcuts(scope, handlers)` (ignores plain keys while typing and while a dialog is open; listens from the first paint) |
+| `components/shared/toast/` | `showToast(message, action?)`, `dismissToast`, `runToastAction`, `useToast`, `TOAST_SECONDS`; `ToastHost` (in the practice layout; `u` runs the action). Undo for reversible actions instead of a confirmation |
+| `components/shared/noteDetail.ts` | `useNoteDetail(noteId)`, `prefetchNoteDetail(noteId)`, `forgetNoteDetail(noteId)` (one cache key for a note's detail across note review, compliance and Today) |
 | `components/shared/shortcuts/ShortcutList.tsx`, `ShortcutsDialog.tsx` | the shortcut list (help page and the `?` dialog) |
 | `components/shared/overlays.ts` | `openOverlay("search" \| "shortcuts")`, `closeOverlay`, `useOpenOverlay` |
 | `components/shared/noteStatus.ts` | `noteStatus`, `DELETABLE_STATUSES`, `ASSIGNABLE_STATUSES` |
 | `hooks/useAssignees.ts` | `useAssignees(user)` (who the user may assign notes to) |
+| `hooks/useRemote.ts` | `useRemote(key, load, keepSeconds = 0)` (loading, error and success; serves a fresh cached or prefetched value at once and shares a request already running for the key) |
+| `hooks/remoteCache.ts` | `prefetchRemote(key, load)` (kept `PREFETCH_SECONDS`), `loadRemote`, `readRemote`, `keepRemote`, `writeRemote`, `editRemote`, `forgetRemote`, `LOOKUP_SECONDS` (places, payers, providers); emptied when the session ends |
+| `hooks/useRememberedParams.ts` | `useRememberedParams(screen, keys)` (restores a screen's last filters per user from local storage when it opens without any; never the search text), `rememberedParams` |
+| `components/ui/Skeleton.tsx` | `SkeletonFrame` (a `status` region with the loading label), `SkeletonBlock` |
 | `components/ui/Pager.tsx` | `Pager` (offset pages with a total; text from `SHARED_TEXT.pager`), `offsetFrom(param)` |
 | `components/shared/batchProgress.ts` | `batchCounts(batch)` (total, finished, pending, failed from counts by status) |
 | `components/shared/blind-coding/` | `BlindCodingPanel` (note text, PDF button and the blind form; renders nothing else of the note), `BlindCodingForm`, `parseAnswer`, `splitCodes`, `useBlindSession(sampleId)` (audits and training) |

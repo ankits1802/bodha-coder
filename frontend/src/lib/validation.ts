@@ -11,6 +11,7 @@ const SIX_DIGITS = /^\d{6}$/;
 const NPI_PATTERN = /^\d{10}$/;
 
 export const PASSWORD_MIN_LENGTH = 10;
+export const COMPLIANCE_REASON_MAX = 300;
 
 export interface ParsedCodes {
   codes: string[];

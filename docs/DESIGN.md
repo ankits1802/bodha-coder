@@ -42,6 +42,15 @@ Grouped panels with 14px radius, pill buttons (primary, secondary, plain, danger
 controls, macOS-style sidebar with small line icons, toggles in system green. One primary action
 per screen. No helper sentences: labels, layout and state carry the meaning.
 
+## Feedback and flow
+
+A reversible action (approve, approve all) happens at once and offers Undo in a toast at the bottom
+for eight seconds; a confirmation dialog is kept for destructive actions only (delete, replace a PDF,
+block). Loads that fill a screen show a skeleton of its layout; small panels keep the spinner. In
+note review the finding that `y` and `n` act on carries a dark bar at its left edge, and focus moves
+to the next finding after each decision, then to Approve. Form fields are checked when they lose
+focus, not only on submit.
+
 Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.

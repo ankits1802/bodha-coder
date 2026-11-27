@@ -1,5 +1,6 @@
 "use client";
 
+import { LOOKUP_SECONDS } from "@/hooks/remoteCache";
 import { useRemote } from "@/hooks/useRemote";
 import type { LaneCounts } from "@/lib/api/types";
 import { getProviders } from "@/lib/api/uploads";
@@ -13,7 +14,7 @@ interface QueueFiltersBarProps {
 }
 
 export function QueueFiltersBar({ filters, lanes, allTotal }: QueueFiltersBarProps) {
-  const providers = useRemote("queue-providers", getProviders);
+  const providers = useRemote("queue-providers", getProviders, LOOKUP_SECONDS);
   return (
     <QueueToolbar
       lane={filters.lane}

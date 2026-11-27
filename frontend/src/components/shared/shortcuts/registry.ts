@@ -2,7 +2,7 @@ import type { Role } from "@/lib/api/types";
 import { canDo, canUse, type Action, type Area } from "@/lib/roles";
 import { SHARED_TEXT } from "../strings";
 
-export type ShortcutScope = "global" | "queue" | "review";
+export type ShortcutScope = "global" | "today" | "queue" | "review";
 export type ShortcutId = keyof typeof SHARED_TEXT.shortcuts.labels;
 
 export interface KeyCombo {
@@ -27,23 +27,28 @@ export interface KeyPress {
 export const SHORTCUTS: readonly Shortcut[] = [
   { id: "search", scope: "global", combos: [{ key: "k", withModifier: true }, { key: "/" }], requires: "search" },
   { id: "shortcuts", scope: "global", combos: [{ key: "?" }] },
+  { id: "undo", scope: "global", combos: [{ key: "u" }] },
+  { id: "startReviewing", scope: "today", combos: [{ key: "n" }] },
   { id: "reviewNext", scope: "queue", combos: [{ key: "n" }] },
   { id: "mine", scope: "queue", combos: [{ key: "m" }] },
   { id: "nextNote", scope: "review", combos: [{ key: "j" }] },
   { id: "previousNote", scope: "review", combos: [{ key: "k" }] },
   { id: "approve", scope: "review", combos: [{ key: "a" }], requires: "approve" },
-  { id: "askProvider", scope: "review", combos: [{ key: "p" }], requires: "ask" },
+  { id: "acceptFinding", scope: "review", combos: [{ key: "y" }], requires: "decide" },
+  { id: "rejectFinding", scope: "review", combos: [{ key: "n" }], requires: "decide" },
+  { id: "askProvider", scope: "review", combos: [{ key: "q" }, { key: "p" }], requires: "ask" },
 ];
 
-export const SCOPE_ORDER: readonly ShortcutScope[] = ["global", "queue", "review"];
+export const SCOPE_ORDER: readonly ShortcutScope[] = ["global", "today", "queue", "review"];
 
-const SCOPE_AREAS: Partial<Record<ShortcutScope, Area>> = { queue: "queue", review: "queue" };
+const SCOPE_AREAS: Partial<Record<ShortcutScope, Area>> = { today: "queue", queue: "queue", review: "queue" };
 
 const TYPING_TAGS = ["INPUT", "TEXTAREA", "SELECT"];
 
 export function scopeForPath(pathname: string): ShortcutScope {
   if (pathname.startsWith("/notes/")) return "review";
   if (pathname === "/queue") return "queue";
+  if (pathname === "/today") return "today";
   return "global";
 }
 

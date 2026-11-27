@@ -14,7 +14,7 @@ interface AskQuestionItemProps {
 
 export function AskQuestionItem({ index, finding, draft, showError, onChange }: AskQuestionItemProps) {
   const words = REVIEW_TEXT.askDialog;
-  const options = [...stringList(finding.detail.options), REVIEW_TEXT.questions.other];
+  const options = [...new Set([...stringList(finding.detail.options), REVIEW_TEXT.questions.other])];
   const empty = draft.include && draft.text.trim() === "";
   return (
     <li className="flex items-start gap-3 border-t border-hairline px-4 py-3.5 first:border-t-0">

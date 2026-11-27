@@ -15,7 +15,7 @@ interface QuestionCardProps {
 }
 
 const OPTION =
-  "flex min-h-10.5 cursor-pointer items-center gap-3 rounded-field px-3.5 text-body text-label shadow-option hover:bg-row-hover has-checked:shadow-option-on has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus";
+  "flex min-h-12 cursor-pointer items-center gap-3 rounded-field px-3.5 text-body text-label shadow-option hover:bg-row-hover has-checked:shadow-option-on has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus";
 
 export function QuestionCard({ number, question, draft, onChange }: QuestionCardProps) {
   const name = useId();

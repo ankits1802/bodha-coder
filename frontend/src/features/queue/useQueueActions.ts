@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAction } from "@/hooks/useAction";
-import { approveNotes, assignNotes, deleteNotes, remindProvider, retryFailedNotes } from "@/lib/api/notes";
+import { showToast } from "@/components/shared/toast/toastStore";
+import { approveNotes, assignNotes, deleteNotes, remindProvider, reopenNotes, retryFailedNotes } from "@/lib/api/notes";
 import { formatCount } from "@/lib/format";
 import { QUEUE_TEXT } from "./strings";
 
@@ -30,6 +31,7 @@ export function useQueueActions(onChanged: () => void): QueueActions {
   const remove = useAction(deleteNotes);
   const remind = useAction(remindProvider);
   const retry = useAction(retryFailedNotes);
+  const reopen = useAction(reopenNotes);
   const [remindingId, setRemindingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -38,7 +40,15 @@ export function useQueueActions(onChanged: () => void): QueueActions {
     remind.clearError();
     const outcome = await approve.run(noteIds);
     if (!outcome.ok) return;
-    setNotice(QUEUE_TEXT.approved(formatCount(outcome.value.approved.length)));
+    const approved = outcome.value.approved;
+    showToast(QUEUE_TEXT.approved(formatCount(approved.length)), { label: QUEUE_TEXT.undo, run: () => void undoApproval(approved) });
+    onChanged();
+  }
+
+  async function undoApproval(noteIds: string[]): Promise<void> {
+    const outcome = await reopen.run(noteIds);
+    if (!outcome.ok) return;
+    showToast(QUEUE_TEXT.reopened(formatCount(outcome.value.reopened.length)));
     onChanged();
   }
 
@@ -95,6 +105,6 @@ export function useQueueActions(onChanged: () => void): QueueActions {
     retryFailed,
     retrying: retry.pending,
     notice,
-    error: approve.error ?? remind.error ?? retry.error,
+    error: approve.error ?? remind.error ?? retry.error ?? reopen.error,
   };
 }

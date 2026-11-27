@@ -2,6 +2,7 @@ from app.models.base import Base, new_id, utcnow
 from app.models.quality import AuditRun, AuditSample, EvalCase, EvalRun
 from app.models.remittance import Remittance, RemittanceLine
 from app.models.tables import (
+    ACCESS_DETAIL_LENGTH,
     ANALYSIS_STATUSES,
     CHOICES,
     CODE_SET_KINDS,
@@ -33,6 +34,7 @@ from app.models.tables import (
 )
 
 __all__ = [
+    "ACCESS_DETAIL_LENGTH",
     "ANALYSIS_STATUSES",
     "CHOICES",
     "CODE_SET_KINDS",

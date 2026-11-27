@@ -15,6 +15,8 @@ export const REVIEW_TEXT = {
     cancel: "Cancel",
   },
   position: (index: number, total: number) => `Note ${index} of ${total}`,
+  approvedToast: (patient: string) => `Approved ${patient}`,
+  undo: "Undo",
   patientUnknown: "Patient not read yet",
   seen: (day: string) => `Seen ${day}`,
   due: (left: string) => `Due in ${left}`,
@@ -186,7 +188,7 @@ export const REVIEW_TEXT = {
   claim: "Claim",
   claimEmpty: "No codes yet",
   pointers: {
-    line: (code: string, diagnoses: string) => `${code}, diagnoses ${diagnoses}`,
+    line: (code: string, letters: string, diagnoses: string) => `${[code, letters].filter(Boolean).join(" ")}, diagnoses ${diagnoses}`,
     title: (code: string) => `Diagnoses for ${code}`,
     chosen: (count: number, most: number) => `${count} of ${most}`,
     option: (code: string, letter: string | null, ordinal: string | null) => [letter, code, ordinal].filter(Boolean).join(" "),

@@ -96,7 +96,9 @@ Keys carry ids only, never names. PDFs are opened through signed links that expi
    code changes.
 5. People decide. The claim is always derived: billed codes plus the latest decision on each
    suggestion, with the latest diagnosis pointers on each procedure line. Approval writes a final
-   code set revision.
+   code set revision. Until export an approval can be undone (`POST /api/notes/{id}/reopen`, or
+   `POST /api/notes/reopen` for several, all or none); the final code set stays as history and
+   `reopened` is logged.
 6. Asking the provider stores the questions and emails or texts a link whose token travels in the
    URL fragment. The provider confirms a one-time code sent to the contact on file, answers, and
    signs; the answers become a new note text revision and a new analysis is queued.
@@ -153,7 +155,19 @@ Decision: [0014](decisions/0014-units-and-medicare-national-estimates.md).
 14 MiB) or Vertex AI (`vertex`, `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION`, Application
 Default Credentials, PDFs inline up to 50 MiB; a larger PDF fails for good with "PDF too large for
 Vertex inline; split it"). PHI goes through Vertex under Google's BAA. Decision:
-[0012](decisions/0012-vertex-ai.md).
+[0012](decisions/0012-vertex-ai.md). `demo` answers with canned reviews (`adapters/demo_model.py`)
+and is refused at start-up when `APP_ENVIRONMENT` is `production` (the default):
+[0023](decisions/0023-demo-model-backend.md).
+
+## Web client data
+
+| Piece | How it works |
+|---|---|
+| Cache | `hooks/remoteCache.ts` keeps loaded values in memory for a few seconds to minutes: lookups (places, payers, providers) for five minutes, the review order of a lane for two minutes, a prefetched note for one minute. It is emptied when the session ends, and nothing is written to browser storage |
+| Prefetch | while a note is open, the next note of the lane is loaded; Today loads the first note waiting for a coder, and compliance the next case. A prefetch is an ordinary `GET /api/notes/{id}` and is written to the access log as `opened note` like any read |
+| Decisions | a choice shows at once and is saved in order (`PUT /api/notes/{id}/decisions`); approval waits for the saves still running, and a failed save puts the last saved state back with the error |
+| Remembered filters | the queue lane, assignee and provider filters and the compliance segment are kept per user in local storage (ids and lane names, never the search text) and restored when the screen opens without filters |
+| Homes | billers start on Ready to bill and compliance on Compliance; other practice roles on Today |
 
 ## Calendar days
 

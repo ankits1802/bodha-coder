@@ -25,15 +25,16 @@ export function InviteDialog({ onClose, onInvited }: InviteDialogProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<PracticeRole>("coder");
-  const [checked, setChecked] = useState(false);
+  const [touched, setTouched] = useState<string[]>([]);
   const invite = useAction(inviteMember);
   const words = TEAM_TEXT.inviteDialog;
-  const nameError = checked && !name.trim() ? words.errors.name : null;
-  const emailError = checked && !isEmail(email) ? words.errors.email : null;
+  const touch = (field: string) => setTouched((current) => (current.includes(field) ? current : [...current, field]));
+  const nameError = touched.includes("name") && !name.trim() ? words.errors.name : null;
+  const emailError = touched.includes("email") && !isEmail(email) ? words.errors.email : null;
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    setChecked(true);
+    setTouched(["name", "email"]);
     if (!name.trim() || !isEmail(email)) return;
     const outcome = await invite.run({ name: name.trim(), email: email.trim(), role });
     if (outcome.ok) onInvited();
@@ -55,11 +56,20 @@ export function InviteDialog({ onClose, onInvited }: InviteDialogProps) {
     >
       <form id={FORM_ID} noValidate onSubmit={submit} className="flex flex-col gap-4">
         <Field label={words.name} error={nameError}>
-          {(control) => <Input {...control} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />}
+          {(control) => (
+            <Input {...control} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} onBlur={() => touch("name")} />
+          )}
         </Field>
         <Field label={words.email} error={emailError}>
           {(control) => (
-            <Input {...control} type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Input
+              {...control}
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => touch("email")}
+            />
           )}
         </Field>
         <Field label={words.role}>

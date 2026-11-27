@@ -12,16 +12,23 @@ interface ProviderFieldsProps {
   places: Place[];
   onChange: (field: ProviderTextField, value: string) => void;
   onActive: (active: boolean) => void;
+  onTouched: (field: ProviderTextField) => void;
 }
 
 const CHANNELS: readonly Channel[] = ["email", "sms"];
 
-export function ProviderFields({ draft, errors, places, onChange, onActive }: ProviderFieldsProps) {
+export function ProviderFields({ draft, errors, places, onChange, onActive, onTouched }: ProviderFieldsProps) {
   const words = PROVIDER_TEXT.dialog;
   const text = (field: ProviderTextField, label: string, type = "text", optional = true) => (
     <Field label={label} error={errors[field]} optional={optional ? words.optional : undefined}>
       {(control) => (
-        <Input {...control} type={type} value={draft[field]} onChange={(event) => onChange(field, event.target.value)} />
+        <Input
+          {...control}
+          type={type}
+          value={draft[field]}
+          onChange={(event) => onChange(field, event.target.value)}
+          onBlur={() => onTouched(field)}
+        />
       )}
     </Field>
   );

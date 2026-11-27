@@ -1,7 +1,7 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     pdf_link_seconds: int = 60
     max_upload_mb: int = 40
 
-    gemini_backend: Literal["developer", "vertex"] = "developer"
+    app_environment: Literal["development", "staging", "production"] = "production"
+    gemini_backend: Literal["developer", "vertex", "demo"] = "developer"
     gemini_api_key: str | None = None
     google_cloud_project: str | None = None
     google_cloud_location: str | None = None
@@ -60,6 +61,12 @@ class Settings(BaseSettings):
     turnaround_hours: int = 48
     addendum_link_hours: int = 72
     provider_session_minutes: int = 30
+
+    @model_validator(mode="after")
+    def _no_demo_model_in_production(self) -> Self:
+        if self.gemini_backend == "demo" and self.app_environment == "production":
+            raise ValueError("GEMINI_BACKEND=demo is refused when APP_ENVIRONMENT is production")
+        return self
 
 
 @lru_cache

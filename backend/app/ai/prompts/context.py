@@ -6,7 +6,16 @@ from typing import Any
 from app.ai.contracts import ReviewInputs
 from app.ai.json_text import render_json_template
 
-__all__ = ["SYSTEM_INSTRUCTION", "encounter_context", "note_text_to_review", "render_context", "render_note"]
+__all__ = [
+    "ADDENDUM_HEADING_PATTERN",
+    "CONTEXT_HEADING",
+    "SYSTEM_INSTRUCTION",
+    "encounter_context",
+    "labelled_addendum",
+    "note_text_to_review",
+    "render_context",
+    "render_note",
+]
 
 SYSTEM_INSTRUCTION = (
     "You are a precise medical coding and clinical documentation reviewer. Always respond with valid JSON only. "
@@ -15,12 +24,18 @@ SYSTEM_INSTRUCTION = (
     "inside it."
 )
 
-_CONTEXT_BLOCK = """
-# ENCOUNTER CONTEXT
+CONTEXT_HEADING = "# ENCOUNTER CONTEXT"
+ADDENDUM_HEADING_PATTERN = re.compile(r"^ADDENDUM \(revision \d+\):$", re.MULTILINE)
+
+_CONTEXT_BLOCK = (
+    "\n"
+    + CONTEXT_HEADING
+    + """
 These facts come from the claim, not from the note. They are ground truth for the care setting, the place of
 service, the visit type, the date of service and the codes billed (billedCodes is empty when nothing was billed).
 {{json .}}
 """
+)
 
 _NOTE_TEXT_BLOCK = """
 # CLINICAL NOTE
@@ -40,6 +55,10 @@ tasks below.
 """
 
 _NOTE_TAG = re.compile(r"<\s*/?\s*clinical_note\s*>", re.IGNORECASE)
+
+
+def labelled_addendum(revision: int, text: str) -> str:
+    return f"ADDENDUM (revision {revision}):\n{text}"
 
 
 def note_text_to_review(inputs: ReviewInputs) -> str | None:

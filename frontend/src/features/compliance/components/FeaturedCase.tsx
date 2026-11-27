@@ -1,12 +1,11 @@
 "use client";
 
+import { useNoteDetail } from "@/components/shared/noteDetail";
 import { noteStatus } from "@/components/shared/noteStatus";
 import { SHARED_TEXT } from "@/components/shared/strings";
 import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { useRemote } from "@/hooks/useRemote";
-import { getNote } from "@/lib/api/notes";
 import { placeName, type PlaceNames } from "@/hooks/usePlaceNames";
 import type { ComplianceRow } from "@/lib/api/types";
 import { formatCalendarDay, formatDueIn } from "@/lib/format";
@@ -25,7 +24,7 @@ interface FeaturedCaseProps {
 }
 
 export function FeaturedCase({ row, placeNames, canDecide, onDecided }: FeaturedCaseProps) {
-  const detail = useRemote(`compliance-case:${row.id}`, () => getNote(row.id));
+  const detail = useNoteDetail(row.id);
   const status = noteStatus(row);
   const facts = detail.state.status === "success" ? caseFacts(detail.state.data, row) : null;
   return (

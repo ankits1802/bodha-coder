@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_store import ObjectStore, analysis_response_key
 from app.adapters.pdf_text import read_pdf_text
 from app.ai.contracts import BilledCode, ModelClient, ReviewInputs, ReviewOutcome
+from app.ai.prompts.context import labelled_addendum
 from app.codes.billing_codes import Code
 from app.codes.icd import IcdCatalog
 from app.codes.mips_scope import practice_scope
@@ -98,7 +99,7 @@ async def _note_source(db: AsyncSession, note: Note, store: ObjectStore) -> Note
 
 
 def _labelled(text: NoteText) -> str:
-    return text.text if text.source == "document" else f"ADDENDUM (revision {text.revision}):\n{text.text}"
+    return text.text if text.source == "document" else labelled_addendum(text.revision, text.text)
 
 
 async def _inputs(

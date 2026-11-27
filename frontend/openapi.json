@@ -1527,6 +1527,25 @@
         "title": "BulkApproveBody",
         "type": "object"
       },
+      "BulkReopenBody": {
+        "additionalProperties": false,
+        "properties": {
+          "note_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Note Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "note_ids"
+        ],
+        "title": "BulkReopenBody",
+        "type": "object"
+      },
       "CdiOverview": {
         "additionalProperties": false,
         "properties": {
@@ -2179,7 +2198,7 @@
           "reason": {
             "anyOf": [
               {
-                "maxLength": 2000,
+                "maxLength": 300,
                 "type": "string"
               },
               {
@@ -8884,6 +8903,23 @@
         "title": "Renewal",
         "type": "object"
       },
+      "ReopenedNotes": {
+        "additionalProperties": false,
+        "properties": {
+          "reopened": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reopened",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reopened"
+        ],
+        "title": "ReopenedNotes",
+        "type": "object"
+      },
       "RequestCancelled": {
         "additionalProperties": false,
         "properties": {
@@ -14335,6 +14371,95 @@
           }
         },
         "summary": "Delete Notes",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "/api/notes/reopen": {
+      "post": {
+        "operationId": "reopen_many_api_notes_reopen_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReopenBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReopenedNotes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Reopen Many",
         "tags": [
           "notes"
         ]

@@ -54,7 +54,7 @@ export function SegmentedControl<V extends string>({ label, value, segments, onC
           >
             {segment.label}
             {segment.count !== undefined ? (
-              <span className="ml-1 font-normal text-tertiary tabular-nums">{segment.count}</span>
+              <span className="ml-1 font-normal text-label-soft tabular-nums">{segment.count}</span>
             ) : null}
           </button>
         );

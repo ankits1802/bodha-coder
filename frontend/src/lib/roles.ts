@@ -75,8 +75,10 @@ export function canDo(role: Role | null | undefined, action: Action): boolean {
   return role != null && ACTION_ROLES[action].includes(role);
 }
 
+const HOMES: Partial<Record<Role, string>> = { hq: "/hq", biller: "/billing", compliance: "/compliance" };
+
 export function homeFor(role: Role): string {
-  return role === "hq" ? "/hq" : "/today";
+  return HOMES[role] ?? "/today";
 }
 
 export const HQ_IDLE_MINUTES = 15;

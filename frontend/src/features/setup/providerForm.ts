@@ -64,3 +64,7 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
     details: detailsFrom(draft.details),
   };
 }
+
+export function touchedErrors(errors: ProviderErrors, touched: readonly string[]): ProviderErrors {
+  return Object.fromEntries(Object.entries(errors).filter(([field]) => touched.includes(field))) as ProviderErrors;
+}

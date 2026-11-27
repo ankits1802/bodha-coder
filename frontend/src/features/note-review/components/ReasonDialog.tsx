@@ -18,12 +18,13 @@ export interface ReasonDialogText {
 interface ReasonDialogProps {
   text: ReasonDialogText;
   minLength: number;
+  maxLength: number;
   onClose: () => void;
   onDone: () => void;
   submit: (reason: string) => Promise<unknown>;
 }
 
-export function ReasonDialog({ text, minLength, onClose, onDone, submit }: ReasonDialogProps) {
+export function ReasonDialog({ text, minLength, maxLength, onClose, onDone, submit }: ReasonDialogProps) {
   const formId = useId();
   const [reason, setReason] = useState("");
   const [tried, setTried] = useState(false);
@@ -55,7 +56,7 @@ export function ReasonDialog({ text, minLength, onClose, onDone, submit }: Reaso
         }}
       >
         <Field label={text.reason} error={tried && tooShort ? text.invalid : action.error}>
-          {(control) => <TextArea {...control} value={reason} onChange={(event) => setReason(event.target.value)} rows={4} />}
+          {(control) => <TextArea {...control} maxLength={maxLength} value={reason} onChange={(event) => setReason(event.target.value)} rows={4} />}
         </Field>
       </form>
     </Dialog>

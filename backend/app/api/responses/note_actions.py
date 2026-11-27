@@ -12,6 +12,7 @@ __all__ = [
     "NoteState",
     "PointerLine",
     "QueuedNotes",
+    "ReopenedNotes",
     "RequestCancelled",
     "RequestCreated",
 ]
@@ -40,6 +41,10 @@ class NotePayer(View):
 
 class ApprovedNotes(View):
     approved: list[str]
+
+
+class ReopenedNotes(View):
+    reopened: list[str]
 
 
 class AssignedNotes(View):

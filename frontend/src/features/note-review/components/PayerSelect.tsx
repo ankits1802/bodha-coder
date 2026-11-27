@@ -2,6 +2,7 @@
 
 import { FilterSelect } from "@/components/ui/FilterSelect";
 import { useAction } from "@/hooks/useAction";
+import { LOOKUP_SECONDS } from "@/hooks/remoteCache";
 import { useRemote } from "@/hooks/useRemote";
 import { getPayers, setNotePayer } from "@/lib/api/notes";
 import { REVIEW_TEXT } from "../strings";
@@ -13,7 +14,7 @@ interface PayerSelectProps {
 }
 
 export function PayerSelect({ noteId, payer, onChanged }: PayerSelectProps) {
-  const payers = useRemote("note-payers", getPayers);
+  const payers = useRemote("note-payers", getPayers, LOOKUP_SECONDS);
   const save = useAction((next: string | null) => setNotePayer(noteId, next));
   const options = payers.state.status === "success" ? payers.state.data : [];
   if (options.length === 0) return null;

@@ -156,6 +156,13 @@ def is_em_code(code: str) -> bool:
     return em_position(code) is not None
 
 
+def em_ladder(code: str) -> tuple[tuple[str, str], ...]:
+    position = em_position(code)
+    if position is None:
+        return ()
+    return tuple((level.code, level.mdm) for level in position[0].levels)
+
+
 def describe_em(code: str) -> str | None:
     position = em_position(code)
     if position is None:

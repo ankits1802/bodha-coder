@@ -53,10 +53,10 @@ describe("ClaimCodes", () => {
     const onEdit = vi.fn();
     render(<ClaimCodes claim={LINKED_CLAIM} estimate={null} pointers={POINTERS} onEdit={onEdit} />);
 
-    const visit = screen.getByRole("button", { name: "99214, diagnoses E11.65, N18.30" });
-    const screening = screen.getByRole("button", { name: "96127 ×2, diagnoses N18.30" });
-    expect(visit).toHaveTextContent("99214AB");
-    expect(screening).toHaveTextContent("96127 ×2B");
+    const visit = screen.getByRole("button", { name: "99214 AB, diagnoses E11.65, N18.30" });
+    const screening = screen.getByRole("button", { name: "96127 ×2 B, diagnoses N18.30" });
+    expect(visit).toHaveTextContent("99214 AB");
+    expect(screening).toHaveTextContent("96127 ×2 B");
     fireEvent.click(screening);
     expect(onEdit).toHaveBeenCalledWith(POINTERS.lines[1]);
   });

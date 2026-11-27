@@ -9,6 +9,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
+import { useRememberedParams } from "@/hooks/useRememberedParams";
 import type { QueuePage, User } from "@/lib/api/types";
 import { getQueue } from "@/lib/api/work";
 import { formatCount } from "@/lib/format";
@@ -18,13 +19,14 @@ import { BulkActions } from "./components/BulkActions";
 import { Pager } from "./components/Pager";
 import { QueueFiltersBar } from "./components/QueueFiltersBar";
 import { QueueTable } from "./components/QueueTable";
-import { noteHref, selectsRows } from "./queueRules";
+import { isApprovable, noteHref, selectsRows } from "./queueRules";
 import { QUEUE_TEXT } from "./strings";
 import { useQueueActions } from "./useQueueActions";
 import { useQueueFilters } from "./useQueueFilters";
 import { useQueueSelection } from "./useQueueSelection";
 
 const REMOTE_TEXT = { loading: QUEUE_TEXT.loading, empty: QUEUE_TEXT.empty, retry: QUEUE_TEXT.retry };
+const REMEMBERED = ["lane", "assigned", "provider_id"] as const;
 
 function totalWaiting(page: QueuePage | null): string | undefined {
   return page ? QUEUE_TEXT.subtitle(formatCount(page.total)) : undefined;
@@ -33,6 +35,7 @@ function totalWaiting(page: QueuePage | null): string | undefined {
 function QueueContent({ user }: { user: User }) {
   const router = useRouter();
   const filters = useQueueFilters();
+  useRememberedParams("queue", REMEMBERED);
   const queue = useRemote(`queue:${filters.key}`, () => getQueue(filters.query));
   const selection = useQueueSelection(filters.key);
   const actions = useQueueActions(() => {
@@ -56,6 +59,7 @@ function QueueContent({ user }: { user: User }) {
     mine: () => filters.update({ assigned: filters.assigned === "me" ? null : "me", offset: null }),
   });
   const failed = page && canDo(user.role, "retry") ? page.failed : 0;
+  const approvable = page && filters.lane === "approve" && canDo(user.role, "approve") ? page.items.filter(isApprovable) : [];
   const header = (
     <>
       {failed > 0 ? (
@@ -64,6 +68,11 @@ function QueueContent({ user }: { user: User }) {
         </Button>
       ) : null}
       {next ? <ButtonLink href={noteHref(next.id, filters.lane)}>{QUEUE_TEXT.reviewNext}</ButtonLink> : null}
+      {approvable.length > 0 ? (
+        <Button variant="primary" pending={actions.approving} onClick={() => void actions.approveSelected(approvable.map((row) => row.id))}>
+          {QUEUE_TEXT.approveAll(formatCount(approvable.length))}
+        </Button>
+      ) : null}
     </>
   );
 

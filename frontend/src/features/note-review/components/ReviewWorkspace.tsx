@@ -6,6 +6,7 @@ import { openQuestions } from "../findings";
 import type { ReviewPermissions } from "../permissions";
 import type { Neighbours } from "../useNoteData";
 import type { ReviewActions } from "../useReviewActions";
+import { useDecisions } from "../useDecisions";
 import { useReviewShortcuts } from "../useReviewShortcuts";
 import { ClaimBar } from "./ClaimBar";
 import { NoteHeading } from "./NoteHeading";
@@ -30,8 +31,16 @@ interface ReviewWorkspaceProps {
 }
 
 export function ReviewWorkspace(props: ReviewWorkspaceProps) {
-  const { detail, placeLabel, permissions, actions, neighbours, onGo, onReplace, onReload, onApproved } = props;
+  const { detail, placeLabel, permissions, neighbours, onGo, onReplace, onReload, onApproved } = props;
   const [dialog, setDialog] = useState<OpenDialog>(null);
+  const decisions = useDecisions(detail, onReplace);
+  const actions: ReviewActions = {
+    ...props.actions,
+    approve: async () => {
+      await decisions.idle();
+      await props.actions.approve();
+    },
+  };
   const questions = openQuestions(detail.findings);
   const { previous, next } = neighbours;
   const openAsk = permissions.ask ? () => setDialog("ask") : null;
@@ -64,7 +73,14 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
         <SummaryPanel detail={detail} />
         <div className="flex flex-wrap items-start gap-6">
           <NotePanel texts={detail.texts} findings={detail.findings} />
-          <ReviewPanel detail={detail} permissions={permissions} actions={actions} onReplace={onReplace} onAsk={openAsk} />
+          <ReviewPanel
+            detail={detail}
+            permissions={permissions}
+            actions={actions}
+            decisions={decisions}
+            onReplace={onReplace}
+            onAsk={openAsk}
+          />
         </div>
       </div>
       <ClaimBar

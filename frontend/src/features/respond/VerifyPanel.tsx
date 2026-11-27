@@ -30,13 +30,17 @@ export function VerifyPanel({ token, expired, onVerified }: VerifyPanelProps) {
     setCode("");
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    const ready = isSixDigitCode(code);
+  async function check(value: string): Promise<void> {
+    const ready = isSixDigitCode(value);
     setIncomplete(!ready);
     if (!ready) return;
-    const outcome = await verify.run(token, code);
+    const outcome = await verify.run(token, value);
     if (outcome.ok) onVerified(outcome.value.provider_token);
+  }
+
+  function typed(value: string): void {
+    setCode(value);
+    if (isSixDigitCode(value) && !verify.pending) void check(value);
   }
 
   return (
@@ -49,11 +53,18 @@ export function VerifyPanel({ token, expired, onVerified }: VerifyPanelProps) {
           {RESPOND_TEXT.sendCode}
         </Button>
       ) : (
-        <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-5.5">
+        <form
+          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            void check(code);
+          }}
+          noValidate
+          className="flex flex-col gap-5.5"
+        >
           <p className="m-0 text-center text-body text-secondary">{RESPOND_TEXT.codeSentTo(sentTo)}</p>
           <CodeInput
             value={code}
-            onChange={setCode}
+            onChange={typed}
             label={RESPOND_TEXT.codeLabel}
             digitLabel={RESPOND_TEXT.digitLabel}
             disabled={verify.pending}

@@ -3,16 +3,19 @@
 import { useState, type ReactNode } from "react";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { Panel } from "@/components/ui/Panel";
-import { useAction } from "@/hooks/useAction";
+import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { useQueryParams } from "@/hooks/useQueryParams";
-import { saveDecisions } from "@/lib/api/notes";
-import type { Choice, Finding, NoteDetail } from "@/lib/api/types";
+import type { Finding, NoteDetail } from "@/lib/api/types";
+import { choiceFor, decisionOrder } from "../decisionFlow";
 import { riskSummary } from "../findings";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
+import type { Decisions } from "../useDecisions";
+import { useFindingFocus } from "../useFindingFocus";
 import type { ReviewActions } from "../useReviewActions";
 import { AuditTab } from "./AuditTab";
 import { CodesTab } from "./CodesTab";
+import type { DecisionProps } from "./DecidableRow";
 import { HistoryTab } from "./HistoryTab";
 import { QuestionsTab } from "./QuestionsTab";
 import { RiskAdjustmentTab } from "./RiskAdjustmentTab";
@@ -36,36 +39,49 @@ interface ReviewPanelProps {
   detail: NoteDetail;
   permissions: ReviewPermissions;
   actions: ReviewActions;
+  decisions: Decisions;
   onReplace: (detail: NoteDetail) => void;
   onAsk: (() => void) | null;
 }
 
-export function ReviewPanel({ detail, permissions, actions, onReplace, onAsk }: ReviewPanelProps) {
+export function ReviewPanel({ detail, permissions, actions, decisions, onReplace, onAsk }: ReviewPanelProps) {
   const query = useQueryParams();
   const tabs = tabsFor(detail);
   const tab = parseTab(query.get("tab"), tabs);
-  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [reminded, setReminded] = useState(false);
-  const decide = useAction((key: string, choice: Choice) => saveDecisions(detail.note.id, { [key]: choice }));
+  const order = decisionOrder(detail.findings, tab);
+  const focus = useFindingFocus(order, tab);
 
-  async function choose(finding: Finding, choice: Choice): Promise<void> {
-    setBusyKey(finding.key);
-    const outcome = await decide.run(finding.key, choice);
-    setBusyKey(null);
-    if (outcome.ok) onReplace(outcome.value);
+  function decideCurrent(accept: boolean): void {
+    const finding = detail.findings.find((item) => item.key === focus.currentKey);
+    const choice = finding ? choiceFor(finding, accept) : null;
+    if (!finding || !choice) return;
+    decisions.choose(finding, choice);
+    focus.moveAfter(finding.key);
   }
+
+  useShortcuts("review", {
+    acceptFinding: permissions.decide && focus.currentKey ? () => decideCurrent(true) : undefined,
+    rejectFinding: permissions.decide && focus.currentKey ? () => decideCurrent(false) : undefined,
+  });
 
   async function remind(): Promise<void> {
     setReminded((await actions.remind()).ok);
   }
 
-  const decision = { editable: permissions.decide, busyKey, onChoose: (finding: Finding, choice: Choice) => void choose(finding, choice) };
+  const decision: DecisionProps = {
+    editable: permissions.decide,
+    savingKey: decisions.savingKey,
+    currentKey: focus.currentKey,
+    onChoose: decisions.choose,
+    onPicked: (finding: Finding) => focus.moveAfter(finding.key),
+  };
   const panels: Record<ReviewTab, ReactNode> = {
-    codes: <CodesTab detail={detail} {...decision} onSaved={onReplace} />,
+    codes: <CodesTab detail={detail} decision={decision} onSaved={onReplace} />,
     questions: (
       <QuestionsTab
         detail={detail}
-        {...decision}
+        decision={decision}
         onAsk={onAsk}
         onRemind={permissions.remind ? () => void remind() : null}
         remindPending={actions.remindPending}
@@ -76,7 +92,7 @@ export function ReviewPanel({ detail, permissions, actions, onReplace, onAsk }: 
     ),
     wording: <WordingTab detail={detail} />,
     audit: <AuditTab detail={detail} />,
-    risk: <RiskAdjustmentTab detail={detail} {...decision} />,
+    risk: <RiskAdjustmentTab detail={detail} decision={decision} />,
     history: <HistoryTab detail={detail} />,
   };
 
@@ -89,9 +105,9 @@ export function ReviewPanel({ detail, permissions, actions, onReplace, onAsk }: 
         onChange={(next) => query.update({ tab: next === "codes" ? null : next })}
         headerClassName="border-b border-hairline px-5 py-3.5"
       >
-        {decide.error ? (
+        {decisions.error ? (
           <div className="px-5 pt-4">
-            <InlineAlert tone="bad">{decide.error}</InlineAlert>
+            <InlineAlert tone="bad">{decisions.error}</InlineAlert>
           </div>
         ) : null}
         {panels[tab]}

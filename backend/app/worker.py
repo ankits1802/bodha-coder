@@ -7,14 +7,18 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
+from app.adapters.demo_answers import DemoCodeBook
+from app.adapters.demo_model import DemoModelClient
 from app.adapters.gemini import GeminiClient
 from app.adapters.messenger import Messenger, build_messenger
 from app.adapters.object_listing import S3ListingStore
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.pdf_text import DocumentUnreadable
+from app.ai.contracts import ModelClient
 from app.ai.errors import ModelRefused, ModelRequestRejected, ModelUnavailable
 from app.ai.review import review_note
-from app.codes.icd import IcdReleaseUnavailable, load_catalog
+from app.codes.em import em_ladder
+from app.codes.icd import IcdCatalog, IcdReleaseUnavailable, load_catalog
 from app.core.config import Settings, get_settings
 from app.core.db import SessionFactory
 from app.core.logging import configure_logging, log_queue_metrics
@@ -167,6 +171,12 @@ async def evaluate_once(deps: AnalysisDeps) -> None:
             raise
 
 
+def model_client(settings: Settings, icd: IcdCatalog) -> ModelClient:
+    if settings.gemini_backend == "demo":
+        return DemoModelClient(DemoCodeBook(em_ladder=em_ladder, icd_name=icd.describe))
+    return GeminiClient(settings)
+
+
 async def purge_loop() -> None:
     while True:
         try:
@@ -179,9 +189,8 @@ async def purge_loop() -> None:
 
 async def run() -> None:
     settings = get_settings()
-    deps = AnalysisDeps(
-        review_note, GeminiClient(settings), S3ObjectStore(settings), await asyncio.to_thread(load_catalog)
-    )
+    icd = await asyncio.to_thread(load_catalog)
+    deps = AnalysisDeps(review_note, model_client(settings, icd), S3ObjectStore(settings), icd)
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
     messenger, listing = build_messenger(settings), S3ListingStore(settings)
     everything = asyncio.gather(

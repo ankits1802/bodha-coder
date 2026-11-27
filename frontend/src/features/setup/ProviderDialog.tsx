@@ -10,7 +10,15 @@ import type { Channel, Place, Provider, ProviderInput } from "@/lib/api/types";
 import { CredentialFields } from "./CredentialFields";
 import type { CredentialTextField } from "./credentialForm";
 import { ProviderFields } from "./ProviderFields";
-import { draftFrom, inputFrom, validateProvider, type ProviderDraft, type ProviderErrors, type ProviderTextField } from "./providerForm";
+import {
+  draftFrom,
+  inputFrom,
+  touchedErrors,
+  validateProvider,
+  type ProviderDraft,
+  type ProviderErrors,
+  type ProviderTextField,
+} from "./providerForm";
 import { PROVIDER_TEXT } from "./strings";
 
 const FORM_ID = "provider-form";
@@ -28,7 +36,10 @@ function saveProvider(provider: Provider | null, input: ProviderInput): Promise<
 
 export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderDialogProps) {
   const [draft, setDraft] = useState<ProviderDraft>(() => draftFrom(provider));
-  const [errors, setErrors] = useState<ProviderErrors>({});
+  const [touched, setTouched] = useState<string[]>([]);
+  const [tried, setTried] = useState(false);
+  const found = validateProvider(draft);
+  const errors: ProviderErrors = tried ? found : touchedErrors(found, touched);
   const save = useAction(saveProvider);
   const words = PROVIDER_TEXT.dialog;
 
@@ -42,8 +53,7 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const found = validateProvider(draft);
-    setErrors(found);
+    setTried(true);
     if (Object.keys(found).length > 0) return;
     const outcome = await save.run(provider, inputFrom(draft));
     if (outcome.ok) onSaved();
@@ -71,6 +81,7 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
           places={places}
           onChange={change}
           onActive={(active) => setDraft((current) => ({ ...current, active }))}
+          onTouched={(field) => setTouched((current) => (current.includes(field) ? current : [...current, field]))}
         />
         <CredentialFields
           draft={draft.details}

@@ -54,6 +54,16 @@ stays at `AI_WORKERS` per task.
    retried from each practice's queue (the Failed filter, then Retry), which records who retried
    them. Tell affected practices through HQ.
 
+## Demo model backend
+
+`GEMINI_BACKEND=demo` makes the worker answer every review with canned findings instead of calling
+Gemini (model `bodha-demo`, zero tokens), so the whole flow runs on synthetic notes without credits.
+The outcome of a note (matches, billed too high, billed too low, CDI query, audit risk) follows from
+the SHA-256 of its PDF, or of its text when the PDF has a text layer; a note that carries a signed
+addendum reads as matching. The API and the worker refuse to start with it when `APP_ENVIRONMENT` is
+`production`, which is also the value when `APP_ENVIRONMENT` is not set. Never set it on a
+deployment that holds real patient documents: its findings are not a review.
+
 ## Notes stuck queued
 
 Symptoms: `QueuedAnalyses` above zero and not falling, the queue-age alarm, notes showing as

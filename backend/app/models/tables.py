@@ -46,6 +46,7 @@ LANE_REASONS = (
     "matches",
 )
 DEFAULT_TIME_ZONE = "America/Chicago"
+ACCESS_DETAIL_LENGTH = 300
 
 
 class Practice(IdMixin, Base):
@@ -328,7 +329,7 @@ class AccessLog(IdMixin, Base):
     actor_name: Mapped[str] = mapped_column(String(120))
     action: Mapped[str] = mapped_column(String(40))
     note_id: Mapped[str | None] = mapped_column(String(36))
-    detail: Mapped[str | None] = mapped_column(String(300))
+    detail: Mapped[str | None] = mapped_column(String(ACCESS_DETAIL_LENGTH))
     ip: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(String(300))
 

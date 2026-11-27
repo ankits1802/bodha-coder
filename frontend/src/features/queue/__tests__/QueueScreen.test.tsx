@@ -32,6 +32,7 @@ vi.mock("@/lib/api/notes", () => ({
   assignNotes: vi.fn(),
   deleteNotes: vi.fn(),
   remindProvider: vi.fn(),
+  reopenNotes: vi.fn(),
   retryFailedNotes: vi.fn(),
 }));
 

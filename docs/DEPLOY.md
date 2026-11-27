@@ -200,7 +200,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `GOOGLE_CLIENT_SECRET` | yes | | | secret |
 | `GOOGLE_CREDENTIALS_JSON` (the Vertex AI service account credential) | | yes | | secret |
 | `GEMINI_BACKEND=vertex`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` | | yes | | plain |
-| `APP_URL=https://coder.example.com`, `COOKIE_SECURE=true` | yes | yes | | plain |
+| `APP_URL=https://coder.example.com`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
 | `GOOGLE_CLIENT_ID` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |

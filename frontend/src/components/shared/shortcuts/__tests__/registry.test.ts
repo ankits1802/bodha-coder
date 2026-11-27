@@ -39,14 +39,31 @@ describe("shortcut registry", () => {
   it("finds the screen from the path", () => {
     expect(scopeForPath("/notes/note-1")).toBe("review");
     expect(scopeForPath("/queue")).toBe("queue");
-    expect(scopeForPath("/today")).toBe("global");
+    expect(scopeForPath("/today")).toBe("today");
+    expect(scopeForPath("/today/x")).toBe("global");
     expect(scopeForPath("/queued")).toBe("global");
   });
 
   it("lists only the shortcuts a role may use", () => {
-    expect(shortcutsIn("review", "coder").map((shortcut) => shortcut.id)).toEqual(["nextNote", "previousNote", "approve", "askProvider"]);
-    expect(shortcutsIn("review", "cdi").map((shortcut) => shortcut.id)).toEqual(["nextNote", "previousNote", "askProvider"]);
-    expect(shortcutsIn("global", "viewer").map((shortcut) => shortcut.id)).toEqual(["shortcuts"]);
+    expect(shortcutsIn("review", "coder").map((shortcut) => shortcut.id)).toEqual([
+      "nextNote",
+      "previousNote",
+      "approve",
+      "acceptFinding",
+      "rejectFinding",
+      "askProvider",
+    ]);
+    expect(shortcutsIn("review", "cdi").map((shortcut) => shortcut.id)).toEqual([
+      "nextNote",
+      "previousNote",
+      "acceptFinding",
+      "rejectFinding",
+      "askProvider",
+    ]);
+    expect(shortcutsIn("review", "biller").map((shortcut) => shortcut.id)).toEqual(["nextNote", "previousNote"]);
+    expect(shortcutsIn("global", "viewer").map((shortcut) => shortcut.id)).toEqual(["shortcuts", "undo"]);
+    expect(shortcutsIn("today", "coder").map((shortcut) => shortcut.id)).toEqual(["startReviewing"]);
+    expect(shortcutsIn("today", "viewer")).toEqual([]);
     expect(shortcutsIn("queue", "viewer")).toEqual([]);
     expect(shortcutsIn("queue", "biller").map((shortcut) => shortcut.id)).toEqual(["reviewNext", "mine"]);
   });
@@ -61,7 +78,10 @@ describe("shortcut registry", () => {
     expect(shortcutTitle("previousNote", false)).toBe("Previous note (K)");
     expect(shortcutTitle("nextNote", true)).toBe("Next note (J)");
     expect(shortcutKeys("approve", false)).toBe("A");
-    expect(shortcutKeys("askProvider", true)).toBe("P");
+    expect(shortcutKeys("askProvider", true)).toBe("Q");
+    expect(comboFor(press("p"), "review")?.shortcut.id).toBe("askProvider");
+    expect(comboFor(press("n"), "review")?.shortcut.id).toBe("rejectFinding");
+    expect(comboFor(press("n"), "today")?.shortcut.id).toBe("startReviewing");
     expect(shortcutKeys("search", true)).toBe("⌘+K");
     expect(shortcutKeys("search", false)).toBe("Ctrl+K");
   });

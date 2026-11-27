@@ -11,6 +11,7 @@ from app.adapters.object_store import ObjectStore, evaluation_response_key
 from app.adapters.pdf_text import DocumentUnreadable
 from app.ai.contracts import BilledCode, ReviewInputs, ReviewOutcome, ReviewReport
 from app.ai.errors import ModelError
+from app.ai.prompts.context import labelled_addendum
 from app.codes.billing_codes import Code
 from app.codes.icd import IcdRelease, IcdReleaseUnavailable
 from app.codes.mips_scope import practice_scope
@@ -154,8 +155,7 @@ def _note_text(texts: list[NoteText]) -> str | None:
     if not texts or not texts[0].text.strip():
         return None
     return "\n\n".join(
-        text.text if text.source == "document" else f"ADDENDUM (revision {text.revision}):\n{text.text}"
-        for text in texts
+        text.text if text.source == "document" else labelled_addendum(text.revision, text.text) for text in texts
     )
 
 

@@ -1,4 +1,5 @@
 import type { PracticeSetup, SetupSectionKey } from "@/lib/api/types";
+import { isNpiShaped } from "@/lib/validation";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
 
 export const SECTION_ORDER: readonly (SetupSectionKey | "providers")[] = [
@@ -44,4 +45,23 @@ export function valuesFor(fields: string[], stored: Record<string, string>): Rec
 export function sameValues(left: Record<string, string>, right: Record<string, string>): boolean {
   const keys = new Set([...Object.keys(left), ...Object.keys(right)]);
   return [...keys].every((key) => (left[key] ?? "") === (right[key] ?? ""));
+}
+
+const EIN_PATTERN = /^\d{2}-?\d{7}$/;
+
+const FIELD_CHECKS: Record<string, (value: string) => boolean> = {
+  group_npi: isNpiShaped,
+  tax_id: (value) => EIN_PATTERN.test(value.trim()),
+};
+
+export function fieldError(field: string, value: string): string | null {
+  const check = FIELD_CHECKS[field];
+  if (!check || value.trim() === "" || check(value)) return null;
+  return SETUP_TEXT.fieldErrors[field] ?? null;
+}
+
+export function nextIncomplete(setup: PracticeSetup, after: SetupNavKey): SetupNavKey | null {
+  const start = SECTION_ORDER.indexOf(after as (typeof SECTION_ORDER)[number]);
+  const later = SECTION_ORDER.slice(start + 1);
+  return later.find((key) => markerFor(key, setup) !== "complete") ?? null;
 }

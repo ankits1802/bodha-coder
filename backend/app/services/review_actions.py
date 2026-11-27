@@ -176,10 +176,10 @@ async def compliance_decision(
             )
         )
         await db.flush()
+    if reason:
+        record_access(db, actor, f"compliance {decision}", note_id=note.id, detail=reason)
     note.compliance_cleared_by = actor.user.id
-    return await approve(
-        db, actor, note_id, reason=f"compliance {decision}: {reason}" if reason else f"compliance {decision}"
-    )
+    return await approve(db, actor, note_id, reason=f"compliance {decision}")
 
 
 async def update_billed(db: AsyncSession, actor: Actor, note_id: str, text: str, icd: IcdCatalog) -> Note:
@@ -246,13 +246,25 @@ async def retry(db: AsyncSession, actor: Actor, note_id: str) -> Note:
 
 async def reopen(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     note = await note_for(db, actor, note_id)
+    await _reopen(db, actor, note)
+    await db.commit()
+    return note
+
+
+async def reopen_many(db: AsyncSession, actor: Actor, note_ids: list[str]) -> list[str]:
+    notes = [await note_for(db, actor, note_id) for note_id in dict.fromkeys(note_ids)]
+    for note in notes:
+        await _reopen(db, actor, note)
+    await db.commit()
+    return [note.id for note in notes]
+
+
+async def _reopen(db: AsyncSession, actor: Actor, note: Note) -> None:
     if note.status != "approved":
         raise Conflict("only an approved note that has not been exported can be reopened")
     note.status, note.approved_by, note.approved_at = "ready", None, None
     await refresh_placement(db, note)
     record_access(db, actor, "reopened", note_id=note.id)
-    await db.commit()
-    return note
 
 
 async def retry_failed(db: AsyncSession, actor: Actor, note_ids: list[str] | None) -> list[str]:

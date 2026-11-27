@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import type { NoteDetail } from "@/lib/api/types";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
+import { APPROVE_TARGET } from "../useFindingFocus";
 import type { ReviewActions } from "../useReviewActions";
 import { EstimateSummary } from "./ClaimEstimate";
 import { LinkedClaimCodes } from "./LinkedClaimCodes";
@@ -53,7 +54,12 @@ function CoderButtons({ detail, permissions, actions, questionCount, onAsk }: Om
   return (
     <>
       {permissions.approve ? (
-        <Button variant={asking ? "secondary" : "primary"} onClick={() => void actions.approve()} pending={actions.pending}>
+        <Button
+          variant={asking ? "secondary" : "primary"}
+          data-target={APPROVE_TARGET}
+          onClick={() => void actions.approve()}
+          pending={actions.pending}
+        >
           {asking ? words.approveWithoutAsking : words.approve} <Key value={shortcutKeys("approve", mac)} onPrimary={!asking} />
         </Button>
       ) : null}

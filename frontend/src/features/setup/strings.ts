@@ -63,6 +63,11 @@ export const SETUP_TEXT = {
   } as Record<string, string>,
   save: "Save",
   saved: "Saved",
+  sectionSaved: (section: string) => `${section} saved`,
+  fieldErrors: {
+    group_npi: "Enter the 10-digit NPI",
+    tax_id: "Enter the 9-digit EIN, like 12-3456789",
+  } as Record<string, string>,
   checks: {
     title: "Checks",
     save: "Save checks",

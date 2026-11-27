@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent } from "react";
+import { useEffectEvent, useLayoutEffect } from "react";
 import { comboFor, isTyping, type ShortcutId, type ShortcutScope } from "./registry";
 
 export type ShortcutHandlers = Partial<Record<ShortcutId, () => void>>;
@@ -18,7 +18,7 @@ export function useShortcuts(scope: ShortcutScope, handlers: ShortcutHandlers): 
     action();
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const listener = (event: KeyboardEvent) => handle(event);
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);

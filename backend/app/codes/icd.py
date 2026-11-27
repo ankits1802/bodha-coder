@@ -83,6 +83,10 @@ class IcdCatalog:
             raise IcdReleaseUnavailable(f"ICD-10-CM release {release} is not loaded for service date {service_date}")
         return self._releases[release]
 
+    def describe(self, code: str, service_date: date) -> str | None:
+        entry = self.for_service_date(service_date).get(code)
+        return entry.description if entry is not None else None
+
 
 def load_release(release: str, *, data_dir: Path = DATA_DIR) -> IcdRelease:
     manifest = json.loads((data_dir / f"icd10cm_{release}.meta.json").read_text(encoding="utf-8"))

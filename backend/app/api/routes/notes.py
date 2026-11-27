@@ -10,6 +10,7 @@ from app.api.bodies import (
     AssignBody,
     BilledBody,
     BulkApproveBody,
+    BulkReopenBody,
     ComplianceBody,
     DecisionsBody,
     DeleteNotesBody,
@@ -30,6 +31,7 @@ from app.api.responses.note_actions import (
     NotePayer,
     NoteState,
     QueuedNotes,
+    ReopenedNotes,
     RequestCancelled,
     RequestCreated,
 )
@@ -156,6 +158,11 @@ async def cancel_request(note_id: str, db: Db, actor: Annotated[Actor, Depends(r
 async def reopen(note_id: str, db: Db, actor: Approver) -> dict[str, str]:
     note = await review_actions.reopen(db, actor, note_id)
     return {"status": note.status}
+
+
+@router.post("/reopen", response_model=ReopenedNotes)
+async def reopen_many(body: BulkReopenBody, db: Db, actor: Approver) -> dict[str, list[str]]:
+    return {"reopened": await review_actions.reopen_many(db, actor, body.note_ids)}
 
 
 @router.post("/retry", response_model=QueuedNotes)

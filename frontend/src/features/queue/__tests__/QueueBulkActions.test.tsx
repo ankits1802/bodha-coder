@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { assignNotes, deleteNotes } from "@/lib/api/notes";
+import { currentToast, runToastAction } from "@/components/shared/toast/toastStore";
+import { approveNotes, assignNotes, deleteNotes, reopenNotes } from "@/lib/api/notes";
 import { getProviders } from "@/lib/api/uploads";
 import { getQueue } from "@/lib/api/work";
 import { clearSession, setSession } from "@/lib/session/store";
@@ -9,9 +10,10 @@ import { QueueScreen } from "../QueueScreen";
 import { CODER, page, ROW } from "./fixtures";
 
 const router = vi.hoisted(() => ({ replace: vi.fn(), push: vi.fn() }));
+const search = vi.hoisted(() => ({ value: "" }));
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => new URLSearchParams(search.value),
   usePathname: () => "/queue",
   useRouter: () => router,
 }));
@@ -31,6 +33,7 @@ vi.mock("@/lib/api/notes", () => ({
   assignNotes: vi.fn(),
   deleteNotes: vi.fn(),
   remindProvider: vi.fn(),
+  reopenNotes: vi.fn(),
   retryFailedNotes: vi.fn(),
 }));
 
@@ -45,6 +48,7 @@ describe("queue assignment and bulk actions", () => {
     clearSession();
     vi.mocked(getQueue).mockReset();
     router.replace.mockReset();
+    search.value = "";
   });
 
   it("filters to my notes from the menu and with the M key", async () => {
@@ -78,5 +82,32 @@ describe("queue assignment and bulk actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete 1 note" }));
     await waitFor(() => expect(deleteNotes).toHaveBeenCalledWith(["note-1"]));
     expect(await screen.findByText("1 deleted")).toBeInTheDocument();
+  });
+});
+
+describe("approving every matching note", () => {
+  beforeEach(() => {
+    setSession({ access_token: "token", user: CODER });
+    vi.mocked(getProviders).mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    clearSession();
+    search.value = "";
+  });
+
+  it("approves the lane in one click and undoes it from the toast", async () => {
+    search.value = "lane=approve";
+    vi.mocked(getQueue).mockResolvedValue(page([{ ...ROW, lane: "approve", lane_reason: "matches" }]));
+    vi.mocked(approveNotes).mockResolvedValue({ approved: ["note-1"] });
+    vi.mocked(reopenNotes).mockResolvedValue({ reopened: ["note-1"] });
+    render(<QueueScreen />);
+    fireEvent.click(await screen.findByRole("button", { name: "Approve all 1" }));
+    await waitFor(() => expect(approveNotes).toHaveBeenCalledWith(["note-1"]));
+    await waitFor(() => expect(currentToast()?.message).toBe("1 approved"));
+    expect(currentToast()?.action?.label).toBe("Undo");
+    runToastAction();
+    await waitFor(() => expect(reopenNotes).toHaveBeenCalledWith(["note-1"]));
+    await waitFor(() => expect(currentToast()?.message).toBe("1 back in the queue"));
   });
 });

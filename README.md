@@ -122,7 +122,8 @@ Gemini Developer API (`GEMINI_API_KEY`) is for development with made-up notes.
 
 | Setting | Values |
 |---|---|
-| `GEMINI_BACKEND` | `developer` (default, uses `GEMINI_API_KEY`) or `vertex` |
+| `GEMINI_BACKEND` | `developer` (default, uses `GEMINI_API_KEY`), `vertex`, or `demo` (canned reviews of synthetic notes, no model call; refused when `APP_ENVIRONMENT` is `production`) |
+| `APP_ENVIRONMENT` | `production` (default), `staging` or `development` |
 | `GOOGLE_CLOUD_PROJECT` | the Google Cloud project that holds the signed BAA and has the Vertex AI API enabled |
 | `GOOGLE_CLOUD_LOCATION` | a regional endpoint such as `us-central1`, where notes are processed |
 | `GEMINI_MODEL` | a Gemini model Vertex serves in that location |

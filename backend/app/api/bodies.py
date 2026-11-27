@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
+from app.models import ACCESS_DETAIL_LENGTH
 
 
 class Body(BaseModel):
@@ -75,7 +76,7 @@ class FlagBody(Body):
 
 class ComplianceBody(Body):
     decision: Literal["confirm", "return", "keep"]
-    reason: str | None = Field(default=None, max_length=2000)
+    reason: str | None = Field(default=None, max_length=ACCESS_DETAIL_LENGTH)
 
 
 class QuestionBody(Body):
@@ -90,6 +91,10 @@ class AskBody(Body):
 
 
 class BulkApproveBody(Body):
+    note_ids: list[str] = Field(min_length=1, max_length=200)
+
+
+class BulkReopenBody(Body):
     note_ids: list[str] = Field(min_length=1, max_length=200)
 
 
