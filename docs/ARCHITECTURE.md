@@ -88,7 +88,7 @@ Keys carry ids only, never names. PDFs are opened through signed links that expi
 1. `POST /api/uploads` validates every file first (PDF signature, size, billed codes), stores
    the PDFs, and creates a batch, notes, billed code set revision 1 and a queued analysis each.
 2. The worker claims the analysis, takes the note texts from the latest `document` revision onward
-   (or extracts the PDF text, or sends the PDF itself when it has no text layer), and calls `ai.review.review_note` with the
+   (or extracts the PDF text), attaches the original PDF so the model can read its layout while quoting only from the text (a scan with no text layer goes as the PDF alone), and calls `ai.review.review_note` with the
    practice's enabled checks, the setting from the place of service, the billed codes and the
    practice MIPS scope.
 3. `services.findings.build_findings` turns the report into suggestions. Every suggested ICD-10-CM

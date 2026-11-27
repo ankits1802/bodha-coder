@@ -45,7 +45,7 @@ def read_request(prompt: str, pdf: bytes | None) -> DemoRequest:
     found = _NOTE.search(prompt)
     text = found["text"] if found else ""
     document, *addenda = ADDENDUM_HEADING_PATTERN.split(text, maxsplit=1)
-    outcome: DemoOutcome = "matches" if addenda else demo_outcome(pdf if pdf is not None else document.encode())
+    outcome: DemoOutcome = "matches" if addenda else demo_outcome(document.encode() if document.strip() else pdf or b"")
     billed = tuple(BilledLine(item["code"], item["type"]) for item in context["billedCodes"])
     return DemoRequest(outcome, text, billed, date.fromisoformat(context["dateOfService"]))
 

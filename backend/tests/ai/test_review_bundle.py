@@ -20,7 +20,7 @@ async def test_a_full_valid_bundle_yields_a_report_from_one_call() -> None:
 
     assert len(client.calls) == 1
     assert client.calls[0].requested_parts() == EVERY_PART
-    assert outcome.prompt_version == "2026.11.4"
+    assert outcome.prompt_version == "2026.11.5"
     assert outcome.failed_sections == frozenset()
     assert [reply.model for reply in outcome.replies] == ["fake-gemini"]
     report = outcome.report
@@ -168,15 +168,25 @@ async def test_e_missing_extracted_text_is_topped_up_with_the_pdf_again() -> Non
     assert report.extracted_text == "Follow-up visit."
 
 
-async def test_e_text_path_never_sends_the_pdf() -> None:
+async def test_e_text_path_sends_the_pdf_for_layout_and_quotes_from_the_text() -> None:
     client = FakeModelClient([as_text(full_answer())])
 
     report = (await review_note(client, review_inputs(note_text=NOTE, pdf=PDF))).report
 
-    assert client.calls[0].pdf is None
+    assert client.calls[0].pdf == PDF
+    assert "Quote evidence word for word from the text between" in client.calls[0].prompt
     assert "extracted_text" not in client.calls[0].requested_parts()
     assert "<clinical_note>\n" + NOTE + "\n</clinical_note>" in client.calls[0].prompt
     assert report.extracted_text is None
+
+
+async def test_e_text_without_a_pdf_has_no_layout_instruction() -> None:
+    client = FakeModelClient([as_text(full_answer())])
+
+    await review_note(client, review_inputs(note_text=NOTE, pdf=None))
+
+    assert client.calls[0].pdf is None
+    assert "The attached PDF is the same note" not in client.calls[0].prompt
 
 
 async def test_f_em_prompt_has_the_corrected_new_patient_bands_and_no_99318() -> None:

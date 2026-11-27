@@ -89,7 +89,7 @@ def render_review_prompt(inputs: ReviewInputs, parts: Sequence[Part]) -> str:
     return (
         _HEAD.replace("{count}", count)
         + render_context(inputs)
-        + render_note(note_text_to_review(inputs))
+        + render_note(note_text_to_review(inputs), with_pdf=bool(inputs.pdf))
         + tasks
         + _output_format(parts, count)
     )

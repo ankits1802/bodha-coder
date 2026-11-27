@@ -28,7 +28,8 @@ async def test_an_amended_pdf_replaces_the_document_and_keeps_the_old_one(harnes
     practice, note_id = await reviewed_note(harness, icd_catalog)
     old_key = f"practices/{practice.id}/notes/{note_id}/document.pdf"
 
-    replaced = await _replace(harness, practice, note_id, text_pdf(AMENDED))
+    amended = text_pdf(AMENDED)
+    replaced = await _replace(harness, practice, note_id, amended)
     assert replaced.status_code == 200, replaced.text
     assert replaced.json() == {"status": "queued"}
     assert old_key in harness.store.objects
@@ -36,7 +37,7 @@ async def test_an_amended_pdf_replaces_the_document_and_keeps_the_old_one(harnes
     assert await _texts(note_id) == [(1, "document", NOTE_TEXT), (2, "document", AMENDED)]
 
     reviewer = await read_next_note(harness, icd_catalog)
-    assert (reviewer.calls[-1].note_text, reviewer.calls[-1].pdf) == (AMENDED, None)
+    assert (reviewer.calls[-1].note_text, reviewer.calls[-1].pdf) == (AMENDED, amended)
     detail = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()
     assert [(text["revision"], text["text"]) for text in detail["texts"]] == [(2, AMENDED)]
     assert [entry["reason"] for entry in detail["history"]["analyses"]] == ["upload", "document"]
@@ -64,7 +65,7 @@ async def test_a_scanned_replacement_is_read_from_the_pdf_and_its_text_kept(harn
     )
     assert changed.status_code == 200, changed.text
     again = await read_next_note(harness, icd_catalog)
-    assert (again.calls[-1].note_text, again.calls[-1].pdf) == (EXTRACTED, None)
+    assert (again.calls[-1].note_text, again.calls[-1].pdf) == (EXTRACTED, SCAN)
 
 
 async def test_a_replacement_waiting_to_be_read_supersedes_the_queued_read(harness, icd_catalog):

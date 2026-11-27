@@ -87,15 +87,15 @@ class NoteSource:
 async def _note_source(db: AsyncSession, note: Note, store: ObjectStore) -> NoteSource:
     texts = await note_texts(db, note.id)
     current = current_texts(texts)
-    if current and current[0].text.strip():
-        return NoteSource("\n\n".join(_labelled(text) for text in current), None, current[-1].revision)
     pdf = await store.get(note.file_key)
+    if current and current[0].text.strip():
+        return NoteSource("\n\n".join(_labelled(text) for text in current), pdf, current[-1].revision)
     document = read_pdf_text(pdf)
     if not document.has_text_layer:
         return NoteSource(None, pdf, current[-1].revision if current else None)
     revision = texts[-1].revision + 1 if texts else 1
     db.add(NoteText(note_id=note.id, revision=revision, source="document", text=document.text))
-    return NoteSource(document.text, None, revision)
+    return NoteSource(document.text, pdf, revision)
 
 
 def _labelled(text: NoteText) -> str:
@@ -132,7 +132,7 @@ def _context(inputs: ReviewInputs) -> dict[str, Any]:
         "visit_type": inputs.visit_type,
         "billed": [code.code for code in inputs.billed_codes],
         "mips_measures": list(inputs.mips_scope.measure_ids) if inputs.mips_scope else None,
-        "source": "text" if inputs.note_text is not None else "pdf",
+        "source": "pdf" if inputs.note_text is None else "text and pdf" if inputs.pdf else "text",
     }
 
 

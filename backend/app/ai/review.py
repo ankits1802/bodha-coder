@@ -27,7 +27,7 @@ from app.ai.prompts.frame import render_review_prompt
 
 __all__ = ["PROMPT_VERSION", "review_note"]
 
-PROMPT_VERSION = "2026.11.4"
+PROMPT_VERSION = "2026.11.5"
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def _model_parts(inputs: ReviewInputs) -> tuple[Part, ...]:
         parts.discard("code_review")
     if scope_allows_nothing(inputs.mips_scope):
         parts.discard("mips")
-    if _pdf_for(inputs) is not None:
+    if note_text_to_review(inputs) is None and _pdf_for(inputs) is not None:
         parts.add("extracted_text")
     if parts:
         parts.add("patient")
@@ -80,7 +80,7 @@ def _model_parts(inputs: ReviewInputs) -> tuple[Part, ...]:
 
 
 def _pdf_for(inputs: ReviewInputs) -> bytes | None:
-    return inputs.pdf if note_text_to_review(inputs) is None else None
+    return inputs.pdf or None
 
 
 async def _ask(client: ModelClient, inputs: ReviewInputs, parts: Sequence[Part]) -> ModelReply:
