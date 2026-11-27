@@ -35,10 +35,13 @@ TEXT_SUFFIXES = {
     ".example",
     ".sh",
     ".lock",
+    ".hcl",
+    ".mts",
 }
-HASH_COMMENT_SUFFIXES = {".yml", ".yaml", ".toml", ".ini", ".example", ".sh", ".lock", ".tf"}
+HASH_COMMENT_SUFFIXES = {".yml", ".yaml", ".toml", ".ini", ".example", ".sh", ".lock", ".tf", ".hcl"}
 HASH_COMMENT_NAMES = {".gitignore", ".dockerignore", "Dockerfile"}
-SLASH_COMMENT_SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".css"}
+SLASH_COMMENT_SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".mts", ".css"}
+SQL_COMMENT = re.compile(r"^\s*--(\s|$)", re.MULTILINE)
 PYTHON_DIRECTIVES = ("# noqa", "# type: ignore")
 VENDORED = {
     "backend/app/codes/cms_mips_2026.py",
@@ -95,11 +98,11 @@ def encoding_problems(raw: bytes) -> list[str]:
 
 
 def python_comments(text: str) -> int:
+    tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
     comments = sum(
-        1
-        for token in tokenize.generate_tokens(io.StringIO(text).readline)
-        if token.type == tokenize.COMMENT and not token.string.startswith(PYTHON_DIRECTIVES)
+        1 for token in tokens if token.type == tokenize.COMMENT and not token.string.startswith(PYTHON_DIRECTIVES)
     )
+    comments += sum(len(SQL_COMMENT.findall(token.string)) for token in tokens if token.type == tokenize.STRING)
     tree = ast.parse(text)
     holders = (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
     return comments + sum(
@@ -120,6 +123,8 @@ def comment_count(path: Path, text: str) -> int:
         return sum(1 for line in text.splitlines() if line.lstrip().startswith("#"))
     if path.suffix in {".html", ".svg"}:
         return text.count("<!--")
+    if path.suffix == ".sql":
+        return len(SQL_COMMENT.findall(text))
     return 0
 
 
