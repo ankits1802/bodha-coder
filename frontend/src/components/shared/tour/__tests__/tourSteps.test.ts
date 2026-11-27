@@ -80,7 +80,7 @@ describe("tourStepsFor", () => {
   });
 
   it("gives HQ a short tour of the console", () => {
-    expect(keysFor("hq")).toEqual(["welcome", "hqOverview", "hqPractices", "hqActivity", "hqDemos", "hqTeam", "hqSecurity", "replay"]);
+    expect(keysFor("hq")).toEqual(["welcome", "hqOverview", "hqPractices", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity", "replay"]);
   });
 
   it("keeps a billing-only admin to the plan", () => {

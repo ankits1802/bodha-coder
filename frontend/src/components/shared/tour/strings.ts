@@ -31,6 +31,7 @@ export const TOUR_TEXT = {
     security: "Two-step sign-in, devices and recovery codes.",
     hqOverview: "Practices that need attention.",
     hqPractices: "Add, renew, block or remove practices.",
+    hqSpend: "AI cost per practice and provider.",
     hqActivity: "Every HQ action, by person and day.",
     hqDemos: "Demo requests from the website.",
     hqTeam: "Invite and manage HQ accounts.",

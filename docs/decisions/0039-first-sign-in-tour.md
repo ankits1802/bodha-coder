@@ -67,5 +67,5 @@ screen and a sidebar of names.
 
 ## Follows
 
-- Migration 0015 creates `person_tours`; it follows 0010 here and is re-chained when merged.
+- Migration 0012 creates `person_tours`.
 - An HQ area added to the sidebar needs a line in `TOUR_TEXT.areas`, or the tour test fails.
