@@ -24,6 +24,11 @@ const LANES: QueuePage["lanes"] = {
   compliance: { total: 2, due_soon: 0 },
 };
 
+export const PROVIDER_REASONS: QueuePage["provider_reasons"] = {
+  questions: { total: 1, due_soon: 0 },
+  waiting_on_provider: { total: 0, due_soon: 0 },
+};
+
 export const ROW: QueueRow = {
   id: "note-1",
   patient_name: "Marisol Reyes",
@@ -45,8 +50,9 @@ export const ROW: QueueRow = {
   billed: ["99215", "I10"],
   suggested: ["99214"],
   em_action: "lower",
+  impact_cents: -4_211,
 };
 
 export function page(items: QueueRow[], failed = 0): QueuePage {
-  return { items, lanes: LANES, total: 10, all_total: 12, failed, page_size: 50 };
+  return { items, lanes: LANES, provider_reasons: PROVIDER_REASONS, total: 10, all_total: 12, failed, page_size: 50 };
 }

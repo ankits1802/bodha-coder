@@ -7,6 +7,7 @@ import { PlanBanner } from "../plan-banner/PlanBanner";
 import { useShortcuts } from "../shortcuts/useShortcuts";
 import { SHARED_TEXT } from "../strings";
 import { TourHost } from "../tour/TourHost";
+import { DropOverlay } from "../upload-drop/DropOverlay";
 import { Sidebar } from "./Sidebar";
 import { useSidebarCollapsed } from "./useSidebarCollapsed";
 
@@ -55,6 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </main>
       <TourHost user={user} onMenu={setMenuOpen} />
+      <DropOverlay user={user} />
     </div>
   );
 }

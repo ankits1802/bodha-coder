@@ -3,7 +3,7 @@ import { SHARED_TEXT } from "../strings";
 import type { NavIconName } from "./NavIcon";
 
 export type NavGroup = "work" | "practice" | "platform";
-export type CountKey = "queue" | "compliance";
+export type CountKey = "queue" | "compliance" | "inbox";
 
 export interface NavItem {
   key: string;
@@ -19,6 +19,7 @@ const words = SHARED_TEXT.nav;
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { key: "today", area: "today", href: "/today", label: words.today, icon: "calendar", group: "work" },
+  { key: "inbox", area: "inbox", href: "/inbox", label: words.inbox, icon: "bell", group: "work", count: "inbox" },
   { key: "upload", area: "upload", href: "/upload", label: words.upload, icon: "upload", group: "work" },
   { key: "queue", area: "queue", href: "/queue", label: words.queue, icon: "list", group: "work", count: "queue" },
   { key: "compliance", area: "compliance", href: "/compliance", label: words.compliance, icon: "shield", group: "work", count: "compliance" },

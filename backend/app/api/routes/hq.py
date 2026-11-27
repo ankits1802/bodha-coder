@@ -23,8 +23,11 @@ from app.api.responses.hq import (
     DemoRequestRow,
     HqActivityPage,
     HqOverview,
+    HqPerson,
     HqPlace,
     HqPractice,
+    HqPracticePage,
+    HqSearchResults,
     HqTeamMember,
     PracticePurged,
     Renewal,
@@ -33,7 +36,7 @@ from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import audit_chain, hq, hq_admins, hq_team, retention
+from app.services import audit_chain, hq, hq_admins, hq_practice, hq_team, retention
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"], route_class=ExactRoute)
@@ -48,6 +51,21 @@ async def overview(db: Db, actor: HqActor) -> dict[str, Any]:
 @router.get("/hq/practices", response_model=list[HqPractice])
 async def practices(db: Db, actor: HqActor) -> list[dict[str, Any]]:
     return await hq.practices(db)
+
+
+@router.get("/hq/practices/{practice_id}", response_model=HqPracticePage)
+async def practice_page(practice_id: str, db: Db, actor: HqActor) -> dict[str, Any]:
+    return await hq_practice.practice_page(db, practice_id)
+
+
+@router.get("/hq/practices/{practice_id}/people", response_model=list[HqPerson])
+async def practice_people(practice_id: str, db: Db, actor: HqActor) -> list[dict[str, Any]]:
+    return await hq_practice.practice_people(db, practice_id)
+
+
+@router.get("/hq/search", response_model=HqSearchResults)
+async def search(db: Db, actor: HqActor, q: Annotated[str, Query(max_length=200)]) -> dict[str, Any]:
+    return await hq_practice.hq_search(db, q)
 
 
 @router.post("/hq/practices", response_model=Created)

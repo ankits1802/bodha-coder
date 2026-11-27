@@ -64,6 +64,7 @@ export const SHARED_TEXT = {
     mainLabel: "Main",
     platformLabel: "Platform",
     today: "Today",
+    inbox: "Inbox",
     upload: "Upload notes",
     queue: "Review queue",
     compliance: "Compliance",
@@ -118,6 +119,8 @@ export const SHARED_TEXT = {
       rejectFinding: "Keep the billed code or skip",
       approve: "Approve",
       askProvider: "Ask the provider",
+      selectRow: "Select or clear a note",
+      assignSelected: "Assign the selected notes",
     },
   },
 } as const;

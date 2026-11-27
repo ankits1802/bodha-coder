@@ -2,6 +2,8 @@ from typing import Literal
 
 from app.api.responses.base import Lane, NoteStatus, View
 from app.models.tables import LANE_REASONS
+from app.services.queue_views import BUILTIN_KEYS
+from app.services.worklists import QUEUE_SORTS
 
 __all__ = [
     "BatchProgress",
@@ -12,14 +14,21 @@ __all__ = [
     "LaneCount",
     "LaneCounts",
     "LaneReason",
+    "BuiltinView",
     "NoteSummary",
+    "ProviderReasonCounts",
     "QueuePage",
     "QueueRow",
+    "QueueSort",
+    "QueueViewFilters",
+    "QueueViews",
+    "SavedView",
     "SearchResults",
     "TodaySummary",
 ]
 
 LaneReason = Literal[LANE_REASONS]
+QueueSort = Literal[QUEUE_SORTS]
 EmAction = Literal["keep", "lower", "raise", "replace", "add", "not_applicable", "review"]
 
 
@@ -47,6 +56,7 @@ class QueueRow(NoteSummary):
     billed: list[str]
     suggested: list[str]
     em_action: EmAction | None
+    impact_cents: int | None
 
 
 class LaneCount(View):
@@ -61,6 +71,11 @@ class LaneCounts(View):
     compliance: LaneCount
 
 
+class ProviderReasonCounts(View):
+    questions: LaneCount
+    waiting_on_provider: LaneCount
+
+
 class BatchProgress(View):
     id: str
     provider_name: str
@@ -73,6 +88,7 @@ class TodaySummary(View):
     waiting: int
     due_soon: int
     lanes: LaneCounts
+    provider_reasons: ProviderReasonCounts
     next_up: list[QueueRow]
     batches: list[BatchProgress]
 
@@ -80,6 +96,7 @@ class TodaySummary(View):
 class QueuePage(View):
     items: list[QueueRow]
     lanes: LaneCounts
+    provider_reasons: ProviderReasonCounts
     total: int
     all_total: int
     failed: int
@@ -103,3 +120,28 @@ class CompliancePattern(View):
 class ComplianceList(View):
     items: list[ComplianceRow]
     patterns: list[CompliancePattern]
+
+
+class QueueViewFilters(View):
+    lane: Lane | None
+    reason: LaneReason | None
+    assigned: str | None
+    provider_id: str | None
+    overdue: bool
+    sort: QueueSort
+
+
+class BuiltinView(View):
+    key: Literal[BUILTIN_KEYS]
+    filters: QueueViewFilters
+
+
+class SavedView(View):
+    id: str
+    name: str
+    filters: QueueViewFilters
+
+
+class QueueViews(View):
+    builtin: list[BuiltinView]
+    saved: list[SavedView]

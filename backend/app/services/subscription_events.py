@@ -14,7 +14,9 @@ from app.core.calendar import today_in, zone_named
 from app.core.config import get_settings
 from app.models import CLOSED_STATUSES, BillingEvent, Practice, Subscription, utcnow
 from app.services.audit_log import record_activity
+from app.services.inbox import Notice, notify_admins
 from app.services.plan_limits import LIVE_STATUSES, is_live, subscription_for
+from app.services.plan_notices import PAYMENT_FAILED_KIND
 from app.services.plans import plan_for_price
 
 __all__ = ["SUBSCRIPTION_CHANGED", "access_until", "apply_subscription", "receive_webhook"]
@@ -52,6 +54,7 @@ async def apply_subscription(
         return
     same = stored is not None and stored.subscription_id == state.subscription_id
     was_live = same and is_live(stored)
+    was_past_due = same and stored is not None and stored.status == PAST_DUE
     previous = _snapshot(stored) if same else None
     row = stored or Subscription(practice_id=practice.id)
     if stored is None:
@@ -61,6 +64,13 @@ async def apply_subscription(
         _grant_access(practice, row, was_live=was_live)
     if _snapshot(row) != previous:
         record_activity(db, None, SUBSCRIPTION_CHANGED, practice_id=practice.id, detail=_detail(row))
+    if row.status == PAST_DUE and not was_past_due:
+        await _tell_admins_payment_failed(db, practice)
+
+
+async def _tell_admins_payment_failed(db: AsyncSession, practice: Practice) -> None:
+    until = practice.renews_on.isoformat() if practice.renews_on else ""
+    await notify_admins(db, practice.id, Notice(PAYMENT_FAILED_KIND, payload={"access_until": until}))
 
 
 def access_until(row: Subscription, zone: ZoneInfo, grace_days: int) -> date:

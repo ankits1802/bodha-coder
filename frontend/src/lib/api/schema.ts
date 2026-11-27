@@ -806,7 +806,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["practice_page_api_hq_practices__practice_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -863,6 +863,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hq/practices/{practice_id}/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["practice_people_api_hq_practices__practice_id__people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hq/practices/{practice_id}/purge": {
         parameters: {
             query?: never;
@@ -889,6 +905,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["renew_api_hq_practices__practice_id__renew_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hq/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search_api_hq_search_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -937,6 +969,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["resend_invite_api_hq_team__user_id__resend_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["items_api_inbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inbox/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["count_api_inbox_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inbox/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["read_api_inbox_read_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1919,6 +1999,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/queue-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["views_api_queue_views_get"];
+        put?: never;
+        post: operations["save_view_api_queue_views_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/queue-views/{view_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_view_api_queue_views__view_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/remittances": {
         parameters: {
             query?: never;
@@ -2664,6 +2776,9 @@ export interface components {
             purpose: "audit" | "training";
             status: "open" | "done";
         };
+        Body_preview_api_uploads_preview_post: {
+            files: string[];
+        };
         Body_replace_pdf_api_notes__note_id__document_post: {
             file: string;
         };
@@ -2673,10 +2788,14 @@ export interface components {
         Body_upload_api_uploads_post: {
             details: string;
             files: string[];
-            place_code: string;
-            provider_id: string;
-            service_date: string;
+            place_code?: string | null;
+            provider_id?: string | null;
+            service_date?: string | null;
             visit_type: string;
+        };
+        BuiltinView: {
+            filters: components["schemas"]["QueueViewFilters"];
+            key: "my_work" | "questions_to_send" | "unassigned" | "overdue" | "flagged";
         };
         BulkApproveBody: {
             note_ids: string[];
@@ -2844,6 +2963,7 @@ export interface components {
             flagged_by_name: string | null;
             headline: string | null;
             id: string;
+            impact_cents: number | null;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
             lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
             patient_name: string | null;
@@ -3133,9 +3253,15 @@ export interface components {
             units: number;
         };
         FilePreview: {
+            check: boolean;
+            confidence: components["schemas"]["MatchConfidence"];
             cpt: string | null;
+            duplicate: boolean;
             file_name: string;
+            overall: number;
             patient_name: string | null;
+            place_code: string | null;
+            provider_id: string | null;
             service_date: string | null;
         };
         Finding: {
@@ -3210,6 +3336,20 @@ export interface components {
             unpriced_last_24h: number;
             waiting: number;
         };
+        HqPerson: {
+            email: string;
+            id: string;
+            last_active_at: string | null;
+            mfa_enabled: boolean;
+            name: string;
+            role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
+            status: "invited" | "active" | "blocked";
+        };
+        HqPersonPractice: {
+            id: string;
+            name: string;
+            role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
+        };
         HqPlace: {
             active: boolean;
             code: string;
@@ -3240,6 +3380,33 @@ export interface components {
             users: number;
             waiting: number;
         };
+        HqPracticeHit: {
+            id: string;
+            name: string;
+            status: "trial" | "active" | "ended" | "blocked" | "closed" | "purged";
+        };
+        HqPracticePage: {
+            places: components["schemas"]["HqPracticePlace"][];
+            practice: components["schemas"]["HqPractice"];
+        };
+        HqPracticePlace: {
+            active: boolean;
+            code: string;
+            name: string;
+            notes: number;
+            providers: number;
+        };
+        HqSearchPerson: {
+            email: string;
+            id: string;
+            name: string;
+            practices: components["schemas"]["HqPersonPractice"][];
+        };
+        HqSearchResults: {
+            limit: number;
+            people: components["schemas"]["HqSearchPerson"][];
+            practices: components["schemas"]["HqPracticeHit"][];
+        };
         HqTeamMember: {
             email: string;
             id: string;
@@ -3267,6 +3434,42 @@ export interface components {
         };
         ImportedProviders: {
             imported: number;
+        };
+        InboxCount: {
+            unread: number;
+        };
+        InboxEntry: {
+            actor_name: string;
+            created_at: string;
+            id: string;
+            kind: "provider_answered" | "level_disagreed" | "request_expired" | "mentioned" | "training_assigned" | "payment_failed" | "plan_ending" | "compliance_returned";
+            note_id: string | null;
+            patient_name: string | null;
+            payload: components["schemas"]["InboxPayload"];
+            read_at: string | null;
+            service_date: string | null;
+        };
+        InboxPage: {
+            items: components["schemas"]["InboxEntry"][];
+            offset: number;
+            page_size: number;
+            total: number;
+            unread: number;
+        };
+        InboxPayload: {
+            access_until?: string;
+            comment_id?: string;
+            ends_on?: string;
+            notes?: number;
+            on?: "finding" | "note";
+            purpose?: "questions" | "level_change";
+            questions?: number;
+            reason?: string;
+            run_id?: string;
+        };
+        InboxReadBody: {
+            all?: boolean;
+            ids?: string[];
         };
         InsightEstimates: {
             difference: number;
@@ -3359,6 +3562,12 @@ export interface components {
         LoginBody: {
             email: string;
             password: string;
+        };
+        MatchConfidence: {
+            patient: number;
+            place: number;
+            provider: number;
+            service_date: number;
         };
         MemberBody: {
             blocked?: boolean | null;
@@ -3645,6 +3854,7 @@ export interface components {
             trial_days: number;
         };
         PlanStatus: {
+            ending_soon: boolean;
             plan: "trial" | "essentials" | "professional" | "enterprise";
             provider_limit: number | null;
             providers: number;
@@ -3754,9 +3964,6 @@ export interface components {
         PreferencesBody: {
             notify_digest: boolean;
         };
-        PreviewBody: {
-            file_names: string[];
-        };
         Provider: {
             active: boolean;
             channel: "email" | "sms";
@@ -3854,6 +4061,10 @@ export interface components {
             repeat_rate: number | null;
             response_rate: number | null;
         };
+        ProviderReasonCounts: {
+            questions: components["schemas"]["LaneCount"];
+            waiting_on_provider: components["schemas"]["LaneCount"];
+        };
         ProviderRef: {
             channel: "email" | "sms";
             credential: string;
@@ -3934,6 +4145,7 @@ export interface components {
             items: components["schemas"]["QueueRow"][];
             lanes: components["schemas"]["LaneCounts"];
             page_size: number;
+            provider_reasons: components["schemas"]["ProviderReasonCounts"];
             total: number;
         };
         QueueRow: {
@@ -3947,6 +4159,7 @@ export interface components {
             flagged_by: string | null;
             headline: string | null;
             id: string;
+            impact_cents: number | null;
             lane: ("approve" | "coder" | "provider" | "compliance") | null;
             lane_reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
             patient_name: string | null;
@@ -3957,6 +4170,30 @@ export interface components {
             status: "queued" | "reading" | "ready" | "failed" | "approved" | "exported" | "voided";
             suggested: string[];
             visit_type: string;
+        };
+        QueueViewBody: {
+            filters: components["schemas"]["QueueViewFiltersBody"];
+            name: string;
+        };
+        QueueViewFilters: {
+            assigned: string | null;
+            lane: ("approve" | "coder" | "provider" | "compliance") | null;
+            overdue: boolean;
+            provider_id: string | null;
+            reason: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            sort: "due" | "impact";
+        };
+        QueueViewFiltersBody: {
+            assigned?: string | null;
+            lane?: ("approve" | "coder" | "provider" | "compliance") | null;
+            overdue?: boolean;
+            provider_id?: string | null;
+            reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
+            sort?: "due" | "impact";
+        };
+        QueueViews: {
+            builtin: components["schemas"]["BuiltinView"][];
+            saved: components["schemas"]["SavedView"][];
         };
         QueuedNotes: {
             queued: string[];
@@ -4148,6 +4385,11 @@ export interface components {
             sample: components["schemas"]["SampleOverview"];
             summary: components["schemas"]["AgreementSides"];
         };
+        SavedView: {
+            filters: components["schemas"]["QueueViewFilters"];
+            id: string;
+            name: string;
+        };
         SealVerification: {
             code: string;
             document_sha256: string | null;
@@ -4297,6 +4539,7 @@ export interface components {
             due_soon: number;
             lanes: components["schemas"]["LaneCounts"];
             next_up: components["schemas"]["QueueRow"][];
+            provider_reasons: components["schemas"]["ProviderReasonCounts"];
             waiting: number;
         };
         TourBody: {
@@ -4342,6 +4585,7 @@ export interface components {
         UploadResult: {
             accepted: string[];
             batch_id: string;
+            batch_ids: string[];
             duplicates: string[];
         };
         UploadedBatch: {
@@ -6828,6 +7072,61 @@ export interface operations {
             };
         };
     };
+    practice_page_api_hq_practices__practice_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HqPracticePage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     edit_practice_api_hq_practices__practice_id__patch: {
         parameters: {
             query?: never;
@@ -7056,6 +7355,61 @@ export interface operations {
             };
         };
     };
+    practice_people_api_hq_practices__practice_id__people_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                practice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HqPerson"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     purge_practice_api_hq_practices__practice_id__purge_post: {
         parameters: {
             query?: never;
@@ -7138,6 +7492,61 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Renewal"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    search_api_hq_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HqSearchResults"];
                 };
             };
             401: {
@@ -7351,6 +7760,163 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    items_api_inbox_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxPage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    count_api_inbox_count_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxCount"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    read_api_inbox_read_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboxReadBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxCount"];
+                };
             };
             401: {
                 headers: {
@@ -7656,11 +8222,14 @@ export interface operations {
     queue_api_notes_get: {
         parameters: {
             query?: {
-                lane?: string | null;
+                lane?: ("approve" | "coder" | "provider" | "compliance") | null;
+                reason?: ("flagged" | "levels_too_high" | "audit_risk" | "waiting_on_provider" | "code_changes" | "questions" | "matches") | null;
                 search?: string | null;
                 provider_id?: string | null;
                 batch_id?: string | null;
                 assigned?: string | null;
+                overdue?: boolean;
+                sort?: "due" | "impact";
                 offset?: number;
             };
             header?: {
@@ -11176,6 +11745,161 @@ export interface operations {
             };
         };
     };
+    views_api_queue_views_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueViews"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_view_api_queue_views_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueueViewBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_view_api_queue_views__view_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                view_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     remittance_list_api_remittances_get: {
         parameters: {
             query?: {
@@ -12837,7 +13561,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PreviewBody"];
+                "multipart/form-data": components["schemas"]["Body_preview_api_uploads_preview_post"];
             };
         };
         responses: {

@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.codes.billing_codes import Code
 from app.codes.fees import ClaimEstimate, fee_schedule_for, rate_setting_for
 from app.models import Note
-from app.services.analysis import latest_codes
+from app.services.code_sets import latest_codes
 
-__all__ = ["claim_amount", "claim_estimate", "estimate_difference", "money", "note_estimate"]
+__all__ = ["CENTS", "claim_amount", "claim_estimate", "estimate_difference", "impact_cents", "money", "note_estimate"]
+
+CENTS = Decimal(100)
 
 
 def money(value: Decimal) -> float:
@@ -42,6 +44,16 @@ def estimate_difference(
     if after is None or before is None:
         return None
     return after.total - before.total
+
+
+def impact_cents(claim: Iterable[Code], billed: Iterable[Code], place_code: str, service_date: date) -> int | None:
+    after = claim_estimate(claim, place_code, service_date)
+    before = claim_estimate(billed, place_code, service_date)
+    if after is None or before is None:
+        return None
+    if all(line.amount is None for line in (*after.lines, *before.lines)):
+        return None
+    return int((after.total - before.total) * CENTS)
 
 
 async def note_estimate(db: AsyncSession, note: Note, claim: tuple[Code, ...]) -> dict[str, Any] | None:

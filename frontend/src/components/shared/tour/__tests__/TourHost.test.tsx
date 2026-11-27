@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => navigation, usePathname: ()
 vi.mock("@/lib/api/tours", () => ({ getTours: vi.fn(), saveTour: vi.fn() }));
 
 const SEEN: TourRecord = { tour: "practice", version: 1, completed_at: "2026-11-28T10:00:00+00:00", skipped_at: null };
-const CODER_STEPS = 12;
+const CODER_STEPS = 13;
 
 function searchButtonWith(reducedMotion: boolean): Element["scrollIntoView"] {
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: reducedMotion && query === "(prefers-reduced-motion: reduce)", media: query }));
@@ -101,7 +101,7 @@ describe("TourHost", () => {
     expect(screen.getByRole("dialog")).toHaveAccessibleName("Take the tour again");
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(saveTour).toHaveBeenCalledWith("practice", { version: 1, outcome: "completed" });
-    expect(navigation.push.mock.calls.map(([path]) => path)).toEqual(["/upload", "/queue", "/training", "/security", "/help", "/today"]);
+    expect(navigation.push.mock.calls.map(([path]) => path)).toEqual(["/inbox", "/upload", "/queue", "/training", "/security", "/help", "/today"]);
   });
 
   it("replays from Help without recording the tour again", async () => {

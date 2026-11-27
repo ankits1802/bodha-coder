@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AreaGuard } from "@/components/shared/AreaGuard";
 import { SignatureGateDialog } from "@/components/shared/signature/SignatureDialog";
-import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { InlineAlert } from "@/components/ui/InlineAlert";
@@ -11,41 +10,40 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
 import { useRememberedParams } from "@/hooks/useRememberedParams";
-import type { QueuePage, User } from "@/lib/api/types";
+import type { User } from "@/lib/api/types";
 import { getQueue } from "@/lib/api/work";
 import { formatCount } from "@/lib/format";
 import { canDo } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
-import { BulkActions } from "./components/BulkActions";
+import { BulkActions, type BulkDialog } from "./components/BulkActions";
 import { Pager } from "./components/Pager";
 import { QueueFiltersBar } from "./components/QueueFiltersBar";
 import { QueueTable } from "./components/QueueTable";
+import { QueueViewsBar } from "./components/QueueViewsBar";
 import { isApprovable, noteHref, selectsRows } from "./queueRules";
 import { QUEUE_TEXT } from "./strings";
 import { useQueueActions } from "./useQueueActions";
 import { useQueueFilters } from "./useQueueFilters";
 import { useQueueSelection } from "./useQueueSelection";
+import { useQueueShortcuts } from "./useQueueShortcuts";
 
 const REMOTE_TEXT = { loading: QUEUE_TEXT.loading, empty: QUEUE_TEXT.empty, retry: QUEUE_TEXT.retry };
-const REMEMBERED = ["lane", "assigned", "provider_id"] as const;
-
-function totalWaiting(page: QueuePage | null): string | undefined {
-  return page ? QUEUE_TEXT.subtitle(formatCount(page.total)) : undefined;
-}
+const REMEMBERED = ["lane", "reason", "assigned", "provider_id", "sort"] as const;
 
 function QueueContent({ user }: { user: User }) {
-  const router = useRouter();
   const filters = useQueueFilters();
   useRememberedParams("queue", REMEMBERED);
   const queue = useRemote(`queue:${filters.key}`, () => getQueue(filters.query));
   const selection = useQueueSelection(filters.key);
+  const [dialog, setDialog] = useState<BulkDialog>(null);
   const actions = useQueueActions(() => {
     selection.select([]);
     queue.reload();
   });
   const page = queue.state.status === "success" ? queue.state.data : null;
-  const next = page?.items.find((row) => row.status === "ready");
-  const selectedRows = page?.items.filter((row) => selection.selectedIds.includes(row.id)) ?? [];
+  const rows = page?.items ?? [];
+  const next = rows.find((row) => row.status === "ready");
+  const selectedRows = rows.filter((row) => selection.selectedIds.includes(row.id));
   const controls = {
     lane: filters.lane,
     member: user,
@@ -55,12 +53,19 @@ function QueueContent({ user }: { user: User }) {
     onToggle: selection.toggle,
     onRemind: (id: string) => void actions.remindOne(id),
   };
-  useShortcuts("queue", {
-    reviewNext: next ? () => router.push(noteHref(next.id, filters.lane)) : undefined,
-    mine: () => filters.update({ assigned: filters.assigned === "me" ? null : "me", offset: null }),
+  useQueueShortcuts({
+    user,
+    filters,
+    rows,
+    selection,
+    nextHref: next ? noteHref(next.id, filters.lane) : null,
+    onAssign: () => {
+      actions.clearDialogErrors();
+      setDialog("assign");
+    },
   });
   const failed = page && canDo(user.role, "retry") ? page.failed : 0;
-  const approvable = page && filters.lane === "approve" && canDo(user.role, "approve") ? page.items.filter(isApprovable) : [];
+  const approvable = page && filters.lane === "approve" && canDo(user.role, "approve") ? rows.filter(isApprovable) : [];
   const header = (
     <>
       {failed > 0 ? (
@@ -79,8 +84,9 @@ function QueueContent({ user }: { user: User }) {
 
   return (
     <>
-      <PageHeader title={QUEUE_TEXT.title} subtitle={totalWaiting(page)} actions={header} />
-      <QueueFiltersBar filters={filters} lanes={page?.lanes ?? null} allTotal={page?.all_total} />
+      <PageHeader title={QUEUE_TEXT.title} subtitle={page ? QUEUE_TEXT.subtitle(formatCount(page.total), filters.sort) : undefined} actions={header} />
+      <QueueViewsBar filters={filters} />
+      <QueueFiltersBar filters={filters} counts={page} />
       {filters.batchId ? (
         <div className="flex items-center justify-between gap-3 rounded-panel bg-surface px-4 py-2 text-subhead shadow-panel">
           <span>{QUEUE_TEXT.oneBatch}</span>
@@ -94,7 +100,13 @@ function QueueContent({ user }: { user: User }) {
       <RemoteView state={queue.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0} onRetry={queue.reload}>
         {(data) => (
           <>
-            <QueueTable rows={data.items} selectedIds={selection.selectedIds} controls={controls} onSelectAll={selection.select} />
+            <QueueTable
+              rows={data.items}
+              grouped={filters.sort === "due"}
+              selectedIds={selection.selectedIds}
+              controls={controls}
+              onSelectAll={selection.select}
+            />
             <Pager
               offset={filters.offset}
               pageSize={data.page_size}
@@ -104,7 +116,7 @@ function QueueContent({ user }: { user: User }) {
           </>
         )}
       </RemoteView>
-      <BulkActions member={user} rows={selectedRows} actions={actions} onClear={() => selection.select([])} />
+      <BulkActions member={user} rows={selectedRows} actions={actions} dialog={dialog} onDialog={setDialog} onClear={() => selection.select([])} />
       <SignatureGateDialog gate={actions.signatureGate} />
     </>
   );

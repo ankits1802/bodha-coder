@@ -2,64 +2,74 @@
 
 import { SegmentedControl, type Segment } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
-import type { Lane, LaneCounts, Provider } from "@/lib/api/types";
-import { LANE_LABELS, LANE_ORDER } from "@/lib/labels";
+import type { LaneCounts, Provider, ProviderReasonCounts, QueueSort } from "@/lib/api/types";
+import { LANE_VIEWS } from "@/lib/labels";
+import { laneChanges, laneChoice, type LaneChoice } from "../queueViews";
 import { QUEUE_TEXT } from "../strings";
-import type { AssignedFilter } from "../useQueueFilters";
+import type { QueueFilters } from "../useQueueFilters";
 import { QueueSearch } from "./QueueSearch";
 
-type LaneChoice = Lane | "all";
-
-interface QueueToolbarProps {
-  lane: Lane | undefined;
-  lanes: LaneCounts | null;
-  allTotal: number | undefined;
-  search: string;
-  providerId: string;
-  providers: Provider[];
-  assigned: AssignedFilter;
-  onLane: (lane: Lane | undefined) => void;
-  onSearch: (search: string) => void;
-  onProvider: (providerId: string) => void;
-  onAssigned: (assigned: string) => void;
+export interface QueueCounts {
+  lanes: LaneCounts;
+  provider_reasons: ProviderReasonCounts;
+  all_total: number;
 }
 
-function laneSegments(lanes: LaneCounts | null, allTotal: number | undefined): Segment<LaneChoice>[] {
+interface QueueToolbarProps {
+  filters: QueueFilters;
+  counts: QueueCounts | null;
+  providers: Provider[];
+}
+
+const SORTS: QueueSort[] = ["due", "impact"];
+
+function laneSegments(counts: QueueCounts | null): Segment<LaneChoice>[] {
   return [
-    { value: "all", label: QUEUE_TEXT.all, count: allTotal },
-    ...LANE_ORDER.map((lane) => ({ value: lane, label: LANE_LABELS[lane], count: lanes?.[lane].total })),
+    { value: "all", label: QUEUE_TEXT.all, count: counts?.all_total },
+    ...LANE_VIEWS.map((view) => ({
+      value: view.key,
+      label: view.label,
+      count: view.reason ? counts?.provider_reasons[view.reason].total : counts?.lanes[view.lane].total,
+    })),
   ];
 }
 
-export function QueueToolbar(props: QueueToolbarProps) {
-  const { lane, lanes, allTotal, search, providerId, providers, assigned, onLane, onSearch, onProvider, onAssigned } = props;
+export function QueueToolbar({ filters, counts, providers }: QueueToolbarProps) {
+  const update = filters.update;
   return (
     <div className="flex flex-wrap items-center justify-between gap-2.5">
       <SegmentedControl<LaneChoice>
         label={QUEUE_TEXT.laneFilter}
-        value={lane ?? "all"}
-        segments={laneSegments(lanes, allTotal)}
-        onChange={(choice) => onLane(choice === "all" ? undefined : choice)}
+        value={laneChoice(filters)}
+        segments={laneSegments(counts)}
+        onChange={(choice) => update(laneChanges(choice))}
       />
       <div className="flex flex-wrap items-center gap-2">
-        <QueueSearch value={search} onSearch={onSearch} />
+        <QueueSearch value={filters.search} onSearch={(search) => update({ search, offset: null })} />
         <Select
           variant="filter"
           label={QUEUE_TEXT.provider}
-          value={providerId}
+          value={filters.providerId}
           options={[{ value: "", label: QUEUE_TEXT.allProviders }, ...providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
-          onChange={onProvider}
+          onChange={(providerId) => update({ provider_id: providerId, offset: null })}
         />
         <Select
           variant="filter"
           label={QUEUE_TEXT.assignedFilter}
-          value={assigned}
+          value={filters.assigned}
           options={[
             { value: "", label: QUEUE_TEXT.anyone },
             { value: "me", label: QUEUE_TEXT.mine },
             { value: "none", label: QUEUE_TEXT.unassigned },
           ]}
-          onChange={onAssigned}
+          onChange={(assigned) => update({ assigned, offset: null })}
+        />
+        <Select<QueueSort>
+          variant="filter"
+          label={QUEUE_TEXT.sort}
+          value={filters.sort}
+          options={SORTS.map((sort) => ({ value: sort, label: QUEUE_TEXT.sorts[sort] }))}
+          onChange={(sort) => update({ sort: sort === "impact" ? sort : null, offset: null })}
         />
       </div>
     </div>

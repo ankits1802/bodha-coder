@@ -52,6 +52,7 @@ export function planStatus(changes: Partial<PlanStatus> = {}): PlanStatus {
     standing: "trial",
     renews_on: "2026-12-02",
     trial_days_left: 3,
+    ending_soon: true,
     users: 1,
     user_limit: 5,
     providers: 1,

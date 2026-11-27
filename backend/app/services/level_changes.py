@@ -22,6 +22,7 @@ from app.services.attestations import LEVEL_ATTESTATION, Statement, checked_word
 from app.services.audit_log import record_access, record_provider_access
 from app.services.claim_snapshots import snapshot_codes
 from app.services.finding import Finding
+from app.services.inbox import Notice, notify
 from app.services.placement import refresh_placement
 from app.services.provider_channels import require_channel, usable_channel
 from app.services.sealing import provider_signer, seal_attestation
@@ -45,6 +46,7 @@ LEVEL_ANSWERS = {"confirm": "Confirm", "disagree": "Disagree"}
 NO_LEVEL = "none"
 REMIND_AFTER = timedelta(hours=12)
 ACTIONS = {"confirm": "confirmed visit level", "disagree": "disagreed with visit level"}
+DISAGREED = "level_disagreed"
 
 
 @dataclass(frozen=True)
@@ -162,7 +164,7 @@ async def answer_level_change(
     record_provider_access(db, actor, provider.name, ACTIONS[reply.answer], note_id=note.id)
     if reply.answer == "disagree":
         await _reopen_for_review(db, actor, note, provider)
-        await _notify_approver(db, messenger, note, request)
+        await _notify_approver(db, messenger, note, request, provider)
     await db.commit()
     return request
 
@@ -186,11 +188,14 @@ async def _reopen_for_review(db: AsyncSession, actor: ProviderActor, note: Note,
     record_provider_access(db, actor, provider.name, "reopened after disagreement", note_id=note.id)
 
 
-async def _notify_approver(db: AsyncSession, messenger: Messenger, note: Note, request: AddendumRequest) -> None:
+async def _notify_approver(
+    db: AsyncSession, messenger: Messenger, note: Note, request: AddendumRequest, provider: Provider
+) -> None:
     snapshot = await db.get(ApprovedClaim, request.approved_claim_id) if request.approved_claim_id else None
     approver = await db.get(User, snapshot.approved_by) if snapshot and snapshot.approved_by else None
     if approver is None or approver.status != "active":
         return
+    await notify(db, note.practice_id, [approver.id], Notice(DISAGREED, provider.name, note_id=note.id))
     practice = await db.get_one(Practice, note.practice_id)
     link = f"{get_settings().app_url}/notes/{note.id}?tab=history"
     body = f"{practice.name}: a provider disagreed with a visit level you approved. Open: {link}"

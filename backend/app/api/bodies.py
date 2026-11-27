@@ -13,16 +13,20 @@ from app.models import (
     BILLING_INTERVALS,
     BILLING_PROVIDERS,
     COMMENT_LENGTH,
+    LANES,
     OVERRIDE_NOTE_LENGTH,
     OVERRIDE_REASONS,
+    QUEUE_VIEW_NAME_LENGTH,
     SIGNATURE_SOURCES,
     SIGNER_NAME_LENGTH,
     TOUR_OUTCOMES,
     TOUR_VERSION_LIMIT,
 )
+from app.models.tables import LANE_REASONS
 from app.services.note_voids import REASON_LENGTH
 from app.services.plans import CHECKOUT_PLANS
 from app.services.signature_images import MAX_IMAGE_DATA_CHARS
+from app.services.worklists import ASSIGNED_PATTERN, DUE_SORT, QUEUE_SORTS
 
 
 class Body(BaseModel):
@@ -68,10 +72,6 @@ class PreferencesBody(Body):
 class TourBody(Body):
     version: int = Field(ge=1, le=TOUR_VERSION_LIMIT)
     outcome: Literal[TOUR_OUTCOMES]
-
-
-class PreviewBody(Body):
-    file_names: list[str] = Field(max_length=500)
 
 
 class OverrideBody(Body):
@@ -366,3 +366,22 @@ class CheckoutBody(Body):
     plan: Literal[CHECKOUT_PLANS]
     interval: Literal[BILLING_INTERVALS]
     provider: Literal[BILLING_PROVIDERS]
+
+
+class InboxReadBody(Body):
+    ids: list[str] = Field(default_factory=list, max_length=500)
+    all: bool = False
+
+
+class QueueViewFiltersBody(Body):
+    lane: Literal[LANES] | None = None
+    reason: Literal[LANE_REASONS] | None = None
+    assigned: str | None = Field(default=None, pattern=ASSIGNED_PATTERN)
+    provider_id: str | None = Field(default=None, max_length=36)
+    overdue: bool = False
+    sort: Literal[QUEUE_SORTS] = DUE_SORT
+
+
+class QueueViewBody(Body):
+    name: str = Field(min_length=1, max_length=QUEUE_VIEW_NAME_LENGTH)
+    filters: QueueViewFiltersBody

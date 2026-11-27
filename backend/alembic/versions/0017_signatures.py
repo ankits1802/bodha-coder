@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
-revision = "0016"
-down_revision = "0015"
+revision = "0017"
+down_revision = "0016"
 branch_labels = None
 depends_on = None
 
@@ -13,8 +11,7 @@ SEALED_TABLES = ("signatures", "signature_adoptions", "signing_events")
 ONE_OWNER = "(user_id IS NULL) <> (provider_id IS NULL)"
 PROVIDER_IN_PRACTICE = "provider_id IS NULL OR practice_id IS NOT NULL"
 RUNTIME_ROLE = "bodha_runtime"
-PURGE_SOURCE = Path(__file__).with_name("0015_audit_hardening.sql")
-PURGE_HEAD = "CREATE FUNCTION bodha_purge_practice("
+PURGE_FUNCTION = "bodha_purge_practice(text, integer)"
 PURGE_ANCHOR = "    'DELETE FROM review_comment_removals WHERE practice_id = $1',\n"
 SEALED_PURGE_STEPS = (
     "    'DELETE FROM signing_events WHERE practice_id = $1 OR signer_user_id = ANY($2)',\n"
@@ -160,12 +157,12 @@ def _run(statement: str) -> None:
     op.get_bind().exec_driver_sql(statement)
 
 
-def _purge_function() -> str:
-    statements = PURGE_SOURCE.read_text(encoding="utf-8").split("\n;\n")
-    found = [statement.strip() for statement in statements if statement.strip().startswith(PURGE_HEAD)]
-    if len(found) != 1 or found[0].count(PURGE_ANCHOR) != 1:
-        raise RuntimeError("bodha_purge_practice in 0015 no longer has the step the signing records go before")
-    return found[0].replace("CREATE FUNCTION", "CREATE OR REPLACE FUNCTION", 1)
+def _purge_definition(*, holding: str) -> str:
+    query = sa.text("SELECT pg_get_functiondef(CAST(:name AS regprocedure))")
+    definition = op.get_bind().scalar(query, {"name": PURGE_FUNCTION})
+    if definition.count(holding) != 1:
+        raise RuntimeError(f"{PURGE_FUNCTION} no longer reads as this migration expects")
+    return definition
 
 
 def _row_trigger(name: str, event: str, table: str, function: str) -> None:
@@ -191,12 +188,12 @@ def upgrade() -> None:
         _protect(table)
     if _runtime_role_exists():
         _run(f"GRANT SELECT, INSERT ON {', '.join(SEALED_TABLES)} TO {RUNTIME_ROLE}")
-    purge = _purge_function()
+    purge = _purge_definition(holding=PURGE_ANCHOR)
     _run(purge.replace(PURGE_ANCHOR, SEALED_PURGE_STEPS + PURGE_ANCHOR, 1))
 
 
 def downgrade() -> None:
-    _run(_purge_function())
+    _run(_purge_definition(holding=SEALED_PURGE_STEPS).replace(SEALED_PURGE_STEPS, "", 1))
     for table in SEALED_TABLES:
         for trigger in ("bodha_append_only", "bodha_stamp", "bodha_no_truncate"):
             _run(f"DROP TRIGGER {trigger} ON {table}")

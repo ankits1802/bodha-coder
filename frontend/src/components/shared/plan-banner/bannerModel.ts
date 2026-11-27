@@ -9,7 +9,6 @@ export interface BannerView {
 }
 
 export const DISMISS_STORAGE_KEY = "bodha.planBanner.dismissedOn";
-const TRIAL_WARNING_DAYS = 3;
 
 const words = PLAN_BANNER_TEXT;
 
@@ -18,7 +17,7 @@ export function bannerFor(status: PlanStatus): BannerView | null {
     return { tone: "warn", text: words.pastDue(formatCalendarDay(status.renews_on, "year")), action: words.fixPayment };
   }
   if (status.standing === "trial" && status.trial_days_left !== null) {
-    const tone = status.trial_days_left <= TRIAL_WARNING_DAYS ? "warn" : "ok";
+    const tone = status.ending_soon ? "warn" : "ok";
     return { tone, text: words.trialLeft(status.trial_days_left), action: words.choosePlan };
   }
   return null;

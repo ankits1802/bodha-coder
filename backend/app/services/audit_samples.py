@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 import secrets
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -19,6 +19,7 @@ from app.models import AuditRun, AuditSample, Note, PracticeMembership, Provider
 from app.services.agreement import elements_of, summarize, visit_agreement
 from app.services.analysis import latest_codes
 from app.services.audit_log import record_access, record_activity
+from app.services.inbox import Notice, notify
 from app.services.memberships import active_members, member_names
 from app.services.placement import SETTLED_STATUSES, current_findings
 from app.services.routing import choices_for, claim
@@ -41,7 +42,9 @@ __all__ = [
 DEFAULT_SAMPLE_SIZE = 40
 SPECIALTY_SAMPLE_SIZE = 150
 SEED_BITS = 63
-STARTED = {"audit": "started blind audit", "training": "assigned training set"}
+TRAINING = "training"
+TRAINING_ASSIGNED = "training_assigned"
+STARTED = {"audit": "started blind audit", TRAINING: "assigned training set"}
 
 
 @dataclass(frozen=True)
@@ -95,8 +98,16 @@ async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest) ->
         )
     detail = f"{len(chosen)} notes, seed {seed}"
     record_activity(db, actor, STARTED[request.purpose], practice_id=actor.practice_id, detail=detail)
+    if request.purpose == TRAINING:
+        await _tell_trainees(db, actor, run.id, Counter(reviewer for _, reviewer in chosen))
     await db.commit()
     return run.id
+
+
+async def _tell_trainees(db: AsyncSession, actor: Actor, run_id: str, notes_by_trainee: Counter[str]) -> None:
+    for trainee, notes in notes_by_trainee.items():
+        notice = Notice(TRAINING_ASSIGNED, actor.user.name, actor.user.id, payload={"run_id": run_id, "notes": notes})
+        await notify(db, actor.practice_id, [trainee], notice)
 
 
 def reference_elements(item: AuditSample, side: str) -> dict[str, Any]:

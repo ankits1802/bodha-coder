@@ -5,8 +5,8 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { TextButton } from "@/components/ui/TextButton";
 import { Td, Tr } from "@/components/ui/Table";
 import type { Lane, QueueRow } from "@/lib/api/types";
-import { formatDueIn } from "@/lib/format";
-import { canOpen, isAwaitingProvider, isSelectable, noteHref, patientName, type Member } from "../queueRules";
+import { formatDueIn, formatMoneyChange } from "@/lib/format";
+import { NOTE_ROW_ATTRIBUTE, canOpen, isAwaitingProvider, isSelectable, noteHref, patientName, type Member } from "../queueRules";
 import { QUEUE_TEXT } from "../strings";
 import { AssigneeChip } from "./AssigneeChip";
 
@@ -60,10 +60,20 @@ function StatusCell({ row, controls }: { row: QueueRow; controls: RowControls })
   );
 }
 
+function ImpactLine({ cents }: { cents: number | null }) {
+  if (cents === null) return null;
+  return (
+    <span className="mt-0.5 block text-footnote text-secondary tabular-nums">
+      <span className="sr-only">{QUEUE_TEXT.impact} </span>
+      {formatMoneyChange(cents / 100)}
+    </span>
+  );
+}
+
 export function QueueRowView({ row, selected, controls }: { row: QueueRow; selected: boolean; controls: RowControls }) {
   const due = formatDueIn(row.due_at);
   return (
-    <Tr selected={selected}>
+    <Tr selected={selected} {...{ [NOTE_ROW_ATTRIBUTE]: row.id }}>
       {controls.selectable ? (
         <Td className="w-4">
           <SelectCell row={row} selected={selected} controls={controls} />
@@ -84,6 +94,7 @@ export function QueueRowView({ row, selected, controls }: { row: QueueRow; selec
       </Td>
       <Td>
         <CodeList codes={row.suggested} max={2} />
+        <ImpactLine cents={row.impact_cents} />
       </Td>
       <Td>
         <StatusCell row={row} controls={controls} />

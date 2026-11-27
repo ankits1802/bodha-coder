@@ -258,6 +258,7 @@ class Note(IdMixin, Base):
     voided_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
     void_reason: Mapped[str | None] = mapped_column(Text)
     status_before_void: Mapped[str | None] = mapped_column(String(16))
+    impact_cents: Mapped[int | None] = mapped_column(Integer)
 
 
 class NoteText(LedgerMixin, Base):

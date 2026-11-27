@@ -9,6 +9,7 @@ import { useSidebarCollapsed } from "../useSidebarCollapsed";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/queue" }));
 vi.mock("../useNavCounts", () => ({ useNavCounts: () => ({ queue: 7 }) }));
+vi.mock("../inboxCount", () => ({ useInboxCount: (enabled: boolean) => (enabled ? 3 : undefined) }));
 
 describe("Sidebar", () => {
   beforeEach(() => window.localStorage.clear());
@@ -48,6 +49,17 @@ describe("Sidebar", () => {
     act(() => first.result.current.toggle());
     expect(first.result.current.collapsed).toBe(true);
     expect(renderHook(() => useSidebarCollapsed()).result.current.collapsed).toBe(true);
+  });
+
+  it("shows the unread inbox count beside Inbox and offers HQ search on the admin host", () => {
+    const { unmount } = render(<Sidebar user={CODER} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
+    expect(screen.getByRole("link", { name: /Inbox/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Inbox/ })).toHaveTextContent("3");
+    unmount();
+    const hq = { ...CODER, role: "hq" as const, practice: null };
+    render(<Sidebar user={hq} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
+    expect(screen.queryByRole("link", { name: /Inbox/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
   });
 
   it("registers [ as the global shortcut", () => {

@@ -40,7 +40,7 @@ function TodayBody({ data, role }: { data: TodaySummary; role: Role }) {
   const placeNames = usePlaceNames();
   return (
     <>
-      <LaneCells counts={data.lanes} role={role} />
+      <LaneCells counts={data.lanes} reasons={data.provider_reasons} role={role} />
       <div className="flex flex-wrap items-start gap-6">
         {canUse(role, "queue") ? <UpNext rows={data.next_up} placeNames={placeNames} /> : null}
         <BeingRead

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getHqExpenditure } from "@/lib/api/hq";
 import { saveFile } from "@/lib/download";
 import { HqSpendScreen } from "../HqSpendScreen";
-import { NOVEMBER_SPEND, NO_SPEND } from "./spendFixtures";
+import { NOVEMBER_SPEND, NO_SPEND, WITH_QUIET_PRACTICE } from "./spendFixtures";
 
 const navigation = vi.hoisted(() => ({ search: "", replace: vi.fn() }));
 
@@ -70,6 +70,14 @@ describe("HqSpendScreen", () => {
     expect(within(rowOf("Omar Haddad")).getByText("$0.08")).toBeInTheDocument();
     expect(within(rowOf("Omar Haddad")).getByText("—")).toBeInTheDocument();
     expect(screen.queryByText("Ana Ruiz")).not.toBeInTheDocument();
+  });
+
+  it("lists a practice with no model use at zero, with nothing to open", async () => {
+    vi.mocked(getHqExpenditure).mockResolvedValue(WITH_QUIET_PRACTICE);
+    render(<HqSpendScreen />);
+    await screen.findByRole("button", { name: "Lakeside" });
+    expect(within(rowOf("Quiet Creek")).getByText("$0.00")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Quiet Creek" })).not.toBeInTheDocument();
   });
 
   it("puts a preset's days in the address", async () => {

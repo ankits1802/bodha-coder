@@ -1,47 +1,44 @@
-import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
 import { Td, Tr } from "@/components/ui/Table";
-import { TextButton } from "@/components/ui/TextButton";
 import { UPLOAD_TEXT } from "../strings";
-import { entryStatus, type EntryStatus, type UploadEntry } from "../uploadEntries";
+import { entryStatus, type EntryEdit, type Placement, type References, type UploadEntry } from "../uploadEntries";
+import { FilePlacementCells } from "./FilePlacementCells";
 import { FileRowInputs } from "./FileRowInputs";
+import { FileStatusCell } from "./FileStatusCell";
 
-const TONES: Record<EntryStatus, StatusTone> = { ready: "ok", fix: "bad", duplicate: "warn", noCodes: "neutral" };
-
-interface FileRowProps {
-  entry: UploadEntry;
-  onUpdate: (id: string, change: Partial<Pick<UploadEntry, "billed" | "visitType" | "keep">>) => void;
+export interface FileRowActions {
+  onUpdate: (id: string, change: EntryEdit) => void;
+  onPlace: (id: string, change: Partial<Placement>) => void;
+  onConfirm: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
-export function FileRow({ entry, onUpdate, onRemove }: FileRowProps) {
+interface FileRowProps extends FileRowActions {
+  entry: UploadEntry;
+  references: References;
+}
+
+export function FileRow({ entry, references, onUpdate, onPlace, onConfirm, onRemove }: FileRowProps) {
   const words = UPLOAD_TEXT.row;
   const status = entryStatus(entry);
+  const name = entry.patientName ?? entry.file.name;
+  const leftOut = status === "duplicate" || status === "uploaded";
   return (
     <Tr>
       <Td className="align-top">
         <span className={`font-medium ${entry.patientName ? "" : "text-secondary"}`}>{entry.patientName ?? words.readFromNote}</span>
         <span className="mt-0.5 block text-caption break-all text-tertiary">{entry.file.name}</span>
       </Td>
-      {status === "duplicate" ? (
-        <Td colSpan={2} className="align-top text-secondary">
-          {words.sameAsAbove}
+      {leftOut ? (
+        <Td colSpan={5} className="align-top text-secondary">
+          {status === "duplicate" ? words.sameAsAbove : null}
         </Td>
       ) : (
-        <FileRowInputs entry={entry} name={entry.patientName ?? entry.file.name} onUpdate={onUpdate} />
+        <>
+          <FilePlacementCells entry={entry} name={name} references={references} onPlace={onPlace} />
+          <FileRowInputs entry={entry} name={name} onUpdate={onUpdate} />
+        </>
       )}
-      <Td className="align-top">
-        <span className="flex flex-wrap items-center gap-3">
-          <StatusDot tone={TONES[status]}>{UPLOAD_TEXT.status[status]}</StatusDot>
-          {status === "duplicate" ? (
-            <TextButton className="text-subhead" aria-label={words.keepLabel(entry.file.name)} onClick={() => onUpdate(entry.id, { keep: true })}>
-              {words.keep}
-            </TextButton>
-          ) : null}
-          <TextButton className="text-subhead" aria-label={words.removeLabel(entry.file.name)} onClick={() => onRemove(entry.id)}>
-            {UPLOAD_TEXT.table.remove}
-          </TextButton>
-        </span>
-      </Td>
+      <FileStatusCell entry={entry} onKeep={(id) => onUpdate(id, { keep: true })} onConfirm={onConfirm} onRemove={onRemove} />
     </Tr>
   );
 }
