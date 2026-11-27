@@ -46,7 +46,7 @@ function Harness({ initial }: { initial: NoteDetail }) {
 }
 
 function renderPanel(findings = [EM, QUERY, SUSPECTED, ...SUPPORTED]) {
-  const detail = noteDetail(findings, { history: { ...noteDetail([]).history, code_sets: [BILLED] } });
+  const detail = noteDetail(findings, { history: { ...noteDetail([]).history, code_sets: [BILLED] } as never });
   vi.mocked(saveDecisions).mockImplementation((_, choices) => Promise.resolve(withChoices(detail, choices)));
   render(<Harness initial={detail} />);
   return userEvent.setup();
