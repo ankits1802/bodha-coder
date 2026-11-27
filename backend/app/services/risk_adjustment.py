@@ -5,22 +5,37 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from app.ai.contracts import ReviewReport
+from app.ai.contracts import PatientFacts, ReviewReport
 from app.ai.hcc import SuspectedCondition
 from app.codes.billing_codes import Code
-from app.codes.hcc import HCC_MODEL_NAME, HccModel, HccPatient, Segment, segment_for, sex_code
+from app.codes.hcc import HCC_MODEL_NAME, HccModel, HccPatient, Segment, payment_year_age, segment_for, sex_code
 from app.codes.icd import IcdRelease, format_icd
 from app.services.finding import Finding
 
-__all__ = ["DOCUMENTED_STATUSES", "RISK_SUMMARY_KEY", "SUSPECTED_PREFIX", "risk_adjustment_findings"]
+__all__ = [
+    "AGE_FROM_BIRTH_DATE",
+    "AGE_FROM_NOTE",
+    "DOCUMENTED_STATUSES",
+    "RISK_SUMMARY_KEY",
+    "SUSPECTED_PREFIX",
+    "risk_adjustment_findings",
+]
 
 RISK_SUMMARY_KEY = "hcc"
 SUSPECTED_PREFIX = "hcc:"
 RISK_SUMMARY_TITLE = "Risk adjustment"
 DOCUMENTED_STATUSES = ("supported", "needs_specificity")
+AGE_FROM_BIRTH_DATE = "birth_date"
+AGE_FROM_NOTE = "note"
 SEGMENT_LABELS: Mapping[Segment, str] = MappingProxyType(
     {"aged": "Community, non-dual, aged", "disabled": "Community, non-dual, disabled"}
 )
+
+
+@dataclass(frozen=True)
+class _HccAge:
+    years: int | None
+    source: str | None
 
 
 @dataclass(frozen=True)
@@ -39,7 +54,8 @@ def risk_adjustment_findings(
         return []
     if model is None:
         return [_summary_finding({"model": review.model, "payment_year": review.paymentYear, "available": False})]
-    patient = HccPatient(report.patient.age, sex_code(report.patient.sex))
+    age = _hcc_age(report.patient, model.payment_year)
+    patient = HccPatient(age.years, sex_code(report.patient.sex))
     diagnoses = report.diagnoses or []
     billed_codes = [format_icd(code.code) for code in billed if code.type == "ICD-10"]
     documented = [
@@ -47,10 +63,20 @@ def risk_adjustment_findings(
     ]
     known = set(billed_codes) | {format_icd(dx.icd10) for dx in diagnoses if dx.icd10}
     suspected = [_suspected_finding(item, model, patient, icd, known) for item in review.suspected]
-    return [_summary(model, patient, billed_codes, documented), *(item for item in suspected if item is not None)]
+    summary = _summary(model, patient, billed_codes, documented, age=age)
+    return [summary, *(item for item in suspected if item is not None)]
 
 
-def _summary(model: HccModel, patient: HccPatient, billed: list[str], documented: list[str]) -> Finding:
+def _hcc_age(patient: PatientFacts, payment_year: str) -> _HccAge:
+    years = payment_year_age(patient.birth_date, payment_year) if patient.birth_date else None
+    if years is not None:
+        return _HccAge(years, AGE_FROM_BIRTH_DATE)
+    return _HccAge(patient.age, AGE_FROM_NOTE if patient.age is not None else None)
+
+
+def _summary(
+    model: HccModel, patient: HccPatient, billed: list[str], documented: list[str], *, age: _HccAge
+) -> Finding:
     billed_by = _codes_by_hcc(model, billed, patient)
     documented_by = _codes_by_hcc(model, documented, patient)
     sets = _HccSets(billed_by, documented_by, model.payment_hccs(billed_by), model.payment_hccs(documented_by))
@@ -59,6 +85,8 @@ def _summary(model: HccModel, patient: HccPatient, billed: list[str], documented
         "model": HCC_MODEL_NAME,
         "payment_year": model.payment_year,
         "available": True,
+        "age": age.years,
+        "age_from": age.source,
         "segment": SEGMENT_LABELS[segment] if segment else None,
         "score_billed": model.score(billed_by, segment) if segment else None,
         "score_documented": model.score(documented_by, segment) if segment else None,

@@ -6,16 +6,16 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 
+from app.api.blinding import SightedReader
 from app.api.routes.billing import INSIGHT_PERIODS
 from app.codes.em_benchmarks import EmBenchmarks, default_em_benchmarks
 from app.core.calendar import today_in
 from app.core.deps import Actor, Db, require
 from app.core.errors import Invalid
-from app.core.roles import COMPLIANCE, INSIGHT_READERS, NOTE_READERS
+from app.core.roles import COMPLIANCE, INSIGHT_READERS
 from app.services import day_checks, defense_packet, em_mix
 
 router = APIRouter(tags=["defensibility"])
-Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 
 
 def em_benchmark_data() -> EmBenchmarks:
@@ -26,14 +26,14 @@ Benchmarks = Annotated[EmBenchmarks, Depends(em_benchmark_data)]
 
 
 @router.get("/notes/{note_id}/defense-packet")
-async def packet(note_id: str, db: Db, actor: Reader) -> Response:
+async def packet(note_id: str, db: Db, actor: SightedReader) -> Response:
     built = await defense_packet.defense_packet(db, actor, note_id)
     disposition = f'attachment; filename="{built.file_name}"'
     return Response(built.content, media_type="application/pdf", headers={"Content-Disposition": disposition})
 
 
 @router.get("/notes/{note_id}/day")
-async def note_day(note_id: str, db: Db, actor: Reader) -> dict[str, Any]:
+async def note_day(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]:
     return await day_checks.note_day(db, actor, note_id)
 
 

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Mapping, Sequence
+from datetime import date
 from typing import Any
 
 from sqlalchemy import func, select
@@ -18,6 +21,7 @@ from app.services.remittance_outcomes import (
     APPEALABLE,
     DENIED,
     appeal_days,
+    line_appeal_by,
     line_outcome,
     plan_type_for,
     validated_appeal_days,
@@ -54,7 +58,8 @@ async def remittance_page(db: AsyncSession, actor: Actor, *, offset: int) -> dic
             .limit(PAGE_SIZE)
         )
     ).all()
-    counts, next_appeal = await _line_summaries(db, [remittance.id for remittance, _ in rows])
+    days = await stored_appeal_days(db, actor)
+    counts, next_appeal = await _line_summaries(db, [remittance for remittance, _ in rows], days)
     return {
         "items": [
             {
@@ -70,21 +75,26 @@ async def remittance_page(db: AsyncSession, actor: Actor, *, offset: int) -> dic
     }
 
 
-async def _line_summaries(db: AsyncSession, ids: list[str]) -> tuple[dict[str, dict[str, int]], dict[str, str]]:
-    if not ids:
+async def _line_summaries(
+    db: AsyncSession, remittances: Sequence[Remittance], days: Mapping[str, int]
+) -> tuple[dict[str, dict[str, int]], dict[str, str]]:
+    paid_on = {remittance.id: remittance.paid_on for remittance in remittances}
+    if not paid_on:
         return {}, {}
+    grouping = (RemittanceLine.remittance_id, RemittanceLine.status, RemittanceLine.appeal_plan_type)
     rows = await db.execute(
-        select(RemittanceLine.remittance_id, RemittanceLine.status, func.count(), func.min(RemittanceLine.appeal_by))
-        .where(RemittanceLine.remittance_id.in_(ids))
-        .group_by(RemittanceLine.remittance_id, RemittanceLine.status)
+        select(*grouping, func.count(), func.min(RemittanceLine.appeal_by))
+        .where(RemittanceLine.remittance_id.in_(list(paid_on)))
+        .group_by(*grouping)
     )
-    counts: dict[str, dict[str, int]] = {}
-    soonest: dict[str, str] = {}
-    for remittance_id, status, count, appeal_by in rows.all():
-        counts.setdefault(remittance_id, {})[status] = count
-        if appeal_by is not None and (remittance_id not in soonest or appeal_by.isoformat() < soonest[remittance_id]):
-            soonest[remittance_id] = appeal_by.isoformat()
-    return counts, soonest
+    counts: dict[str, Counter[str]] = {}
+    soonest: dict[str, date] = {}
+    for remittance_id, status, plan_type, count, stored in rows.all():
+        counts.setdefault(remittance_id, Counter())[status] += count
+        due = line_appeal_by(paid_on[remittance_id], plan_type, stored, days)
+        if due is not None and (remittance_id not in soonest or due < soonest[remittance_id]):
+            soonest[remittance_id] = due
+    return {key: dict(value) for key, value in counts.items()}, {key: due.isoformat() for key, due in soonest.items()}
 
 
 async def remittance_detail(
@@ -102,12 +112,13 @@ async def remittance_detail(
             query.order_by(RemittanceLine.service_date, RemittanceLine.claim_ref, RemittanceLine.id).limit(LINE_LIMIT)
         )
     ).all()
-    counts, _ = await _line_summaries(db, [remittance.id])
+    days = await stored_appeal_days(db, actor)
+    counts, _ = await _line_summaries(db, [remittance], days)
     record_access(db, actor, "viewed remittance", detail=f"remittance {remittance.id}, {len(lines)} lines")
     await db.commit()
     return {
         "remittance": {**_remittance_view(remittance, uploader or ""), "counts": counts.get(remittance.id, {})},
-        "lines": [_line_view(line) for line in lines],
+        "lines": [_line_view(line, _appeal_by(remittance, line, days)) for line in lines],
     }
 
 
@@ -122,7 +133,11 @@ def _remittance_view(remittance: Remittance, uploader: str) -> dict[str, Any]:
     }
 
 
-def _line_view(line: RemittanceLine) -> dict[str, Any]:
+def _appeal_by(remittance: Remittance, line: RemittanceLine, days: Mapping[str, int]) -> date | None:
+    return line_appeal_by(remittance.paid_on, line.appeal_plan_type, line.appeal_by, days)
+
+
+def _line_view(line: RemittanceLine, appeal_by: date | None) -> dict[str, Any]:
     return {
         "id": line.id,
         "note_id": line.note_id,
@@ -135,7 +150,7 @@ def _line_view(line: RemittanceLine) -> dict[str, Any]:
         "paid_amount": line.paid_amount,
         "adjustments": line.adjustments,
         "status": line.status,
-        "appeal_by": line.appeal_by.isoformat() if line.appeal_by else None,
+        "appeal_by": appeal_by.isoformat() if appeal_by else None,
     }
 
 
@@ -144,7 +159,8 @@ async def appeal_draft(db: AsyncSession, store: ObjectStore, actor: Actor, line_
     remittance = await db.get(Remittance, line.remittance_id) if line else None
     if line is None or remittance is None or remittance.practice_id != actor.practice_id:
         raise NotFound("remittance line not found")
-    if line.appeal_by is None:
+    appeal_by = _appeal_by(remittance, line, await stored_appeal_days(db, actor))
+    if appeal_by is None:
         raise Conflict("only a denied or downcoded line has an appeal")
     practice = await db.get_one(Practice, actor.practice_id)
     claim = await _claim_in_file(store, remittance, line)
@@ -154,7 +170,7 @@ async def appeal_draft(db: AsyncSession, store: ObjectStore, actor: Actor, line_
     return {
         "line_id": line.id,
         "note_id": line.note_id,
-        "appeal_by": line.appeal_by.isoformat(),
+        "appeal_by": appeal_by.isoformat(),
         "text": appeal_letter(facts),
         "file_name": f"appeal-{line.id}.txt",
         "defense_packet": defense_packet_path(line.note_id) if line.note_id else None,
@@ -184,7 +200,7 @@ async def _appeal_facts(
     return AppealFacts(
         practice_name=str((practice.setup.get("practice_details") or {}).get("legal_name") or practice.name),
         payer_name=remittance.payer,
-        plan_type=plan_type_for(claim.filing_indicator if claim else None, listed),
+        plan_type=line.appeal_plan_type or plan_type_for(claim.filing_indicator if claim else None, listed),
         outcome=outcome if outcome in APPEALABLE else DENIED,
         patient_name=line.patient_name,
         member_id=claim.member_id if claim else None,

@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.object_store import ObjectStore
+from app.adapters.object_store import ObjectStore, evaluation_response_key
 from app.adapters.pdf_text import DocumentUnreadable
 from app.ai.contracts import BilledCode, ReviewInputs, ReviewOutcome, ReviewReport
 from app.ai.errors import ModelError
@@ -26,7 +26,6 @@ from app.services.routing import choices_for, claim
 __all__ = [
     "RUNS_PER_CASE",
     "CaseUnavailable",
-    "evaluation_response_key",
     "fail_evaluation",
     "fail_stale_evaluations",
     "next_queued_evaluation",
@@ -41,10 +40,6 @@ CASE_FAILURES = (ModelError, DocumentUnreadable, IcdReleaseUnavailable)
 
 class CaseUnavailable(Exception):
     pass
-
-
-def evaluation_response_key(practice_id: str, run_id: str, case_id: str, attempt: int) -> str:
-    return f"practices/{practice_id}/evaluations/{run_id}/{case_id}-{attempt}.json"
 
 
 async def next_queued_evaluation(db: AsyncSession) -> str | None:

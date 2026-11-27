@@ -107,6 +107,24 @@ rotates without an outage.
 4. Store `<new key>` alone and redeploy. If the old key may have been exposed, skip the wait: store the
    new key alone at once and have admins reset two-step for everyone.
 
+## Stored files without records
+
+The worker's daily orphan sweep writes one `orphan file sweep` line to the worker log with counts only:
+`deleted`, `kept`, `recent` (younger than 24 hours), `intake` (left in the inbox folders), `unknown`
+(a key of a shape the sweep does not know, left alone) and `unknown_folders` (a practice folder with
+no practice row and no `practice deleted` entry, left alone).
+
+```
+filter message = "orphan file sweep"
+| fields @timestamp, deleted, kept, recent, intake, unknown, unknown_folders
+| sort @timestamp desc
+```
+
+`unknown` or `unknown_folders` above zero means objects nothing in Bodha accounts for: list them with
+`aws s3 ls --recursive s3://<bucket>/practices/<practice id>/` (keys hold ids only), find their source,
+and delete them by hand only once that is understood. A deleted object stays recoverable for 30 days
+as a noncurrent version (Restore from backup, Documents).
+
 ## Restore from backup
 
 Decide first what was lost: a mistaken change in the database, deleted documents, or the whole
@@ -145,7 +163,8 @@ request, after its records have been returned):
    every row that belongs to the practice (its people, providers, notes and their history, provider
    requests and access log), records "practice deleted" in HQ activity, and deletes every object
    under `practices/<practice id>/`.
-3. If the HQ log shows "stored files of deleted practice … were not removed", delete them by hand:
+3. If the HQ log shows "stored files of deleted practice … were not removed", the daily orphan sweep
+   deletes them once they are 24 hours old. To remove them at once, delete them by hand:
    `aws s3 rm s3://<bucket>/practices/<practice id>/ --recursive`.
 4. Earlier object versions stay recoverable for 30 days and then expire. To remove them at once:
 

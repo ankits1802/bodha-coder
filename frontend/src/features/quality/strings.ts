@@ -27,6 +27,7 @@ export const QUALITY_TEXT = {
   scopeLabels: { practice: "Practice", provider: "Provider", specialty: "Specialty" },
   period: (start: string, end: string) => `${start} – ${end}`,
   progress: (done: number, total: number) => `${done} of ${total}`,
+  startedBy: (name: string) => `Started by ${name}`,
   noReviewers: "No active team members can review notes",
   dialog: {
     title: "Start a blind audit",
@@ -46,7 +47,7 @@ export const QUALITY_TEXT = {
   displayLabel: "Display",
   displays: { chart: "Chart", table: "Table" },
   summaryTitle: "Agreement with the auditor",
-  summaryLabel: (side: string) => `Agreement of ${side} with the auditor, 95% Wilson intervals`,
+  summaryLabel: (side: string) => `Agreement of ${side} with the auditor, 95% intervals`,
   notesCount: (count: string) => `${count} notes coded`,
   elements: {
     em: "E/M exact",

@@ -21,6 +21,7 @@ __all__ = [
     "appeal_deadline",
     "appeal_days",
     "is_downcode",
+    "line_appeal_by",
     "line_outcome",
     "plan_type_for",
     "validated_appeal_days",
@@ -91,3 +92,11 @@ def validated_appeal_days(values: Mapping[str, int]) -> dict[str, int]:
 
 def appeal_deadline(remitted_on: date, plan_type: str, days: Mapping[str, int]) -> date:
     return remitted_on + timedelta(days=days[plan_type])
+
+
+def line_appeal_by(
+    remitted_on: date | None, plan_type: str | None, stored: date | None, days: Mapping[str, int]
+) -> date | None:
+    if plan_type is None or remitted_on is None:
+        return stored
+    return appeal_deadline(remitted_on, plan_type, days)

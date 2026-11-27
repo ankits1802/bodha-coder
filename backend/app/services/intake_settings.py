@@ -17,6 +17,7 @@ from app.services.audit_log import record_activity
 
 __all__ = [
     "DEFAULT_INBOX",
+    "INBOX_NAME",
     "PROCESSED",
     "REJECTED",
     "IntakeConfig",

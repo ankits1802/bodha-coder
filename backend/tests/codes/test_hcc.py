@@ -9,6 +9,7 @@ from app.codes.hcc import (
     HccPatient,
     hcc_model_for,
     load_hcc_model,
+    payment_year_age,
     payment_year_for,
     segment_for,
     sex_code,
@@ -63,6 +64,21 @@ def test_the_score_adds_factors_interactions_and_the_count_variable(model):
 def test_service_dates_feed_the_next_payment_year():
     assert payment_year_for(date(2026, 11, 25)) == "2027"
     assert payment_year_for(date(2026, 1, 1)) == "2027"
+
+
+@pytest.mark.parametrize(
+    ("born", "age"),
+    [
+        (date(1961, 2, 1), 66),
+        (date(1961, 2, 2), 65),
+        (date(1962, 1, 15), 65),
+        (date(1960, 2, 29), 66),
+        (date(2026, 6, 1), 0),
+        (date(2027, 2, 2), None),
+    ],
+)
+def test_the_age_is_taken_on_the_first_of_february_of_the_payment_year(born, age):
+    assert payment_year_age(born, "2027") == age
 
 
 def test_segments_and_sex_codes():

@@ -89,6 +89,7 @@ export interface RiskSummary {
   model: string | null;
   paymentYear: string | null;
   segment: string | null;
+  ageFromNote: boolean;
   scoreBilled: number | null;
   scoreDocumented: number | null;
   categories: RiskCategory[];
@@ -117,6 +118,7 @@ export function riskSummary(findings: Finding[]): RiskSummary | null {
     model: textValue(detail.model),
     paymentYear: textValue(detail.payment_year),
     segment: textValue(detail.segment),
+    ageFromNote: detail.age_from === "note",
     scoreBilled: numberValue(detail.score_billed),
     scoreDocumented: numberValue(detail.score_documented),
     categories: rows.map(riskCategory).filter((row): row is RiskCategory => row !== null),

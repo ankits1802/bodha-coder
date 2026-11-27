@@ -1,12 +1,12 @@
 import { formatRate } from "@/components/shared/rates";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
-import type { EvalRunView, WilsonRate } from "@/lib/api/types";
+import type { EvalRunView, Rate } from "@/lib/api/types";
 import { FORMAT_WORDS, formatDateTime, formatPercent } from "@/lib/format";
 import { RUN_TONES, changeTone } from "../qualityModel";
 import { QUALITY_TEXT } from "../strings";
 
-function rate(value: WilsonRate | undefined): string {
+function rate(value: Rate | undefined): string {
   return value ? formatRate(value) : FORMAT_WORDS.empty;
 }
 

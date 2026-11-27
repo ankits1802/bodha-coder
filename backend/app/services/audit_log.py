@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Actor, ProviderActor
 from app.models import AccessLog, Activity, User
 
 SIGNED_IN = "signed in"
+
+
+@dataclass(frozen=True)
+class SystemActor:
+    id: str
+    name: str
 
 
 def record_access(
@@ -39,6 +47,28 @@ def record_provider_access(
             note_id=note_id,
             ip=actor.ip,
             user_agent=(actor.user_agent or "")[:300] or None,
+        )
+    )
+
+
+def record_system_access(
+    db: AsyncSession,
+    actor: SystemActor,
+    practice_id: str,
+    action: str,
+    *,
+    note_id: str | None = None,
+    detail: str | None = None,
+) -> None:
+    db.add(
+        AccessLog(
+            practice_id=practice_id,
+            actor_kind="system",
+            actor_id=actor.id,
+            actor_name=actor.name,
+            action=action,
+            note_id=note_id,
+            detail=detail,
         )
     )
 

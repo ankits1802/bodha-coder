@@ -1,14 +1,14 @@
 import { formatInterval } from "@/components/shared/rates";
 import { StatCell, StatGrid } from "@/components/ui/StatGrid";
-import type { TrainingOverview, WilsonRate } from "@/lib/api/types";
+import type { Rate, TrainingOverview } from "@/lib/api/types";
 import { FORMAT_WORDS, formatCount, formatPercent } from "@/lib/format";
 import { TRAINING_TEXT } from "../strings";
 
-function value(rate: WilsonRate): string {
+function value(rate: Rate): string {
   return rate.value === null ? FORMAT_WORDS.empty : formatPercent(rate.value);
 }
 
-function note(rate: WilsonRate): string | undefined {
+function note(rate: Rate): string | undefined {
   return rate.value === null ? undefined : formatInterval(rate);
 }
 

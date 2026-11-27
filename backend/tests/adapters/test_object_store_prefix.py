@@ -2,7 +2,7 @@ import boto3
 import pytest
 from botocore.stub import Stubber
 
-from app.adapters.object_store import S3ObjectStore, practice_prefix
+from app.adapters.object_store import S3ObjectStore, evaluation_response_key, practice_prefix
 from app.core.config import get_settings
 
 BUCKET = "bodha-test"
@@ -65,3 +65,7 @@ def test_a_practice_prefix_is_its_folder_and_needs_an_id():
         practice_prefix("")
     with pytest.raises(ValueError):
         practice_prefix("p-1/notes")
+
+
+def test_evaluation_replies_are_keyed_by_practice_run_case_and_attempt():
+    assert evaluation_response_key("p-1", "r-1", "c-1", 2) == "practices/p-1/evaluations/r-1/c-1-2.json"

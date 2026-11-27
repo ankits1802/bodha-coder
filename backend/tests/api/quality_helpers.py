@@ -14,7 +14,7 @@ from app.ai.contracts import (
     ReviewReport,
 )
 from app.core.db import SessionFactory
-from app.models import AuditSample, Note, User, new_id, utcnow
+from app.models import AuditRun, AuditSample, Note, User, utcnow
 from tests.builders import Harness, Practice, read_next_note, upload_note
 from tests.fakes import NOTE_TEXT
 
@@ -88,21 +88,31 @@ async def user_id(email: str) -> str:
 
 
 async def seed_audit(note_id: str, reviewer_id: str, outcomes: list[str], *, done: bool = True) -> str:
-    sample_id = new_id()
     finished = utcnow()
+    status = "done" if done else "open"
     async with SessionFactory() as db:
         note = await db.get_one(Note, note_id)
+        run = AuditRun(
+            practice_id=note.practice_id,
+            created_by=reviewer_id,
+            purpose="audit",
+            scope="practice",
+            requested=len(outcomes),
+            status=status,
+        )
+        db.add(run)
+        await db.flush()
         for position, direction in enumerate(outcomes):
             db.add(
                 AuditSample(
                     practice_id=note.practice_id,
                     note_id=note_id,
                     reviewer_id=reviewer_id,
+                    run_id=run.id,
                     purpose="audit",
-                    status="done" if done else "open",
+                    status=status,
                     answer={},
                     result={
-                        "sample": {"id": sample_id, "purpose": "audit"},
                         "position": position,
                         "bodha": {"em": {"match": direction == "match", "direction": direction}},
                     },
@@ -110,4 +120,4 @@ async def seed_audit(note_id: str, reviewer_id: str, outcomes: list[str], *, don
                 )
             )
         await db.commit()
-    return sample_id
+        return run.id

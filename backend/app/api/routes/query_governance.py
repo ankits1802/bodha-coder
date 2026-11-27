@@ -5,10 +5,11 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 
+from app.api.blinding import SightedReader
 from app.api.routes.billing import INSIGHT_PERIODS
 from app.core.deps import Actor, Db, require
 from app.core.errors import Invalid
-from app.core.roles import INSIGHT_READERS, NOTE_READERS
+from app.core.roles import INSIGHT_READERS
 from app.models import utcnow
 from app.services import query_governance, query_metrics
 
@@ -25,9 +26,7 @@ async def queries(
 
 
 @router.get("/notes/{note_id}/addendum.txt")
-async def addendum_text(
-    note_id: str, db: Db, actor: Annotated[Actor, Depends(require(*NOTE_READERS))], request_id: str | None = None
-) -> Response:
+async def addendum_text(note_id: str, db: Db, actor: SightedReader, request_id: str | None = None) -> Response:
     exported = await query_governance.addendum_export(db, actor, note_id, request_id=request_id)
     return Response(
         exported.text,

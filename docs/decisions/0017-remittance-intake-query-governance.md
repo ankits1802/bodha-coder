@@ -63,6 +63,45 @@ the specific clinical options rather than No, Clinically undetermined or Other.
 
 - The worker calls `poll_intake` every minute and `escalate_unanswered` every hour, and
   `addenda.create_request` calls `refuse_repeat_queries`.
-- Changing an appeal window does not move appeal-by dates already stored.
+- Changing an appeal window moves every appeal-by date (amended 2026-11-27, below); lines stored
+  before migration 0007 keep their stored date.
 - `adapters/object_listing.py` lists through `S3ObjectStore`'s paginator helper; if that helper
   moves, the listing moves with it.
+
+## Amended 2026-11-27
+
+**Repeats are found by checksum.** `remittances.file_sha256` (migration 0006) holds the SHA-256 of
+the file; a file whose checksum matches an earlier upload of the practice is refused whatever its
+name, and the message names the earlier upload's day and file name. The check runs under a
+per-practice advisory lock so two uploads of one file cannot both pass. Payments stored before the
+column are given their checksum from the stored file before the check.
+
+**Appeal dates are computed when read.** A line stores the plan type whose window applies
+(`remittance_lines.appeal_plan_type`, migration 0007, appealable lines only) and no date; list,
+detail and letter add the practice's current window to the payment date. The plan type was not
+stored before, and the alternatives were worse: re-reading every 835 on each list costs a storage
+read per file per page, and inferring the plan type from the stored date is ambiguous whenever two
+windows are equal. The `appeal_by` write stops; the column stays for lines stored before 0007,
+which keep their date because their plan type cannot be recovered without reading the file.
+
+**Intake is uploaded by the system.** `uploads.create_intake_upload` writes `batches.source`
+`intake` with no `created_by`, billed code sets with no actor, and the access entry through
+`audit_log.record_system_access` as `Bodha intake` (actor id `bodha-intake`). The access-log check
+allows only `user` and `provider`; adding `system` needs a migration and a change to the shared
+access-log type and screen, so the kind stays `user` and the actor id shows it is not a person, as
+for `Bodha (auto)`. Upload history shows Intake.
+
+**Checksum names on arrival.** The first poll that sees a dropped file renames it in its folder to
+the SHA-256 of its content, ` - <CPT>` when the name carried a CPT code, and its suffix, before
+any check, so a patient name in a file name lives at most one poll even when reading the file
+fails. The CPT code is the only fact intake takes from a name and is not PHI, so it rides in the new
+name and survives a failed poll. The original name is kept nowhere: intake notes carry the checksum
+name and reason files name the renamed path. This replaces "the reason file holds the original
+path" above.
+
+**Email intake function.** `infra/ses_intake/handler.py` takes the recipient from the object key
+(`ses-inbound/<recipient>/`, set by the per-address receipt rule), because the envelope recipient
+is not reliably in the message headers. It requires every SES spam and virus verdict header to be
+`PASS`, a single `From` address on the inbox's sender list (the list is required) and a date of
+service in the subject; without a date it writes nothing rather than guess the date of service. It
+names PDFs by their checksum and deletes the raw message.

@@ -7,7 +7,7 @@ from typing import Any
 from app.codes.billing_codes import Code
 from app.codes.em import compare_em, em_position, is_em_code
 from app.codes.icd import format_icd
-from app.core.statistics import f1_score, wilson
+from app.core.statistics import bootstrap_ratio, f1_score, wilson
 
 __all__ = [
     "TIMED_LEVEL",
@@ -18,6 +18,7 @@ __all__ = [
     "em_direction",
     "em_level",
     "summarize",
+    "visit_agreement",
 ]
 
 TIMED_LEVEL = "Time"
@@ -101,12 +102,11 @@ def summarize(comparisons: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     total = len(comparisons)
     visits = [item["em"] for item in comparisons]
     diagnoses = [item["icd"] for item in comparisons]
-    matched = sum(item["matched"] for item in diagnoses)
-    precision = wilson(matched, sum(item["compared"] for item in diagnoses))
-    recall = wilson(matched, sum(item["reference"] for item in diagnoses))
+    precision = bootstrap_ratio([(item["matched"], item["compared"]) for item in diagnoses])
+    recall = bootstrap_ratio([(item["matched"], item["reference"]) for item in diagnoses])
     return {
         "notes": total,
-        "em": wilson(sum(item["match"] for item in visits), total).as_json(),
+        "em": visit_agreement(comparisons),
         "em_higher": wilson(sum(item["direction"] == "higher" for item in visits), total).as_json(),
         "em_lower": wilson(sum(item["direction"] == "lower" for item in visits), total).as_json(),
         "em_other": sum(item["direction"] in OTHER_DIRECTIONS for item in visits),
@@ -116,3 +116,7 @@ def summarize(comparisons: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "icd_exact": wilson(sum(item["match"] for item in diagnoses), total).as_json(),
         "modifiers": wilson(sum(item["modifiers"]["match"] for item in comparisons), total).as_json(),
     }
+
+
+def visit_agreement(comparisons: Sequence[Mapping[str, Any]]) -> dict[str, int | float | None]:
+    return wilson(sum(item["em"]["match"] for item in comparisons), len(comparisons)).as_json()

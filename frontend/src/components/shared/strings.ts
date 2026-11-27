@@ -68,6 +68,7 @@ export const SHARED_TEXT = {
     then: "+",
     modifier: "Ctrl",
     modifierMac: "⌘",
+    titled: (label: string, keys: string) => `${label} (${keys})`,
     scopes: { global: "Everywhere", queue: "Review queue", review: "Note review" },
     labels: {
       search: "Search notes",

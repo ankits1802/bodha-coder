@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, WithJsonSchema, field_validator
 
 from app.ai.audit import AuditChecklistOutput
 from app.ai.cdi import CDIGapScanOutput
@@ -142,6 +142,7 @@ class PatientFacts(BaseModel):
     name: str | None = None
     age: int | None = None
     sex: str | None = None
+    birth_date: Annotated[date | None, WithJsonSchema({"anyOf": [{"type": "string"}, {"type": "null"}]})] = None
 
 
 class ReviewReport(BaseModel):

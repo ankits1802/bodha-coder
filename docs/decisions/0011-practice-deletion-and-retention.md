@@ -70,7 +70,17 @@ admins and renewals; setup needs provider credentialing and a real payer list.
 
 - `services.analysis.run_analysis` stores model-extracted text at the next text revision instead of
   revision 1.
-- Note deletion still removes only the current document key and the analysis replies; with replaced
-  PDFs it should remove every key under the note's folder (`practices/{p}/notes/{n}/`).
+- Note deletion removes every key under the note's folder (`practices/{p}/notes/{n}/`).
 - The provider's answer page shows every note text; it should show the texts from the latest
   document onward, as the note view does.
+
+## Amended 2026-11-27: the orphan sweep
+
+A file can outlive its record: the database can fail after a file was stored, and removing a deleted
+note's or practice's files can fail after its rows are gone. Once a day the worker lists every
+practice folder and deletes objects older than 24 hours that no row holds (current and earlier
+document revisions, analysis replies, remittance files, evaluation replies of a case in its run).
+It deletes only keys whose shape it knows and leaves the intake folders to the poller; a folder of a
+practice with no row is emptied only when HQ activity records its deletion, so a database that
+lacks a practice never empties that practice's folder. Twenty-four hours is longer than any read
+or upload takes, so a file stored a moment before its row is committed is never taken for an orphan.

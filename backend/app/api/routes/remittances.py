@@ -15,7 +15,7 @@ router = APIRouter(tags=["remittances"])
 Biller = Annotated[Actor, Depends(require(*BILLERS))]
 Admin = Annotated[Actor, Depends(require(*ADMINS))]
 LineStatus = Literal["all", "paid_as_billed", "downcoded", "denied", "matched", "unmatched"]
-PlanType = Literal["commercial", "medicare", "medicaid", "other"]
+PlanType = Literal["commercial", "medicare", "medicare_advantage", "medicaid", "other"]
 
 
 class AppealDaysBody(Body):

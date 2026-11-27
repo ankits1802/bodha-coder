@@ -87,3 +87,22 @@ should import instead of its own copies.
 Amendment: the default provider audit is 40 notes. With 30 notes, even 30 of 30 agreeing gives a Wilson 95%
 lower bound of 88.6%, below the 90% bar, so a 30-note audit could never make a provider eligible; 35 of 35 is
 the smallest passing result.
+
+Amendment (2026-11-27):
+
+- Runs. Each draw is one `audit_runs` row (purpose, scope, provider, specialty, period, notes requested,
+  who started it, status) and every sampled note's `audit_samples` row carries its `run_id`; listing and
+  results read the run, not `result.sample`. The seed is written to the `started blind audit` or
+  `assigned training set` activity entry. A run becomes `done` when its last note is coded; the run row
+  is locked while that is checked, so two reviewers finishing together still close it.
+- Blinding outside the audit screens. While a reviewer has an open item for a note, the note's review
+  routes (detail, PDF, decisions, billed-code changes, defense packet, claim checks, provider day,
+  addendum export) answer 403 "This note is in your blind audit" to that reviewer only. It lifts once
+  the item is coded. This replaces "choose reviewers who did not work the notes" as the only safeguard.
+- ICD-10 intervals. Precision and recall now take a per-note percentile bootstrap: the notes are
+  resampled with replacement 2,000 times with a fixed seed (20261127), each resample gives the ratio of
+  summed matched codes to summed compared (precision) or reference (recall) codes, and the 2.5th and
+  97.5th percentiles by nearest rank bound the interval. Resamples with no code in the denominator are
+  left out. The note is the unit of independence, so a note with many codes no longer narrows the
+  interval as if each code were a separate observation. The per-note rates (E/M exact, its directions,
+  the exact ICD-10 set, modifiers) keep the Wilson interval.

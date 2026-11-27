@@ -18,15 +18,14 @@ function Score({ label, value }: { label: string; value: number | null }) {
 export function RiskScores({ summary }: { summary: RiskSummary }) {
   const words = REVIEW_TEXT.risk;
   const model = summary.model && summary.paymentYear ? words.model(summary.model, summary.paymentYear) : null;
+  const facts = [model, summary.segment, summary.ageFromNote ? words.ageFromNote : null].filter(Boolean);
   return (
     <TabSection title={words.scores}>
       <dl className="m-0 flex flex-wrap gap-y-3">
         <Score label={words.scoreBilled} value={summary.scoreBilled} />
         <Score label={words.scoreDocumented} value={summary.scoreDocumented} />
       </dl>
-      {model || summary.segment ? (
-        <p className="m-0 text-footnote text-secondary">{[model, summary.segment].filter(Boolean).join(" · ")}</p>
-      ) : null}
+      {facts.length > 0 ? <p className="m-0 text-footnote text-secondary">{facts.join(" · ")}</p> : null}
     </TabSection>
   );
 }

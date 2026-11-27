@@ -14,6 +14,7 @@ export const CLAIM_CHECK_TEXT = {
   overLimit: (limit: number) => `Units over limit (MUE ${limit})`,
   units: (code: string, units: number) => `${code} ×${units}`,
   noPrimary: "Add-on without its primary",
+  earlierInitial: (day: string) => `Earlier initial visit ${day}`,
   rules: {
     telehealth_place: "Telehealth: use POS 02 or 10",
     audio_only_place: "Audio-only needs POS 10",
@@ -22,7 +23,7 @@ export const CLAIM_CHECK_TEXT = {
     g2211_replaced: "G2211 replaced by modifier B1",
     level_downcode_risk: "Likely downcode, document MDM",
     audio_only_risk_adjustment: "Audio-only: no risk adjustment",
-    nursing_initial_once: "Initial visit once per stay",
     nursing_incident_to: "No incident-to in a nursing facility",
+    initial_visit_repeated: "Initial visit already billed this stay",
   } satisfies Record<PayerFlagRule, string>,
 };

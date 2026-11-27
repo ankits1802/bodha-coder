@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { CodeList } from "@/components/shared/CodeList";
 import { StatusDot, type StatusTone } from "@/components/ui/StatusDot";
-import type { AnalysisStatus, NoteDetail } from "@/lib/api/types";
+import type { AnalysisStatus, DecisionRecord, NoteDetail } from "@/lib/api/types";
 import { codeLabel } from "../findings";
 import { REVIEW_TEXT } from "../strings";
 import { HistoryEntry, HistoryList, joinMeta } from "./HistoryEntry";
@@ -68,6 +68,12 @@ function CodeRevisions({ detail }: { detail: NoteDetail }) {
   );
 }
 
+function decisionTitle(decision: DecisionRecord, titles: Map<string, string>): string {
+  const linked = decision.pointers;
+  if (!linked) return titles.get(decision.key) || decision.key;
+  return linked.diagnoses.length > 0 ? words.linked(linked.code, linked.diagnoses.join(", ")) : words.linkedDefault(linked.code);
+}
+
 function Decisions({ detail }: { detail: NoteDetail }) {
   const titles = new Map(detail.findings.map((finding) => [finding.key, finding.title]));
   return (
@@ -76,8 +82,8 @@ function Decisions({ detail }: { detail: NoteDetail }) {
         <HistoryEntry
           key={`${decision.key}-${decision.at}-${index}`}
           at={decision.at}
-          title={<span className="font-medium">{titles.get(decision.key) || decision.key}</span>}
-          meta={joinMeta([words.chose(REVIEW_TEXT.choices[decision.choice]), byLabel(decision.by)])}
+          title={<span className="font-medium">{decisionTitle(decision, titles)}</span>}
+          meta={joinMeta([decision.pointers ? null : words.chose(REVIEW_TEXT.choices[decision.choice]), byLabel(decision.by)])}
         />
       ))}
     </HistoryList>

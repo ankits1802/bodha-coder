@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from datetime import UTC, date, datetime
 
+import pytest
 from sqlalchemy import select
 
 from app.core.db import SessionFactory
-from app.models import Batch, Note, User
-from app.services.intake import poll_intake, sort_inbox
+from app.models import AccessLog, Batch, CodeSet, Note
+from app.services.intake import arrival_name, poll_intake, sort_inbox
 from app.services.intake_settings import IntakeConfig
 from tests.builders import Practice, practice_with_provider
 from tests.fakes import FakeStore, text_pdf
@@ -20,6 +22,21 @@ DROPPED_PDF = text_pdf("Follow-up visit for diabetes.")
 class FakeListingStore(FakeStore):
     async def list_keys(self, prefix: str) -> list[str]:
         return sorted(key for key in self.objects if key.startswith(prefix))
+
+
+class UnreadableArrivals(FakeListingStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.unreadable = True
+
+    async def get(self, key: str) -> bytes:
+        if self.unreadable and key.endswith(" - 99214.pdf"):
+            raise OSError("storage unavailable")
+        return await super().get(key)
+
+
+def _checksum(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
 async def _turn_on(harness, practice, **changes):
@@ -82,22 +99,36 @@ async def _mixed_inbox(harness) -> tuple[Practice, str, FakeListingStore]:
     return practice, inbox, store
 
 
-async def test_a_dropped_pdf_becomes_a_note_uploaded_as_the_first_admin(harness):
+async def test_a_dropped_pdf_becomes_a_note_uploaded_by_intake(harness):
     practice, inbox, store = await _mixed_inbox(harness)
 
     async with SessionFactory() as db:
         note = await db.scalar(select(Note).where(Note.practice_id == practice.id))
         batch = await db.get_one(Batch, note.batch_id)
-        uploader = await db.get_one(User, batch.created_by)
-    assert (note.service_date, note.patient_name, note.file_name) == (date(2026, 11, 20), "Reyes Marisol", NOTE_NAME)
-    assert (batch.provider_id, batch.place_code, uploader.email) == (
+        billed = await db.scalar(select(CodeSet).where(CodeSet.note_id == note.id))
+        entry = await db.scalar(select(AccessLog).where(AccessLog.action == "uploaded notes"))
+    renamed = f"{_checksum(DROPPED_PDF)} - 99214.pdf"
+    assert (note.service_date, note.patient_name, note.file_name) == (date(2026, 11, 20), None, renamed)
+    assert [(code["code"], code["type"]) for code in billed.codes] == [("99214", "CPT")]
+    assert (batch.provider_id, batch.place_code, batch.source, batch.created_by) == (
         practice.provider_id,
         "11",
-        "admin@lakeside.example.com",
+        "intake",
+        None,
     )
+    assert (billed.actor_id, entry.practice_id, entry.actor_kind, entry.actor_id, entry.actor_name) == (
+        None,
+        practice.id,
+        "system",
+        "bodha-intake",
+        "Bodha intake",
+    )
+    history = (await harness.client.get("/api/batches", headers=practice.admin)).json()["items"]
+    assert [row["uploaded_by"] for row in history] == ["Intake"]
     assert store.objects[note.file_key] == DROPPED_PDF
     processed = _under(store, f"{inbox}processed/2026-11-27/")
     assert len(processed) == 1 and store.objects[processed[0]] == DROPPED_PDF
+    assert not any("REYES" in key or "Progress" in key for key in store.objects)
 
 
 async def test_everything_else_is_moved_to_rejected_with_a_reason(harness):
@@ -109,10 +140,42 @@ async def test_everything_else_is_moved_to_rejected_with_a_reason(harness):
     assert left == []
     reasons = _reasons(store, f"{inbox}rejected/2026-11-27/")
     assert len(reasons) == 4
-    assert any("file: varga/2026-11-20/scan.docx\nreason: only PDF files are read" in text for text in reasons)
-    assert any("reason: fake.pdf is not a PDF" in text for text in reasons)
+    word = f"file: varga/2026-11-20/{_checksum(b'word file')}.docx\nreason: only PDF files are read"
+    assert any(word in text for text in reasons)
+    assert any(f"reason: {_checksum(b'not a pdf')}.pdf is not a PDF" in text for text in reasons)
     assert any("reason: no provider is set for the folder unknown" in text for text in reasons)
     assert any("reason: the date of service 2026-12-01 is in the future" in text for text in reasons)
+    for dropped_name in ("scan", "fake", "other", "later"):
+        assert not any(dropped_name in text for text in reasons)
+        assert not any(dropped_name in key for key in store.objects)
+
+
+async def test_a_dropped_file_is_renamed_to_its_checksum_before_it_is_read(harness):
+    practice = await practice_with_provider(harness)
+    assert (await _turn_on(harness, practice)).status_code == 200
+    folder = f"practices/{practice.id}/inbox/varga/2026-11-20/"
+    store = UnreadableArrivals()
+    store.objects[f"{folder}{NOTE_NAME}"] = DROPPED_PDF
+
+    with pytest.raises(OSError):
+        await _poll(store)
+    assert list(store.objects) == [f"{folder}{_checksum(DROPPED_PDF)} - 99214.pdf"]
+
+    store.unreadable = False
+    assert await _poll(store) == 1
+    async with SessionFactory() as db:
+        note = await db.scalar(select(Note).where(Note.practice_id == practice.id))
+        billed = await db.scalar(select(CodeSet).where(CodeSet.note_id == note.id))
+    assert [code["code"] for code in billed.codes] == ["99214"]
+
+
+def test_an_arrival_keeps_only_its_checksum_its_code_and_its_type():
+    data = b"%PDF-1.7 visit"
+    checksum = hashlib.sha256(data).hexdigest()
+    assert arrival_name(NOTE_NAME, data) == f"{checksum} - 99214.pdf"
+    assert arrival_name("Reyes Marisol.PDF", data) == f"{checksum}.pdf"
+    assert arrival_name("Reyes Marisol 99214.docx", data) == f"{checksum}.docx"
+    assert arrival_name("no suffix", data) == checksum
 
 
 async def test_a_second_poll_does_nothing_and_a_dropped_duplicate_is_rejected(harness):

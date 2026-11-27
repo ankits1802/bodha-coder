@@ -39,6 +39,7 @@ backend/alembic/        migrations; 0001 executes a frozen DDL file compiled fro
 backend/tests/          tests; they run on GitHub Actions against Postgres
 frontend/               Next.js App Router web client
 tools/                  hygiene_check.py and its baseline
+infra/ses_intake/       the email intake Lambda function (deployed on its own; standard library and boto3)
 docs/                   living documents and the decision log
 ```
 
@@ -91,6 +92,7 @@ A development machine runs the formatters, the linters and the hygiene check.
 | hygiene check (ratchet) | `python tools/hygiene_check.py` |
 | accept a lower baseline after a clean-up | `python tools/hygiene_check.py --update-baseline` |
 | backend lint and format | `cd backend; .venv\Scripts\python.exe -m ruff check .` and `... -m ruff format .` |
+| tools and infra lint and format | `backend\.venv\Scripts\python.exe -m ruff check tools infra` and `... -m ruff format tools infra` |
 | frontend lint | `cd frontend; npm run lint` |
 | CI only: backend tests | `pytest -q` after `alembic upgrade head` against the Postgres service |
 | CI only: frontend | `npm run typecheck`, `npm test`, `npm run build` |

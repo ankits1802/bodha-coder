@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import func, select
@@ -8,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.codes.billing_codes import Code
 from app.models import CodeSet
 
-__all__ = ["latest_codes", "next_revision"]
+__all__ = ["latest_codes", "latest_codes_for", "next_revision"]
 
 
 async def next_revision(db: AsyncSession, model: type[Any], note_id: str, **filters: str) -> int:
@@ -26,3 +27,15 @@ async def latest_codes(db: AsyncSession, note_id: str, kind: str) -> tuple[Code,
         .limit(1)
     )
     return tuple(Code.from_json(item) for item in (row.codes if row else []))
+
+
+async def latest_codes_for(db: AsyncSession, kind: str, note_ids: Sequence[str]) -> dict[str, tuple[Code, ...]]:
+    if not note_ids:
+        return {}
+    rows = await db.execute(
+        select(CodeSet.note_id, CodeSet.codes)
+        .where(CodeSet.kind == kind, CodeSet.note_id.in_(note_ids))
+        .order_by(CodeSet.note_id, CodeSet.revision.desc())
+        .distinct(CodeSet.note_id)
+    )
+    return {note_id: tuple(Code.from_json(item) for item in codes) for note_id, codes in rows}

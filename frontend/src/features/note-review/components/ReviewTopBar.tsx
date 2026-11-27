@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { shortcutTitle } from "@/components/shared/shortcuts/registry";
+import { useIsMac } from "@/components/shared/shortcuts/useIsMac";
 import { Button } from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/buttonStyles";
 import { Chevron } from "@/components/ui/Chevron";
@@ -26,6 +30,7 @@ function StepButton({ target, label, direction, onGo }: { target: string | null;
     <button
       type="button"
       aria-label={label}
+      title={label}
       disabled={target === null}
       onClick={() => target && onGo(target)}
       className="flex h-7 w-8 cursor-pointer items-center justify-center rounded-nav text-label hover:bg-surface disabled:cursor-not-allowed disabled:text-quaternary disabled:hover:bg-transparent"
@@ -36,6 +41,7 @@ function StepButton({ target, label, direction, onGo }: { target: string | null;
 }
 
 export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdfPending, replacePdf = null }: ReviewTopBarProps) {
+  const mac = useIsMac();
   return (
     <div className="sticky top-0 z-10 flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-separator bg-surface/95 px-4 py-2">
       <Link href={backHref} className={buttonClasses("plain", "md", "px-3")}>
@@ -50,8 +56,8 @@ export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdf
       </div>
       <div className="flex items-center gap-2">
         <div className="flex rounded-segment bg-control p-0.5">
-          <StepButton target={neighbours.previous} label={REVIEW_TEXT.previous} direction="left" onGo={onGo} />
-          <StepButton target={neighbours.next} label={REVIEW_TEXT.next} direction="right" onGo={onGo} />
+          <StepButton target={neighbours.previous} label={shortcutTitle("previousNote", mac)} direction="left" onGo={onGo} />
+          <StepButton target={neighbours.next} label={shortcutTitle("nextNote", mac)} direction="right" onGo={onGo} />
         </div>
         {onOpenPdf ? (
           <Button onClick={onOpenPdf} pending={pdfPending}>

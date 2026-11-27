@@ -1,10 +1,15 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { shortcutKeys } from "@/components/shared/shortcuts/registry";
+import { useIsMac } from "@/components/shared/shortcuts/useIsMac";
 import { Button } from "@/components/ui/Button";
 import type { NoteDetail } from "@/lib/api/types";
 import type { ReviewPermissions } from "../permissions";
 import { REVIEW_TEXT } from "../strings";
 import type { ReviewActions } from "../useReviewActions";
-import { ClaimCodes, EstimateSummary } from "./ClaimEstimate";
+import { EstimateSummary } from "./ClaimEstimate";
+import { LinkedClaimCodes } from "./LinkedClaimCodes";
 
 interface ClaimBarProps {
   detail: NoteDetail;
@@ -43,17 +48,18 @@ function ComplianceButtons({ detail, actions, onKeep }: Pick<ClaimBarProps, "det
 
 function CoderButtons({ detail, permissions, actions, questionCount, onAsk }: Omit<ClaimBarProps, "onFlag" | "onKeep">) {
   const words = REVIEW_TEXT.actions;
+  const mac = useIsMac();
   const asking = permissions.ask && questionCount > 0;
   return (
     <>
       {permissions.approve ? (
         <Button variant={asking ? "secondary" : "primary"} onClick={() => void actions.approve()} pending={actions.pending}>
-          {asking ? words.approveWithoutAsking : words.approve} <Key value="A" onPrimary={!asking} />
+          {asking ? words.approveWithoutAsking : words.approve} <Key value={shortcutKeys("approve", mac)} onPrimary={!asking} />
         </Button>
       ) : null}
       {asking ? (
         <Button variant="primary" onClick={onAsk}>
-          {words.askProvider(detail.note.provider.name, questionCount)} <Key value="P" onPrimary />
+          {words.askProvider(detail.note.provider.name, questionCount)} <Key value={shortcutKeys("askProvider", mac)} onPrimary />
         </Button>
       ) : null}
     </>
@@ -72,7 +78,12 @@ export function ClaimBar(props: ClaimBarProps) {
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="mr-1 text-subhead text-secondary">{REVIEW_TEXT.claim}</span>
             {detail.claim.length > 0 ? (
-              <ClaimCodes claim={detail.claim} estimate={detail.estimate} />
+              <LinkedClaimCodes
+                noteId={detail.note.id}
+                claim={detail.claim}
+                estimate={detail.estimate}
+                editable={permissions.decide}
+              />
             ) : (
               <span className="text-subhead text-tertiary">{REVIEW_TEXT.claimEmpty}</span>
             )}

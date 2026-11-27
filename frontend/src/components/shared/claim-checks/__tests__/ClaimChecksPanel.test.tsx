@@ -80,13 +80,24 @@ describe("claimCheckItems", () => {
       payer_flags: [
         { rule: "g2211_replaced", severity: "denial", codes: ["G2211"] },
         { rule: "level_downcode_risk", severity: "risk", codes: ["99214"] },
-        { rule: "nursing_initial_once", severity: "reminder", codes: ["99306"] },
+        { rule: "nursing_incident_to", severity: "reminder", codes: ["99309"] },
       ],
     });
     expect(items.map((item) => [item.tone, item.status])).toEqual([
       ["bad", "G2211 replaced by modifier B1"],
       ["warn", "Likely downcode, document MDM"],
-      ["neutral", "Initial visit once per stay"],
+      ["neutral", "No incident-to in a nursing facility"],
+    ]);
+  });
+
+  it("names the earlier initial visit of the same stay", () => {
+    const items = claimCheckItems({
+      ...CHECKS,
+      edits: [],
+      payer_flags: [{ rule: "initial_visit_repeated", severity: "denial", codes: ["99305"], earlier: "2026-11-02" }],
+    });
+    expect(items.map((item) => [item.tone, item.status, item.codes, item.detail])).toEqual([
+      ["bad", "Initial visit already billed this stay", ["99305"], "Earlier initial visit 2 Nov 2026"],
     ]);
   });
 });

@@ -79,3 +79,14 @@ export function comboKeys(combo: KeyCombo, mac: boolean): string[] {
   if (!combo.withModifier) return [key];
   return [mac ? words.modifierMac : words.modifier, key];
 }
+
+export function shortcutKeys(id: ShortcutId, mac: boolean): string {
+  const combo = SHORTCUTS.find((shortcut) => shortcut.id === id)?.combos[0];
+  if (!combo) throw new Error(`No key combination is registered for the ${id} shortcut`);
+  return comboKeys(combo, mac).join(SHARED_TEXT.shortcuts.then);
+}
+
+export function shortcutTitle(id: ShortcutId, mac: boolean): string {
+  const words = SHARED_TEXT.shortcuts;
+  return words.titled(words.labels[id], shortcutKeys(id, mac));
+}

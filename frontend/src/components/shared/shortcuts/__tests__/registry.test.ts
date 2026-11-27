@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { comboFor, comboKeys, scopeForPath, SCOPE_ORDER, SHORTCUTS, shortcutsIn, type KeyPress } from "../registry";
+import {
+  comboFor,
+  comboKeys,
+  scopeForPath,
+  SCOPE_ORDER,
+  SHORTCUTS,
+  shortcutKeys,
+  shortcutsIn,
+  shortcutTitle,
+  type KeyPress,
+} from "../registry";
 
 function press(key: string, extra: Partial<KeyPress> = {}): KeyPress {
   return { key, ctrlKey: false, metaKey: false, altKey: false, ...extra };
@@ -45,5 +55,14 @@ describe("shortcut registry", () => {
     expect(comboKeys({ key: "k", withModifier: true }, true)).toEqual(["⌘", "K"]);
     expect(comboKeys({ key: "k", withModifier: true }, false)).toEqual(["Ctrl", "K"]);
     expect(comboKeys({ key: "/" }, false)).toEqual(["/"]);
+  });
+
+  it("titles a control with its label and first key, as the overlay lists them", () => {
+    expect(shortcutTitle("previousNote", false)).toBe("Previous note (K)");
+    expect(shortcutTitle("nextNote", true)).toBe("Next note (J)");
+    expect(shortcutKeys("approve", false)).toBe("A");
+    expect(shortcutKeys("askProvider", true)).toBe("P");
+    expect(shortcutKeys("search", true)).toBe("⌘+K");
+    expect(shortcutKeys("search", false)).toBe("Ctrl+K");
   });
 });

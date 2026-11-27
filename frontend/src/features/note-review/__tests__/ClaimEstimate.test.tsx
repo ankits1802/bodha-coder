@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import type { ClaimEstimates } from "@/lib/api/types";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { ClaimEstimates, ClaimPointers } from "@/lib/api/types";
 import { ClaimCodes, EstimateSummary } from "../components/ClaimEstimate";
 
 const ESTIMATE: ClaimEstimates = {
@@ -19,6 +19,18 @@ const ESTIMATE: ClaimEstimates = {
   difference: -56.78,
 };
 
+const POINTERS: ClaimPointers = {
+  diagnoses: [
+    { code: "E11.65", letter: "A" },
+    { code: "N18.30", letter: "B" },
+  ],
+  lines: [
+    { code: "99214", label: "99214", pointers: ["E11.65", "N18.30"], stored: false },
+    { code: "96127", label: "96127 ×2", pointers: ["N18.30"], stored: true },
+  ],
+};
+const LINKED_CLAIM = ["99214", "96127 ×2", "E11.65", "N18.30"];
+
 describe("ClaimCodes", () => {
   it("shows the estimated national amount beside each procedure line and a dash when there is none", () => {
     const { container } = render(<ClaimCodes claim={["99214", "96127 ×2", "99417", "E11.65"]} estimate={ESTIMATE} />);
@@ -35,6 +47,25 @@ describe("ClaimCodes", () => {
 
     expect(screen.getByText("99214")).toBeInTheDocument();
     expect(screen.queryByText(/^Est\./)).toBeNull();
+  });
+
+  it("letters the diagnoses and opens the pointer editor from a procedure line", () => {
+    const onEdit = vi.fn();
+    render(<ClaimCodes claim={LINKED_CLAIM} estimate={null} pointers={POINTERS} onEdit={onEdit} />);
+
+    const visit = screen.getByRole("button", { name: "99214, diagnoses E11.65, N18.30" });
+    const screening = screen.getByRole("button", { name: "96127 ×2, diagnoses N18.30" });
+    expect(visit).toHaveTextContent("99214AB");
+    expect(screening).toHaveTextContent("96127 ×2B");
+    fireEvent.click(screening);
+    expect(onEdit).toHaveBeenCalledWith(POINTERS.lines[1]);
+  });
+
+  it("shows the pointers without buttons when the claim cannot be changed", () => {
+    const { container } = render(<ClaimCodes claim={LINKED_CLAIM} estimate={null} pointers={POINTERS} onEdit={null} />);
+
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(container.textContent).toBe("99214AB96127 ×2BAE11.65BN18.30");
   });
 });
 

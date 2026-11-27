@@ -8,12 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Actor
 from app.core.errors import Conflict
-from app.models import AuditSample, Suggestion
+from app.models import AuditRun, AuditSample, Suggestion
 from app.services.agreement import summarize
 from app.services.audit_log import record_access
 from app.services.audit_samples import reference_elements
 from app.services.blind_review import reviewer_item
-from app.services.samples import sample_id_of
 
 __all__ = ["FEEDBACK_KINDS", "my_training", "training_feedback"]
 
@@ -21,27 +20,28 @@ FEEDBACK_KINDS = ("em", "diagnosis", "modifier", "code_review")
 
 
 async def my_training(db: AsyncSession, actor: Actor) -> dict[str, Any]:
-    rows = list(
-        await db.scalars(
-            select(AuditSample)
-            .where(AuditSample.practice_id == actor.practice_id, AuditSample.reviewer_id == actor.user.id)
-            .order_by(AuditSample.created_at.desc())
-        )
+    rows = await db.execute(
+        select(AuditSample, AuditRun)
+        .join(AuditRun, AuditRun.id == AuditSample.run_id)
+        .where(AuditSample.practice_id == actor.practice_id, AuditSample.reviewer_id == actor.user.id)
+        .order_by(AuditRun.created_at.desc())
     )
+    runs: dict[str, AuditRun] = {}
     groups: dict[str, list[AuditSample]] = defaultdict(list)
-    for item in rows:
-        groups[sample_id_of(item)].append(item)
-    done = [item for item in rows if item.purpose == "training" and item.status == "done"]
+    for item, run in rows.tuples():
+        runs[run.id] = run
+        groups[run.id].append(item)
+    done = [item for items in groups.values() for item in items if item.purpose == "training" and item.status == "done"]
     return {
         "sets": [
             {
-                "id": sample_id,
-                "purpose": items[0].purpose,
-                "total": len(items),
-                "done": sum(item.status == "done" for item in items),
-                "started_at": items[0].result["sample"]["started_at"],
+                "id": run.id,
+                "purpose": run.purpose,
+                "total": len(groups[run.id]),
+                "done": sum(item.status == "done" for item in groups[run.id]),
+                "started_at": run.created_at.isoformat(),
             }
-            for sample_id, items in groups.items()
+            for run in runs.values()
         ],
         "scores": {side: summarize([item.result[side] for item in done]) for side in ("claim", "bodha")},
     }
@@ -56,7 +56,7 @@ async def training_feedback(db: AsyncSession, actor: Actor, item_id: str) -> dic
     await db.commit()
     return {
         "item_id": item.id,
-        "sample_id": sample_id_of(item),
+        "sample_id": item.run_id,
         "answer": {key: item.answer.get(key) for key in ("em", "icd", "modifiers")},
         "bodha": reference_elements(item, "bodha"),
         "claim": reference_elements(item, "claim"),

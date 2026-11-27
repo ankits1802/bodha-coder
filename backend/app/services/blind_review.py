@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore
@@ -10,25 +11,36 @@ from app.codes.em import is_em_code
 from app.codes.icd import IcdCatalog, IcdRelease
 from app.codes.modifiers import PROCEDURE_MODIFIERS, VISIT_MODIFIERS
 from app.core.deps import Actor
-from app.core.errors import Conflict, Invalid, NotFound
-from app.models import AuditSample, Note, utcnow
+from app.core.errors import Conflict, Forbidden, Invalid, NotFound
+from app.models import AuditRun, AuditSample, Note, utcnow
 from app.services.agreement import ClaimElements, compare_elements, elements_of
 from app.services.audit_log import record_access
-from app.services.audit_samples import sample_rows
+from app.services.audit_samples import run_items
 from app.services.note_texts import current_texts, note_texts
 from app.services.note_view import pdf_link
 
-__all__ = ["KNOWN_MODIFIERS", "check_answer", "item_document", "next_item", "reviewer_item", "submit_answer"]
+__all__ = [
+    "BLIND_NOTE",
+    "KNOWN_MODIFIERS",
+    "check_answer",
+    "item_document",
+    "next_item",
+    "refuse_blind_note",
+    "reviewer_item",
+    "submit_answer",
+]
 
 KNOWN_MODIFIERS = frozenset(VISIT_MODIFIERS) | frozenset(PROCEDURE_MODIFIERS)
+BLIND_NOTE = "This note is in your blind audit"
 
 
-async def next_item(db: AsyncSession, actor: Actor, sample_id: str) -> dict[str, Any]:
-    mine = [item for item in await sample_rows(db, actor.practice_id, sample_id) if item.reviewer_id == actor.user.id]
+async def next_item(db: AsyncSession, actor: Actor, run_id: str) -> dict[str, Any]:
+    run, items = await run_items(db, actor.practice_id, run_id)
+    mine = [item for item in items if item.reviewer_id == actor.user.id]
     if not mine:
         raise NotFound("sample not found")
     waiting = [item for item in mine if item.status == "open"]
-    progress = {"id": sample_id, "purpose": mine[0].purpose, "total": len(mine), "done": len(mine) - len(waiting)}
+    progress = {"id": run.id, "purpose": run.purpose, "total": len(mine), "done": len(mine) - len(waiting)}
     if not waiting:
         return {"sample": progress, "item": None}
     item = waiting[0]
@@ -72,9 +84,20 @@ async def submit_answer(
         "claim": compare_elements(answer, final),
     }
     item.status, item.completed_at = "done", utcnow()
+    await _close_finished_run(db, item)
     record_access(db, actor, "coded note blind", note_id=note.id)
     await db.commit()
     return item
+
+
+async def refuse_blind_note(db: AsyncSession, actor: Actor, note_id: str) -> None:
+    open_item = await db.scalar(
+        select(AuditSample.id)
+        .where(AuditSample.note_id == note_id, AuditSample.reviewer_id == actor.user.id, AuditSample.status == "open")
+        .limit(1)
+    )
+    if open_item is not None:
+        raise Forbidden(BLIND_NOTE)
 
 
 async def reviewer_item(db: AsyncSession, actor: Actor, item_id: str) -> AuditSample:
@@ -82,6 +105,17 @@ async def reviewer_item(db: AsyncSession, actor: Actor, item_id: str) -> AuditSa
     if item is None or item.practice_id != actor.practice_id or item.reviewer_id != actor.user.id:
         raise NotFound("item not found")
     return item
+
+
+async def _close_finished_run(db: AsyncSession, item: AuditSample) -> None:
+    run = await db.get_one(AuditRun, item.run_id, with_for_update=True)
+    still_open = await db.scalar(
+        select(AuditSample.id)
+        .where(AuditSample.run_id == run.id, AuditSample.id != item.id, AuditSample.status == "open")
+        .limit(1)
+    )
+    if still_open is None:
+        run.status = "done"
 
 
 def check_answer(answer: ClaimElements, release: IcdRelease) -> None:

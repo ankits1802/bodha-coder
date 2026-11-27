@@ -45,6 +45,10 @@ def analysis_response_key(practice_id: str, note_id: str, revision: int) -> str:
     return f"practices/{practice_id}/notes/{note_id}/analyses/{revision}.json"
 
 
+def evaluation_response_key(practice_id: str, run_id: str, case_id: str, attempt: int) -> str:
+    return f"practices/{practice_id}/evaluations/{run_id}/{case_id}-{attempt}.json"
+
+
 DELETE_BATCH = 1000
 
 

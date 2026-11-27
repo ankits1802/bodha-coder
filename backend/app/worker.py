@@ -22,6 +22,7 @@ from app.models import Analysis, utcnow
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
 from app.services.digests import send_due_digests
 from app.services.evaluation_runs import fail_evaluation, fail_stale_evaluations, next_queued_evaluation, run_evaluation
+from app.services.file_sweep import sweep_orphan_files
 from app.services.intake import poll_intake
 from app.services.job_control import queue_counts, requeue_interrupted
 from app.services.query_governance import escalate_unanswered
@@ -37,6 +38,7 @@ PURGE_INTERVAL_SECONDS = 86_400
 INTAKE_INTERVAL_SECONDS = 60
 EVALUATION_INTERVAL_SECONDS = 60
 ESCALATION_INTERVAL_SECONDS = 3_600
+SWEEP_INTERVAL_SECONDS = 86_400
 STALE_EVALUATION = timedelta(hours=6)
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
@@ -141,6 +143,11 @@ async def poll_intake_once(store: S3ListingStore) -> None:
         await poll_intake(db, store, utcnow())
 
 
+async def sweep_files_once(store: S3ListingStore) -> None:
+    async with SessionFactory() as db:
+        await sweep_orphan_files(db, store, utcnow())
+
+
 async def escalate_once(messenger: Messenger) -> None:
     async with SessionFactory() as db:
         await escalate_unanswered(db, messenger, utcnow())
@@ -186,6 +193,7 @@ async def run() -> None:
         every(INTAKE_INTERVAL_SECONDS, "intake", lambda: poll_intake_once(listing)),
         every(EVALUATION_INTERVAL_SECONDS, "evaluation", lambda: evaluate_once(deps)),
         every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
+        every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),
     )
     with suppress(NotImplementedError):
         asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, everything.cancel)

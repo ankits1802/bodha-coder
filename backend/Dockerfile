@@ -8,9 +8,9 @@ RUN python -m venv /opt/venv
 ENV PATH=/opt/venv/bin:$PATH
 
 WORKDIR /src
-COPY pyproject.toml ./
+COPY pyproject.toml requirements.lock ./
 RUN python -c "import pathlib, tomllib; project = tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']; pathlib.Path('requirements.txt').write_text('\n'.join(project['dependencies']) + '\n')" \
-    && pip install --only-binary=:all: --requirement requirements.txt
+    && pip install --only-binary=:all: --constraint requirements.lock --requirement requirements.txt
 
 COPY app ./app
 RUN pip install --no-deps .

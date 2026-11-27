@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import logging
 import re
 from collections import Counter
 from collections.abc import Sequence
@@ -13,24 +12,25 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from app.adapters.object_listing import ListingStore
+from app.codes.billing_codes import parse_note_filename
 from app.core.calendar import zone_named
-from app.core.deps import ACTIVE_PRACTICE_STATUSES, Actor
+from app.core.deps import ACTIVE_PRACTICE_STATUSES
 from app.core.errors import AppError, Invalid
-from app.models import Practice, User
+from app.models import Practice
 from app.services.audit_log import record_activity
 from app.services.intake_settings import PROCESSED, REJECTED, IntakeConfig, inbox_prefix, intake_config
-from app.services.uploads import UploadFile, UploadPlan, billed_codes_for, check_pdf, create_upload
+from app.services.uploads import UploadFile, UploadPlan, billed_codes_for, check_pdf, create_intake_upload
 
-__all__ = ["INTAKE_AGENT", "InboxGroup", "InboxSort", "poll_intake", "sort_inbox"]
+__all__ = ["InboxGroup", "InboxSort", "arrival_name", "poll_intake", "sort_inbox"]
 
-logger = logging.getLogger("bodha.intake")
-INTAKE_AGENT = "bodha-intake"
 INTAKE_DONE = "intake processed"
 PDF_SUFFIX = ".pdf"
 PDF_TYPE = "application/pdf"
+OTHER_TYPE = "application/octet-stream"
 REASON_TYPE = "text/plain; charset=utf-8"
 DAY_FOLDER = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 KEPT_SUFFIX = re.compile(r"^\.[a-z0-9]{1,8}$")
+ARRIVAL_NAME = re.compile(r"^[0-9a-f]{64}( - [0-9A-Z]{5})?(\.[a-z0-9]{1,8})?$")
 LAYOUT = "files go in <provider folder>/<YYYY-MM-DD>/<file>.pdf"
 ALREADY_UPLOADED = "this PDF was already uploaded"
 
@@ -58,7 +58,7 @@ class Stamp:
 
 @dataclass(frozen=True)
 class IntakeRun:
-    actor: Actor
+    practice: Practice
     config: IntakeConfig
     stamp: Stamp
 
@@ -72,14 +72,22 @@ async def poll_intake(db: AsyncSession, store: ListingStore, now: datetime) -> i
     return created
 
 
+def arrival_name(name: str, data: bytes) -> str:
+    suffix = PurePosixPath(name).suffix.lower()
+    kept = suffix if KEPT_SUFFIX.fullmatch(suffix) else ""
+    cpt = parse_note_filename(name).cpt if kept == PDF_SUFFIX else None
+    coded = f" - {cpt}" if cpt else ""
+    return f"{hashlib.sha256(data).hexdigest()}{coded}{kept}"
+
+
 def sort_inbox(inbox: str, keys: Sequence[str], config: IntakeConfig, today: date) -> InboxSort:
     grouped: dict[tuple[str, date], list[str]] = {}
     rejects: list[tuple[str, str]] = []
     for key in keys:
-        relative = key[len(inbox) :] if key.startswith(inbox) else ""
-        parts = relative.split("/")
-        if not relative or relative.endswith("/") or parts[0] in (PROCESSED, REJECTED):
+        relative = _relative(inbox, key)
+        if relative is None:
             continue
+        parts = relative.split("/")
         problem = _placement_problem(parts, config, today)
         if problem is not None:
             rejects.append((key, problem))
@@ -90,6 +98,13 @@ def sort_inbox(inbox: str, keys: Sequence[str], config: IntakeConfig, today: dat
         for (folder, day), found in sorted(grouped.items())
     )
     return InboxSort(groups, tuple(rejects))
+
+
+def _relative(inbox: str, key: str) -> str | None:
+    relative = key[len(inbox) :] if key.startswith(inbox) else ""
+    if not relative or relative.endswith("/") or relative.split("/")[0] in (PROCESSED, REJECTED):
+        return None
+    return relative
 
 
 def _placement_problem(parts: list[str], config: IntakeConfig, today: date) -> str | None:
@@ -144,20 +159,17 @@ async def _locked_poll(db: AsyncSession, store: ListingStore, practice: Practice
 
 
 async def _poll_practice(db: AsyncSession, store: ListingStore, practice: Practice, now: datetime) -> int:
-    actor = await _intake_actor(db, practice)
-    if actor is None:
-        logger.warning("intake for practice %s skipped: no active admin", practice.id)
-        return 0
     config = intake_config(practice)
     inbox = inbox_prefix(practice.id, config)
-    stamp = Stamp(inbox, now, now.astimezone(actor.zone).date())
-    found = sort_inbox(inbox, await store.list_keys(inbox), config, stamp.day)
+    stamp = Stamp(inbox, now, now.astimezone(zone_named(practice.time_zone)).date())
+    arrived = await _rename_arrivals(store, inbox, await store.list_keys(inbox))
+    found = sort_inbox(inbox, arrived, config, stamp.day)
     if not found.groups and not found.rejects:
         return 0
     counts: Counter[str] = Counter(rejected=len(found.rejects))
     for key, reason in found.rejects:
         await _reject(store, stamp, key, await store.get(key), reason)
-    run = IntakeRun(actor, config, stamp)
+    run = IntakeRun(practice, config, stamp)
     for group in found.groups:
         counts += await _ingest(db, store, run, group)
     detail = f"{counts['created']} notes, {counts['rejected']} files rejected"
@@ -166,14 +178,21 @@ async def _poll_practice(db: AsyncSession, store: ListingStore, practice: Practi
     return counts["created"]
 
 
-async def _intake_actor(db: AsyncSession, practice: Practice) -> Actor | None:
-    admin = await db.scalar(
-        select(User)
-        .where(User.practice_id == practice.id, User.role == "admin", User.status == "active")
-        .order_by(User.created_at, User.id)
-        .limit(1)
-    )
-    return Actor(admin, practice, None, INTAKE_AGENT) if admin is not None else None
+async def _rename_arrivals(store: ListingStore, inbox: str, keys: Sequence[str]) -> list[str]:
+    arrived: set[str] = set()
+    for key in keys:
+        if _relative(inbox, key) is None:
+            continue
+        path = PurePosixPath(key)
+        if ARRIVAL_NAME.fullmatch(path.name):
+            arrived.add(key)
+            continue
+        data = await store.get(key)
+        target = f"{path.parent}/{arrival_name(path.name, data)}"
+        await store.put(target, data, content_type=_content_type(target))
+        await store.delete([key])
+        arrived.add(target)
+    return sorted(arrived)
 
 
 async def _ingest(db: AsyncSession, store: ListingStore, run: IntakeRun, group: InboxGroup) -> Counter[str]:
@@ -197,7 +216,7 @@ async def _upload_group(
 ) -> Counter[str]:
     plan = UploadPlan(group.provider_id, group.service_date, run.config.place_code or "", run.config.visit_type)
     try:
-        result = await create_upload(db, store, run.actor, plan, [file for _, file in ready])
+        result = await create_intake_upload(db, store, run.practice, plan, [file for _, file in ready])
     except AppError as error:
         for key, file in ready:
             await _reject(store, run.stamp, key, file.data, error.message)
@@ -220,6 +239,10 @@ def _file_problem(file: UploadFile) -> str | None:
     return None
 
 
+def _content_type(key: str) -> str:
+    return PDF_TYPE if key.lower().endswith(PDF_SUFFIX) else OTHER_TYPE
+
+
 def _target(stamp: Stamp, folder: str, key: str, data: bytes) -> str:
     suffix = PurePosixPath(key).suffix.lower()
     kept = suffix if KEPT_SUFFIX.fullmatch(suffix) else ""
@@ -233,8 +256,7 @@ async def _keep(store: ListingStore, stamp: Stamp, key: str, data: bytes) -> Non
 
 async def _reject(store: ListingStore, stamp: Stamp, key: str, data: bytes, reason: str) -> None:
     target = _target(stamp, REJECTED, key, data)
-    kind = PDF_TYPE if key.lower().endswith(PDF_SUFFIX) else "application/octet-stream"
-    await store.put(target, data, content_type=kind)
+    await store.put(target, data, content_type=_content_type(key))
     note = f"file: {key[len(stamp.inbox) :]}\nreason: {reason}\nat: {stamp.at.isoformat()}\n"
     await store.put(f"{target}.reason.txt", note.encode("utf-8"), content_type=REASON_TYPE)
     await store.delete([key])

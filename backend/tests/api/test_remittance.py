@@ -1,103 +1,27 @@
 from __future__ import annotations
 
-import json
+import hashlib
 from datetime import date
+from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.db import SessionFactory
-from app.models import AccessLog
+from app.models import AccessLog, Practice, Remittance
 from app.services.remittance_835 import Adjustment, ServicePayment, parse_835
 from app.services.remittance_outcomes import line_outcome
 from app.services.x12 import X12Invalid
+from tests.api.remittance_helpers import BODY, FILE_NAME, era, post_era, three_notes
 from tests.builders import practice_with_member, practice_with_provider, sign_in
-from tests.fakes import text_pdf
-
-ISA = "ISA*00*          *00*          *ZZ*BODHATEST      *ZZ*ACMEHEALTH     *261124*1200*^*00501*000000001*0*P*:~"
-BODY = """GS*HP*ACMEHEALTH*BODHATEST*20261124*1200*1*X*005010X221A1~
-ST*835*0001~
-BPR*I*175*C*ACH*CCP*01*999999992*DA*123456*1512345678**01*999988880*DA*98765*20261124~
-TRN*1*EFT0001*1512345678~
-DTM*405*20261123~
-N1*PR*ACME HEALTH PLAN*XV*ACME01~
-N1*PE*LAKESIDE*XX*1234567893~
-LX*1~
-CLP*{downcoded}*1*200*90*30*MB*PCN0001~
-NM1*QC*1*REYES*MARISOL****MI*MBI0001~
-SVC*HC:99214*200*90**1*HC:99215~
-DTM*472*20261120~
-CAS*CO*45*80~
-CAS*PR*2*30~
-CLP*ACCT1002*1*120*85*0*CI*PCN0002~
-NM1*QC*1*OKAFOR*JAMES****MI*MEM0002~
-SVC*HC:99213*120*85**1~
-DTM*472*20261121~
-CAS*CO*45*35~
-CLP*{denied}*4*150*0*0*CI*PCN0003~
-NM1*QC*1*LINDQVIST*ANNA****MI*MEM0003~
-SVC*HC:99214*150*0**1~
-DTM*472*20261122~
-CAS*CO*50*150~
-CLP*ACCT9999*4*90*0*0*CI*PCN0004~
-NM1*QC*1*DOE*JANE****MI*MEM0004~
-SVC*HC:99212*90*0**1~
-DTM*472*20261123~
-CAS*CO*97*90~
-SE*29*0001~
-GE*1*1~
-IEA*1*000000001~
-"""
-FILE_NAME = "acme-era-20261124.835"
-
-
-def era(downcoded: str = "ACCT1001", denied: str = "ACCT1003", *, body: str = BODY) -> bytes:
-    return (ISA + "\n" + body.format(downcoded=downcoded, denied=denied)).encode()
-
-
-async def _upload_note(harness, practice, *, file_name: str, day: str, billed: str) -> str:
-    response = await harness.client.post(
-        "/api/uploads",
-        headers=practice.admin,
-        data={
-            "provider_id": practice.provider_id,
-            "service_date": day,
-            "place_code": "11",
-            "visit_type": "Established patient",
-            "details": json.dumps([{"billed": billed}]),
-        },
-        files=[("files", (file_name, text_pdf(file_name), "application/pdf"))],
-    )
-    assert response.status_code == 200, response.text
-    listing = await harness.client.get("/api/notes", headers=practice.admin)
-    return next(item["id"] for item in listing.json()["items"] if item["file_name"] == file_name)
-
-
-async def _three_notes(harness, practice) -> tuple[str, str, str]:
-    reyes = await _upload_note(
-        harness, practice, file_name="2026-11-20 - REYES MARISOL - Progress.pdf", day="2026-11-20", billed="99215, I10"
-    )
-    okafor = await _upload_note(
-        harness, practice, file_name="2026-11-21 - OKAFOR JAMES - Visit.pdf", day="2026-11-21", billed="99213, J06.9"
-    )
-    lindqvist = await _upload_note(
-        harness, practice, file_name="2026-11-22 - LINDQVIST ANNA - Visit.pdf", day="2026-11-22", billed="99214"
-    )
-    return reyes, okafor, lindqvist
-
-
-async def _post_era(harness, headers, data: bytes, name: str = FILE_NAME):
-    return await harness.client.post(
-        "/api/remittances", headers=headers, files=[("file", (name, data, "application/octet-stream"))]
-    )
 
 
 async def test_an_835_is_stored_matched_and_classified(harness):
     practice = await practice_with_provider(harness)
-    reyes, okafor, lindqvist = await _three_notes(harness, practice)
+    reyes, okafor, lindqvist = await three_notes(harness, practice)
     data = era(reyes, lindqvist)
 
-    uploaded = await _post_era(harness, practice.admin, data)
+    uploaded = await post_era(harness, practice.admin, data)
     assert uploaded.status_code == 200, uploaded.text
     remittance_id = uploaded.json()["ids"][0]
     assert uploaded.json()["counts"] == {"downcoded": 1, "paid_as_billed": 1, "denied": 1, "unmatched": 1}
@@ -125,8 +49,8 @@ async def test_an_835_is_stored_matched_and_classified(harness):
 
 async def test_lines_filter_by_status_and_the_list_shows_counts(harness):
     practice = await practice_with_provider(harness)
-    reyes, _, lindqvist = await _three_notes(harness, practice)
-    remittance_id = (await _post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
+    reyes, _, lindqvist = await three_notes(harness, practice)
+    remittance_id = (await post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
 
     downcoded = await harness.client.get(
         f"/api/remittances/{remittance_id}", headers=practice.admin, params={"status": "downcoded"}
@@ -145,8 +69,8 @@ async def test_lines_filter_by_status_and_the_list_shows_counts(harness):
 
 async def test_the_appeal_draft_names_the_claim_and_links_the_defense_packet(harness):
     practice = await practice_with_provider(harness)
-    reyes, okafor, lindqvist = await _three_notes(harness, practice)
-    remittance_id = (await _post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
+    reyes, okafor, lindqvist = await three_notes(harness, practice)
+    remittance_id = (await post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
     lines = (await harness.client.get(f"/api/remittances/{remittance_id}", headers=practice.admin)).json()["lines"]
 
     draft = await harness.client.get(f"/api/remittances/lines/{lines[0]['id']}/appeal", headers=practice.admin)
@@ -180,8 +104,8 @@ async def test_the_appeal_draft_names_the_claim_and_links_the_defense_packet(har
 
 async def test_uploads_views_and_drafts_are_in_the_access_log(harness):
     practice = await practice_with_provider(harness)
-    reyes, _, lindqvist = await _three_notes(harness, practice)
-    remittance_id = (await _post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
+    reyes, _, lindqvist = await three_notes(harness, practice)
+    remittance_id = (await post_era(harness, practice.admin, era(reyes, lindqvist))).json()["ids"][0]
     lines = (await harness.client.get(f"/api/remittances/{remittance_id}", headers=practice.admin)).json()["lines"]
     await harness.client.get(f"/api/remittances/lines/{lines[0]['id']}/appeal", headers=practice.admin)
 
@@ -201,17 +125,48 @@ async def test_uploads_views_and_drafts_are_in_the_access_log(harness):
 async def test_the_same_file_twice_is_refused_and_a_coder_cannot_upload(harness):
     practice = await practice_with_member(harness, name="Cody Coder", email="cody@lakeside.example.com", role="coder")
     data = era()
-    assert (await _post_era(harness, practice.admin, data)).status_code == 200
-    again = await _post_era(harness, practice.admin, data)
+    assert (await post_era(harness, practice.admin, data)).status_code == 200
+    again = await post_era(harness, practice.admin, data)
     assert again.status_code == 409
     coder = await sign_in(harness.client, "cody@lakeside.example.com")
-    assert (await _post_era(harness, coder, era(), "other.835")).status_code == 403
+    assert (await post_era(harness, coder, era(), "other.835")).status_code == 403
+
+
+async def test_a_repeat_is_recognised_by_its_checksum_whatever_its_name(harness):
+    practice = await practice_with_provider(harness)
+    data = era()
+    first_id = (await post_era(harness, practice.admin, data)).json()["ids"][0]
+    async with SessionFactory() as db:
+        first = await db.get_one(Remittance, first_id)
+        zone = ZoneInfo(await db.scalar(select(Practice.time_zone).where(Practice.id == practice.id)))
+    assert first.file_sha256 == hashlib.sha256(data).hexdigest()
+    uploaded_on = first.created_at.astimezone(zone).strftime("%d %b %Y")
+
+    renamed = await post_era(harness, practice.admin, data, "copy-from-the-clearinghouse.835")
+    assert renamed.status_code == 409
+    assert renamed.json()["message"] == f"this file was already uploaded on {uploaded_on} as {FILE_NAME}"
+    other = await post_era(harness, practice.admin, era("ACCT2001", "ACCT2003"), FILE_NAME)
+    assert other.status_code == 200, other.text
+
+
+async def test_an_upload_from_before_checksums_is_recognised_and_given_its_checksum(harness):
+    practice = await practice_with_provider(harness)
+    data = era()
+    first_id = (await post_era(harness, practice.admin, data)).json()["ids"][0]
+    async with SessionFactory() as db:
+        await db.execute(update(Remittance).where(Remittance.id == first_id).values(file_sha256=None))
+        await db.commit()
+
+    assert (await post_era(harness, practice.admin, data, "renamed.835")).status_code == 409
+    async with SessionFactory() as db:
+        stored = await db.scalar(select(Remittance.file_sha256).where(Remittance.id == first_id))
+    assert stored == hashlib.sha256(data).hexdigest()
 
 
 async def test_a_broken_file_is_refused_with_the_reason(harness):
     practice = await practice_with_provider(harness)
     broken = era(body=BODY.replace("SE*29*0001~", "SE*28*0001~"))
-    response = await _post_era(harness, practice.admin, broken)
+    response = await post_era(harness, practice.admin, broken)
     assert response.status_code == 422
     assert response.json()["message"] == "SE counts 28 but there are 29"
 

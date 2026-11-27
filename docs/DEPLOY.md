@@ -242,6 +242,11 @@ bundle in the image.
   delete markers. Deleting a practice therefore leaves recoverable versions for 30 days.
 - CloudTrail data events for the bucket (reads and writes) to a separate, locked log bucket.
 - No CORS configuration is needed: signed PDF links are opened, not fetched.
+- The worker deletes, once a day, objects older than 24 hours that no record holds (the orphan sweep in
+  [ARCHITECTURE.md](ARCHITECTURE.md#records-replaced-pdfs-retention-and-practice-deletion)); it needs
+  no permission beyond its task role's.
+- Email intake adds the `ses-inbound/` prefix, an SES statement in this bucket policy and the key
+  policy, a one-day lifecycle rule on that prefix and a Lambda function: [infra/ses_intake](../infra/ses_intake/README.md).
 
 ### Email: SES
 

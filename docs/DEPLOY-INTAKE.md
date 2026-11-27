@@ -15,12 +15,17 @@ s3://<bucket>/practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<file
 | practice id | shown as the watched folder in Practice setup, Automatic intake |
 | provider folder | a name the admin maps to a provider there (letters, digits, `.`, `-`, `_`); `processed` and `rejected` are reserved |
 | `YYYY-MM-DD` | the date of service; a future date is refused |
-| file | a PDF. The billed CPT can be in the name as in a manual upload (`2026-11-20 - 99214 - Progress.pdf`). Leave the patient's name out of the file name where you can: the name is part of the object key until the next poll, and Bodha reads the patient from the note |
+| file | a PDF. The billed CPT can be in the name as in a manual upload (`2026-11-20 - 99214 - Progress.pdf`). Name files without patient details (no names, dates of birth or record numbers): Bodha reads the patient from the note. The first poll that sees a file, about a minute after it lands, renames it to the SHA-256 of its content (`<sha256> - 99214.pdf` keeps a CPT code from the name), so a name lives at most one poll, and only the new name reaches the note and the reason files |
 
 The admin turns intake on with a place of service, a visit type and at least one provider folder.
 Every file is then moved out of the inbox: notes to `inbox/processed/<day>/`, everything else to
-`inbox/rejected/<day>/` beside a `.reason.txt` that names the original path and the reason. Each
-batch appears in Upload history as uploaded by the practice's first admin.
+`inbox/rejected/<day>/` beside a `.reason.txt` that names the path (after renaming) and the reason.
+Each batch appears in Upload history as uploaded by Intake, and the access log records the upload by
+Bodha intake.
+
+The inbox holds PHI and must stay private: Block Public Access stays on, no bucket policy, ACL,
+access point or presigned link may grant reading it, and only the practice's own principal (below)
+and Bodha's task roles reach it.
 
 ## Access for the practice
 
@@ -55,7 +60,8 @@ aws s3 sync "D:\Scans\Bodha" s3://<bucket>/practices/<practice id>/inbox/ --excl
 Run it from a scheduled task every few minutes with the practice's credentials (an IAM user's
 access key kept in the AWS CLI profile, or IAM Roles Anywhere). Keep the local folder in the
 `<provider folder>/<YYYY-MM-DD>/` layout and clear it after a successful sync, so a file is not
-sent again (a second copy of the same PDF is rejected as already uploaded).
+sent again: the inbox renames what arrives, so `sync` cannot see that a file was already sent, and a
+second copy of the same PDF is rejected as already uploaded.
 
 ## Option 2: SFTP through AWS Transfer Family
 
@@ -72,18 +78,23 @@ Transfer Family is HIPAA eligible under the AWS BAA; turn on its CloudWatch logg
 
 ## Option 3: email to an inbound address
 
-For a practice that can only email documents. This needs a small Lambda function that is not part
-of this repository.
+For a practice that can only email documents, with the function in
+[infra/ses_intake](../infra/ses_intake/README.md) (receipt rule, bucket and key policy, role and
+deployment are there).
 
 1. Verify a receiving domain in SES (for example `intake.<your domain>`) with an MX record to the
    SES inbound endpoint of the region.
-2. Add a receipt rule for each practice address (for example `<practice id>+<provider folder>@intake.<your domain>`)
-   with Require TLS and spam and virus scanning on, and an S3 action that saves the raw message to a
-   separate prefix outside `practices/` (for example `ses-inbound/`), encrypted with the bucket key.
-3. On each new message, the Lambda reads the MIME message, refuses a sender not on the practice's
-   list, saves each PDF attachment to `practices/<practice id>/inbox/<provider folder>/<date of service>/`
-   (the date from the subject, `YYYY-MM-DD`; without one the message is rejected back to the
-   sender), and deletes the raw message.
+2. Add a receipt rule for each practice address (for example `lakeside-varga@intake.<your domain>`,
+   one address per provider folder) with Require TLS and spam and virus scanning on, and an S3
+   action that saves the raw message under `ses-inbound/<local part>/`, outside `practices/`.
+3. Map the address in the function's `INTAKE_ADDRESSES` to the practice id, the provider folder and
+   the senders allowed to use it.
+4. The practice emails the PDFs with the date of service in the subject (`YYYY-MM-DD`). The function
+   refuses a message SES did not pass for spam and viruses, a sender not on the list or a subject
+   without a date; otherwise it writes each PDF attachment to
+   `practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<sha256>.pdf`. It deletes the raw
+   message either way and logs outcomes and counts only. Billed codes are not read from attachment
+   names.
 
 Email between the practice and SES is only as private as the practice's mail server's TLS; prefer
 options 1 or 2 when the practice can use them.

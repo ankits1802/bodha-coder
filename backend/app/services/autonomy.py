@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import Actor
 from app.core.errors import Conflict, NotFound
 from app.core.statistics import wilson
-from app.models import AuditSample, Note, Provider
+from app.models import AuditRun, AuditSample, Note, Provider
 from app.services.audit_log import record_activity
-from app.services.samples import SAMPLE_ID_PATH, sample_id_of
 
 __all__ = [
     "MAX_BODHA_HIGHER_SHARE",
@@ -65,7 +62,7 @@ async def provider_eligibility(db: AsyncSession, provider: Provider) -> Eligibil
     agreement = wilson(sum(visit["match"] for visit in visits), total)
     higher = sum(visit["direction"] == "higher" for visit in visits) / total
     reason = _reason(total, agreement.low, higher)
-    return Eligibility(reason == "eligible", reason, sample_id_of(items[0]), total, agreement.low, higher)
+    return Eligibility(reason == "eligible", reason, items[0].run_id, total, agreement.low, higher)
 
 
 async def providers_autonomy(db: AsyncSession, actor: Actor) -> list[dict[str, Any]]:
@@ -115,40 +112,27 @@ def _reason(total: int, low: float | None, higher: float) -> str:
 
 
 async def _latest_audit_items(db: AsyncSession, provider: Provider) -> list[AuditSample]:
-    sample_ids = set(
-        await db.scalars(
-            select(AuditSample.result[SAMPLE_ID_PATH].astext)
-            .join(Note, Note.id == AuditSample.note_id)
-            .where(
-                AuditSample.practice_id == provider.practice_id,
-                AuditSample.purpose == "audit",
-                Note.provider_id == provider.id,
-            )
-        )
+    providers_runs = (
+        select(AuditSample.run_id).join(Note, Note.id == AuditSample.note_id).where(Note.provider_id == provider.id)
     )
-    if not sample_ids:
-        return []
-    rows = await db.execute(
-        select(AuditSample, Note.provider_id)
-        .join(Note, Note.id == AuditSample.note_id)
+    latest = await db.scalar(
+        select(AuditSample.run_id)
+        .join(AuditRun, AuditRun.id == AuditSample.run_id)
         .where(
-            AuditSample.practice_id == provider.practice_id,
-            AuditSample.result[SAMPLE_ID_PATH].astext.in_(sorted(sample_ids)),
+            AuditRun.practice_id == provider.practice_id,
+            AuditRun.purpose == "audit",
+            AuditRun.status == "done",
+            AuditRun.id.in_(providers_runs),
         )
+        .group_by(AuditSample.run_id)
+        .order_by(func.max(AuditSample.completed_at).desc().nulls_last())
+        .limit(1)
     )
-    samples: dict[str, list[tuple[AuditSample, str]]] = defaultdict(list)
-    for item, owner in rows.tuples():
-        samples[sample_id_of(item)].append((item, owner))
-    finished = [(_finished_at(items), items) for items in samples.values() if _all_done(items)]
-    if not finished:
+    if latest is None:
         return []
-    _, latest = max(finished, key=lambda entry: entry[0])
-    return [item for item, owner in latest if owner == provider.id]
-
-
-def _all_done(items: list[tuple[AuditSample, str]]) -> bool:
-    return all(item.status == "done" for item, _ in items)
-
-
-def _finished_at(items: list[tuple[AuditSample, str]]) -> datetime:
-    return max(item.completed_at or item.created_at for item, _ in items)
+    rows = await db.scalars(
+        select(AuditSample)
+        .join(Note, Note.id == AuditSample.note_id)
+        .where(AuditSample.run_id == latest, Note.provider_id == provider.id)
+    )
+    return list(rows.all())

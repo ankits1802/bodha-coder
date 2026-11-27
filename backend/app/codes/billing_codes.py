@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any, Literal
 
@@ -14,6 +14,7 @@ CodeType = Literal["CPT", "ICD-10"]
 CPT_PATTERN = re.compile(r"^(\d{4}[0-9A-Z]|[A-Z]\d{4})$")
 MODIFIER_PATTERN = re.compile(r"^[0-9A-Z]{2}$")
 MAX_MODIFIERS = 4
+MAX_POINTERS = 4
 MIN_UNITS = 1
 MAX_UNITS = 99
 UNITS_SIGN = "×"
@@ -32,18 +33,25 @@ class InvalidUnits(ValueError):
     pass
 
 
+class InvalidPointers(ValueError):
+    pass
+
+
 @dataclass(frozen=True)
 class Code:
     code: str
     type: CodeType
     modifiers: tuple[str, ...] = ()
     units: int = 1
+    pointers: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not MIN_UNITS <= self.units <= MAX_UNITS:
             raise InvalidUnits(f"{self.code} has {self.units} units; units run from {MIN_UNITS} to {MAX_UNITS}")
         if self.units > 1 and self.type != "CPT":
             raise InvalidUnits(f"{self.code} is a diagnosis code and carries no units")
+        if self.pointers:
+            _check_pointers(self)
 
     def label(self) -> str:
         coded = "-".join((self.code, *self.modifiers))
@@ -54,14 +62,21 @@ class Code:
         return f"{coded}x{self.units}" if self.units > 1 else coded
 
     def as_json(self) -> dict[str, object]:
-        return {"code": self.code, "type": self.type, "modifiers": list(self.modifiers), "units": self.units}
+        value: dict[str, object] = {
+            "code": self.code,
+            "type": self.type,
+            "modifiers": list(self.modifiers),
+            "units": self.units,
+        }
+        return {**value, "pointers": list(self.pointers)} if self.pointers else value
 
     @classmethod
     def from_json(cls, value: dict[str, Any]) -> Code:
         modifiers = value.get("modifiers") or ()
         units = int(value.get("units", MIN_UNITS))
+        pointers = tuple(str(pointer) for pointer in value.get("pointers") or ())
         code_type: CodeType = "CPT" if value["type"] == "CPT" else "ICD-10"
-        return cls(str(value["code"]), code_type, tuple(str(m) for m in modifiers), units)
+        return cls(str(value["code"]), code_type, tuple(str(m) for m in modifiers), units, pointers)
 
 
 @dataclass(frozen=True)
@@ -114,6 +129,20 @@ def _parse_token(token: str) -> Code | None:
     return None
 
 
+def _check_pointers(code: Code) -> None:
+    if code.type != "CPT":
+        raise InvalidPointers(f"{code.code} is a diagnosis code and points to no diagnosis")
+    if len(code.pointers) > MAX_POINTERS:
+        raise InvalidPointers(
+            f"{code.code} points to {len(code.pointers)} diagnoses; a line points to at most {MAX_POINTERS}"
+        )
+    if len(set(code.pointers)) != len(code.pointers):
+        raise InvalidPointers(f"{code.code} points to the same diagnosis twice")
+    unshaped = [pointer for pointer in code.pointers if not is_icd_shaped(pointer)]
+    if unshaped:
+        raise InvalidPointers(f"{code.code} points to {', '.join(unshaped)}, which is not an ICD-10-CM code")
+
+
 def _procedure(text: str) -> Code | None:
     base, *modifiers = _PARTS.split(text)
     if (
@@ -127,6 +156,16 @@ def _procedure(text: str) -> Code | None:
 
 def format_code_list(codes: tuple[Code, ...] | list[Code]) -> str:
     return ", ".join(code.label() for code in codes)
+
+
+def with_pointers(codes: Sequence[Code], pointers: Mapping[str, Sequence[str]]) -> tuple[Code, ...]:
+    diagnoses = {code.code for code in codes if code.type == "ICD-10"}
+    return tuple(
+        replace(code, pointers=tuple(item for item in pointers[code.code] if item in diagnoses))
+        if code.type == "CPT" and code.code in pointers
+        else code
+        for code in codes
+    )
 
 
 def claim_changes(final: Iterable[Code], billed: Iterable[Code]) -> int:

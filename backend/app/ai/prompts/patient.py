@@ -9,6 +9,8 @@ Return the patient facts exactly as the note states them:
   dateOfService; null when neither is stated
 - sex: as written (for example "female" or "M"), or null when the note does not state it. Never infer it from a
   name or a diagnosis.
+- birth_date: the date of birth as YYYY-MM-DD only when the note states it; null otherwise. Never work it out from
+  the age.
 """
 
 EXTRACTED_TEXT_TASK = """

@@ -81,13 +81,21 @@ function WindowsForm({ stored, onSaved }: { stored: AppealDays; onSaved: (days: 
   );
 }
 
-export function AppealWindows() {
+export function AppealWindows({ onSaved }: { onSaved: () => void }) {
   const windows = useRemote("appeal-days", getAppealDays);
   return (
     <Panel aria-label={REMITTANCE_TEXT.windowsTitle}>
       <PanelHeader title={REMITTANCE_TEXT.windowsTitle} />
       <RemoteView state={windows.state} text={REMOTE_TEXT} onRetry={windows.reload}>
-        {(data) => <WindowsForm stored={data} onSaved={windows.replace} />}
+        {(data) => (
+          <WindowsForm
+            stored={data}
+            onSaved={(days) => {
+              windows.replace(days);
+              onSaved();
+            }}
+          />
+        )}
       </RemoteView>
     </Panel>
   );

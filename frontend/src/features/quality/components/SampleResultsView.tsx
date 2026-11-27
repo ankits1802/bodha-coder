@@ -25,6 +25,7 @@ function SampleFacts({ sample }: { sample: SampleOverview }) {
       <span className="font-medium text-label">{scopeName(sample)}</span>
       <span className="tabular-nums">{QUALITY_TEXT.period(formatCalendarDay(sample.start), formatCalendarDay(sample.end))}</span>
       <span className="tabular-nums">{QUALITY_TEXT.progress(sample.done, sample.notes)}</span>
+      {sample.started_by ? <span>{QUALITY_TEXT.startedBy(sample.started_by)}</span> : null}
       <StatusDot tone={sample.status === "done" ? "ok" : "neutral"}>{QUALITY_TEXT[sample.status]}</StatusDot>
     </div>
   );

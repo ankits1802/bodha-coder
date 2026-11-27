@@ -44,6 +44,7 @@ export const SECURITY_TEXT = {
     export: "Export",
     tableLabel: "Access log",
     provider: "Provider",
+    system: "Automatic",
     openNote: "Open note",
     columns: { time: "Time", person: "Person", action: "Action", detail: "Detail", note: "Note", device: "Device" },
     csvHeader: ["time", "person", "kind", "action", "detail", "note_id", "ip", "user_agent"],

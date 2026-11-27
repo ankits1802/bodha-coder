@@ -326,11 +326,17 @@ export interface CodeSetRevision {
   at: string;
 }
 
+export interface PointerChoice {
+  code: string;
+  diagnoses: string[];
+}
+
 export interface DecisionRecord {
   key: string;
   choice: Choice;
   by: string | null;
   at: string;
+  pointers: PointerChoice | null;
 }
 
 export interface NoteHistory {
@@ -397,6 +403,23 @@ export interface ClaimEstimates {
   billed: ClaimEstimate;
   claim: ClaimEstimate;
   difference: number;
+}
+
+export interface PointerLine {
+  code: string;
+  label: string;
+  pointers: string[];
+  stored: boolean;
+}
+
+export interface ClaimDiagnosis {
+  code: string;
+  letter: string | null;
+}
+
+export interface ClaimPointers {
+  diagnoses: ClaimDiagnosis[];
+  lines: PointerLine[];
 }
 
 export type ComplianceDecision = "confirm" | "return" | "keep";
@@ -631,7 +654,7 @@ export interface MipsOverview {
 export interface AccessLogEntry {
   at: string;
   actor: string;
-  actor_kind: "user" | "provider";
+  actor_kind: "user" | "provider" | "system";
   action: string;
   note_id: string | null;
   detail: string | null;
@@ -971,7 +994,7 @@ export interface QueryMetricsReport {
   providers: ProviderQueryMetrics[];
 }
 
-export interface WilsonRate {
+export interface Rate {
   successes: number;
   trials: number;
   value: number | null;
@@ -981,15 +1004,15 @@ export interface WilsonRate {
 
 export interface AgreementSummary {
   notes: number;
-  em: WilsonRate;
-  em_higher: WilsonRate;
-  em_lower: WilsonRate;
+  em: Rate;
+  em_higher: Rate;
+  em_lower: Rate;
   em_other: number;
-  icd_precision: WilsonRate;
-  icd_recall: WilsonRate;
+  icd_precision: Rate;
+  icd_recall: Rate;
   icd_f1: number | null;
-  icd_exact: WilsonRate;
-  modifiers: WilsonRate;
+  icd_exact: Rate;
+  modifiers: Rate;
 }
 
 export type EmDirection = "match" | "higher" | "lower" | "family" | "absent";
@@ -1023,10 +1046,11 @@ export interface SampleOverview {
   done: number;
   status: "open" | "done";
   reviewers: string[];
+  started_by: string | null;
   started_at: string;
   completed_at: string | null;
-  em: WilsonRate;
-  em_claim: WilsonRate;
+  em: Rate;
+  em_claim: Rate;
 }
 
 export interface SampleItemRow {
@@ -1144,14 +1168,14 @@ export interface EvalSummary {
   cases: number;
   scored: number;
   failed: number;
-  em: WilsonRate;
-  em_higher: WilsonRate;
-  em_lower: WilsonRate;
-  icd_precision: WilsonRate;
-  icd_recall: WilsonRate;
+  em: Rate;
+  em_higher: Rate;
+  em_lower: Rate;
+  icd_precision: Rate;
+  icd_recall: Rate;
   icd_f1: number | null;
-  modifiers: WilsonRate;
-  consistency: Record<"em" | "icd" | "modifiers" | "all", WilsonRate>;
+  modifiers: Rate;
+  consistency: Record<"em" | "icd" | "modifiers" | "all", Rate>;
   error?: string;
 }
 
@@ -1250,8 +1274,8 @@ export type PayerFlagRule =
   | "g2211_replaced"
   | "level_downcode_risk"
   | "audio_only_risk_adjustment"
-  | "nursing_initial_once"
-  | "nursing_incident_to";
+  | "nursing_incident_to"
+  | "initial_visit_repeated";
 
 export type PayerFlagSeverity = "denial" | "risk" | "reminder";
 
@@ -1259,6 +1283,7 @@ export interface PayerFlag {
   rule: PayerFlagRule;
   severity: PayerFlagSeverity;
   codes: string[];
+  earlier?: string;
 }
 
 export interface ClaimChecks {

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
@@ -15,8 +15,11 @@ __all__ = [
     "COMPLEXITY_MODIFIER_FROM",
     "COMPLEXITY_WITH_25_EXCEPTIONS",
     "DOWNCODE_LEVELS",
+    "NURSING_DISCHARGES",
+    "NURSING_INITIAL_VISITS",
     "PLAN_TYPES",
     "TELEHEALTH_FLEXIBILITIES_THROUGH",
+    "EarlierVisit",
     "Payer",
     "PayerClaim",
     "PayerFamily",
@@ -24,8 +27,10 @@ __all__ = [
     "PlanType",
     "Rule",
     "Severity",
+    "initial_nursing_visits",
     "payer_flags",
     "payer_for",
+    "repeated_initial_visit",
 ]
 
 PlanType = Literal["medicare", "medicare_advantage", "medicaid", "commercial"]
@@ -39,8 +44,8 @@ Rule = Literal[
     "g2211_replaced",
     "level_downcode_risk",
     "audio_only_risk_adjustment",
-    "nursing_initial_once",
     "nursing_incident_to",
+    "initial_visit_repeated",
 ]
 
 PLAN_TYPES: tuple[PlanType, ...] = ("medicare", "medicare_advantage", "medicaid", "commercial")
@@ -70,6 +75,7 @@ DOWNCODE_EXEMPT_UNDER_AGE = 1
 NON_DISEASE_CHAPTERS = ("R", "Z")
 AUDIO_ONLY_RISK_ADJUSTMENT_FROM = date(2026, 1, 1)
 NURSING_INITIAL_VISITS = frozenset({"99304", "99305", "99306"})
+NURSING_DISCHARGES = frozenset({"99315", "99316"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,9 +96,13 @@ class PayerFlag:
     rule: Rule
     severity: Severity
     codes: tuple[str, ...] = ()
+    earlier: date | None = None
 
     def as_json(self) -> dict[str, object]:
-        return {"rule": self.rule, "severity": self.severity, "codes": list(self.codes)}
+        found: dict[str, object] = {"rule": self.rule, "severity": self.severity, "codes": list(self.codes)}
+        if self.earlier is not None:
+            found["earlier"] = self.earlier.isoformat()
+        return found
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +117,14 @@ class Visit:
 
     def billed(self, codes: frozenset[str]) -> tuple[Code, ...]:
         return tuple(code for code in self.procedures if code.code in codes)
+
+
+@dataclass(frozen=True, slots=True)
+class EarlierVisit:
+    service_date: date
+    place_code: str
+    code: str
+    specialty: str | None = None
 
 
 RuleCheck = Callable[[Visit], PayerFlag | None]
@@ -125,6 +143,42 @@ def payer_flags(claim: PayerClaim, payer_type: Payer, place_code: str, service_d
     applies = [(plans, family, check) for plans, family, check in RULES if payer_type.plan in plans]
     checks = [check for _, family, check in applies if family in (None, payer_type.family)]
     return [flag for check in checks if (flag := check(visit)) is not None]
+
+
+def initial_nursing_visits(codes: Iterable[Code], place_code: str) -> tuple[Code, ...]:
+    if place_code not in NURSING_FACILITY_PLACES:
+        return ()
+    return tuple(code for code in codes if code.type == "CPT" and code.code in NURSING_INITIAL_VISITS)
+
+
+def repeated_initial_visit(
+    codes: Iterable[Code],
+    place_code: str,
+    service_date: date,
+    history: Iterable[EarlierVisit],
+    *,
+    specialty: str | None = None,
+) -> PayerFlag | None:
+    initial = initial_nursing_visits(codes, place_code)
+    visits = tuple(history)
+    starts = [visit.service_date for visit in visits if _opened_stay(visit, service_date, specialty)]
+    if not initial or not starts:
+        return None
+    earlier = max(starts)
+    if any(visit.code in NURSING_DISCHARGES and earlier <= visit.service_date <= service_date for visit in visits):
+        return None
+    return PayerFlag("initial_visit_repeated", "denial", _labels(initial), earlier)
+
+
+def _opened_stay(visit: EarlierVisit, before: date, specialty: str | None) -> bool:
+    initial = visit.code in NURSING_INITIAL_VISITS and visit.place_code in NURSING_FACILITY_PLACES
+    return initial and visit.service_date < before and _same_specialty(visit.specialty, specialty)
+
+
+def _same_specialty(first: str | None, second: str | None) -> bool:
+    if not first or not second:
+        return True
+    return first.strip().casefold() == second.strip().casefold()
 
 
 def _telehealth_place(visit: Visit) -> PayerFlag | None:
@@ -186,13 +240,6 @@ def _audio_only_risk_adjustment(visit: Visit) -> PayerFlag | None:
     return PayerFlag("audio_only_risk_adjustment", "risk", _labels(lines))
 
 
-def _nursing_initial_once(visit: Visit) -> PayerFlag | None:
-    lines = visit.billed(NURSING_INITIAL_VISITS)
-    if not lines or visit.place_code not in NURSING_FACILITY_PLACES:
-        return None
-    return PayerFlag("nursing_initial_once", "reminder", _labels(lines))
-
-
 def _nursing_incident_to(visit: Visit) -> PayerFlag | None:
     visits = tuple(code for code in visit.procedures if is_em_code(code.code))
     if not visits or visit.place_code not in NURSING_FACILITY_PLACES or not visit.claim.supervised_nonphysician:
@@ -213,6 +260,5 @@ RULES: tuple[tuple[frozenset[PlanType | None], PayerFamily | None, RuleCheck], .
     (MEDICARE, None, _g2211_replaced),
     (frozenset({"commercial"}), "cigna", _level_downcode_risk),
     (frozenset({"medicare_advantage"}), None, _audio_only_risk_adjustment),
-    (MEDICARE, None, _nursing_initial_once),
     (MEDICARE, None, _nursing_incident_to),
 )

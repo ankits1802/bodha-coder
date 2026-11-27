@@ -27,18 +27,30 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Run it
 
-Backend (Python 3.12+):
+Backend (Python 3.14):
 
 ```
 cd backend
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.venv\Scripts\python.exe -m pip install -r requirements.lock
+.venv\Scripts\python.exe -m pip install --no-deps -e .
 copy .env.example .env
 alembic upgrade head
 python -m app.scripts.bootstrap_hq
 uvicorn app.main:app --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1
 python -m app.worker
 ```
+
+`backend/requirements.lock` pins every Python package, direct and transitive, for Linux images and
+Windows alike; CI and the backend image install from it. After changing `pyproject.toml`, compile it
+again from `backend` with uv 0.13.10 (installed in a separate environment):
+
+```
+uv pip compile pyproject.toml --extra dev --universal --python-version 3.14 --no-header --no-annotate -o requirements.lock
+```
+
+Add `--upgrade` to move every pin to its latest release. CI fails when the lock and `pyproject.toml`
+disagree.
 
 Frontend (Node 24):
 
@@ -124,8 +136,8 @@ staging load test in [tools/load/README.md](tools/load/README.md).
 ## Checks
 
 Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
-check, ruff, the migrations up and down against Postgres, pytest, and the frontend lint, type
-check, tests and build.
+check, the Python lock against `pyproject.toml`, ruff, the migrations up and down against Postgres,
+pytest, and the frontend lint, type check, tests and build.
 
 ## Data sources
 

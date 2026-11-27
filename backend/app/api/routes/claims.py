@@ -6,15 +6,15 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from pydantic import Field
 
+from app.api.blinding import SightedReader
 from app.api.bodies import Body
 from app.core.deps import Actor, Db, require
-from app.core.roles import BILLERS, NOTE_READERS
+from app.core.roles import BILLERS
 from app.models import utcnow
 from app.services import claim_checks, claim_lines
 
 router = APIRouter(tags=["claims"])
 Biller = Annotated[Actor, Depends(require(*BILLERS))]
-Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 
 
 class ClaimLinesBody(Body):
@@ -36,5 +36,5 @@ async def lines(body: ClaimLinesBody, db: Db, actor: Biller) -> Response | dict[
 
 
 @router.get("/notes/{note_id}/claim-checks")
-async def checks(note_id: str, db: Db, actor: Reader) -> dict[str, Any]:
+async def checks(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]:
     return await claim_checks.claim_checks(db, actor, note_id)

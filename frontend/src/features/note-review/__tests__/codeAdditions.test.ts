@@ -31,6 +31,7 @@ const summary = finding({
     payment_year: "2027",
     available: true,
     segment: "Community, non-dual, aged",
+    age_from: "note",
     score_billed: 0.638,
     score_documented: 0.824,
     categories: [
@@ -48,6 +49,7 @@ describe("risk adjustment findings", () => {
     const parsed = riskSummary([summary, suspected]);
     expect(parsed?.scoreBilled).toBe(0.638);
     expect(parsed?.scoreDocumented).toBe(0.824);
+    expect(parsed?.ageFromNote).toBe(true);
     expect(parsed?.categories).toEqual([
       { hcc: "HCC37", label: "Diabetes with Chronic Complications", status: "missed", codes: ["E11.22"], factor: 0.166 },
     ]);

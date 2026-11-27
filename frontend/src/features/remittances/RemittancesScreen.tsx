@@ -36,12 +36,18 @@ function RemittancesContent({ canSetWindows }: { canSetWindows: boolean }) {
   const files = useRemote(`remittances:${offset}`, () => getRemittances(offset));
   const upload = useAction(uploadRemittance);
   const [notice, setNotice] = useState<string | null>(null);
+  const [windowsVersion, setWindowsVersion] = useState(0);
   const page = files.state.status === "success" ? files.state.data : null;
   const selected = params.get("file") ?? page?.items[0]?.id ?? null;
 
   function uploaded(result: RemittanceUpload): void {
     setNotice(REMITTANCE_TEXT.uploaded(formatCount(lineTotal(result))));
     params.update({ file: result.ids[0] ?? null, status: null, offset: null });
+    files.reload();
+  }
+
+  function windowsSaved(): void {
+    setWindowsVersion((version) => version + 1);
     files.reload();
   }
 
@@ -70,6 +76,7 @@ function RemittancesContent({ canSetWindows }: { canSetWindows: boolean }) {
               <RemittanceLinesPanel
                 key={selected}
                 remittanceId={selected}
+                windowsVersion={windowsVersion}
                 filter={filter}
                 onFilter={(value) => params.update({ status: value === "all" ? null : value })}
               />
@@ -77,7 +84,7 @@ function RemittancesContent({ canSetWindows }: { canSetWindows: boolean }) {
           </>
         )}
       </RemoteView>
-      {canSetWindows ? <AppealWindows /> : null}
+      {canSetWindows ? <AppealWindows onSaved={windowsSaved} /> : null}
     </>
   );
 }

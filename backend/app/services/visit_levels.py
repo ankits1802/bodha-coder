@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code
 from app.codes.em import em_position, is_em_code
-from app.models import CodeSet, Note
+from app.models import Note
+from app.services.code_sets import latest_codes_for
 from app.services.placement import SETTLED_STATUSES
 
 __all__ = ["is_leveled", "is_top_level", "visit_code", "visit_codes"]
@@ -37,18 +38,12 @@ async def visit_codes(db: AsyncSession, note_ids: Sequence[str]) -> dict[str, st
     if not note_ids:
         return {}
     statuses = dict((await db.execute(select(Note.id, Note.status).where(Note.id.in_(note_ids)))).all())
-    rows = await db.execute(
-        select(CodeSet.note_id, CodeSet.kind, CodeSet.codes)
-        .where(CodeSet.note_id.in_(note_ids))
-        .order_by(CodeSet.note_id, CodeSet.kind, CodeSet.revision.desc())
-        .distinct(CodeSet.note_id, CodeSet.kind)
-    )
-    latest = {(note_id, kind): tuple(Code.from_json(item) for item in codes) for note_id, kind, codes in rows}
+    settled = [note_id for note_id in note_ids if statuses.get(note_id) in SETTLED_STATUSES]
+    final, billed = await latest_codes_for(db, "final", settled), await latest_codes_for(db, "billed", note_ids)
     found: dict[str, str] = {}
     for note_id in note_ids:
-        settled = statuses.get(note_id) in SETTLED_STATUSES
-        codes = latest.get((note_id, "final")) if settled else None
-        code = visit_code(codes if codes is not None else latest.get((note_id, "billed"), ()))
+        codes = final.get(note_id)
+        code = visit_code(codes if codes is not None else billed.get(note_id, ()))
         if code is not None:
             found[note_id] = code
     return found

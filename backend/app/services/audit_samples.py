@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 import secrets
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -15,13 +15,12 @@ from app.codes.billing_codes import Code
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
 from app.core.roles import NOTE_READERS
-from app.models import AuditSample, Note, Provider, User, new_id, utcnow
-from app.services.agreement import elements_of, summarize
+from app.models import AuditRun, AuditSample, Note, Provider, User
+from app.services.agreement import elements_of, summarize, visit_agreement
 from app.services.analysis import latest_codes
 from app.services.audit_log import record_access, record_activity
 from app.services.placement import SETTLED_STATUSES, current_findings
 from app.services.routing import choices_for, claim
-from app.services.samples import SAMPLE_ID_PATH, sample_id_of
 
 __all__ = [
     "DEFAULT_SAMPLE_SIZE",
@@ -31,10 +30,10 @@ __all__ = [
     "draw_sample",
     "practice_names",
     "reference_elements",
-    "sample_overview",
+    "run_items",
     "sample_options",
+    "sample_overview",
     "sample_results",
-    "sample_rows",
     "samples_overview",
 ]
 
@@ -76,7 +75,9 @@ async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest) ->
     chosen = _assign(candidates, reviewers, request.wanted, random.Random(seed))
     if not chosen:
         raise Invalid("no approved notes match that period")
-    meta = _meta(actor, request, seed)
+    run = _new_run(actor, request)
+    db.add(run)
+    await db.flush()
     for position, (note, reviewer_id) in enumerate(chosen):
         db.add(
             AuditSample(
@@ -84,31 +85,29 @@ async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest) ->
                 note_id=note.id,
                 analysis_id=note.current_analysis_id,
                 reviewer_id=reviewer_id,
+                run_id=run.id,
                 purpose=request.purpose,
                 status="open",
                 answer={},
-                result={"sample": meta, "position": position, "reference": await _reference(db, note)},
+                result={"position": position, "reference": await _reference(db, note)},
             )
         )
-    record_activity(db, actor, STARTED[request.purpose], practice_id=actor.practice_id, detail=f"{len(chosen)} notes")
+    detail = f"{len(chosen)} notes, seed {seed}"
+    record_activity(db, actor, STARTED[request.purpose], practice_id=actor.practice_id, detail=detail)
     await db.commit()
-    return meta["id"]
+    return run.id
 
 
 def reference_elements(item: AuditSample, side: str) -> dict[str, Any]:
     return elements_of(Code.from_json(code) for code in item.result["reference"][side]).as_json()
 
 
-async def sample_rows(db: AsyncSession, practice_id: str, sample_id: str) -> list[AuditSample]:
-    rows = await db.scalars(
-        select(AuditSample).where(
-            AuditSample.practice_id == practice_id, AuditSample.result[SAMPLE_ID_PATH].astext == sample_id
-        )
-    )
-    found = sorted(rows.all(), key=lambda item: int(item.result.get("position", 0)))
-    if not found:
+async def run_items(db: AsyncSession, practice_id: str, run_id: str) -> tuple[AuditRun, list[AuditSample]]:
+    run = await db.get(AuditRun, run_id)
+    if run is None or run.practice_id != practice_id:
         raise NotFound("sample not found")
-    return found
+    rows = await db.scalars(select(AuditSample).where(AuditSample.run_id == run.id))
+    return run, sorted(rows.all(), key=lambda item: int(item.result.get("position", 0)))
 
 
 async def practice_names(db: AsyncSession, practice_id: str) -> Names:
@@ -140,51 +139,53 @@ async def sample_options(db: AsyncSession, actor: Actor) -> dict[str, Any]:
 
 
 async def samples_overview(db: AsyncSession, actor: Actor, purpose: str) -> list[dict[str, Any]]:
-    rows = await db.scalars(
-        select(AuditSample)
-        .where(AuditSample.practice_id == actor.practice_id, AuditSample.purpose == purpose)
-        .order_by(AuditSample.created_at.desc())
+    runs = list(
+        await db.scalars(
+            select(AuditRun)
+            .where(AuditRun.practice_id == actor.practice_id, AuditRun.purpose == purpose)
+            .order_by(AuditRun.created_at.desc())
+        )
     )
+    items = await db.scalars(select(AuditSample).where(AuditSample.run_id.in_([run.id for run in runs])))
     groups: dict[str, list[AuditSample]] = defaultdict(list)
-    for item in rows:
-        groups[sample_id_of(item)].append(item)
+    for item in items:
+        groups[str(item.run_id)].append(item)
     names = await practice_names(db, actor.practice_id)
-    return [sample_overview(items, names) for items in groups.values()]
+    return [sample_overview(run, groups[run.id], names) for run in runs]
 
 
-def sample_overview(items: Sequence[AuditSample], names: Names) -> dict[str, Any]:
-    meta = items[0].result["sample"]
+def sample_overview(run: AuditRun, items: Sequence[AuditSample], names: Names) -> dict[str, Any]:
     done = [item for item in items if item.status == "done"]
-    finished = len(done) == len(items)
     return {
-        "id": meta["id"],
-        "purpose": meta["purpose"],
-        "scope": meta["scope"],
-        "provider_name": names.providers.get(meta.get("provider_id") or ""),
-        "specialty": meta.get("specialty"),
-        "start": meta["start"],
-        "end": meta["end"],
-        "requested": meta["requested"],
+        "id": run.id,
+        "purpose": run.purpose,
+        "scope": run.scope,
+        "provider_name": names.providers.get(run.provider_id or ""),
+        "specialty": run.specialty,
+        "start": _day(run.period_start),
+        "end": _day(run.period_end),
+        "requested": run.requested,
         "notes": len(items),
         "done": len(done),
-        "status": "done" if finished else "open",
+        "status": run.status,
         "reviewers": sorted({names.users.get(item.reviewer_id, "") for item in items}),
-        "started_at": meta["started_at"],
-        "completed_at": max(_completed(item) for item in done) if finished else None,
-        "em": summarize([item.result["bodha"] for item in done])["em"],
-        "em_claim": summarize([item.result["claim"] for item in done])["em"],
+        "started_by": names.users.get(run.created_by),
+        "started_at": run.created_at.isoformat(),
+        "completed_at": _latest(item.completed_at for item in done) if run.status == "done" else None,
+        "em": visit_agreement([item.result["bodha"] for item in done]),
+        "em_claim": visit_agreement([item.result["claim"] for item in done]),
     }
 
 
-async def sample_results(db: AsyncSession, actor: Actor, sample_id: str) -> dict[str, Any]:
-    items = await sample_rows(db, actor.practice_id, sample_id)
+async def sample_results(db: AsyncSession, actor: Actor, run_id: str) -> dict[str, Any]:
+    run, items = await run_items(db, actor.practice_id, run_id)
     names = await practice_names(db, actor.practice_id)
     notes = {note.id: note for note in await db.scalars(select(Note).where(Note.id.in_([i.note_id for i in items])))}
     done = [item for item in items if item.status == "done"]
     record_access(db, actor, "opened audit results", detail=f"{len(items)} notes")
     await db.commit()
     return {
-        "sample": sample_overview(items, names),
+        "sample": sample_overview(run, items, names),
         "summary": _summaries(done),
         "providers": _by_provider(done, notes, names),
         "items": [_item_row(item, notes[item.note_id], names) for item in items],
@@ -222,8 +223,13 @@ def _item_row(item: AuditSample, note: Note, names: Names) -> dict[str, Any]:
     }
 
 
-def _completed(item: AuditSample) -> str:
-    return item.completed_at.isoformat() if item.completed_at else ""
+def _latest(moments: Iterable[datetime | None]) -> str | None:
+    known = [moment for moment in moments if moment is not None]
+    return max(known).isoformat() if known else None
+
+
+def _day(value: date | None) -> str | None:
+    return value.isoformat() if value else None
 
 
 def _check_request(request: SampleRequest) -> None:
@@ -300,20 +306,19 @@ def _next_reviewer(reviewers: list[str], turn: int, approver: str | None) -> str
     return None
 
 
-def _meta(actor: Actor, request: SampleRequest, seed: int) -> dict[str, Any]:
-    return {
-        "id": new_id(),
-        "purpose": request.purpose,
-        "scope": request.scope,
-        "provider_id": request.provider_id if request.scope == "provider" else None,
-        "specialty": request.specialty if request.scope == "specialty" else None,
-        "start": request.start.isoformat(),
-        "end": request.end.isoformat(),
-        "requested": request.wanted,
-        "seed": str(seed),
-        "started_by": actor.user.id,
-        "started_at": utcnow().isoformat(),
-    }
+def _new_run(actor: Actor, request: SampleRequest) -> AuditRun:
+    return AuditRun(
+        practice_id=actor.practice_id,
+        created_by=actor.user.id,
+        purpose=request.purpose,
+        scope=request.scope,
+        provider_id=request.provider_id if request.scope == "provider" else None,
+        specialty=request.specialty if request.scope == "specialty" else None,
+        period_start=request.start,
+        period_end=request.end,
+        requested=request.wanted,
+        status="open",
+    )
 
 
 async def _reference(db: AsyncSession, note: Note) -> dict[str, list[dict[str, object]]]:

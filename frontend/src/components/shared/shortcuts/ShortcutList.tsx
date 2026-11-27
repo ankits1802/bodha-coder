@@ -1,27 +1,14 @@
 "use client";
 
-import { Fragment, useSyncExternalStore } from "react";
+import { Fragment } from "react";
 import type { Role } from "@/lib/api/types";
 import { SHARED_TEXT } from "../strings";
 import { comboKeys, shortcutsIn, type KeyCombo, type ShortcutScope } from "./registry";
+import { useIsMac } from "./useIsMac";
 
 interface ShortcutListProps {
   scopes: readonly ShortcutScope[];
   role: Role;
-}
-
-const APPLE_PLATFORM = /Mac|iPhone|iPad/;
-
-function noChange(): () => void {
-  return () => undefined;
-}
-
-function useIsMac(): boolean {
-  return useSyncExternalStore(
-    noChange,
-    () => APPLE_PLATFORM.test(navigator.userAgent),
-    () => false,
-  );
 }
 
 function Combo({ combo, mac }: { combo: KeyCombo; mac: boolean }) {

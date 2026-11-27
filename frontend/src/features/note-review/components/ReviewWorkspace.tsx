@@ -37,10 +37,10 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
   const openAsk = permissions.ask ? () => setDialog("ask") : null;
 
   useReviewShortcuts({
-    j: next ? () => onGo(next) : undefined,
-    k: previous ? () => onGo(previous) : undefined,
-    a: permissions.approve ? () => void actions.approve() : undefined,
-    p: openAsk ?? undefined,
+    nextNote: next ? () => onGo(next) : undefined,
+    previousNote: previous ? () => onGo(previous) : undefined,
+    approve: permissions.approve ? () => void actions.approve() : undefined,
+    askProvider: openAsk ?? undefined,
   });
 
   return (

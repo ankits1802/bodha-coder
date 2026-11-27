@@ -56,9 +56,9 @@ def _suspected(code: str) -> SuspectedCondition:
     return SuspectedCondition(condition="CKD", icd10=code, query="eGFR 38 and 40. Please clarify.", options=["A", "B"])
 
 
-def _report(age: int | None, *suspected: SuspectedCondition) -> ReviewReport:
+def _report(age: int | None, *suspected: SuspectedCondition, birth_date: date | None = None) -> ReviewReport:
     return ReviewReport(
-        patient=PatientFacts(age=age, sex="female"),
+        patient=PatientFacts(age=age, sex="female", birth_date=birth_date),
         em=EmReview(code="99214", mdm_level="Moderate"),
         diagnoses=[
             _supported("E11.22", "Type 2 diabetes with diabetic chronic kidney disease"),
@@ -83,6 +83,20 @@ def test_categories_are_captured_or_missed_and_scored_from_the_factors(model, ic
         ("HCC48", "missed", ["E66.01"], 0.186),
         ("HCC226", "captured", ["I50.22"], 0.36),
     ]
+
+
+def test_a_known_birth_date_sets_the_age_on_the_first_of_february_of_the_payment_year(model, icd):
+    report = _report(64, birth_date=date(1962, 1, 15))
+    detail = _summary(risk_adjustment_findings(report, BILLED, icd, model)).detail
+    assert (detail["age"], detail["age_from"], detail["segment"]) == (65, "birth_date", "Community, non-dual, aged")
+    assert (detail["score_billed"], detail["score_documented"]) == (0.638, 0.824)
+
+
+def test_without_a_birth_date_the_age_comes_from_the_note(model, icd):
+    detail = _summary(risk_adjustment_findings(_report(64), BILLED, icd, model)).detail
+    assert (detail["age"], detail["age_from"], detail["segment"]) == (64, "note", "Community, non-dual, disabled")
+    unknown = _summary(risk_adjustment_findings(_report(None), BILLED, icd, model)).detail
+    assert (unknown["age"], unknown["age_from"]) == (None, None)
 
 
 def test_a_billed_category_without_documentation_is_unsupported(model, icd):

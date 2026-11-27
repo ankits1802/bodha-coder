@@ -7,9 +7,9 @@ import type {
   EvalRunStatus,
   LevelMix,
   LevelMixStatus,
+  Rate,
   Role,
   SampleOverview,
-  WilsonRate,
 } from "@/lib/api/types";
 import { QUALITY_TEXT } from "./strings";
 
@@ -19,7 +19,7 @@ export type RateKey = "em" | "icd_precision" | "icd_recall" | "icd_exact" | "mod
 
 export interface RateRow {
   key: RateKey;
-  rate: WilsonRate;
+  rate: Rate;
 }
 
 export interface LevelShare {

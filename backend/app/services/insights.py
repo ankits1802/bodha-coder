@@ -11,8 +11,9 @@ from sqlalchemy import Date, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.codes.billing_codes import Code, claim_changes
-from app.models import Analysis, CodeSet, Note, Provider, Suggestion, User, utcnow
+from app.models import Analysis, Note, Provider, Suggestion, User, utcnow
 from app.services.billing import AUTO_APPROVER
+from app.services.code_sets import latest_codes_for
 from app.services.estimates import estimate_difference, money
 from app.services.placement import SETTLED_STATUSES
 
@@ -128,7 +129,7 @@ async def _approved_notes(db: AsyncSession, practice_id: str, since: datetime) -
         )
     ).all()
     ids = [note.id for note, *_ in rows]
-    final, billed = await _latest_codes(db, "final", ids), await _latest_codes(db, "billed", ids)
+    final, billed = await latest_codes_for(db, "final", ids), await latest_codes_for(db, "billed", ids)
     return [
         ApprovedNote(
             note_id=note.id,
@@ -144,18 +145,6 @@ async def _approved_notes(db: AsyncSession, practice_id: str, since: datetime) -
         )
         for note, provider_name, approver_id, approver_name, ready_at in rows
     ]
-
-
-async def _latest_codes(db: AsyncSession, kind: str, note_ids: list[str]) -> dict[str, tuple[Code, ...]]:
-    if not note_ids:
-        return {}
-    rows = await db.execute(
-        select(CodeSet.note_id, CodeSet.codes)
-        .where(CodeSet.kind == kind, CodeSet.note_id.in_(note_ids))
-        .order_by(CodeSet.note_id, CodeSet.revision.desc())
-        .distinct(CodeSet.note_id)
-    )
-    return {note_id: tuple(Code.from_json(item) for item in codes) for note_id, codes in rows}
 
 
 async def _outcomes(db: AsyncSession, practice_id: str, since: Any) -> dict[str, int]:

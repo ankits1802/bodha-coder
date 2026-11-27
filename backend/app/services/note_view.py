@@ -13,6 +13,7 @@ from app.services.audit_log import record_access
 from app.services.estimates import note_estimate
 from app.services.note_texts import current_texts
 from app.services.placement import current_decisions, current_findings
+from app.services.pointer_decisions import read_pointer_key
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
 from app.services.worklists import assignee_name, summary
@@ -137,10 +138,21 @@ async def _history(db: AsyncSession, note_id: str, practice_id: str) -> dict[str
             for c in code_sets
         ],
         "decisions": [
-            {"key": d.suggestion_key, "choice": d.choice, "by": names.get(d.actor_id), "at": d.created_at.isoformat()}
+            {
+                "key": d.suggestion_key,
+                "choice": d.choice,
+                "by": names.get(d.actor_id),
+                "at": d.created_at.isoformat(),
+                "pointers": _pointer_view(d.suggestion_key),
+            }
             for d in decisions
         ],
     }
+
+
+def _pointer_view(key: str) -> dict[str, Any] | None:
+    parsed = read_pointer_key(key)
+    return {"code": parsed[0], "diagnoses": list(parsed[1])} if parsed else None
 
 
 async def _requests(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:

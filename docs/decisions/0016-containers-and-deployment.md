@@ -26,9 +26,18 @@ without PHI, health endpoints and a documented production layout on AWS.
 - The load test uses k6: one static binary or image, arrival-rate scenarios that model notes per
   day directly, and thresholds that fail the run.
 
+- Python dependencies (amended 2026-11-27): `backend/requirements.lock` pins every package,
+  direct and transitive, for Linux images and Windows development in one file (`uv pip compile
+  --universal --python-version 3.14`, without header or annotations, so it holds no comments). CI
+  installs it as is (`pip install -r`) and the project with `--no-deps`; the image takes it as
+  constraints over the runtime dependencies, so test tools stay out of the image. CI compiles it
+  again with the committed file as preferences and fails on any difference: the lock no longer
+  matches `pyproject.toml`. A new upstream release does not fail it; upgrades are a recompile
+  with `--upgrade`. uv (0.13.10) only compiles; pip installs.
+
 ## Follows
 
-- `tools/hygiene_check.py` checks Dockerfiles, `.dockerignore` and shell scripts for comments.
+- `tools/hygiene_check.py` checks Dockerfiles, `.dockerignore`, shell scripts and `.lock` files for comments.
 - The worker reports queue metrics through `log_queue_metrics`, and the worker service scales on
   them ([0013](0013-postgres-job-queue-no-sqs.md)).
 - Production sets `S3_SERVER_SIDE_ENCRYPTION` empty so the bucket's KMS key applies.

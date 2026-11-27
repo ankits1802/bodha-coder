@@ -78,3 +78,15 @@ whose macro still holds a placeholder is stored as `missing`.
 - Units were not on the claim: an add-on billed more than once (96127 twice, 99292 twice) was added
   once and the coder set the units. Superseded by [0014](0014-units-and-medicare-national-estimates.md).
 - Prompt version 2026.11.2.
+
+Amendment (2026-11-27):
+
+- The patient facts carry the date of birth when the note states it (`patient.birth_date`, YYYY-MM-DD,
+  prompt version 2026.11.4). The analysis keeps it on `notes.patient_birth_date` when the note has none
+  and it is not after the date of service.
+- HCC age edits and the segment use the age on 1 February of the payment year when the birth date is
+  known, as the CMS-HCC model does. Without it they use the age in the note, and the risk summary says
+  so (`age_from: note`, shown as "Age from note").
+- On 2026-11-27 the CMS page *2027 Model Software/ICD-10 Mappings* lists only the initial model software
+  and the initial ICD-10-CM mappings; no PY2027 midyear or final mapping is published yet, so FY2027
+  codes still map to no HCC.

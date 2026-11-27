@@ -1,15 +1,9 @@
 "use client";
 
-import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
+import { useShortcuts, type ShortcutHandlers } from "@/components/shared/shortcuts/useShortcuts";
 
-export type ShortcutKey = "j" | "k" | "a" | "p";
-export type ShortcutHandlers = Partial<Record<ShortcutKey, () => void>>;
+export type ReviewShortcutHandlers = Pick<ShortcutHandlers, "nextNote" | "previousNote" | "approve" | "askProvider">;
 
-export function useReviewShortcuts(handlers: ShortcutHandlers): void {
-  useShortcuts("review", {
-    nextNote: handlers.j,
-    previousNote: handlers.k,
-    approve: handlers.a,
-    askProvider: handlers.p,
-  });
+export function useReviewShortcuts(handlers: ReviewShortcutHandlers): void {
+  useShortcuts("review", handlers);
 }

@@ -320,7 +320,7 @@ class AccessLog(IdMixin, Base):
     __tablename__ = "access_log"
     __table_args__ = (
         Index("ix_access_log_practice_time", "practice_id", "created_at"),
-        one_of("actor_kind", ("user", "provider")),
+        one_of("actor_kind", ("user", "provider", "system")),
     )
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"))
     actor_kind: Mapped[str] = mapped_column(String(8))

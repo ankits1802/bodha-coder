@@ -4,6 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
 
+from app.api.blinding import SightedDecider, SightedReader
 from app.api.bodies import (
     AskBody,
     AssignBody,
@@ -14,28 +15,28 @@ from app.api.bodies import (
     DeleteNotesBody,
     FlagBody,
     PayerChoiceBody,
+    PointersBody,
     RetryBody,
     VisitTypeBody,
 )
 from app.api.wiring import Icd, Mail, Store
 from app.core.deps import Actor, Db, require
-from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, NOTE_READERS, UPLOADERS
-from app.services import addenda, assignment, note_changes, note_view, review_actions
+from app.core.roles import APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
+from app.services import addenda, assignment, claim_lines, note_changes, note_view, review_actions
 from app.services.records import NewDocument, replace_document
 
 router = APIRouter(prefix="/notes", tags=["notes"])
-Reader = Annotated[Actor, Depends(require(*NOTE_READERS))]
 Decider = Annotated[Actor, Depends(require(*DECIDERS))]
 Approver = Annotated[Actor, Depends(require(*APPROVERS))]
 
 
 @router.get("/{note_id}")
-async def detail(note_id: str, db: Db, actor: Reader) -> dict[str, Any]:
+async def detail(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]:
     return await note_view.note_detail(db, actor, note_id)
 
 
 @router.get("/{note_id}/document")
-async def document(note_id: str, db: Db, actor: Reader, store: Store) -> dict[str, str]:
+async def document(note_id: str, db: Db, actor: SightedReader, store: Store) -> dict[str, str]:
     return {"url": await note_view.pdf_link(db, store, actor, note_id)}
 
 
@@ -53,15 +54,26 @@ async def replace_pdf(
 
 
 @router.put("/{note_id}/decisions")
-async def decide(note_id: str, body: DecisionsBody, db: Db, actor: Decider) -> dict[str, Any]:
+async def decide(note_id: str, body: DecisionsBody, db: Db, actor: SightedDecider) -> dict[str, Any]:
     await review_actions.decide(db, actor, note_id, body.choices)
     return await note_view.note_detail(db, actor, note_id)
 
 
 @router.put("/{note_id}/billed-codes")
-async def billed_codes(note_id: str, body: BilledBody, db: Db, actor: Decider, icd: Icd) -> dict[str, Any]:
+async def billed_codes(note_id: str, body: BilledBody, db: Db, actor: SightedDecider, icd: Icd) -> dict[str, Any]:
     await review_actions.update_billed(db, actor, note_id, body.codes, icd)
     return await note_view.note_detail(db, actor, note_id)
+
+
+@router.get("/{note_id}/pointers")
+async def pointers(note_id: str, db: Db, actor: SightedReader) -> dict[str, Any]:
+    return await claim_lines.note_pointers(db, actor, note_id)
+
+
+@router.put("/{note_id}/pointers")
+async def link_diagnoses(note_id: str, body: PointersBody, db: Db, actor: SightedDecider) -> dict[str, Any]:
+    await review_actions.save_pointers(db, actor, note_id, [(line.code, line.pointers) for line in body.lines])
+    return await claim_lines.note_pointers(db, actor, note_id)
 
 
 @router.post("/{note_id}/approve")

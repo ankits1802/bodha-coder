@@ -28,9 +28,9 @@ export function AccessLogTable({ entries }: { entries: AccessLogEntry[] }) {
             </Td>
             <Td>
               {entry.actor}
-              {entry.actor_kind === "provider" ? (
-                <span className="ml-1.5 text-footnote text-tertiary">{words.provider}</span>
-              ) : null}
+              {entry.actor_kind === "user" ? null : (
+                <span className="ml-1.5 text-footnote text-tertiary">{entry.actor_kind === "provider" ? words.provider : words.system}</span>
+              )}
             </Td>
             <Td>{entry.action}</Td>
             <Td className="text-secondary">{entry.detail ?? FORMAT_WORDS.empty}</Td>

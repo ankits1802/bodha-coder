@@ -34,3 +34,4 @@ class RemittanceLine(IdMixin, Base):
     adjustments: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     status: Mapped[str] = mapped_column(String(16), default="unmatched")
     appeal_by: Mapped[date | None] = mapped_column(Date)
+    appeal_plan_type: Mapped[str | None] = mapped_column(String(24))

@@ -26,6 +26,7 @@ __all__ = [
     "age_rule_allows",
     "hcc_model_for",
     "load_hcc_model",
+    "payment_year_age",
     "payment_year_for",
     "segment_for",
     "sex_code",
@@ -35,6 +36,7 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 HCC_MODEL_NAME = "CMS-HCC V28"
 PAYMENT_YEARS = ("2027",)
 AGED_FROM = 65
+AGE_ON_MONTH, AGE_ON_DAY = 2, 1
 SCORE_DECIMALS = 3
 COUNT_CAP = 10
 HEART_ASSIST_HCC = "HCC223"
@@ -137,6 +139,14 @@ class HccModel:
 
 def payment_year_for(service_date: date) -> str:
     return str(service_date.year + 1)
+
+
+def payment_year_age(birth_date: date, payment_year: str) -> int | None:
+    reference = date(int(payment_year), AGE_ON_MONTH, AGE_ON_DAY)
+    if birth_date > reference:
+        return None
+    before_birthday = (reference.month, reference.day) < (birth_date.month, birth_date.day)
+    return reference.year - birth_date.year - before_birthday
 
 
 def segment_for(age: int | None) -> Segment | None:

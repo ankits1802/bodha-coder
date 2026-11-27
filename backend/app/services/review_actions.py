@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import ReviewReport
-from app.codes.billing_codes import Code, parse_code_list
-from app.codes.icd import IcdCatalog
+from app.codes.billing_codes import Code, InvalidPointers, parse_code_list, with_pointers
+from app.codes.icd import IcdCatalog, format_icd
 from app.core.deps import Actor
 from app.core.errors import Conflict, Forbidden, Invalid, NotFound
 from app.models import AddendumRequest, Analysis, CodeSet, Decision, Note, utcnow
@@ -15,6 +15,7 @@ from app.services.analysis import latest_codes, next_revision, request_analysis,
 from app.services.audit_log import record_access
 from app.services.findings import Finding, build_findings
 from app.services.placement import current_decisions, current_findings, refresh_placement
+from app.services.pointer_decisions import POINTER_CHOICE, POINTER_KEY, pointer_key, read_pointer_key
 from app.services.routing import choices_for, claim
 
 INFO_KINDS = ("cdi_gap", "audit_risk", "audit_finding", "mips")
@@ -67,7 +68,38 @@ async def decide(db: AsyncSession, actor: Actor, note_id: str, choices: Mapping[
 async def current_claim(db: AsyncSession, note: Note) -> tuple[Code, ...]:
     findings = await current_findings(db, note)
     choices = choices_for(findings, await current_decisions(db, note.id))
-    return claim(await latest_codes(db, note.id, "billed"), findings, choices)
+    derived = claim(await latest_codes(db, note.id, "billed"), findings, choices)
+    return with_pointers(derived, await stored_pointers(db, note.id))
+
+
+async def stored_pointers(db: AsyncSession, note_id: str) -> dict[str, tuple[str, ...]]:
+    keys = await db.scalars(
+        select(Decision.suggestion_key)
+        .where(Decision.note_id == note_id, Decision.suggestion_key.startswith(POINTER_KEY))
+        .order_by(Decision.created_at)
+    )
+    return dict(parsed for key in keys if (parsed := read_pointer_key(key)) is not None)
+
+
+async def save_pointers(
+    db: AsyncSession, actor: Actor, note_id: str, lines: Sequence[tuple[str, Sequence[str]]]
+) -> Note:
+    note = await _open_note(db, actor, note_id)
+    linked = _checked_pointers(await current_claim(db, note), lines)
+    for code, pointers in linked.items():
+        db.add(
+            Decision(
+                note_id=note.id,
+                analysis_id=note.current_analysis_id,
+                suggestion_key=pointer_key(code, pointers),
+                choice=POINTER_CHOICE,
+                actor_id=actor.user.id,
+            )
+        )
+    detail = "; ".join(f"{code} {' '.join(pointers)}".strip() for code, pointers in linked.items())
+    record_access(db, actor, "linked diagnoses", note_id=note.id, detail=detail)
+    await db.commit()
+    return note
 
 
 async def approve(db: AsyncSession, actor: Actor, note_id: str, *, reason: str = "approved") -> Note:
@@ -235,6 +267,29 @@ async def retry_failed(db: AsyncSession, actor: Actor, note_ids: list[str] | Non
         record_access(db, actor, "asked to read again", detail=f"{len(notes)} notes")
     await db.commit()
     return [note.id for note in notes]
+
+
+def _checked_pointers(
+    codes: tuple[Code, ...], lines: Sequence[tuple[str, Sequence[str]]]
+) -> dict[str, tuple[str, ...]]:
+    procedures = {code.code for code in codes if code.type == "CPT"}
+    diagnoses = {code.code for code in codes if code.type == "ICD-10"}
+    checked: dict[str, tuple[str, ...]] = {}
+    for named, pointers in lines:
+        code = named.strip().upper()
+        if code not in procedures:
+            raise Invalid(f"{code} is not a procedure line of the claim")
+        if code in checked:
+            raise Invalid(f"{code} is listed twice")
+        linked = tuple(format_icd(pointer) for pointer in pointers)
+        unknown = [pointer for pointer in linked if pointer not in diagnoses]
+        if unknown:
+            raise Invalid(f"{', '.join(unknown)} is not a diagnosis on the claim")
+        try:
+            checked[code] = Code(code, "CPT", pointers=linked).pointers
+        except InvalidPointers as error:
+            raise Invalid(str(error)) from error
+    return checked
 
 
 async def _open_note(db: AsyncSession, actor: Actor, note_id: str) -> Note:

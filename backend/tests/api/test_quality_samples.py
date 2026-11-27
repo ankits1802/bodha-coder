@@ -1,5 +1,10 @@
-import pytest
+from datetime import date
 
+import pytest
+from sqlalchemy import select
+
+from app.core.db import SessionFactory
+from app.models import AuditRun, AuditSample
 from tests.api.quality_helpers import CODER_EMAIL, SERVICE_DAY, approved_note, note_of_item, read_note, user_id
 from tests.builders import invite_member, practice_with_provider, sign_in
 
@@ -32,6 +37,13 @@ async def audit_setup(harness, icd_catalog, *, purpose: str = "audit"):
     return practice, coder, started.json()["id"], {first: "first", second: "second"}
 
 
+async def stored_run(run_id: str) -> tuple[AuditRun, list[str | None]]:
+    async with SessionFactory() as db:
+        run = await db.get_one(AuditRun, run_id)
+        items = await db.scalars(select(AuditSample.run_id).where(AuditSample.practice_id == run.practice_id))
+        return run, list(items.all())
+
+
 async def code_next(harness, coder, sample_id, notes) -> dict:
     step = (await harness.client.get(f"/api/blind-review/{sample_id}/next", headers=coder)).json()
     if step["item"] is None:
@@ -44,7 +56,23 @@ async def code_next(harness, coder, sample_id, notes) -> dict:
     return step
 
 
-async def test_a_blind_audit_scores_bodha_and_the_claim_with_wilson_intervals(harness, icd_catalog):
+async def test_a_blind_audit_is_one_run_that_closes_when_every_note_is_coded(harness, icd_catalog):
+    practice, coder, run_id, notes = await audit_setup(harness, icd_catalog)
+    run, item_runs = await stored_run(run_id)
+    admin_id = await user_id("admin@lakeside.example.com")
+    day = date.fromisoformat(SERVICE_DAY)
+    assert (run.purpose, run.scope, run.requested, run.created_by) == ("audit", "practice", 40, admin_id)
+    assert (run.period_start, run.period_end, run.status, item_runs) == (day, day, "open", [run_id, run_id])
+
+    await code_next(harness, coder, run_id, notes)
+    assert (await stored_run(run_id))[0].status == "open"
+    await code_next(harness, coder, run_id, notes)
+    assert (await stored_run(run_id))[0].status == "done"
+    listed = (await harness.client.get("/api/quality/samples", headers=practice.admin)).json()["items"]
+    assert [(row["id"], row["status"], row["started_by"]) for row in listed] == [(run_id, "done", "Practice Admin")]
+
+
+async def test_a_blind_audit_scores_visits_with_wilson_and_diagnoses_with_a_note_bootstrap(harness, icd_catalog):
     practice, coder, sample_id, notes = await audit_setup(harness, icd_catalog)
     for _ in range(2):
         await code_next(harness, coder, sample_id, notes)
@@ -56,14 +84,14 @@ async def test_a_blind_audit_scores_bodha_and_the_claim_with_wilson_intervals(ha
     assert_rate(bodha["em"], 1, 2, 0.094531, 0.905469)
     assert_rate(bodha["em_lower"], 1, 2, 0.094531, 0.905469)
     assert_rate(bodha["em_higher"], 0, 2, 0.0, 0.65762)
-    assert_rate(bodha["icd_precision"], 7, 8, 0.529112, 0.977583)
-    assert_rate(bodha["icd_recall"], 7, 8, 0.529112, 0.977583)
+    assert_rate(bodha["icd_precision"], 7, 8, 0.75, 1.0)
+    assert_rate(bodha["icd_recall"], 7, 8, 0.8, 1.0)
     assert bodha["icd_f1"] == pytest.approx(0.875)
     assert_rate(bodha["icd_exact"], 0, 2, 0.0, 0.65762)
     assert_rate(bodha["modifiers"], 1, 2, 0.094531, 0.905469)
     assert_rate(claim["em"], 2, 2, 0.34238, 1.0)
-    assert_rate(claim["icd_precision"], 8, 9, 0.565, 0.980109)
-    assert_rate(claim["icd_recall"], 8, 8, 0.675592, 1.0)
+    assert_rate(claim["icd_precision"], 8, 9, 0.75, 1.0)
+    assert_rate(claim["icd_recall"], 8, 8, 1.0, 1.0)
     assert claim["icd_f1"] == pytest.approx(16 / 17)
     assert_rate(claim["icd_exact"], 1, 2, 0.094531, 0.905469)
     assert (results["sample"]["status"], results["sample"]["requested"], results["sample"]["notes"]) == ("done", 40, 2)
@@ -167,3 +195,29 @@ async def test_a_trainee_codes_blind_then_sees_bodha_the_claim_and_a_running_sco
     assert after["scores"]["claim"]["em"]["successes"] == 1
     training_sets = (await harness.client.get("/api/training/sets", headers=practice.admin)).json()["items"]
     assert [(row["purpose"], row["done"]) for row in training_sets] == [("training", 1)]
+
+
+BLIND_ROUTES = ("", "/document", "/defense-packet", "/claim-checks", "/day", "/addendum.txt")
+
+
+async def test_a_note_in_an_open_blind_audit_stays_hidden_from_its_reviewer_until_coded(harness, icd_catalog):
+    practice, coder, run_id, notes = await audit_setup(harness, icd_catalog)
+    for note_id in notes:
+        for route in BLIND_ROUTES:
+            refused = await harness.client.get(f"/api/notes/{note_id}{route}", headers=coder)
+            assert (route, refused.status_code, refused.json()["message"]) == (
+                route,
+                403,
+                "This note is in your blind audit",
+            )
+        decided = await harness.client.put(
+            f"/api/notes/{note_id}/decisions", headers=coder, json={"choices": {"em": "keep"}}
+        )
+        assert decided.status_code == 403
+        assert (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).status_code == 200
+
+    coded = await code_next(harness, coder, run_id, notes)
+    coded_note = await note_of_item(coded["item"]["id"])
+    still_blind = next(note_id for note_id in notes if note_id != coded_note)
+    assert (await harness.client.get(f"/api/notes/{coded_note}", headers=coder)).status_code == 200
+    assert (await harness.client.get(f"/api/notes/{still_blind}", headers=coder)).status_code == 403

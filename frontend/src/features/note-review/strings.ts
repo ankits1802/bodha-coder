@@ -6,8 +6,6 @@ export const REVIEW_TEXT = {
   retry: "Try again",
   notFound: "This note is not available.",
   backToQueue: "Review queue",
-  previous: "Previous note (K)",
-  next: "Next note (J)",
   originalPdf: "Original PDF",
   replacePdf: {
     open: "Replace PDF",
@@ -136,6 +134,7 @@ export const REVIEW_TEXT = {
     suspected: "Suspected conditions",
     unavailable: (year: string | null) => (year ? `No CMS-HCC model for payment year ${year}` : "No CMS-HCC model"),
     model: (model: string, year: string) => `${model} · payment year ${year}`,
+    ageFromNote: "Age from note",
     factor: (value: string) => `Factor ${value}`,
     status: { captured: "Captured", missed: "Documented, not billed", unsupported: "Not supported" },
   },
@@ -153,6 +152,8 @@ export const REVIEW_TEXT = {
     analysisStatus: { queued: "Waiting", running: "Reading", succeeded: "Done", failed: "Failed", superseded: "Replaced" },
     none: "Nothing yet.",
     chose: (choice: string) => `Chose ${choice}`,
+    linked: (code: string, diagnoses: string) => `Linked ${code} to ${diagnoses}`,
+    linkedDefault: (code: string) => `Linked ${code} to the default diagnoses`,
   },
   banner: {
     reading: "Bodha is reading this note.",
@@ -184,6 +185,17 @@ export const REVIEW_TEXT = {
   placeNamed: (name: string, code: string) => `${name} (${code})`,
   claim: "Claim",
   claimEmpty: "No codes yet",
+  pointers: {
+    line: (code: string, diagnoses: string) => `${code}, diagnoses ${diagnoses}`,
+    title: (code: string) => `Diagnoses for ${code}`,
+    chosen: (count: number, most: number) => `${count} of ${most}`,
+    option: (code: string, letter: string | null, ordinal: string | null) => [letter, code, ordinal].filter(Boolean).join(" "),
+    ordinals: ["1st", "2nd", "3rd", "4th"],
+    useDefault: "Use default",
+    cancel: "Cancel",
+    save: "Save",
+    unavailable: "Diagnosis links unavailable",
+  },
   estimate: {
     label: "Estimated Medicare national",
     billed: (amount: string) => `Billed ${amount}`,

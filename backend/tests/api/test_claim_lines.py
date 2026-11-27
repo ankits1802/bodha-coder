@@ -153,3 +153,103 @@ async def test_claim_lines_need_an_approved_visit_and_a_biller(harness, icd_cata
     coder = await sign_in(harness.client, "coder@lakeside.example.com", secret_box=practice.secrets)
     refused = await harness.client.post("/api/billing/claim-lines", headers=coder, json={"note_ids": [note_id]})
     assert refused.status_code == 403
+
+
+CLAIM_DIAGNOSES = ["E11.65", "N18.30", "I12.9", "R20.2"]
+
+
+async def _link(harness, headers, note_id: str, lines: list[dict]):
+    return await harness.client.put(f"/api/notes/{note_id}/pointers", headers=headers, json={"lines": lines})
+
+
+async def _billed_with_screening(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    await _bill(harness, practice, note_id, "99215, 96127x2, I10, E11.9, N18.30")
+    return practice, note_id
+
+
+async def test_lines_point_to_the_first_four_diagnoses_until_a_coder_links_them(harness, icd_catalog):
+    practice, note_id = await _billed_with_screening(harness, icd_catalog)
+
+    shown = await harness.client.get(f"/api/notes/{note_id}/pointers", headers=practice.admin)
+
+    assert shown.status_code == 200, shown.text
+    assert shown.json() == {
+        "diagnoses": [{"code": code, "letter": letter} for code, letter in zip(CLAIM_DIAGNOSES, "ABCD", strict=True)],
+        "lines": [
+            {"code": "99214", "label": "99214", "pointers": CLAIM_DIAGNOSES, "stored": False},
+            {"code": "96127", "label": "96127 ×2", "pointers": CLAIM_DIAGNOSES, "stored": False},
+        ],
+    }
+
+
+async def test_linked_diagnoses_reach_the_final_claim_and_the_claim_lines(harness, icd_catalog):
+    practice, note_id = await _billed_with_screening(harness, icd_catalog)
+
+    linked = await _link(harness, practice.admin, note_id, [{"code": "96127", "pointers": ["R20.2", "e1165"]}])
+
+    assert linked.status_code == 200, linked.text
+    assert linked.json()["lines"][1] == {
+        "code": "96127",
+        "label": "96127 ×2",
+        "pointers": ["R20.2", "E11.65"],
+        "stored": True,
+    }
+    approved = await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)
+    assert approved.status_code == 200, approved.text
+    history = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()["history"]
+    final = next(item for item in history["code_sets"] if item["kind"] == "final")
+    assert final["codes"][:2] == [
+        {"code": "99214", "type": "CPT", "modifiers": [], "units": 1},
+        {"code": "96127", "type": "CPT", "modifiers": [], "units": 2, "pointers": ["R20.2", "E11.65"]},
+    ]
+    exported = await harness.client.post("/api/billing/claim-lines", headers=practice.admin, json={})
+    assert [(line["procedure"], line["pointers"]) for line in exported.json()["claims"][0]["lines"]] == [
+        ("99214", ["A", "B", "C", "D"]),
+        ("96127", ["D", "A"]),
+    ]
+
+
+async def test_pointers_name_diagnoses_and_lines_of_the_claim(harness, icd_catalog):
+    practice, note_id = await _billed_with_screening(harness, icd_catalog)
+
+    replaced = await _link(harness, practice.admin, note_id, [{"code": "96127", "pointers": ["I10"]}])
+    billed_level = await _link(harness, practice.admin, note_id, [{"code": "99215", "pointers": ["E11.65"]}])
+    twice = await _link(
+        harness,
+        practice.admin,
+        note_id,
+        [{"code": "96127", "pointers": ["E11.65"]}, {"code": "96127", "pointers": ["R20.2"]}],
+    )
+    five = await _link(harness, practice.admin, note_id, [{"code": "99214", "pointers": [*CLAIM_DIAGNOSES, "I10"]}])
+
+    assert (replaced.status_code, replaced.json()["message"]) == (422, "I10 is not a diagnosis on the claim")
+    assert (billed_level.status_code, billed_level.json()["message"]) == (
+        422,
+        "99215 is not a procedure line of the claim",
+    )
+    assert (twice.status_code, twice.json()["message"]) == (422, "96127 is listed twice")
+    assert five.status_code == 422
+
+
+async def test_an_empty_choice_returns_a_line_to_the_default(harness, icd_catalog):
+    practice, note_id = await _billed_with_screening(harness, icd_catalog)
+    await _link(harness, practice.admin, note_id, [{"code": "99214", "pointers": ["I12.9"]}])
+
+    reset = await _link(harness, practice.admin, note_id, [{"code": "99214", "pointers": []}])
+
+    assert reset.json()["lines"][0] == {"code": "99214", "label": "99214", "pointers": CLAIM_DIAGNOSES, "stored": False}
+
+
+async def test_only_deciders_link_diagnoses_and_only_while_the_note_is_open(harness, icd_catalog):
+    practice, note_id = await _billed_with_screening(harness, icd_catalog)
+    await invite_member(harness, practice, name="Bea Biller", email="biller@lakeside.example.com", role="biller")
+    biller = await sign_in(harness.client, "biller@lakeside.example.com", secret_box=practice.secrets)
+
+    refused = await _link(harness, biller, note_id, [{"code": "99214", "pointers": ["I12.9"]}])
+    shown = await harness.client.get(f"/api/notes/{note_id}/pointers", headers=biller)
+    await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)
+    closed = await _link(harness, practice.admin, note_id, [{"code": "99214", "pointers": ["I12.9"]}])
+
+    assert (refused.status_code, shown.status_code) == (403, 200)
+    assert (closed.status_code, closed.json()["message"]) == (409, "this note is not open for review")

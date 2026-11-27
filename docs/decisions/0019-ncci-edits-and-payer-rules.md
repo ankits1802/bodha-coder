@@ -90,10 +90,12 @@ from one claim.
 | `g2211_replaced` (denial) | Medicare | G2211 on a claim dated 2027 or later | CY 2027 PFS final rule, 91 FR 71097-71104: "the code will no longer be payable" once B1 replaces it |
 | `level_downcode_risk` (risk) | commercial, Cigna | 99204, 99205, 99214, 99215, 99244 or 99245 from 2025-10-01 when every diagnosis on the claim is a symptom (R) or a status or encounter code (Z), patient not under one | Cigna "may adjust the E/M CPT code 99204-99205, 99214-99215, 99244-99245 to a single level lower when the encounter criteria on the claim does not support the higher-level E/M CPT code reported", excluding children under one, certain transplants and complex conditions, and behavioral health providers ([Cigna R49](https://static.cigna.com/assets/chcp/secure/pdf/resourceLibrary/clinReimPolsModifiers/R49_Evaluation_and_Management_Coding_Accuracy.pdf), effective 2025-10-01). Cigna screens claim data and targets outlier providers ([Cigna provider news, 2025-11-18](https://providernewsroom.com/cigna-healthcare/new-reimbursement-policy-for-professional-evaluation-and-management-services-claims-effective-october-1-2025/)); its algorithm is not published, so "no disease diagnosis on the claim" is Bodha's proxy. Maryland ordered Cigna to stop automatic reductions (MIA-2026-03-009, 2026-03-13); Bodha does not know the plan's state. The flag reads "Likely downcode, document MDM" |
 | `audio_only_risk_adjustment` (risk) | Medicare Advantage | an E/M with 93 or FQ from 2026-01-01 | "For CY 2027, CMS is finalizing the proposal to exclude diagnoses identified as resulting from audio-only services using modifiers '93' or 'FQ'", and CY 2027 payments use 2026 dates of service ([CY 2027 Rate Announcement](https://www.cms.gov/files/document/2027-announcement.pdf)). The request said "from 2027"; that is the payment year, so the rule starts with 2026 dates of service. The exclusion applies when no other line on the record is risk-adjustment eligible; Bodha flags the audio-only visit and leaves that judgement to the coder |
-| `nursing_initial_once` (reminder) | Medicare | 99304-99306 at POS 31 or 32 | An initial visit is one where the patient "has not received any professional services from the physician or other NPP of the same specialty who belongs to the same group practice during the stay" ([Claims Processing Manual 12 §30.6.13](https://www.cms.gov/regulations-and-guidance/guidance/manuals/downloads/clm104c12.pdf)). Bodha has no stay or patient identity across notes, so it is a reminder |
+| `initial_visit_repeated` (denial) | every plan | 99304-99306 at POS 31 or 32 when Bodha holds an earlier initial visit at POS 31 or 32 for the same patient by a provider of the same specialty (or with no specialty recorded), with no discharge (99315, 99316) dated from that visit to this one | An initial visit is one where the patient "has not received any professional services from the physician or other NPP of the same specialty who belongs to the same group practice during the stay" ([Claims Processing Manual 12 §30.6.13](https://www.cms.gov/regulations-and-guidance/guidance/manuals/downloads/clm104c12.pdf)); CPT's nursing facility guidelines define an initial service the same way, so it is not limited to Medicare. The same patient is the same practice and patient name (order, case and initials ignored) and, when both notes have one, the same date of birth. The history is Bodha's own notes: the code of each note's final code set once approved, otherwise its latest billed set. A stay that began outside Bodha is not seen. The flag carries the earlier date (`earlier`) |
 | `nursing_incident_to` (reminder) | Medicare | an E/M at POS 31 or 32 by a provider who is not an MD or DO and has a supervising physician on file | "'Incident to' E/M visits, provided in a facility setting, are not payable under the Physician Fee Schedule" (Claims Processing Manual 12 §30.6.13.E; [Benefit Policy Manual 15 §60](https://www.cms.gov/regulations-and-guidance/guidance/manuals/downloads/bp102c15.pdf)). A claim does not say it is billed incident to, so a supervised non-physician in a facility is the signal |
 
-- Medicaid has no rule yet; commercial payers other than Cigna have none.
+- Medicaid has no rule yet; commercial payers other than Cigna have none. `initial_visit_repeated`
+  is the exception: it reads Bodha's history rather than the payer and is checked with or without a
+  payer (amended 2026-11-27; it replaced the `nursing_initial_once` reminder).
 - The practice payer list (`services/payers.py`) offers `commercial`, `medicare`, `medicaid` and
   `other`. `medicare_advantage` reaches the rules only once that list offers it; `other` maps to
   no plan and gets no payer flags.
@@ -107,10 +109,22 @@ from one claim.
 - Diagnoses take the letters A to L in claim order and are written without the period, as the
   X12 837P (005010X222A1) carries them. More than 12 is refused with the note id, as is a claim
   without a procedure or a diagnosis.
-- Pointers: an E/M points to the claim's first four diagnoses; an add-on carries its primary's
-  pointers. Bodha does not record which diagnosis supports which procedure, so other procedures
-  also point to the first four, and an add-on's primary therefore has the same four; the biller
-  reorders when a payer needs a different primary diagnosis for a line.
+- Pointers (amended 2026-11-27): in note review the coder links up to four of the claim's
+  diagnoses, in order, to a procedure line (`PUT /api/notes/{id}/pointers`). A line the coder has
+  not linked keeps the default: an add-on (listed in the NCCI add-on table for the date of
+  service, with a listed primary on the claim) carries its primary's pointers, every other line
+  points to the first four diagnoses.
+- Pointer storage: the owner ruled out a migration, and no table holds claim state before
+  approval. A choice is a `decisions` row, `suggestion_key` `pointers:<code>:<diagnosis>,...` with
+  choice `accept` (an empty list returns the line to the default); the latest row per code applies.
+  Decisions are already the append-only record of what a person chose on a note and survive a new
+  analysis. Rejected: a billed code-set revision (the billed list is what the provider billed),
+  a final code-set revision before approval (remittance matching and audit samples read the latest
+  final set whatever the note's status) and the access log. `review_actions.current_claim` puts the
+  latest choice on its line and drops a diagnosis that has left the claim; approval writes the
+  pointers into the final code set (`pointers`, ICD-10-CM codes, absent for a default line). A
+  choice is keyed by the procedure code, so a line whose code changes (a new E/M level) returns to
+  the default. Auto-approval writes no pointers and its claims use the default.
 - Billing NPI: the provider's own NPI when provider details say `bills_under: individual`,
   otherwise the group NPI from the details, otherwise none. The rendering taxonomy comes from the
   details.

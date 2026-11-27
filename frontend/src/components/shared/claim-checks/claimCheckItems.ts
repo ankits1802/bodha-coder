@@ -1,5 +1,6 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
 import type { ClaimChecks, ClaimEdit, PayerFlag, PayerFlagSeverity } from "@/lib/api/types";
+import { formatCalendarDay } from "@/lib/format";
 import { CLAIM_CHECK_TEXT } from "./strings";
 
 export interface ClaimCheckItem {
@@ -33,7 +34,7 @@ function flagItem(flag: PayerFlag, index: number): ClaimCheckItem {
     tone: SEVERITY_TONES[flag.severity],
     status: WORDS.rules[flag.rule],
     codes: flag.codes,
-    detail: null,
+    detail: flag.earlier ? WORDS.earlierInitial(formatCalendarDay(flag.earlier, "year")) : null,
   };
 }
 

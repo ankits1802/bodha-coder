@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 
 from app.codes.billing_codes import parse_code_list
-from app.codes.payer_rules import Payer, PayerClaim, payer_flags, payer_for
+from app.codes.payer_rules import EarlierVisit, Payer, PayerClaim, payer_flags, payer_for, repeated_initial_visit
 
 MEDICARE = Payer("medicare")
 ADVANTAGE = Payer("medicare_advantage")
@@ -103,8 +103,8 @@ def test_medicare_advantage_audio_only_diagnoses_do_not_count_for_risk_adjustmen
     assert _flags("99213-93, E11.65", MEDICARE, "10") == []
 
 
-def test_nursing_facility_initial_visits_and_incident_to():
-    assert _flags("99306, I10", MEDICARE, "31") == [("nursing_initial_once", "reminder", ("99306",))]
+def test_nursing_facility_incident_to_and_no_initial_visit_reminder():
+    assert _flags("99306, I10", MEDICARE, "31") == []
     assert _flags("99309, I10", MEDICARE, "32", supervised_nonphysician=True) == [
         ("nursing_incident_to", "reminder", ("99309",))
     ]
@@ -115,3 +115,37 @@ def test_nursing_facility_initial_visits_and_incident_to():
 def test_an_unknown_plan_has_no_payer_flags():
     assert _flags("99214-25, G2211, 99306", Payer(None), "31") == []
     assert _flags("99214-25, G2211", Payer("medicaid")) == []
+
+
+ADMITTED = EarlierVisit(date(2026, 11, 2), "31", "99306", "Internal medicine")
+
+
+def _repeated(history, *, text: str = "99305, I10", place: str = "31", specialty: str | None = "Internal medicine"):
+    flag = repeated_initial_visit(parse_code_list(text).codes, place, NOVEMBER_2026, history, specialty=specialty)
+    return None if flag is None else flag.as_json()
+
+
+def test_a_second_initial_nursing_visit_in_the_same_stay_names_the_first():
+    assert _repeated([ADMITTED]) == {
+        "rule": "initial_visit_repeated",
+        "severity": "denial",
+        "codes": ["99305"],
+        "earlier": "2026-11-02",
+    }
+    subsequent = EarlierVisit(date(2026, 11, 9), "31", "99309", "Internal medicine")
+    discharged_before = EarlierVisit(date(2026, 10, 30), "31", "99316", "Internal medicine")
+    assert _repeated([ADMITTED, subsequent, discharged_before])["earlier"] == "2026-11-02"
+    earlier_stay = EarlierVisit(date(2026, 9, 1), "32", "99304", "Internal medicine")
+    assert _repeated([earlier_stay, discharged_before, ADMITTED])["earlier"] == "2026-11-02"
+    assert _repeated([EarlierVisit(date(2026, 11, 2), "32", "99304", None)])["earlier"] == "2026-11-02"
+
+
+def test_a_discharge_or_another_setting_specialty_or_day_starts_no_repeat():
+    for discharge_day in (date(2026, 11, 2), date(2026, 11, 10), NOVEMBER_2026):
+        assert _repeated([ADMITTED, EarlierVisit(discharge_day, "31", "99315", "Internal medicine")]) is None
+    assert _repeated([EarlierVisit(date(2026, 11, 2), "11", "99306", "Internal medicine")]) is None
+    assert _repeated([EarlierVisit(date(2026, 11, 2), "31", "99306", "Cardiology")]) is None
+    assert _repeated([EarlierVisit(NOVEMBER_2026, "31", "99306", "Internal medicine")]) is None
+    assert _repeated([ADMITTED], place="11") is None
+    assert _repeated([ADMITTED], text="99309, I10") is None
+    assert _repeated([]) is None

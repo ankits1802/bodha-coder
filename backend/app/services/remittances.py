@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, practice_prefix
@@ -16,19 +17,13 @@ from app.services.audit_log import record_access
 from app.services.payers import payer_list
 from app.services.remittance_835 import ClaimPayment, PaymentAdvice, ServicePayment, parse_835
 from app.services.remittance_matching import matching_note
-from app.services.remittance_outcomes import (
-    APPEALABLE,
-    UNMATCHED,
-    appeal_days,
-    appeal_deadline,
-    line_outcome,
-    plan_type_for,
-)
+from app.services.remittance_outcomes import APPEALABLE, UNMATCHED, line_outcome, plan_type_for
 
 __all__ = ["APPEAL_DAYS_KEY", "UploadedRemittance", "listed_plan_type", "remittance_key", "upload_remittance"]
 
 APPEAL_DAYS_KEY = "appeal_days"
 CONTENT_TYPE = "application/edi-x12"
+DAY_FORMAT = "%d %b %Y"
 
 
 @dataclass(frozen=True)
@@ -51,7 +46,8 @@ async def upload_remittance(
         raise Invalid(f"{file_name} is larger than {limit} MB")
     advices = parse_835(data)
     name = file_name.strip()[:255] or "remittance.835"
-    await _refuse_duplicate(db, store, actor.practice_id, name, data)
+    checksum = hashlib.sha256(data).hexdigest()
+    await _refuse_duplicate(db, store, actor, checksum)
     practice = await db.get_one(Practice, actor.practice_id)
     first_id = new_id()
     key = remittance_key(actor.practice_id, first_id)
@@ -67,6 +63,7 @@ async def upload_remittance(
             payer=(advice.payer_name or "")[:120] or None,
             paid_on=advice.paid_on,
             uploaded_by=actor.user.id,
+            file_sha256=checksum,
         )
         db.add(remittance)
         await db.flush()
@@ -77,23 +74,36 @@ async def upload_remittance(
     return UploadedRemittance(ids, dict(counts))
 
 
-async def _refuse_duplicate(db: AsyncSession, store: ObjectStore, practice_id: str, name: str, data: bytes) -> None:
-    keys = (
-        await db.scalars(
-            select(Remittance.file_key)
-            .where(Remittance.practice_id == practice_id, Remittance.file_name == name)
-            .distinct()
+async def _refuse_duplicate(db: AsyncSession, store: ObjectStore, actor: Actor, checksum: str) -> None:
+    await _record_missing_checksums(db, store, actor.practice_id)
+    await db.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(f"remittance:{actor.practice_id}", 0))))
+    earlier = (
+        await db.execute(
+            select(Remittance.created_at, Remittance.file_name)
+            .where(Remittance.practice_id == actor.practice_id, Remittance.file_sha256 == checksum)
+            .order_by(Remittance.created_at)
+            .limit(1)
         )
-    ).all()
+    ).first()
+    if earlier is not None:
+        day = earlier.created_at.astimezone(actor.zone).date()
+        raise Conflict(f"this file was already uploaded on {day.strftime(DAY_FORMAT)} as {earlier.file_name}")
+
+
+async def _record_missing_checksums(db: AsyncSession, store: ObjectStore, practice_id: str) -> None:
+    mine = Remittance.practice_id == practice_id
+    missing = select(Remittance.file_key).where(mine, Remittance.file_sha256.is_(None)).distinct()
+    keys = (await db.scalars(missing)).all()
     for key in keys:
-        if await store.get(key) == data:
-            raise Conflict(f"{name} was already uploaded")
+        checksum = hashlib.sha256(await store.get(key)).hexdigest()
+        await db.execute(update(Remittance).where(mine, Remittance.file_key == key).values(file_sha256=checksum))
+    if keys:
+        await db.commit()
 
 
 async def _add_lines(
     db: AsyncSession, practice: Practice, remittance: Remittance, advice: PaymentAdvice
 ) -> Counter[str]:
-    days = appeal_days(practice.setup.get(APPEAL_DAYS_KEY))
     listed = listed_plan_type(payer_list(practice), advice.payer_id, advice.payer_name)
     counts: Counter[str] = Counter()
     for claim in advice.claims:
@@ -102,7 +112,7 @@ async def _add_lines(
             outcome = line_outcome(line, claim.status)
             note_id = await matching_note(db, practice.id, claim, line)
             row = _line_row(remittance.id, claim, line, note_id=note_id, outcome=outcome)
-            row.appeal_by = appeal_deadline(advice.paid_on, plan_type, days) if outcome in APPEALABLE else None
+            row.appeal_plan_type = plan_type if outcome in APPEALABLE else None
             db.add(row)
             counts[row.status] += 1
     return counts

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from app.codes.billing_codes import MAX_POINTERS
 
 
 class Body(BaseModel):
@@ -56,6 +58,15 @@ class DecisionsBody(Body):
 
 class BilledBody(Body):
     codes: str = Field(max_length=500)
+
+
+class PointerLineBody(Body):
+    code: str = Field(min_length=5, max_length=5)
+    pointers: list[Annotated[str, Field(min_length=3, max_length=8)]] = Field(max_length=MAX_POINTERS)
+
+
+class PointersBody(Body):
+    lines: list[PointerLineBody] = Field(min_length=1, max_length=50)
 
 
 class FlagBody(Body):

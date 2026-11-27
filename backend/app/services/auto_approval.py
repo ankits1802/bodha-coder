@@ -4,8 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Conflict
 from app.core.security import digest
-from app.models import AccessLog, CodeSet, Note, Provider, utcnow
+from app.models import CodeSet, Note, Provider, utcnow
 from app.services import placement
+from app.services.audit_log import SystemActor, record_system_access
 from app.services.autonomy import provider_eligibility
 from app.services.code_sets import latest_codes, next_revision
 from app.services.finding import SEVERE_AUDIT
@@ -26,6 +27,7 @@ HASH_PREFIX = 8
 AUTO_REASON = "auto"
 AUTO_ACTOR_ID = "bodha-auto"
 AUTO_ACTOR_NAME = "Bodha (auto)"
+AUTO_ACTOR = SystemActor(AUTO_ACTOR_ID, AUTO_ACTOR_NAME)
 MATCHES = "matches"
 
 
@@ -64,16 +66,8 @@ async def auto_approve(db: AsyncSession, note: Note) -> None:
     )
     note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
     note.approved_by, note.approved_at = None, utcnow()
-    db.add(
-        AccessLog(
-            practice_id=note.practice_id,
-            actor_kind="user",
-            actor_id=AUTO_ACTOR_ID,
-            actor_name=AUTO_ACTOR_NAME,
-            action="approved",
-            note_id=note.id,
-            detail=", ".join(code.label() for code in codes),
-        )
+    record_system_access(
+        db, AUTO_ACTOR, note.practice_id, "approved", note_id=note.id, detail=", ".join(code.label() for code in codes)
     )
 
 

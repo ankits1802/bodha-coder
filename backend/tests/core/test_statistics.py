@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from app.core.statistics import chi_square_homogeneity, f1_score, wilson
+from app.core.statistics import bootstrap_ratio, chi_square_homogeneity, f1_score, wilson
 
 WILSON_BY_HAND = [
     (1, 1, 1.0, 0.206549, 1.0),
@@ -28,6 +28,46 @@ def test_no_trials_is_not_estimable_and_impossible_counts_are_refused():
     assert wilson(0, 0).as_json() == {"successes": 0, "trials": 0, "value": None, "low": None, "high": None}
     with pytest.raises(ValueError, match="not a proportion"):
         wilson(3, 2)
+
+
+def test_two_notes_give_the_range_of_their_own_ratios():
+    rate = bootstrap_ratio([(3, 4), (4, 4)])
+    assert (rate.successes, rate.trials, rate.value) == (7, 8, 0.875)
+    assert (rate.low, rate.high) == (0.75, 1.0)
+
+
+def test_one_note_has_no_spread():
+    assert bootstrap_ratio([(2, 3)]).as_json() == {
+        "successes": 2,
+        "trials": 3,
+        "value": pytest.approx(2 / 3),
+        "low": pytest.approx(2 / 3),
+        "high": pytest.approx(2 / 3),
+    }
+
+
+def test_the_bootstrap_interval_holds_the_estimate_and_narrows_with_more_notes():
+    notes = [(3, 4), (4, 4), (1, 3), (5, 5), (2, 2), (0, 1), (3, 3), (2, 4)]
+    few, many = bootstrap_ratio(notes), bootstrap_ratio(notes * 10)
+    assert few.value == many.value == pytest.approx(20 / 26)
+    for rate in (few, many):
+        assert rate.low is not None and rate.high is not None
+        assert rate.low <= rate.value <= rate.high
+    assert many.high - many.low < few.high - few.low
+
+
+def test_the_bootstrap_is_repeatable_and_refuses_impossible_counts():
+    notes = [(3, 4), (4, 4), (1, 3), (5, 5)]
+    assert bootstrap_ratio(notes) == bootstrap_ratio(notes)
+    assert bootstrap_ratio([(0, 0), (0, 0)]).as_json() == {
+        "successes": 0,
+        "trials": 0,
+        "value": None,
+        "low": None,
+        "high": None,
+    }
+    with pytest.raises(ValueError, match="part <= whole"):
+        bootstrap_ratio([(5, 4)])
 
 
 def test_f1_is_the_harmonic_mean_of_precision_and_recall():

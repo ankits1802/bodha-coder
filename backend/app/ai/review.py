@@ -27,7 +27,7 @@ from app.ai.prompts.frame import render_review_prompt
 
 __all__ = ["PROMPT_VERSION", "review_note"]
 
-PROMPT_VERSION = "2026.11.3"
+PROMPT_VERSION = "2026.11.4"
 
 logger = logging.getLogger(__name__)
 

@@ -46,6 +46,7 @@ from app.services.worklists import count_of
 
 __all__ = [
     "ACCESS_LOG_PAGE",
+    "PRACTICE_DELETED",
     "NewDocument",
     "access_log_page",
     "delete_practice",
@@ -56,6 +57,7 @@ __all__ = [
 
 logger = logging.getLogger("bodha.records")
 ACCESS_LOG_PAGE = 200
+PRACTICE_DELETED = "practice deleted"
 FIXED_DOCUMENT_STATUSES = ("exported", "reading")
 DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
@@ -193,7 +195,7 @@ async def delete_practice(
         raise Invalid("type the practice name exactly as shown to delete it")
     name = practice.name
     await _delete_practice_rows(db, practice_id)
-    record_activity(db, actor, "practice deleted", practice_id=practice_id, detail=name)
+    record_activity(db, actor, PRACTICE_DELETED, practice_id=practice_id, detail=name)
     await db.commit()
     await _remove_practice_files(store, practice_id)
 

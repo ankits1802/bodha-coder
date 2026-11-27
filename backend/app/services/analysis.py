@@ -179,6 +179,8 @@ def _adopt_patient(note: Note, outcome: ReviewOutcome) -> None:
     note.patient_name = note.patient_name or patient.name
     note.patient_age = note.patient_age if note.patient_age is not None else patient.age
     note.patient_sex = note.patient_sex or patient.sex
+    if note.patient_birth_date is None and patient.birth_date is not None and patient.birth_date <= note.service_date:
+        note.patient_birth_date = patient.birth_date
 
 
 async def fail_attempt(db: AsyncSession, analysis: Analysis, error: str, *, retry_in: timedelta | None) -> None:

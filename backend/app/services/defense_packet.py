@@ -40,6 +40,7 @@ from app.services.defense_layout import (
 from app.services.estimates import claim_estimate
 from app.services.finding import Finding
 from app.services.placement import SETTLED_STATUSES, current_findings
+from app.services.pointer_decisions import read_pointer_key
 from app.services.review_actions import current_claim, note_for
 from app.services.risk_adjustment import RISK_SUMMARY_KEY
 from app.services.routing import CHANGE_KINDS, choices_for
@@ -203,6 +204,14 @@ def _answers(request: AddendumRequest) -> tuple[tuple[str, str], ...]:
     return tuple(rows)
 
 
+def _decision_text(row: Decision, titles: Mapping[str, str]) -> str:
+    parsed = read_pointer_key(row.suggestion_key)
+    if parsed is None:
+        return f"{CHOICE_LABELS.get(row.choice, row.choice)} · {titles.get(row.suggestion_key, row.suggestion_key)}"
+    code, diagnoses = parsed
+    return f"Linked {code} to {', '.join(diagnoses)}" if diagnoses else f"Linked {code} to the default diagnoses"
+
+
 async def _history(
     db: AsyncSession, note: Note, findings: list[Finding], decisions: Sequence[Decision], names: Mapping[str, str]
 ) -> tuple[PacketEvent, ...]:
@@ -211,7 +220,7 @@ async def _history(
         PacketEvent(
             row.created_at,
             names.get(row.actor_id, ""),
-            f"{CHOICE_LABELS.get(row.choice, row.choice)} · {titles.get(row.suggestion_key, row.suggestion_key)}",
+            _decision_text(row, titles),
         )
         for row in decisions
     ]

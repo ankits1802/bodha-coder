@@ -14,6 +14,7 @@ import { RemittanceLines } from "./RemittanceLines";
 
 interface RemittanceLinesPanelProps {
   remittanceId: string;
+  windowsVersion: number;
   filter: RemittanceFilter;
   onFilter: (filter: RemittanceFilter) => void;
 }
@@ -29,8 +30,8 @@ function segmentsFor(counts: RemittanceCounts | null) {
   }));
 }
 
-export function RemittanceLinesPanel({ remittanceId, filter, onFilter }: RemittanceLinesPanelProps) {
-  const detail = useRemote(`remittance:${remittanceId}:${filter}`, () => getRemittance(remittanceId, filter));
+export function RemittanceLinesPanel({ remittanceId, windowsVersion, filter, onFilter }: RemittanceLinesPanelProps) {
+  const detail = useRemote(`remittance:${remittanceId}:${filter}:${windowsVersion}`, () => getRemittance(remittanceId, filter));
   const [drafting, setDrafting] = useState<RemittanceLine | null>(null);
   const loaded = detail.state.status === "success" ? detail.state.data : null;
   const title = loaded ? REMITTANCE_TEXT.fileTitle(loaded.remittance.file_name, loaded.remittance.payer) : REMITTANCE_TEXT.linesLabel;

@@ -1,14 +1,30 @@
 from __future__ import annotations
 
 import math
+import random
 from collections.abc import Sequence
 from dataclasses import dataclass
+from fractions import Fraction
 
 from app.core.chi_square import MIN_EXPECTED, chi_square_sf, pooled_cells
 
-__all__ = ["Z_95", "ChiSquare", "Rate", "chi_square_homogeneity", "f1_score", "wilson"]
+__all__ = [
+    "BOOTSTRAP_RESAMPLES",
+    "BOOTSTRAP_SEED",
+    "Z_95",
+    "ChiSquare",
+    "Rate",
+    "bootstrap_ratio",
+    "chi_square_homogeneity",
+    "f1_score",
+    "wilson",
+]
 
 Z_95 = 1.959963984540054
+BOOTSTRAP_RESAMPLES = 2000
+BOOTSTRAP_SEED = 20261127
+LOWER_TAIL = Fraction(25, 1000)
+UPPER_TAIL = Fraction(975, 1000)
 
 
 @dataclass(frozen=True)
@@ -48,6 +64,26 @@ def wilson(successes: int, trials: int, *, z: float = Z_95) -> Rate:
     return Rate(successes, trials, share, max(0.0, centre - half), min(1.0, centre + half))
 
 
+def bootstrap_ratio(
+    units: Sequence[tuple[int, int]], *, resamples: int = BOOTSTRAP_RESAMPLES, seed: int = BOOTSTRAP_SEED
+) -> Rate:
+    if resamples < 1:
+        raise ValueError(f"{resamples} resamples cannot give an interval")
+    if any(not 0 <= part <= whole for part, whole in units):
+        raise ValueError("every unit needs 0 <= part <= whole")
+    successes, trials = sum(part for part, _ in units), sum(whole for _, whole in units)
+    if trials == 0:
+        return Rate(successes, 0, None, None, None)
+    rng = random.Random(seed)
+    drawn = (_resampled_ratio(units, rng) for _ in range(resamples))
+    ratios = sorted(ratio for ratio in drawn if ratio is not None)
+    if not ratios:
+        return Rate(successes, trials, successes / trials, None, None)
+    low = ratios[_nearest_rank(len(ratios), LOWER_TAIL)]
+    high = ratios[_nearest_rank(len(ratios), UPPER_TAIL)]
+    return Rate(successes, trials, successes / trials, low, high)
+
+
 def f1_score(precision: float | None, recall: float | None) -> float | None:
     if precision is None or recall is None:
         return None
@@ -75,6 +111,16 @@ def chi_square_homogeneity(first: Sequence[int], second: Sequence[int]) -> ChiSq
             statistic += (observed - expected) ** 2 / expected
     degrees = len(columns) - 1
     return ChiSquare(statistic, degrees, chi_square_sf(statistic, degrees))
+
+
+def _resampled_ratio(units: Sequence[tuple[int, int]], rng: random.Random) -> float | None:
+    drawn = rng.choices(units, k=len(units))
+    whole = sum(whole for _, whole in drawn)
+    return sum(part for part, _ in drawn) / whole if whole else None
+
+
+def _nearest_rank(count: int, share: Fraction) -> int:
+    return max(math.ceil(share * count) - 1, 0)
 
 
 def _pooled_columns(first: Sequence[int], second: Sequence[int], totals: tuple[int, int]) -> list[tuple[float, float]]:
