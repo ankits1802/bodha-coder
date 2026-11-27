@@ -3,7 +3,7 @@ from typing import Any
 from httpx import ASGITransport, AsyncClient
 
 from app.core.db import get_session
-from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError
+from app.core.errors import CODE_BY_STATUS, CODE_STATUS_EXTRAS, SERVER_ERROR_MESSAGE, AppError
 from app.main import app
 
 ERROR_REF = {"$ref": "#/components/schemas/ErrorResponse"}
@@ -62,7 +62,8 @@ def test_described_errors_follow_the_route_s_dependencies():
 
 def test_every_error_class_uses_the_code_for_its_status():
     classes = _subclasses(AppError) | {AppError}
-    assert {(kind.status_code, kind.code) for kind in classes} <= set(CODE_BY_STATUS.items())
+    allowed = set(CODE_BY_STATUS.items()) | {(status, code) for code, status in CODE_STATUS_EXTRAS.items()}
+    assert {(kind.status_code, kind.code) for kind in classes} <= allowed
 
 
 async def test_an_unknown_route_or_method_answers_in_the_shared_shape():

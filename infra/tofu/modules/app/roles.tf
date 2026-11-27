@@ -93,6 +93,16 @@ data "aws_iam_policy_document" "app" {
       resources = concat(var.ses_identity_arns, ["arn:aws:ses:${var.region}:${var.account_id}:configuration-set/${var.ses_configuration_set}"])
     }
   }
+
+  dynamic "statement" {
+    for_each = var.sms_origination_number == "" ? [] : [1]
+
+    content {
+      sid       = "Texts"
+      actions   = ["sns:Publish"]
+      resources = ["*"]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "app" {

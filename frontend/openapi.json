@@ -3337,7 +3337,8 @@
               "invalid",
               "rate_limited",
               "server_error",
-              "unavailable"
+              "unavailable",
+              "plan_ended"
             ],
             "title": "Error",
             "type": "string"

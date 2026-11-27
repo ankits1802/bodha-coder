@@ -38,6 +38,7 @@ function signIn(canSendTexts: boolean): void {
     name: "Practice Admin",
     email: "admin@lakeside.example.com",
     role: "admin",
+    billing_only: false,
     practice: {
       id: "practice-1",
       name: "Lakeside Primary Care",

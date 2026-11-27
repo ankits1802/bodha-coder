@@ -208,7 +208,7 @@ offers the list and, after signing, the next request.
 Links, reminders and codes go by email or text (`services.provider_channels`). Texts are offered only
 while `Settings.can_send_texts` holds, which screens read from the signed-in `practice.can_send_texts`;
 otherwise asking by text answers 409 and a stored text preference is sent by email, or refused with 422
-when the provider has no email ([0029](decisions/0029-texts-only-when-set-up.md)).
+when the provider has no email ([0030](decisions/0030-texts-only-when-set-up.md)).
 
 Decision: [0015](decisions/0015-assignment-digests-and-provider-switch.md).
 

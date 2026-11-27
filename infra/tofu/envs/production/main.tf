@@ -65,33 +65,34 @@ module "data" {
 }
 
 module "app" {
-  source                = "../../modules/app"
-  name                  = local.name
-  environment           = local.environment
-  account_id            = var.account_id
-  region                = var.region
-  vpc_id                = module.network.vpc_id
-  vpc_cidr              = module.network.cidr
-  public_subnet_ids     = module.network.public_subnet_ids
-  private_subnet_ids    = module.network.private_subnet_ids
-  security_groups       = module.network.security_groups
-  bucket_name           = module.data.bucket_name
-  bucket_arn            = module.data.bucket_arn
-  kms_key_arn           = module.data.kms_key_arn
-  secret_arns           = module.data.secret_arns
-  ses_identity_arns     = module.data.ses_identity_arns
-  ses_configuration_set = module.data.ses_configuration_set
-  mail_from             = local.sender == "" ? "" : "Bodha Coder <${local.sender}>"
-  gemini_backend        = var.gemini_backend
-  image_tag             = var.image_tag
-  desired_count         = 1
-  public_url            = local.public_url
-  billing               = var.billing
-  site_host             = local.site_host
-  site_ready            = var.domain_live
-  google_client_id      = var.google_client_id
-  microsoft_client_id   = var.microsoft_client_id
-  yahoo_client_id       = var.yahoo_client_id
+  source                 = "../../modules/app"
+  name                   = local.name
+  environment            = local.environment
+  account_id             = var.account_id
+  region                 = var.region
+  vpc_id                 = module.network.vpc_id
+  vpc_cidr               = module.network.cidr
+  public_subnet_ids      = module.network.public_subnet_ids
+  private_subnet_ids     = module.network.private_subnet_ids
+  security_groups        = module.network.security_groups
+  bucket_name            = module.data.bucket_name
+  bucket_arn             = module.data.bucket_arn
+  kms_key_arn            = module.data.kms_key_arn
+  secret_arns            = module.data.secret_arns
+  ses_identity_arns      = module.data.ses_identity_arns
+  ses_configuration_set  = module.data.ses_configuration_set
+  mail_from              = local.sender == "" ? "" : "Bodha Coder <${local.sender}>"
+  gemini_backend         = var.gemini_backend
+  image_tag              = var.image_tag
+  desired_count          = 1
+  public_url             = local.public_url
+  billing                = var.billing
+  sms_origination_number = var.sms_origination_number
+  site_host              = local.site_host
+  site_ready             = var.domain_live
+  google_client_id       = var.google_client_id
+  microsoft_client_id    = var.microsoft_client_id
+  yahoo_client_id        = var.yahoo_client_id
 }
 
 module "watch" {

@@ -19,11 +19,11 @@ locals {
     { name = "S3_BUCKET", value = var.bucket_name },
     { name = "S3_REGION", value = var.region },
     { name = "S3_SERVER_SIDE_ENCRYPTION", value = "" },
-    { name = "SMS_TRANSPORT", value = "outbox" },
+    { name = "SMS_TRANSPORT", value = var.sms_origination_number == "" ? "outbox" : "sns" },
     { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
-  ], local.legal_links, local.billing_environment, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  ], var.sms_origination_number == "" ? [] : [{ name = "SNS_ORIGINATION_NUMBER", value = var.sms_origination_number }], local.legal_links, local.billing_environment, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
   stripe_on = length(var.billing.stripe_prices) > 0
   paypal_on = var.billing.paypal_client_id != ""
   billing_environment = concat(

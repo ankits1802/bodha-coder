@@ -2444,7 +2444,7 @@ export interface components {
             visits: number;
         };
         ErrorResponse: {
-            error: "bad_request" | "unauthorized" | "forbidden" | "not_found" | "method_not_allowed" | "conflict" | "invalid" | "rate_limited" | "server_error" | "unavailable";
+            error: "bad_request" | "unauthorized" | "forbidden" | "not_found" | "method_not_allowed" | "conflict" | "invalid" | "rate_limited" | "server_error" | "unavailable" | "plan_ended";
             message: string;
         };
         EstimateLine: {

@@ -46,6 +46,13 @@ for `stripe-secret-key`, `stripe-webhook-secret` and `paypal-client-secret`. The
 `essentials_annual`, `professional_monthly`, `professional_annual`, plus `paypal_client_id`,
 `paypal_webhook_id` and `paypal_environment`), apply and force a new deployment.
 
+## Texts
+
+Texts stay off until a registered toll-free number exists: request one in AWS End User Messaging
+SMS (us-east-1), complete its toll-free verification, then set `sms_origination_number` (E.164,
+for example `+18885550100`) and apply. That switches `SMS_TRANSPORT` to `sns`, passes the number and
+grants `sns:Publish`; the app then offers texts again.
+
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
 

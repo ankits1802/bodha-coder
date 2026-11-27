@@ -12,7 +12,8 @@ CODE_BY_STATUS = {
     500: "server_error",
     503: "unavailable",
 }
-ERROR_CODES = tuple(CODE_BY_STATUS.values())
+CODE_STATUS_EXTRAS = {"plan_ended": 403}
+ERROR_CODES = (*CODE_BY_STATUS.values(), *CODE_STATUS_EXTRAS)
 SERVER_ERROR_MESSAGE = "something went wrong on our side; try again"
 
 

@@ -49,7 +49,7 @@ async def test_a_practice_past_its_renewal_date_is_refused_outside_billing_but_h
     assert (await harness.client.patch(f"/api/hq/practices/{practice.id}", headers=hq, json=patch)).status_code == 204
     refused = await harness.client.get("/api/today", headers=practice.admin)
     assert refused.status_code == 403
-    assert refused.json() == {"error": "forbidden", "message": ENDED}
+    assert refused.json() == {"error": "plan_ended", "message": ENDED}
     assert (await harness.client.get("/api/plan", headers=practice.admin)).status_code == 200
     login = await harness.client.post("/api/auth/login", json={"email": CODER, "password": PASSWORD})
     assert login.status_code == 403 and login.json()["message"] == ENDED

@@ -22,6 +22,7 @@ export interface DownloadedFile {
 
 export const SIGN_IN_PATH = "/sign-in";
 const REFRESH_PATH = "/api/auth/refresh";
+const PLAN_ENDED = "plan_ended";
 
 let sessionEndedHandler: () => void = () => {
   window.location.replace(SIGN_IN_PATH);
@@ -82,9 +83,19 @@ export function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
+async function refusedForEndedPlan(response: Response): Promise<boolean> {
+  if (response.status !== 403) return false;
+  const body = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as { error?: unknown } | null;
+  return body?.error === PLAN_ENDED;
+}
+
 async function authorised(path: string, options: RequestOptions): Promise<Response> {
   const auth = options.auth ?? "session";
   const response = await send(path, options, auth);
+  if (auth === "session" && (await refusedForEndedPlan(response)) && !(await refreshSession())) endSession();
   if (response.status !== 401 || auth !== "session") return response;
   if (await refreshSession()) {
     const retried = await send(path, options, auth);

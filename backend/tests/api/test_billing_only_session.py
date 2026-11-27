@@ -31,7 +31,7 @@ from tests.builders import (
 ADMIN = "admin@lakeside.example.com"
 CODER = "sam@lakeside.example.com"
 ENDED_ON = date(2025, 12, 31)
-ENDED = {"error": "forbidden", "message": "This practice's plan ended on 2025-12-31"}
+ENDED = {"error": "plan_ended", "message": "This practice's plan ended on 2025-12-31"}
 CHECKOUT = {"plan": "essentials", "interval": "monthly", "provider": "stripe"}
 BILLING_SESSION_ROUTES = {
     ("GET", "/api/auth/me"),

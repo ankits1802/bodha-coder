@@ -88,6 +88,10 @@ variable "billing" {
   })
 }
 
+variable "sms_origination_number" {
+  type = string
+}
+
 variable "site_host" {
   type = string
 }

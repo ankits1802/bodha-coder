@@ -373,7 +373,7 @@ admin's email, the practice id, the plan and the provider count.
 - Register an origination identity in AWS End User Messaging SMS: a toll-free number with
   completed toll-free verification, or a 10DLC campaign, for US recipients. Set
   `SNS_ORIGINATION_NUMBER` to that number in E.164 form (`+18885550100`); every text is sent from it.
-- Texts are offered only when they can be sent ([0029](decisions/0029-texts-only-when-set-up.md)):
+- Texts are offered only when they can be sent ([0030](decisions/0030-texts-only-when-set-up.md)):
   `SMS_TRANSPORT=sns` with `SNS_ORIGINATION_NUMBER`, or `twilio` with `TWILIO_ACCOUNT_SID`,
   `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`, or any transport with `APP_ENVIRONMENT=development`. Otherwise
   the text choice is hidden, a request to text a provider answers 409, and a provider who prefers texts

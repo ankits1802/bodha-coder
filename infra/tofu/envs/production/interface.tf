@@ -91,6 +91,16 @@ variable "domain_mail_live" {
   }
 }
 
+variable "sms_origination_number" {
+  type    = string
+  default = ""
+
+  validation {
+    condition     = var.sms_origination_number == "" || can(regex("^[+]1[0-9]{10}$", var.sms_origination_number))
+    error_message = "sms_origination_number is a US number in E.164 form, such as +18885550100."
+  }
+}
+
 variable "google_client_id" {
   type    = string
   default = ""

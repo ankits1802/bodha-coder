@@ -1,4 +1,4 @@
-# 0029 Texts only when they can be sent
+# 0030 Texts only when they can be sent
 
 Date: 2026-11-27
 

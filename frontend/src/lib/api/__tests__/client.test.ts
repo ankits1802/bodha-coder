@@ -67,6 +67,27 @@ describe("API client session handling", () => {
     expect(getAccessToken()).toBeNull();
   });
 
+  it("renews the session when the practice's plan has ended, so the app can move to the plan page", async () => {
+    const ended403 = json(403, { error: "plan_ended", message: "This practice's plan ended on 2026-11-01" });
+    fetchMock.mockResolvedValueOnce(ended403).mockResolvedValueOnce(json(200, { access_token: "billing-token", user: { ...coder, billing_only: true } }));
+
+    await expect(request("/api/today")).rejects.toMatchObject({ status: 403 });
+
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/auth/refresh");
+    expect(getAccessToken()).toBe("billing-token");
+    expect(ended).not.toHaveBeenCalled();
+  });
+
+  it("ends the session when the plan has ended and the session cannot be renewed", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(403, { error: "plan_ended", message: "This practice's plan ended on 2026-11-01" }))
+      .mockResolvedValueOnce(json(403, { error: "plan_ended", message: "This practice's plan ended on 2026-11-01" }));
+
+    await expect(request("/api/today")).rejects.toMatchObject({ status: 403 });
+
+    expect(ended).toHaveBeenCalledTimes(1);
+  });
+
   it("does not refresh a second time when the retry is also refused", async () => {
     fetchMock
       .mockResolvedValueOnce(json(401, { error: "unauthorized", message: "session expired" }))

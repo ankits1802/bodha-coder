@@ -57,6 +57,8 @@ class ProviderActor:
 
 
 class PlanEnded(Forbidden):
+    code = "plan_ended"
+
     def __init__(self, ended_on: date) -> None:
         super().__init__(f"This practice's plan ended on {ended_on.isoformat()}")
 
