@@ -19,7 +19,7 @@ export const HELP_TEXT = {
         "The review queue lists open notes by due time in four lanes: Ready to approve, Needs a coder, Waiting on provider and Compliance.",
         "Open a note to see each suggested code beside the evidence in the note. Accept or keep each suggestion and the claim updates as you decide.",
         "Approve when the claim is right. Notes whose codes already match the note can be approved together from the queue.",
-        "Assign notes to yourself, or as an admin to anyone, and choose Mine to see only your notes. The daily summary email is turned on or off on the Security page.",
+        "Assign notes to yourself, or as an admin to anyone, and choose Mine to see only your notes. The daily summary email is turned on or off on your Account page, under your name in the sidebar.",
         "Search finds any note, including approved and exported ones, by patient, provider, file name or billed or final code.",
       ],
     },
@@ -42,7 +42,7 @@ export const HELP_TEXT = {
     billing: {
       title: "Billing",
       paragraphs: [
-        "Ready to bill lists approved claims. Export them as a CSV file for your billing system. Every export is recorded.",
+        "Billing, Ready to bill lists approved claims. Export them as a CSV file for your billing system. Every export is recorded.",
         "An approved note can be reopened until it has been exported.",
       ],
     },
@@ -51,7 +51,7 @@ export const HELP_TEXT = {
       paragraphs: [
         "Some roles sign in with a six-digit code from an authenticator app as well as a password.",
         "When you set up two-step verification you get ten recovery codes. Each one works once in place of the six-digit code. Keep them somewhere safe.",
-        "Make new recovery codes on the Security page with a current six-digit code. The old codes stop working.",
+        "Make new recovery codes on your Account page with a current six-digit code. The old codes stop working.",
         "If you lose both your device and your codes, ask an admin to reset your two-step verification.",
       ],
     },

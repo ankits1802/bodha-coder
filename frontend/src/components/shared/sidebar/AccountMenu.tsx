@@ -1,17 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Avatar } from "@/components/ui/Avatar";
-import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
-import type { User } from "@/lib/api/types";
+import { MenuButton } from "@/components/ui/MenuButton";
+import type { PracticeChoice, User } from "@/lib/api/types";
 import { ROLE_LABELS } from "@/lib/labels";
-import { ACCOUNT_PATH } from "@/lib/paths";
-import { canReach } from "@/lib/roles";
 import { signOut } from "@/lib/session/signOut";
+import { LeavePracticeDialog } from "../practices/LeavePracticeDialog";
 import { SHARED_TEXT } from "../strings";
 import { startTour } from "../tour/startTour";
-import { TOUR_TEXT } from "../tour/strings";
 import { REPLAY_TARGET } from "../tour/tourSteps";
+import { accountMenuItems } from "./accountMenuItems";
+import { usePracticeSwitch } from "./usePracticeSwitch";
 
 interface AccountMenuProps {
   user: User;
@@ -23,21 +24,21 @@ const EXPANDED =
   "flex w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-nav px-2.5 py-1.5 text-left hover:bg-nav-hover aria-expanded:bg-nav-active";
 const COLLAPSED = "mx-auto flex size-9 cursor-pointer items-center justify-center rounded-nav hover:bg-nav-hover aria-expanded:bg-nav-active";
 
-export function accountItems(user: User, open: (path: string) => void): MenuItem[] {
-  const words = SHARED_TEXT.account;
-  const items: MenuItem[] = [];
-  if (canReach(user, "account")) items.push({ key: "account", label: words.page, onSelect: () => open(ACCOUNT_PATH) });
-  if (!user.billing_only) items.push({ key: "tour", label: TOUR_TEXT.take, onSelect: startTour });
-  items.push({ key: "signOut", label: SHARED_TEXT.signOut, onSelect: () => void signOut() });
-  return items;
-}
-
 export function AccountMenu({ user, collapsed, onNavigate }: AccountMenuProps) {
   const router = useRouter();
+  const currentId = user.practice?.id ?? null;
+  const switching = usePracticeSwitch(currentId);
+  const [leaving, setLeaving] = useState<PracticeChoice | null>(null);
   const role = ROLE_LABELS[user.role];
-  const items = accountItems(user, (path) => {
-    onNavigate();
-    router.push(path);
+  const items = accountMenuItems(user, {
+    open: (path) => {
+      onNavigate();
+      router.push(path);
+    },
+    switchTo: (practiceId) => void switching.choose(practiceId),
+    leave: setLeaving,
+    tour: startTour,
+    signOut: () => void signOut(),
   });
   const trigger = collapsed ? (
     <Avatar name={user.name} />
@@ -57,9 +58,16 @@ export function AccountMenu({ user, collapsed, onNavigate }: AccountMenuProps) {
         label={SHARED_TEXT.account.menu(user.name, role)}
         items={items}
         align="auto"
+        disabled={switching.pending}
         trigger={trigger}
         triggerClassName={collapsed ? COLLAPSED : EXPANDED}
       />
+      {switching.error ? (
+        <span role="alert" className="block px-2.5 pt-1 text-footnote text-bad-text">
+          {switching.error}
+        </span>
+      ) : null}
+      <LeavePracticeDialog practice={leaving} currentId={currentId} onClose={() => setLeaving(null)} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Role } from "@/lib/api/types";
-import { SECURITY_SETTINGS_PATH, SETUP_PATH, TEAM_PATH } from "@/lib/paths";
+import { ACCESS_LOG_PATH, SECURITY_SETTINGS_PATH, SETUP_PATH, TEAM_PATH } from "@/lib/paths";
 import { PLAN_PATH, canReach, type Area, type SessionUser } from "@/lib/roles";
 import { SHARED_TEXT } from "../strings";
 import type { NavIconName } from "./NavIcon";
@@ -37,6 +37,7 @@ const BILLING_TABS: readonly NavTab[] = [
 const INSIGHT_TABS: readonly NavTab[] = [
   { key: "overview", area: "insights", href: "/insights", label: tabs.overview },
   { key: "quality", area: "compliance", href: "/insights/quality", label: tabs.quality },
+  { key: "accessLog", area: "accessLog", href: ACCESS_LOG_PATH, label: tabs.accessLog },
 ];
 
 const SETTINGS_TABS: readonly NavTab[] = [

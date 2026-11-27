@@ -85,6 +85,7 @@ export const SHARED_TEXT = {
     remittances: "Remittances",
     overview: "Overview",
     quality: "Quality",
+    accessLog: "Access log",
     setup: "Setup",
     team: "Team",
     plan: "Plan",

@@ -21,8 +21,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/lib/api/auth", () => ({
-  FORGOT_PASSWORD_PATH: "/forgot-password",
-  NEW_PRACTICE_PATH: "/practices/new",
+  FORGOT_PASSWORD_PATH: "/forgot-password", NEW_PRACTICE_PATH: "/practices/new",
   SIGN_UP_PATH: "/sign-up",
   providerStartPath: (provider: string) => `/api/auth/${provider}/start`,
   isSignedIn: (result: object) => "access_token" in result,

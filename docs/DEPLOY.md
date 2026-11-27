@@ -319,9 +319,9 @@ under the same email and the same Google, Microsoft or Yahoo account, and signs 
 
 ### Plans and billing settings
 
-Practices choose a plan and pay by card (Stripe) or PayPal on `/plan`
+Practices choose a plan and pay by card (Stripe) or PayPal on `/settings/plan`
 ([0028](decisions/0028-subscription-billing.md)). A processor is offered only when its credentials and
-all four of its price ids are set; with none set, `/plan` shows the plans without a way to pay and HQ
+all four of its price ids are set; with none set, `/settings/plan` shows the plans without a way to pay and HQ
 sets plans by hand as before.
 
 | Setting | Default | Meaning |

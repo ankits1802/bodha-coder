@@ -53,6 +53,20 @@ control uses the action colour.
 | Practice switcher | At the top of the sidebar, only for a person in two or more practices: the current practice's name with a downward chevron (its initials in a small tile when the sidebar is collapsed) opens a menu of the practice names with the current one checked. Focus starts on the current practice; arrow keys move, Enter chooses, Escape or Tab closes and returns focus. Choosing another practice reloads the app on that practice's home. |
 | Date picker | A text field showing the day as the app writes it (27 Nov 2026) with a calendar button. Typed days are read day first (27/11/2026), as ISO or in the written form; a day that cannot be read or lies outside the allowed range turns the field red when it loses focus and is not passed on. The calendar starts weeks on Monday, rings today, fills the chosen day in dark, disables days outside the range, and offers month and year lists and Today. Arrows move by day and week, Page Up and Page Down by month (with Shift by year), Home and End to the ends of the week, Enter picks, Escape closes; focus returns to the calendar button. A date range keeps its end on or after its start. |
 
+## Navigation
+
+The sidebar holds one entry per area a role works in ([0041](decisions/0041-streamlined-navigation-and-first-day.md)).
+Pages that belong together are tabs of one entry, not entries of their own.
+
+| Rule | How |
+|---|---|
+| Entries | Admin: Today, Upload notes, Review queue, Compliance, Billing, Insights, Settings. Compliance: Today, Review queue, Compliance, Insights. Coder: Today, Upload notes, Review queue. CDI: Today, Review queue. Biller: Today, Billing. Viewer: Today, Insights. The inbox entry, with its unread count, goes after Today for every practice role. The practice switcher and Help are not entries |
+| Area tabs | Billing (Ready to bill, Remittances), Insights (Overview, Quality, Access log) and Settings (Setup, Team, Plan, Security) show a tab row above the page, drawn like a segmented control (`components/ui/Tabs`). Each tab is its own address; arrow keys, Home and End move focus and Enter or Space opens a tab, so arrowing never loads a page. A role sees only the tabs it may open, the entry opens the first of them, and an area with one tab shows no row |
+| Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, Take the tour and Sign out. A billing-only session offers Sign out only |
+| Today | The one primary button follows the role: Start reviewing (a coder's own next note, else an unassigned one), Send questions (CDI), Review compliance, Start billing; an admin gets Start reviewing once the practice has notes. Open blind coding assigned to the person is listed under Assigned to you, with a link to Training |
+| First steps | Until every step is done, an admin's Today starts with Get set up: providers (Import CSV, Add provider), payers (Add payer), the checks as switches with Save checks, Invite people (one form with a row per person), Use recommended (two-step for every role, sign-out after 15 minutes, the access log kept 7 years) and Choose a plan. Each step's name links to its place in Settings and carries the setup marker; the next open step holds the primary button while the practice has no notes. Hide appears once providers are in |
+| Forms | A field's optional marker is read after a pause ("NPI, optional"). The provider dialog shows name, credential, NPI, usual place and email; specialty, questions by text, active and credentialing sit behind More, which opens by itself when one of its fields needs fixing |
+
 ## Feedback and flow
 
 A reversible action (approve, approve all) happens at once and offers Undo in a toast at the bottom
@@ -73,13 +87,13 @@ The first sign-in to each console opens a guided tour of every area the person's
 
 | Rule | How |
 |---|---|
-| Spotlight | The page dims with the scrim colour except a ring around the real element (its sidebar entry, the search action or the account area's "Take the tour"), padded 6 px with the field radius and a white 2 px outline. Each area's page opens behind its step |
+| Spotlight | The page dims with the scrim colour except a ring around the real element (its sidebar entry, the search action or the account menu on the person's name), padded 6 px with the field radius and a white 2 px outline. Each area's page opens behind its step |
 | Card | White panel, 20 rem wide or the screen less 2 rem: "3 of 12", a headline title, one line of at most twelve words, Skip tour (plain) at the left and Back (secondary) and Next or Done (primary, the only purple) at the right. No helper copy beyond the line |
 | Placement | Right of the target, else below, above or left, wherever the whole card fits with 16 px to spare; it never covers the target. With no room, or when a step has no element (welcome, note review), the card is centred over the dimmed page |
 | Keyboard | Focus starts on Next and stays in the card; Right and Left move, Enter moves on, Escape skips. Each new step is read out with "highlighted" when an element is lit |
 | Small screens | Below the sidebar breakpoint the menu opens first and the card sits below or above the entry |
 | Motion | The ring and card slide with `transform` only under `motion-safe`; reduced motion jumps and scrolls without smoothing |
-| Replay | "Take the tour" on Help and in the account area (a compass icon in the collapsed sidebar) |
+| Replay | "Take the tour" on Help and in the account menu |
 
 ## Motion and haptics
 
@@ -117,8 +131,8 @@ The public page at `/` (`features/landing`) follows the rules above with these a
 
 | Rule | How |
 |---|---|
-| Plan cards | `PlanCard` is shared by `/plan` and `/pricing`: name, price in whole dollars with its unit (per provider / month or / year, Free for the trial length, Custom), and the limits as a list. The Monthly / Annual segmented control names the months a year saves inside the Annual segment |
-| Choosing | On `/plan` the two plans bought online are native radios drawn as cards (the whole card is the label; checked and focus rings from `OPTION_CARD`); one primary "Choose plan" acts on the choice and opens "Pay with" (Card via Stripe, PayPal) only when both are set up. A subscriber sees "Manage billing" instead (primary for Stripe; secondary beside a danger "Cancel at period end" for PayPal, which confirms first). Enterprise is a secondary "Contact sales" |
+| Plan cards | `PlanCard` is shared by `/settings/plan` and `/pricing`: name, price in whole dollars with its unit (per provider / month or / year, Free for the trial length, Custom), and the limits as a list. The Monthly / Annual segmented control names the months a year saves inside the Annual segment |
+| Choosing | On `/settings/plan` the two plans bought online are native radios drawn as cards (the whole card is the label; checked and focus rings from `OPTION_CARD`); one primary "Choose plan" acts on the choice and opens "Pay with" (Card via Stripe, PayPal) only when both are set up. A subscriber sees "Manage billing" instead (primary for Stripe; secondary beside a danger "Cancel at period end" for PayPal, which confirms first). Enterprise is a secondary "Contact sales" |
 | Status | The plan's standing is a dot and a word (Trial, Active, Payment due, Ending, Canceled); usage reads `3 of 5` |
 | Banner | Admins see one inline alert at the top of the content for a trial's last days or a failed payment, with a link to `/plan` and "Hide until tomorrow"; it is not shown on `/plan` |
 | Pricing page | `/pricing` uses the landing nav (section links point back to `/`) and the landing type scale; "Start free trial" is primary on the trial card only, secondary on the paid cards, and Enterprise opens the demo request. Plan names and monthly prices arrive in the server's HTML with Product and Offer structured data for the two paid plans; when the server cannot reach the API, the cards load in the browser as before |

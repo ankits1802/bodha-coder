@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Panel } from "@/components/ui/Panel";
+import { StepMark } from "@/components/ui/StepMark";
 import { setupSectionPath } from "@/lib/paths";
 import type { PracticeSetup } from "@/lib/api/types";
 import { NAV_ORDER, markerFor, type SectionMarker } from "./setupModel";
@@ -7,30 +8,7 @@ import { SETUP_TEXT, type SetupNavKey } from "./strings";
 
 function Marker({ marker }: { marker: SectionMarker }) {
   if (marker === "none") return <span aria-hidden="true" className="size-4.5 flex-none" />;
-  const text = SETUP_TEXT.marker[marker];
-  if (marker === "complete") {
-    return (
-      <span className="flex size-4.5 flex-none items-center justify-center rounded-full bg-ok">
-        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-          <path d="M2 5.2l2 2L8 2.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-white" />
-        </svg>
-        <span className="sr-only">{text}</span>
-      </span>
-    );
-  }
-  if (marker === "attention") {
-    return (
-      <span className="flex size-4.5 flex-none items-center justify-center rounded-full bg-warn text-caption font-bold text-white">
-        <span aria-hidden="true">!</span>
-        <span className="sr-only">{text}</span>
-      </span>
-    );
-  }
-  return (
-    <span className="m-px size-4 flex-none rounded-full shadow-option">
-      <span className="sr-only">{text}</span>
-    </span>
-  );
+  return <StepMark state={marker} label={SETUP_TEXT.marker[marker]} />;
 }
 
 interface SetupNavProps {

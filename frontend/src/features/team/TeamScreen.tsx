@@ -11,18 +11,20 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useTeam } from "@/hooks/useTeam";
 import { accessLogPath } from "@/lib/paths";
 import { useSession } from "@/lib/session/useSession";
 import { TEAM_TEXT } from "./strings";
 import { TeamTable } from "./TeamTable";
-import { ROLE_FILTERS, countIn, inFilter, isRoleFilter, seatsUsed, type RoleFilter } from "./teamModel";
+import { ROLE_FILTERS, activityRange, countIn, inFilter, isRoleFilter, seatsUsed, type RoleFilter } from "./teamModel";
 import { useTeamActions } from "./useTeamActions";
 
 export function TeamScreen() {
   const remote = useTeam();
   const router = useRouter();
+  const today = usePracticeToday();
   const { user } = useSession();
   const [sent, setSent] = useState<string | null>(null);
   const query = useQueryParams();
@@ -74,7 +76,7 @@ export function TeamScreen() {
               onRole={(member, role) => void actions.changeRole(member, role)}
               onConfirm={actions.openConfirm}
               onSend={(kind, member) => void actions.send(kind, member)}
-              onActivity={(member) => router.push(accessLogPath(member.id))}
+              onActivity={(member) => router.push(accessLogPath(member.id, activityRange(today)))}
             />
           )}
         </RemoteView>

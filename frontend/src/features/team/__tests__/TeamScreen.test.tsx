@@ -65,7 +65,7 @@ describe("TeamScreen", () => {
     const user = userEvent.setup();
     render(<TeamScreen />);
     await choose("Sam Patel", "Activity");
-    expect(navigation.push).toHaveBeenCalledWith("/settings/security?user=user-sam");
+    expect(navigation.push).toHaveBeenCalledWith(expect.stringMatching(/^\/insights\/access-log\?user=user-sam&start=\d{4}-\d{2}-\d{2}&end=\d{4}-\d{2}-\d{2}$/));
     await user.click(screen.getByRole("button", { name: "More for Practice Admin" }));
     expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Activity"]);
   });

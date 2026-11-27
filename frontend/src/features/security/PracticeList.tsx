@@ -1,3 +1,4 @@
+import { PRACTICE_TEXT } from "@/components/shared/practices/strings";
 import { Button } from "@/components/ui/Button";
 import type { PracticeChoice } from "@/lib/api/types";
 import { ROLE_LABELS } from "@/lib/labels";
@@ -24,8 +25,8 @@ export function PracticeList({ practices, currentId, onLeave }: PracticeListProp
               {practice.id === currentId ? words.current(ROLE_LABELS[practice.role]) : ROLE_LABELS[practice.role]}
             </span>
           </span>
-          <Button size="sm" variant="plain" aria-label={words.leaveFor(practice.name)} onClick={() => onLeave(practice)}>
-            {words.leave}
+          <Button size="sm" variant="plain" aria-label={PRACTICE_TEXT.leaveFor(practice.name)} onClick={() => onLeave(practice)}>
+            {PRACTICE_TEXT.leave}
           </Button>
         </li>
       ))}

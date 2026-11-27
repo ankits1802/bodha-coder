@@ -1,5 +1,5 @@
 import type { TourKey, TourRecord } from "@/lib/api/types";
-import { SECURITY_SETTINGS_PATH } from "@/lib/paths";
+import { ACCESS_LOG_PATH } from "@/lib/paths";
 import { canDo, canReach, canSearch, type SessionUser } from "@/lib/roles";
 import type { NavIconName } from "../sidebar/NavIcon";
 import { navFor, type NavItem } from "../sidebar/navItems";
@@ -45,13 +45,13 @@ function reviewSteps(user: SessionUser): TourStep[] {
 }
 
 function accessLogSteps(user: SessionUser, item: NavItem): TourStep[] {
-  const reachable = item.tabs?.some((tab) => tab.href === SECURITY_SETTINGS_PATH) ?? false;
-  return reachable && canDo(user.role, "manageSecurity") ? [extraStep("accessLog", item.href, SECURITY_SETTINGS_PATH)] : [];
+  const reachable = item.tabs?.some((tab) => tab.href === ACCESS_LOG_PATH) ?? false;
+  return reachable && canDo(user.role, "readAccessLog") ? [extraStep("accessLog", item.href, ACCESS_LOG_PATH)] : [];
 }
 
 const FOLLOW_UPS: Readonly<Record<string, (user: SessionUser, item: NavItem) => TourStep[]>> = {
   queue: reviewSteps,
-  settings: accessLogSteps,
+  insights: accessLogSteps,
 };
 
 function stepsForArea(item: NavItem, user: SessionUser): TourStep[] {

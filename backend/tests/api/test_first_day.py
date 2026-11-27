@@ -40,7 +40,7 @@ async def test_saving_the_checks_and_the_security_marks_each_first_step_reviewed
     kept = await harness.client.put("/api/practice/checks", headers=practice.admin, json={"checks": CHECKS})
     assert kept.status_code == 204
     assert await first_run(harness, practice.admin) == {"checks": True, "security": False, "dismissed": False}
-    recommended = {"mfa_roles": ALL_ROLES, "idle_minutes": 15, "access_log_years": 6}
+    recommended = {"mfa_roles": ALL_ROLES, "idle_minutes": 15, "access_log_years": 7}
     saved = await harness.client.put("/api/practice/security", headers=practice.admin, json=recommended)
     assert saved.status_code == 204
     assert await first_run(harness, practice.admin) == {"checks": True, "security": True, "dismissed": False}

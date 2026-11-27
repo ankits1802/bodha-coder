@@ -1,4 +1,4 @@
-import type { CheckKey, SetupSectionKey } from "@/lib/api/types";
+import type { SetupSectionKey } from "@/lib/api/types";
 
 export type SetupNavKey = SetupSectionKey | "providers" | "checks" | "intake" | "mips";
 
@@ -81,14 +81,6 @@ export const SETUP_TEXT = {
     title: "Checks",
     save: "Save checks",
     saved: "Checks saved",
-    labels: {
-      em: "Visit level (E/M)",
-      icd: "Diagnoses (ICD-10)",
-      cdi: "Questions for providers",
-      audit: "Audit risk",
-      mips: "Quality measures (MIPS)",
-      hcc: "Risk adjustment (HCC)",
-    } satisfies Record<CheckKey, string>,
   },
 } as const;
 

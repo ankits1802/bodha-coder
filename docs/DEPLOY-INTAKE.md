@@ -12,7 +12,7 @@ s3://<bucket>/practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<file
 
 | Part | Rule |
 |---|---|
-| practice id | shown as the watched folder in Practice setup, Automatic intake |
+| practice id | the practice's id, known to Bodha's operators; Settings, Setup, Automatic intake tells the practice only whether its PDFs are being read, never the storage path ([0041](decisions/0041-streamlined-navigation-and-first-day.md)) |
 | provider folder | a name the admin maps to a provider there (letters, digits, `.`, `-`, `_`); `processed` and `rejected` are reserved |
 | `YYYY-MM-DD` | the date of service; a future date is refused |
 | file | a PDF. The billed CPT can be in the name as in a manual upload (`2026-11-20 - 99214 - Progress.pdf`). Name files without patient details (no names, dates of birth or record numbers): Bodha reads the patient from the note. The first poll that sees a file, about a minute after it lands, renames it to the SHA-256 of its content (`<sha256> - 99214.pdf` keeps a CPT code from the name), so a name lives at most one poll, and only the new name reaches the note and the reason files |
