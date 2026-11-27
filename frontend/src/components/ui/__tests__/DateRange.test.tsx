@@ -38,7 +38,7 @@ describe("DateRange", () => {
     );
     expect(screen.getByRole("textbox", { name: "From" })).toHaveValue("10 Nov 2026");
     expect(screen.queryByText("From", { selector: "label" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Choose date To" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose to" }));
     expect(screen.getByRole("button", { name: "Monday 9 November 2026" })).toBeDisabled();
   });
 
