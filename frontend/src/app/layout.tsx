@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { SHARED_TEXT } from "@/components/shared/strings";
 import { siteUrl } from "@/lib/site";
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  await connection();
   return (
     <html lang="en" className={inter.variable}>
       <body>{children}</body>
