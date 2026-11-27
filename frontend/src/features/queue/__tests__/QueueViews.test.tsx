@@ -86,9 +86,12 @@ describe("queue views", () => {
 
   it("deletes a saved view", async () => {
     vi.mocked(deleteQueueView).mockResolvedValue(undefined);
+    vi.mocked(getQueueViews).mockResolvedValueOnce(VIEWS).mockResolvedValue({ ...VIEWS, saved: [] });
     render(<QueueScreen />);
     fireEvent.click(await screen.findByRole("button", { name: "Saved views" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete Big changes" }));
     await waitFor(() => expect(deleteQueueView).toHaveBeenCalledWith("view-1"));
+    await waitFor(() => expect(screen.queryByRole("radio", { name: "Big changes" })).not.toBeInTheDocument());
+    expect(getQueueViews).toHaveBeenCalledTimes(2);
   });
 });
