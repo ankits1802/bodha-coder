@@ -53,6 +53,16 @@ SMS (us-east-1), complete its toll-free verification, then set `sms_origination_
 for example `+18885550100`) and apply. That switches `SMS_TRANSPORT` to `sns`, passes the number and
 grants `sns:Publish`; the app then offers texts again.
 
+## HQ host
+
+Set `admin_subdomain` (for example `admin`) and apply: a certificate for both hosts is created and
+`tofu output dns_records` adds its validation CNAME and the `admin` CNAME to CloudFront. When that
+certificate is `ISSUED`, set `admin_live = true` and apply; CloudFront then answers for both hosts
+with it, `ADMIN_URL` reaches the api, worker and web tasks, and a release (or forced deployment)
+puts it in effect. Register `https://admin.<domain>/api/auth/<provider>/callback` with each sign-in
+provider, then invite owners with a one-off task running
+`python -m app.scripts.invite_hq "Full Name <email>" ...`.
+
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
 

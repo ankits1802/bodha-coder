@@ -82,6 +82,21 @@ variable "billing" {
   }
 }
 
+variable "admin_subdomain" {
+  type    = string
+  default = ""
+}
+
+variable "admin_live" {
+  type    = bool
+  default = false
+
+  validation {
+    condition     = !var.admin_live || var.admin_subdomain != ""
+    error_message = "admin_live needs admin_subdomain."
+  }
+}
+
 variable "domain_mail_live" {
   type    = bool
   default = false

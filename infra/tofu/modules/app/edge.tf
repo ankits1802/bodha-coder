@@ -127,10 +127,31 @@ resource "aws_acm_certificate_validation" "site" {
   certificate_arn = aws_acm_certificate.site[0].arn
 }
 
+resource "aws_acm_certificate" "edge" {
+  count                     = var.admin_host == "" ? 0 : 1
+  domain_name               = var.site_host
+  subject_alternative_names = [var.admin_host]
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "edge" {
+  count           = var.admin_ready ? 1 : 0
+  certificate_arn = aws_acm_certificate.edge[0].arn
+}
+
+locals {
+  edge_hosts       = var.site_ready ? concat([var.site_host], var.admin_ready ? [var.admin_host] : []) : []
+  edge_certificate = var.admin_ready ? one(aws_acm_certificate_validation.edge[*].certificate_arn) : one(aws_acm_certificate_validation.site[*].certificate_arn)
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   comment         = var.name
-  aliases         = var.site_ready ? [var.site_host] : []
+  aliases         = local.edge_hosts
   price_class     = "PriceClass_100"
   http_version    = "http2and3"
   is_ipv6_enabled = true
@@ -174,7 +195,7 @@ resource "aws_cloudfront_distribution" "this" {
 
   viewer_certificate {
     cloudfront_default_certificate = var.site_ready ? null : true
-    acm_certificate_arn            = var.site_ready ? aws_acm_certificate_validation.site[0].certificate_arn : null
+    acm_certificate_arn            = var.site_ready ? local.edge_certificate : null
     ssl_support_method             = var.site_ready ? "sni-only" : null
     minimum_protocol_version       = var.site_ready ? "TLSv1.2_2021" : null
   }

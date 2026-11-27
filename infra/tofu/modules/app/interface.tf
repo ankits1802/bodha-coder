@@ -101,6 +101,14 @@ variable "site_ready" {
   type = bool
 }
 
+variable "admin_host" {
+  type = string
+}
+
+variable "admin_ready" {
+  type = bool
+}
+
 variable "google_client_id" {
   type = string
 }
@@ -129,6 +137,8 @@ output "site_records" {
   value = var.site_host == "" ? [] : concat(
     [for option in aws_acm_certificate.site[0].domain_validation_options : { name = trimsuffix(option.resource_record_name, "."), type = option.resource_record_type, value = trimsuffix(option.resource_record_value, ".") }],
     [{ name = var.site_host, type = "CNAME", value = aws_cloudfront_distribution.this.domain_name }],
+    var.admin_host == "" ? [] : [for option in aws_acm_certificate.edge[0].domain_validation_options : { name = trimsuffix(option.resource_record_name, "."), type = option.resource_record_type, value = trimsuffix(option.resource_record_value, ".") }],
+    var.admin_host == "" ? [] : [{ name = var.admin_host, type = "CNAME", value = aws_cloudfront_distribution.this.domain_name }],
   )
 }
 

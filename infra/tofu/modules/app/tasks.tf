@@ -16,6 +16,7 @@ locals {
     { name = "APP_URL", value = local.app_url },
     { name = "COOKIE_SECURE", value = "true" },
     { name = "AGREEMENT_VERSION", value = "1.0" },
+    { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" },
     { name = "S3_BUCKET", value = var.bucket_name },
     { name = "S3_REGION", value = var.region },
     { name = "S3_SERVER_SIDE_ENCRYPTION", value = "" },
@@ -115,7 +116,7 @@ locals {
       role        = aws_iam_role.plain.arn
       port        = 3000
       stop        = 30
-      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }, { name = "SITE_URL", value = local.app_url }]
+      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }, { name = "SITE_URL", value = local.app_url }, { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" }]
       secrets     = []
     }
   }

@@ -38,6 +38,7 @@ locals {
   stack       = "staging"
   name        = "bodha-${local.stack}"
   site_host   = var.domain_name == "" ? "" : "www.${var.domain_name}"
+  admin_host  = var.domain_name == "" || var.admin_subdomain == "" ? "" : "${var.admin_subdomain}.${var.domain_name}"
   public_url  = var.domain_live ? "https://${local.site_host}" : var.public_url
   sender      = var.domain_mail_live ? "no-reply@${var.domain_name}" : var.mail_from_address
 }
@@ -90,6 +91,8 @@ module "app" {
   sms_origination_number = var.sms_origination_number
   site_host              = local.site_host
   site_ready             = var.domain_live
+  admin_host             = local.admin_host
+  admin_ready            = var.admin_live
   google_client_id       = var.google_client_id
   microsoft_client_id    = var.microsoft_client_id
   yahoo_client_id        = var.yahoo_client_id
