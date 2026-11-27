@@ -27,7 +27,14 @@ vi.mock("@/components/shared/noteDetail", () => ({ prefetchNoteDetail: vi.fn() }
 vi.mock("@/lib/api/client", async (importOriginal) => ({ ...(await importOriginal<object>()), refreshSession: vi.fn() }));
 
 const ZERO = { total: 0, due_soon: 0 };
-const QUIET: TodaySummary = { waiting: 0, due_soon: 0, lanes: { approve: ZERO, coder: ZERO, provider: ZERO, compliance: ZERO }, next_up: [], batches: [] };
+const QUIET: TodaySummary = {
+  waiting: 0,
+  due_soon: 0,
+  lanes: { approve: ZERO, coder: ZERO, provider: ZERO, compliance: ZERO },
+  provider_reasons: { questions: ZERO, waiting_on_provider: ZERO },
+  next_up: [],
+  batches: [],
+};
 const NOTHING_ASSIGNED = { sets: [], scores: { claim: { notes: 0 } } } as unknown as TrainingOverview;
 const KEYS = ["today", "practice-setup", "team", "plan-status", "training", "places"];
 
@@ -104,7 +111,7 @@ describe("TodayScreen", () => {
   it("starts CDI on the questions to send and billers on ready to bill", async () => {
     signIn("cdi");
     const { unmount } = render(<TodayScreen />);
-    expect(await screen.findByRole("link", { name: "Send questions" })).toHaveAttribute("href", "/queue?lane=provider");
+    expect(await screen.findByRole("link", { name: "Send questions" })).toHaveAttribute("href", "/queue?lane=provider&reason=questions");
     unmount();
     forgetRemote("today");
     signIn("biller");

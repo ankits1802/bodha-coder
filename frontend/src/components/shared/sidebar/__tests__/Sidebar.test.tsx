@@ -10,6 +10,7 @@ import { useSidebarCollapsed } from "../useSidebarCollapsed";
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/queue", useRouter: () => navigation }));
 vi.mock("../useNavCounts", () => ({ useNavCounts: () => ({ queue: 7 }) }));
+vi.mock("../inboxCount", () => ({ useInboxCount: (enabled: boolean) => (enabled ? 3 : undefined) }));
 
 describe("Sidebar", () => {
   beforeEach(() => window.localStorage.clear());
@@ -22,10 +23,10 @@ describe("Sidebar", () => {
     expect(screen.getByRole("button", { name: SHARED_TEXT.expandSidebar })).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("gives a coder three entries and moves the account, the tour and sign out into the menu", async () => {
+  it("gives a coder four entries and moves the account, the tour and sign out into the menu", async () => {
     render(<Sidebar user={CODER} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
     const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual(["Today", "Upload notes", "Review queue7"]);
+    expect(within(nav).getAllByRole("link").map((link) => link.textContent)).toEqual(["Today", "Inbox3", "Upload notes", "Review queue7"]);
     expect(screen.queryByRole("button", { name: SHARED_TEXT.signOut })).not.toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Priya Nair, Coder" }));
     expect(screen.getByRole("menuitem", { name: "Take the tour" })).toBeInTheDocument();
@@ -60,6 +61,17 @@ describe("Sidebar", () => {
     act(() => first.result.current.toggle());
     expect(first.result.current.collapsed).toBe(true);
     expect(renderHook(() => useSidebarCollapsed()).result.current.collapsed).toBe(true);
+  });
+
+  it("shows the unread inbox count beside Inbox and offers HQ search on the admin host", () => {
+    const { unmount } = render(<Sidebar user={CODER} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
+    expect(screen.getByRole("link", { name: /Inbox/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Inbox/ })).toHaveTextContent("3");
+    unmount();
+    const hq = { ...CODER, role: "hq" as const, practice: null };
+    render(<Sidebar user={hq} collapsed={false} onToggle={() => undefined} onNavigate={() => undefined} />);
+    expect(screen.queryByRole("link", { name: /Inbox/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
   });
 
   it("registers [ as the global shortcut", () => {

@@ -17,6 +17,7 @@ export const TOUR_TEXT = {
   } satisfies Record<TourKey, { title: string; line: string }>,
   areas: {
     today: "Notes due today and what to review next.",
+    inbox: "Answers, mentions and assignments meant for you.",
     upload: "Add visit-note PDFs with the codes you billed.",
     queue: "Every open note, sorted into lanes by due time.",
     compliance: "Notes held for a compliance decision.",

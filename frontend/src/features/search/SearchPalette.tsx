@@ -1,47 +1,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, type KeyboardEvent } from "react";
+import { useId, useState } from "react";
 import { closeOverlay, openOverlay, useOpenOverlay } from "@/components/shared/overlays";
 import { useShortcuts } from "@/components/shared/shortcuts/useShortcuts";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { optionId, useActiveOption } from "@/hooks/useActiveOption";
 import type { NoteSummary } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
 import { canSearch } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
-import { optionId, SearchResultList } from "./SearchResultList";
+import { SearchResultList } from "./SearchResultList";
 import { SEARCH_TEXT } from "./strings";
 import { useNoteSearch } from "./useNoteSearch";
 
-const STEPS: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
 const REMOTE_TEXT = { loading: SEARCH_TEXT.searching, empty: SEARCH_TEXT.empty, retry: SEARCH_TEXT.retry };
 
 function SearchBox({ onOpen }: { onOpen: (note: NoteSummary) => void }) {
   const [text, setText] = useState("");
-  const [active, setActive] = useState(0);
   const listId = useId();
   const search = useNoteSearch(text);
   const state = search.remote.state;
   const items = search.ready && state.status === "success" ? state.data.items : [];
-  const current = Math.max(0, Math.min(active, items.length - 1));
+  const { current, setActive, onKeyDown } = useActiveOption(items, onOpen);
   const listed = items.length > 0;
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
-    const step = STEPS[event.key];
-    if (step !== undefined && listed) {
-      event.preventDefault();
-      setActive((current + step + items.length) % items.length);
-      return;
-    }
-    const chosen = items[current];
-    if (event.key === "Enter" && chosen) {
-      event.preventDefault();
-      onOpen(chosen);
-    }
-  }
 
   return (
     <div className="flex flex-col gap-3">

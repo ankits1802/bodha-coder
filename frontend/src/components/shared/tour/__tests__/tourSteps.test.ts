@@ -20,6 +20,7 @@ describe("tourStepsFor", () => {
       "welcome",
       "search",
       "today",
+      "inbox",
       "upload",
       "queue",
       "decide",
@@ -36,15 +37,16 @@ describe("tourStepsFor", () => {
   });
 
   it("shows a coder their work and the note review steps, and nothing an admin owns", () => {
-    expect(keysFor("coder")).toEqual(["welcome", "search", "today", "upload", "queue", "decide", "evidence", "ask", "help", "replay"]);
+    expect(keysFor("coder")).toEqual(["welcome", "search", "today", "inbox", "upload", "queue", "decide", "evidence", "ask", "help", "replay"]);
   });
 
   it("gives every other practice role exactly the areas its sidebar shows", () => {
-    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "queue", "decide", "evidence", "ask", "help", "replay"]);
+    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "queue", "decide", "evidence", "ask", "help", "replay"]);
     expect(keysFor("compliance")).toEqual([
       "welcome",
       "search",
       "today",
+      "inbox",
       "queue",
       "decide",
       "evidence",
@@ -54,7 +56,7 @@ describe("tourStepsFor", () => {
       "help",
       "replay",
     ]);
-    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "billing", "help", "replay"]);
+    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "billing", "help", "replay"]);
     expect(keysFor("viewer")).toEqual(["welcome", "today", "insights", "help", "replay"]);
   });
 

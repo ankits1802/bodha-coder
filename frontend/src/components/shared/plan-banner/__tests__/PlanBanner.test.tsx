@@ -14,7 +14,7 @@ vi.mock("@/lib/api/plan", () => ({ getPlanStatus: vi.fn() }));
 
 describe("bannerFor", () => {
   it("counts down the trial and warns in its last three days", () => {
-    expect(bannerFor(planStatus({ trial_days_left: 5 }))).toEqual({
+    expect(bannerFor(planStatus({ trial_days_left: 5, ending_soon: false }))).toEqual({
       tone: "ok",
       text: "Your trial ends in 5 days",
       action: "Choose a plan",

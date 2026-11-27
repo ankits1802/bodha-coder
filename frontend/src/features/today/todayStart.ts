@@ -12,9 +12,9 @@ type Summary = Pick<TodaySummary, "next_up" | "waiting" | "batches">;
 
 export const START_LANE = "coder";
 const LANE_PATH = `/queue?lane=${START_LANE}`;
-const MY_WORK_PATH = `${LANE_PATH}&assigned=me`;
+const MY_WORK_PATH = "/queue?assigned=me";
 const FIXED: Readonly<Record<Exclude<StartKind, "review">, string>> = {
-  questions: "/queue?lane=provider",
+  questions: "/queue?lane=provider&reason=questions",
   compliance: "/compliance",
   billing: "/billing",
 };

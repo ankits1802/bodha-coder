@@ -32,12 +32,12 @@ describe("billing-only navigation", () => {
 });
 
 describe("role-based navigation", () => {
-  it("shows each role only its own areas, with admin 7, compliance 4, coder 3 and CDI and billers 2 before the inbox", () => {
-    expect(keysFor("admin")).toEqual(["today", "upload", "queue", "compliance", "billing", "insights", "settings"]);
-    expect(keysFor("coder")).toEqual(["today", "upload", "queue"]);
-    expect(keysFor("cdi")).toEqual(["today", "queue"]);
-    expect(keysFor("compliance")).toEqual(["today", "queue", "compliance", "insights"]);
-    expect(keysFor("biller")).toEqual(["today", "billing"]);
+  it("shows each role only its own areas: admin 8, compliance 5, coder 4, CDI and billers 3", () => {
+    expect(keysFor("admin")).toEqual(["today", "inbox", "upload", "queue", "compliance", "billing", "insights", "settings"]);
+    expect(keysFor("coder")).toEqual(["today", "inbox", "upload", "queue"]);
+    expect(keysFor("cdi")).toEqual(["today", "inbox", "queue"]);
+    expect(keysFor("compliance")).toEqual(["today", "inbox", "queue", "compliance", "insights"]);
+    expect(keysFor("biller")).toEqual(["today", "inbox", "billing"]);
     expect(keysFor("viewer")).toEqual(["today", "insights"]);
     expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
   });

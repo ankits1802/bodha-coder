@@ -13,6 +13,7 @@ export type NavIconName =
   | "gauge"
   | "clock"
   | "inbox"
+  | "bell"
   | "search"
   | "help"
   | "gear"
@@ -84,6 +85,12 @@ const PATHS: Record<NavIconName, ReactNode> = {
     <>
       <path d="M2.5 9.5 4.2 3.5h7.6l1.7 6v3h-11z" {...STROKE} />
       <path d="M2.5 9.5h3.2l.8 1.5h3l.8-1.5h3.2" {...STROKE} />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M4 11.5V7.2a4 4 0 0 1 8 0v4.3l1.2 1.3H2.8z" {...STROKE} />
+      <path d="M6.6 14.2a1.5 1.5 0 0 0 2.8 0" {...STROKE} />
     </>
   ),
   search: (

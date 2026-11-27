@@ -85,15 +85,31 @@ async def test_one_practice_can_be_asked_for_alone(harness):
     assert missing.status_code == 404
 
 
-async def test_a_day_outside_the_range_counts_nothing(harness):
-    await november_spend(harness)
+async def test_a_day_outside_the_range_counts_nothing_and_still_lists_every_practice_at_zero(harness):
+    lakeside_id, hillside_id = await november_spend(harness)
     report = (
         await harness.client.get(
             PATH, headers=await hq_headers(harness), params={"from": "2026-12-02", "to": "2026-12-31"}
         )
     ).json()
-    assert (report["practices"], report["unpriced_models"]) == ([], [])
+    assert report["unpriced_models"] == []
     assert figures_of(report["totals"]) == figures(0, 0, 0, 0, 0.0, None, 0)
+    assert [(practice["id"], practice["name"], practice["providers"]) for practice in report["practices"]] == [
+        (hillside_id, "Hillside", []),
+        (lakeside_id, "Lakeside", []),
+    ]
+    assert all(figures_of(practice) == figures(0, 0, 0, 0, 0.0, None, 0) for practice in report["practices"])
+
+
+async def test_a_practice_with_no_reads_is_shown_at_zero_rather_than_hidden(harness):
+    await november_spend(harness)
+    quiet = await practice_with_provider(harness, name="Quiet Creek", admin_email="admin@quiet.example.com")
+    hq = await hq_headers(harness)
+    everyone = (await harness.client.get(PATH, headers=hq, params=NOVEMBER)).json()
+    assert [practice["name"] for practice in everyone["practices"]] == ["Lakeside", "Hillside", "Quiet Creek"]
+    alone = (await harness.client.get(PATH, headers=hq, params={**NOVEMBER, "practice_id": quiet.id})).json()
+    assert [(practice["id"], practice["plan_monthly_cents"]) for practice in alone["practices"]] == [(quiet.id, 24_900)]
+    assert figures_of(alone["practices"][0]) == figures(0, 0, 0, 0, 0.0, None, 0)
 
 
 async def test_only_hq_reads_spend_and_the_range_must_be_whole(harness):

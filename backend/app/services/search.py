@@ -8,24 +8,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.codes.billing_codes import parse_code_list
 from app.codes.icd import format_icd, is_icd_shaped
 from app.core.deps import Actor
-from app.core.errors import Invalid
+from app.core.text_search import LIKE_ESCAPE, contains_pattern, search_term
 from app.models import CodeSet, Note, Provider
 from app.services.audit_log import record_access
 from app.services.worklists import summary
 
-MIN_SEARCH_LENGTH = 2
-MAX_SEARCH_LENGTH = 100
 SEARCH_LIMIT = 50
 SEARCHED = "searched"
-LIKE_ESCAPE = "\\"
 
 
 async def search_notes(db: AsyncSession, actor: Actor, text: str) -> list[dict[str, Any]]:
-    term = text.strip()
-    if len(term) < MIN_SEARCH_LENGTH:
-        raise Invalid(f"type at least {MIN_SEARCH_LENGTH} characters")
-    if len(term) > MAX_SEARCH_LENGTH:
-        raise Invalid(f"type at most {MAX_SEARCH_LENGTH} characters")
+    term = search_term(text)
     query = (
         select(Note, Provider.name)
         .join(Provider, Provider.id == Note.provider_id)
@@ -47,7 +40,7 @@ def code_forms(term: str) -> set[str]:
 
 
 def _matches(practice_id: str, term: str) -> list[ColumnElement[bool]]:
-    pattern = f"%{_escaped(term)}%"
+    pattern = contains_pattern(term)
     found: list[ColumnElement[bool]] = [
         Note.patient_name.ilike(pattern, escape=LIKE_ESCAPE),
         Note.file_name.ilike(pattern, escape=LIKE_ESCAPE),
@@ -79,7 +72,3 @@ def _coded(practice_id: str, forms: set[str]) -> Select[Any]:
         )
         .where(or_(*(CodeSet.codes.contains([{"code": form}]) for form in sorted(forms))))
     )
-
-
-def _escaped(term: str) -> str:
-    return term.replace(LIKE_ESCAPE, LIKE_ESCAPE * 2).replace("%", f"{LIKE_ESCAPE}%").replace("_", f"{LIKE_ESCAPE}_")

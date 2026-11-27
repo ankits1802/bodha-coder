@@ -51,6 +51,17 @@ export const NOVEMBER_SPEND: HqExpenditure = {
   unpriced_models: ["gemini-unlisted"],
 };
 
+const QUIET: PracticeSpend = {
+  id: "p-quiet",
+  name: "Quiet Creek",
+  plan: "trial",
+  plan_monthly_cents: null,
+  ...figures(0, 0, 0, 0, 0, null, 0),
+  providers: [],
+};
+
+export const WITH_QUIET_PRACTICE: HqExpenditure = { ...NOVEMBER_SPEND, practices: [LAKESIDE, HILLSIDE, QUIET] };
+
 export const NO_SPEND: HqExpenditure = {
   ...NOVEMBER_SPEND,
   totals: figures(0, 0, 0, 0, 0, null, 0),

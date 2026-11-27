@@ -12,12 +12,13 @@ import { QueueRowView, type RowControls } from "./QueueRowView";
 
 interface QueueTableProps {
   rows: QueueRow[];
+  grouped: boolean;
   selectedIds: string[];
   controls: RowControls;
   onSelectAll: (noteIds: string[]) => void;
 }
 
-function SelectAll({ rows, selectedIds, member, onSelectAll }: Omit<QueueTableProps, "controls"> & { member: Member }) {
+function SelectAll({ rows, selectedIds, member, onSelectAll }: Omit<QueueTableProps, "controls" | "grouped"> & { member: Member }) {
   const eligible = rows.filter((row) => isSelectable(row, member)).map((row) => row.id);
   const allSelected = eligible.length > 0 && eligible.every((id) => selectedIds.includes(id));
   return (
@@ -32,7 +33,7 @@ function SelectAll({ rows, selectedIds, member, onSelectAll }: Omit<QueueTablePr
   );
 }
 
-export function QueueTable({ rows, selectedIds, controls, onSelectAll }: QueueTableProps) {
+export function QueueTable({ rows, grouped, selectedIds, controls, onSelectAll }: QueueTableProps) {
   const [today] = useState(() => localIsoDate());
   const columns = controls.selectable ? 8 : 7;
   const words = QUEUE_TEXT.columns;
@@ -55,14 +56,22 @@ export function QueueTable({ rows, selectedIds, controls, onSelectAll }: QueueTa
             <Th className="text-right">{words.due}</Th>
           </tr>
         </thead>
-        {groupRows(rows).map((group) => (
-          <tbody key={group.key}>
-            <GroupRow colSpan={columns}>{groupLabel(group, today)}</GroupRow>
-            {group.rows.map((row) => (
+        {grouped ? (
+          groupRows(rows).map((group) => (
+            <tbody key={group.key}>
+              <GroupRow colSpan={columns}>{groupLabel(group, today)}</GroupRow>
+              {group.rows.map((row) => (
+                <QueueRowView key={row.id} row={row} selected={selectedIds.includes(row.id)} controls={controls} />
+              ))}
+            </tbody>
+          ))
+        ) : (
+          <tbody>
+            {rows.map((row) => (
               <QueueRowView key={row.id} row={row} selected={selectedIds.includes(row.id)} controls={controls} />
             ))}
           </tbody>
-        ))}
+        )}
       </Table>
     </Panel>
   );

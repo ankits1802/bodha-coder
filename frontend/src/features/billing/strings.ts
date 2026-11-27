@@ -1,10 +1,14 @@
+import type { ClaimLinesFormat } from "@/lib/api/types";
+
 export const BILLING_TEXT = {
   title: "Ready to bill",
   subtitle: (count: string) => `${count} visits`,
-  export: (count: string) => `Export ${count} visits`,
-  claimLines: "Claim lines",
-  claimLinesFile: "bodha-claim-lines.csv",
-  downloadAgain: (count: string) => `Download ${count} again`,
+  claimLines: {
+    format: "Format",
+    formats: { csv: "CSV", json: "JSON" } satisfies Record<ClaimLinesFormat, string>,
+    export: (count: string) => `Export ${count} claim lines`,
+    files: { csv: "bodha-claim-lines.csv", json: "bodha-claim-lines.json" } satisfies Record<ClaimLinesFormat, string>,
+  },
   exported: (count: string) => `${count} visits exported`,
   showLabel: "Show visits",
   show: {
@@ -34,7 +38,6 @@ export const BILLING_TEXT = {
   approvedAt: (name: string, when: string) => `${name} · ${when}`,
   exportedAt: (when: string) => `Exported ${when}`,
   seenGroup: (day: string, count: string) => `Seen ${day} · ${count}`,
-  defaultFileName: "bodha-claims.csv",
   heldForConfirmation: "Held for provider",
   files: "Export files",
   fileMeta: (name: string, visits: string) => `${name} · ${visits} visits`,

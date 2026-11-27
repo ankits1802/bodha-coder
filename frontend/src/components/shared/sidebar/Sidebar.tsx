@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { User } from "@/lib/api/types";
-import { canReach, canSearch, homeFor } from "@/lib/roles";
+import { canReach, canSearch, canSearchPlatform, homeFor } from "@/lib/roles";
 import { openOverlay } from "../overlays";
 import { SHARED_TEXT } from "../strings";
 import { AccountMenu } from "./AccountMenu";
@@ -11,6 +11,7 @@ import { ActionEntry, NavEntry } from "./NavEntry";
 import { NavIcon } from "./NavIcon";
 import { NAV_GROUP_ORDER, isActive, navFor, type NavItem } from "./navItems";
 import { PracticeSwitcher, hasPracticeChoice } from "./PracticeSwitcher";
+import { useInboxCount } from "./inboxCount";
 import { useNavCounts, type NavCounts } from "./useNavCounts";
 
 interface SidebarProps {
@@ -71,7 +72,8 @@ export function Sidebar(props: SidebarProps) {
   const { user, collapsed, onNavigate } = props;
   const pathname = usePathname();
   const items = navFor(user);
-  const counts = useNavCounts(items.some((item) => item.count !== undefined), pathname);
+  const lanes = items.some((item) => item.count === "queue" || item.count === "compliance");
+  const counts = { ...useNavCounts(lanes, pathname), inbox: useInboxCount(canReach(user, "inbox"), pathname) };
   const words = SHARED_TEXT.nav;
   const groups = NAV_GROUP_ORDER.map((group) => ({ group, entries: items.filter((item) => item.group === group) })).filter(
     (entry) => entry.entries.length > 0,
@@ -84,7 +86,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <div className={`flex h-full flex-col border-r border-separator bg-sidebar pt-5.5 pb-4 ${collapsed ? "px-2" : "px-3"}`}>
       <Header {...props} />
-      {canSearch(user) ? (
+      {canSearch(user) || canSearchPlatform(user) ? (
         <div className="mt-3">
           <ActionEntry icon="search" label={words.search} collapsed={collapsed} onClick={search} />
         </div>

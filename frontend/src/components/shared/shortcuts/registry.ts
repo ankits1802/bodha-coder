@@ -32,6 +32,8 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: "startReviewing", scope: "today", combos: [{ key: "n" }] },
   { id: "reviewNext", scope: "queue", combos: [{ key: "n" }] },
   { id: "mine", scope: "queue", combos: [{ key: "m" }] },
+  { id: "selectRow", scope: "queue", combos: [{ key: "x" }], requires: "decide" },
+  { id: "assignSelected", scope: "queue", combos: [{ key: "a" }], requires: "assign" },
   { id: "nextNote", scope: "review", combos: [{ key: "j" }] },
   { id: "previousNote", scope: "review", combos: [{ key: "k" }] },
   { id: "approve", scope: "review", combos: [{ key: "a" }], requires: "approve" },

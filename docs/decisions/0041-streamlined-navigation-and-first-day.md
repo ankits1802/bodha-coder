@@ -22,8 +22,9 @@ practice's banner said 14.
   `/insights/access-log`), and Settings has Setup, Team, Plan and Security (`/settings/...`). `AreaTabs`
   draws the row in each area's layout with the Tabs that note review used, moved to `components/ui`;
   page tabs use manual activation so arrowing through them never loads a page. `PLAN_PATH` is
-  `/settings/plan` (the checkout and billing portal return there too). Before the inbox entry the
-  sidebar has admin 7, compliance 4, coder 3, CDI 2 and biller 2 entries; with it, 8, 5, 4, 3 and 3.
+  `/settings/plan` (the checkout and billing portal return there too). With the inbox entry of
+  [0042](0042-inbox-upload-matching-queue-views-hq-page.md) after Today, the sidebar has admin 8,
+  compliance 5, coder 4, CDI 3, biller 3 and viewer 2 entries (13, 7, 5, 4, 6 and 3 before).
 - **Old addresses keep working.** `lib/routeRedirects.ts`, read by `next.config.ts`, sends `/setup`,
   `/team`, `/plan`, `/remittances`, `/quality` and `/quality/review/:id` to their new places with the
   query string, so `/setup?section=payers` and Stripe's return to `/plan?checkout=done` still land.
@@ -44,11 +45,11 @@ practice's banner said 14.
 - **Billers lose Review queue and Training from the sidebar** but can still open notes; Training
   leaves every sidebar. Open blind coding assigned to the person is listed on Today under Assigned to
   you with a link to Training, and Assign training is now the Training view of Insights, Quality
-  (admins). The inbox entry, with its unread count, joins the work group after Today; the inbox work
-  adds it to `NAV_ITEMS`, a line to `TOUR_TEXT.areas` and a count key to `useNavCounts`.
-- **Today's main button follows the role**: a coder's own next note, else an unassigned one, else their
-  coder lane; CDI the provider lane (questions to send); compliance its list; billers Ready to bill; an
-  admin Start reviewing only once the practice has notes. Only the note that button opens is
+  (admins). The inbox entry, with its unread count, sits in the work group after Today; the lane counts are
+  fetched only when an entry shows one.
+- **Today's main button follows the role**: a coder's own next note, else an unassigned one, else the
+  My work view; CDI the Questions to send view; compliance its list; billers Ready to bill; an admin
+  Start reviewing only once the practice has notes. Only the note that button opens is
   prefetched, so roles that do not code no longer write `opened note` for a note they never open.
 - **First steps for an admin.** Until every step is done or hidden, Today starts with six steps, each
   linking to its place in Settings: providers (Import CSV and Add provider open their dialogs from the
@@ -95,5 +96,4 @@ practice's banner said 14.
 
 ## Follows
 
-- The inbox entry and its unread count are added by the inbox work; the targets above count it.
 - No migration: the first-run marks live in the existing `practices.setup` document.

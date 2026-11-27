@@ -1,4 +1,4 @@
-import type { Channel, Lane, MemberStatus, Plan, PracticeStatus, Role } from "@/lib/api/types";
+import type { Channel, Lane, MemberStatus, Plan, PracticeStatus, ProviderReason, Role } from "@/lib/api/types";
 
 export const ROLE_LABELS: Record<Role, string> = {
   hq: "Platform admin",
@@ -18,6 +18,28 @@ export const LANE_LABELS: Record<Lane, string> = {
 };
 
 export const LANE_ORDER: readonly Lane[] = ["approve", "coder", "provider", "compliance"];
+
+export const PROVIDER_REASON_LABELS: Record<ProviderReason, string> = {
+  questions: "Questions to send",
+  waiting_on_provider: "Waiting on provider",
+};
+
+export type LaneViewKey = Exclude<Lane, "provider"> | ProviderReason;
+
+export interface LaneView {
+  key: LaneViewKey;
+  lane: Lane;
+  reason: ProviderReason | null;
+  label: string;
+}
+
+export const LANE_VIEWS: readonly LaneView[] = [
+  { key: "approve", lane: "approve", reason: null, label: LANE_LABELS.approve },
+  { key: "coder", lane: "coder", reason: null, label: LANE_LABELS.coder },
+  { key: "questions", lane: "provider", reason: "questions", label: PROVIDER_REASON_LABELS.questions },
+  { key: "waiting_on_provider", lane: "provider", reason: "waiting_on_provider", label: PROVIDER_REASON_LABELS.waiting_on_provider },
+  { key: "compliance", lane: "compliance", reason: null, label: LANE_LABELS.compliance },
+];
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
   email: "Email",

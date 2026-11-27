@@ -51,6 +51,7 @@ class PlanStatus(View):
     standing: Literal[STANDINGS]
     renews_on: str | None
     trial_days_left: int | None
+    ending_soon: bool
     users: int
     user_limit: int | None
     providers: int

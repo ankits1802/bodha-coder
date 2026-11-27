@@ -26,6 +26,7 @@ from app.models import (
 from app.services.analysis import next_revision, request_analysis
 from app.services.attestations import ADDENDUM_ATTESTATION, Statement, checked_wording, record_attestation
 from app.services.audit_log import record_access, record_provider_access
+from app.services.inbox import Notice, notify
 from app.services.note_texts import current_texts, note_texts
 from app.services.note_voids import refuse_voided
 from app.services.placement import current_decisions, current_findings, refresh_placement
@@ -41,6 +42,7 @@ OTHER_ANSWER = "Other"
 DEFAULT_OPTIONS = ("Yes", "No", "Clinically undetermined")
 CODE_ACCEPTED = "verified code"
 CODE_REFUSED = "code not accepted"
+ANSWERED = "provider_answered"
 LINK_WORDING = {
     QUESTIONS_PURPOSE: ("Questions from {practice}", "{practice} has questions about one of your visit notes."),
     LEVEL_CHANGE_PURPOSE: (
@@ -226,7 +228,7 @@ async def verify_code(db: AsyncSession, token: str, code: str, client: Client) -
 
 async def _record_code_check(db: AsyncSession, request: AddendumRequest, client: Client, action: str) -> None:
     provider = await db.get_one(Provider, request.provider_id)
-    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client[0], client[1])
+    actor = ProviderActor(request.id, request.provider_id, request.practice_id, client.ip, client.agent)
     record_provider_access(db, actor, provider.name, action, note_id=request.note_id)
 
 
@@ -335,6 +337,8 @@ async def answer(
     note.status = "queued"
     await request_analysis(db, note, reason="addendum")
     record_provider_access(db, actor, provider.name, "signed addendum", note_id=note.id)
+    answered = Notice(ANSWERED, provider.name, note_id=note.id, payload={"questions": len(chosen)})
+    await notify(db, note.practice_id, [request.sent_by], answered)
     await db.commit()
     return request
 

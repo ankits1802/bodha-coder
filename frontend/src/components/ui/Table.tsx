@@ -2,11 +2,11 @@ import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } fr
 
 interface TableProps {
   label: string;
-  minWidth?: "sm" | "md" | "lg";
+  minWidth?: "sm" | "md" | "lg" | "xl";
   children: ReactNode;
 }
 
-const MIN_WIDTHS = { sm: "min-w-105", md: "min-w-160", lg: "min-w-205" } as const;
+const MIN_WIDTHS = { sm: "min-w-105", md: "min-w-160", lg: "min-w-205", xl: "min-w-300" } as const;
 
 export function Table({ label, minWidth = "md", children }: TableProps) {
   return (

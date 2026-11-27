@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ReasonDialog } from "@/components/shared/ReasonDialog";
 import type { QueueRow, User } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
@@ -11,26 +10,27 @@ import type { QueueActions } from "../useQueueActions";
 import { AssignDialog } from "./AssignDialog";
 import { BulkBar } from "./BulkBar";
 
-type OpenDialog = "assign" | "void" | null;
+export type BulkDialog = "assign" | "void" | null;
 
 interface BulkActionsProps {
   member: User;
   rows: QueueRow[];
   actions: QueueActions;
+  dialog: BulkDialog;
+  onDialog: (dialog: BulkDialog) => void;
   onClear: () => void;
 }
 
-export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps) {
-  const [dialog, setDialog] = useState<OpenDialog>(null);
+export function BulkActions({ member, rows, actions, dialog, onDialog, onClear }: BulkActionsProps) {
   const ids = rows.map((row) => row.id);
   const amount = formatCount(rows.length);
-  const show = (next: OpenDialog) => {
+  const show = (next: BulkDialog) => {
     actions.clearDialogErrors();
-    setDialog(next);
+    onDialog(next);
   };
 
   async function assignTo(userId: string | null): Promise<void> {
-    if (await actions.assignSelected(ids, userId)) setDialog(null);
+    if (await actions.assignSelected(ids, userId)) onDialog(null);
   }
 
   return (
@@ -50,7 +50,7 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
         member={member}
         pending={actions.assigning}
         error={actions.assignError}
-        onClose={() => setDialog(null)}
+        onClose={() => onDialog(null)}
         onAssign={(userId) => void assignTo(userId)}
       />
       {dialog === "void" ? (
@@ -65,8 +65,8 @@ export function BulkActions({ member, rows, actions, onClear }: BulkActionsProps
           }}
           minLength={VOID_REASON_MIN}
           maxLength={VOID_REASON_MAX}
-          onClose={() => setDialog(null)}
-          onDone={() => setDialog(null)}
+          onClose={() => onDialog(null)}
+          onDone={() => onDialog(null)}
           submit={(reason) => actions.voidSelected(ids, reason)}
         />
       ) : null}

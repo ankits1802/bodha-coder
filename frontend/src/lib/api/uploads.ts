@@ -1,16 +1,15 @@
 import { request } from "./client";
-import type { BatchPage, FileDetail, FilePreview, Place, Provider, UploadPlan, UploadResult } from "./types";
+import type { BatchPage, FileDetail, FilePreview, Place, Provider, UploadResult } from "./types";
 
-export function previewFiles(fileNames: string[]): Promise<FilePreview[]> {
-  return request<FilePreview[]>("/api/uploads/preview", { body: { file_names: fileNames } });
+export function previewFiles(files: File[]): Promise<FilePreview[]> {
+  const form = new FormData();
+  for (const file of files) form.append("files", file, file.name);
+  return request<FilePreview[]>("/api/uploads/preview", { method: "POST", form });
 }
 
-export function buildUploadForm(plan: UploadPlan, files: File[], details: FileDetail[]): FormData {
+export function buildUploadForm(visitType: string, files: File[], details: FileDetail[]): FormData {
   const form = new FormData();
-  form.set("provider_id", plan.provider_id);
-  form.set("service_date", plan.service_date);
-  form.set("place_code", plan.place_code);
-  form.set("visit_type", plan.visit_type);
+  form.set("visit_type", visitType);
   form.set("details", JSON.stringify(details));
   for (const file of files) form.append("files", file, file.name);
   return form;

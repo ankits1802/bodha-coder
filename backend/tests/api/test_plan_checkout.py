@@ -124,6 +124,7 @@ async def test_the_plan_screen_shows_trial_days_and_usage_against_the_trial_limi
         "standing": "trial",
         "renews_on": ends.isoformat(),
         "trial_days_left": 5,
+        "ending_soon": False,
         "users": 1,
         "user_limit": 5,
         "providers": 1,

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { currentToast, runToastAction } from "@/components/shared/toast/toastStore";
 import { approveNotes, assignNotes, reopenNotes, voidNotes } from "@/lib/api/notes";
 import { getProviders } from "@/lib/api/uploads";
-import { getQueue } from "@/lib/api/work";
+import { getQueue, getQueueViews } from "@/lib/api/work";
 import { clearSession, setSession } from "@/lib/session/store";
 import { QueueScreen } from "../QueueScreen";
 import { CODER, page, ROW } from "./fixtures";
@@ -26,7 +26,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("@/lib/api/work", () => ({ getQueue: vi.fn() }));
+vi.mock("@/lib/api/work", () => ({ getQueue: vi.fn(), getQueueViews: vi.fn(), saveQueueView: vi.fn(), deleteQueueView: vi.fn() }));
 vi.mock("@/lib/api/uploads", () => ({ getProviders: vi.fn() }));
 vi.mock("@/lib/api/notes", () => ({
   approveNotes: vi.fn(),
@@ -41,6 +41,7 @@ describe("queue assignment and bulk actions", () => {
   beforeEach(() => {
     setSession({ access_token: "token", user: CODER });
     vi.mocked(getProviders).mockResolvedValue([]);
+    vi.mocked(getQueueViews).mockResolvedValue({ builtin: [], saved: [] });
     vi.mocked(getQueue).mockResolvedValue(page([ROW]));
   });
 
@@ -101,6 +102,7 @@ describe("approving every matching note", () => {
   beforeEach(() => {
     setSession({ access_token: "token", user: CODER });
     vi.mocked(getProviders).mockResolvedValue([]);
+    vi.mocked(getQueueViews).mockResolvedValue({ builtin: [], saved: [] });
   });
 
   afterEach(() => {

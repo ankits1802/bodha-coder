@@ -1,5 +1,6 @@
 import { noteStatus } from "@/components/shared/noteStatus";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { optionId } from "@/hooks/useActiveOption";
 import type { NoteSummary } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
 import { SEARCH_TEXT } from "./strings";
@@ -10,10 +11,6 @@ interface SearchResultListProps {
   active: number;
   onActive: (index: number) => void;
   onOpen: (note: NoteSummary) => void;
-}
-
-export function optionId(listId: string, index: number): string {
-  return `${listId}-option-${index}`;
 }
 
 export function SearchResultList({ listId, items, active, onActive, onOpen }: SearchResultListProps) {

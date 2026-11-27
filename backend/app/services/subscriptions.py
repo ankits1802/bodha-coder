@@ -22,6 +22,7 @@ from app.services.plan_limits import (
     user_count,
     user_limit,
 )
+from app.services.plan_notices import plan_ending_soon
 from app.services.plans import CATALOG, PlanTerms, annual_months_free, plan_terms, price_id, prices_complete
 
 __all__ = [
@@ -85,14 +86,14 @@ def standing(practice: Practice, subscription: Subscription | None) -> str:
 async def plan_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]:
     subscription = await subscription_for(db, practice.id)
     zone = zone_named(practice.time_zone)
-    trial_left = (
-        (practice.renews_on - today_in(zone)).days if practice.status == "trial" and practice.renews_on else None
-    )
+    today = today_in(zone)
+    trial_left = (practice.renews_on - today).days if practice.status == "trial" and practice.renews_on else None
     return {
         "plan": practice.plan,
         "standing": standing(practice, subscription),
         "renews_on": practice.renews_on.isoformat() if practice.renews_on else None,
         "trial_days_left": max(0, trial_left) if trial_left is not None else None,
+        "ending_soon": not is_live(subscription) and plan_ending_soon(practice.renews_on, today),
         "users": await user_count(db, practice.id),
         "user_limit": user_limit(practice, subscription),
         "providers": await active_provider_count(db, practice.id),

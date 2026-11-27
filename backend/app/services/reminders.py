@@ -12,6 +12,7 @@ from app.core.security import digest, random_token
 from app.models import AddendumRequest, Note, Practice, Provider, utcnow
 from app.services.addenda import send_link
 from app.services.audit_log import record_activity
+from app.services.inbox import Notice, notify
 from app.services.placement import refresh_placement
 
 logger = logging.getLogger("bodha.reminders")
@@ -19,6 +20,7 @@ BATCH = 100
 SECOND_REMINDER_GAP = timedelta(hours=24)
 LAST_REMINDER_AGE = timedelta(hours=24)
 RETRY_AFTER_FAILURE = timedelta(hours=1)
+EXPIRED = "request_expired"
 
 
 async def expire_requests(db: AsyncSession) -> int:
@@ -35,6 +37,8 @@ async def expire_requests(db: AsyncSession) -> int:
         await db.flush()
         await refresh_placement(db, await db.get_one(Note, request.note_id))
         record_activity(db, None, "provider request expired", practice_id=request.practice_id, detail=request.note_id)
+        expired = Notice(EXPIRED, note_id=request.note_id, payload={"purpose": request.purpose})
+        await notify(db, request.practice_id, [request.sent_by], expired)
     await db.commit()
     return len(lapsed)
 

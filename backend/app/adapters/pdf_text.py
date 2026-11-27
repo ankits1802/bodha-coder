@@ -25,10 +25,23 @@ class DocumentText:
 
 def read_pdf_text(pdf: bytes) -> DocumentText:
     try:
-        reader = PdfReader(BytesIO(pdf))
-        if reader.is_encrypted:
-            raise DocumentUnreadable("the PDF is password protected")
+        reader = _opened(pdf)
         text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
     except PdfReadError as error:
         raise DocumentUnreadable("the file is not a readable PDF") from error
     return DocumentText(text, len(reader.pages))
+
+
+def read_first_page_text(pdf: bytes) -> str:
+    try:
+        reader = _opened(pdf)
+        return (reader.pages[0].extract_text() or "").strip() if reader.pages else ""
+    except PdfReadError as error:
+        raise DocumentUnreadable("the file is not a readable PDF") from error
+
+
+def _opened(pdf: bytes) -> PdfReader:
+    reader = PdfReader(BytesIO(pdf))
+    if reader.is_encrypted:
+        raise DocumentUnreadable("the PDF is password protected")
+    return reader
