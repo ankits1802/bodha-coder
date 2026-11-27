@@ -42,6 +42,10 @@ variable "bucket_arn" {
   type = string
 }
 
+variable "signing_key_arn" {
+  type = string
+}
+
 variable "kms_key_arn" {
   type = string
 }

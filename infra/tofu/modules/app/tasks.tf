@@ -16,6 +16,7 @@ locals {
     { name = "APP_URL", value = local.app_url },
     { name = "COOKIE_SECURE", value = "true" },
     { name = "AGREEMENT_VERSION", value = "1.0" },
+    { name = "SIGNING_KEY_ID", value = var.signing_key_arn },
     { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" },
     { name = "S3_BUCKET", value = var.bucket_name },
     { name = "S3_REGION", value = var.region },
