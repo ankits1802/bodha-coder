@@ -48,12 +48,9 @@ for `stripe-secret-key`, `stripe-webhook-secret` and `paypal-client-secret`. The
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
 
-## Frontend on Vercel
+## Vercel previews
 
-The Vercel CLI on an operator's machine may be signed in to another account. Keep this project's
-login separate with a dedicated global-config folder outside the repository and pass it to every
-command: `vercel login -Q <folder>`, `vercel -Q <folder> link --project bodha-coder` in `frontend/`,
-`vercel -Q <folder> env add BACKEND_URL production`. Releases from CHARTMATE-APP use
-`deploy-frontend.yml` with the `VERCEL_TOKEN` secret and the `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`
-repository variables.
-
+The live site is the ECS `web` service behind CloudFront; the `SITE_URL` repository variable gives
+its image the public address. Vercel only serves previews from the operator's machine, kept apart
+from any other Vercel login by a dedicated global-config folder: `vercel -Q <folder> deploy` from
+`frontend/` in a clean worktree of a green commit.

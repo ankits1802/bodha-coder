@@ -113,7 +113,7 @@ locals {
       role        = aws_iam_role.plain.arn
       port        = 3000
       stop        = 30
-      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }]
+      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }, { name = "SITE_URL", value = local.app_url }]
       secrets     = []
     }
   }

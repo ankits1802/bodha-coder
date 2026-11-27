@@ -7,8 +7,10 @@ RUN npm ci --no-audit --no-fund
 
 FROM node:24.22.3-trixie-slim AS build
 ARG BACKEND_URL_PLACEHOLDER
+ARG SITE_URL=
 ENV NEXT_TELEMETRY_DISABLED=1 \
-    BACKEND_URL=$BACKEND_URL_PLACEHOLDER
+    BACKEND_URL=$BACKEND_URL_PLACEHOLDER \
+    SITE_URL=$SITE_URL
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

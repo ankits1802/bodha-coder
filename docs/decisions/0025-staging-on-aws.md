@@ -65,7 +65,9 @@ agreements.
   DKIM and SPF align with the domain's existing `p=reject` DMARC policy; the Microsoft 365 records
   stay as they are. Setting `domain_name` creates the certificate and identity and lists the records
   to add (`tofu output dns_records`); `domain_live = true`, once they validate, attaches the
-  certificate and moves `APP_URL` and the sender to the domain, which retires Vercel.
+  certificate and moves `APP_URL` and the sender to the domain, which retires Vercel for the live site:
+  `deploy-frontend.yml` is gone, the web image takes the address from the `SITE_URL` repository
+  variable, and Vercel keeps only previews.
 - A Route 53 HTTPS health check from three regions on `/api/health/ready` alarms to the alerts
   topic after two failed minutes.
 - The `Project` cost allocation tag is active, so the budget filter now counts.
