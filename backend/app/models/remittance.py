@@ -16,6 +16,7 @@ class Remittance(IdMixin, Base):
     payer: Mapped[str | None] = mapped_column(String(120))
     paid_on: Mapped[date | None] = mapped_column(Date)
     uploaded_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    file_sha256: Mapped[str | None] = mapped_column(String(64), index=True)
 
 
 class RemittanceLine(IdMixin, Base):

@@ -1,5 +1,5 @@
 from app.models.base import Base, new_id, utcnow
-from app.models.quality import AuditSample, EvalCase, EvalRun
+from app.models.quality import AuditRun, AuditSample, EvalCase, EvalRun
 from app.models.remittance import Remittance, RemittanceLine
 from app.models.tables import (
     ANALYSIS_STATUSES,
@@ -45,6 +45,7 @@ __all__ = [
     "Activity",
     "AddendumRequest",
     "Analysis",
+    "AuditRun",
     "AuditSample",
     "Base",
     "Batch",

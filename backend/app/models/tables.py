@@ -151,12 +151,14 @@ class Provider(IdMixin, Base):
 
 class Batch(IdMixin, Base):
     __tablename__ = "batches"
+    __table_args__ = (one_of("source", ("upload", "intake")),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     provider_id: Mapped[str] = mapped_column(ForeignKey("providers.id"))
     service_date: Mapped[date] = mapped_column(Date)
     place_code: Mapped[str] = mapped_column(ForeignKey("places_of_service.code"))
     visit_type: Mapped[str] = mapped_column(String(40))
-    created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"))
+    source: Mapped[str] = mapped_column(String(12), default="upload")
 
 
 class Note(IdMixin, Base):
@@ -182,6 +184,7 @@ class Note(IdMixin, Base):
     patient_name: Mapped[str | None] = mapped_column(String(200))
     patient_age: Mapped[int | None] = mapped_column(Integer)
     patient_sex: Mapped[str | None] = mapped_column(String(16))
+    patient_birth_date: Mapped[date | None] = mapped_column(Date)
     service_date: Mapped[date] = mapped_column(Date)
     visit_type: Mapped[str] = mapped_column(String(40))
     place_code: Mapped[str] = mapped_column(String(2))
