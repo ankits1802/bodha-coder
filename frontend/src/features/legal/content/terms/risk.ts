@@ -2,7 +2,7 @@ import { clauses, notice, paragraph, section } from "../../blocks";
 import { LEGAL_PARTY, LEGAL_PERIODS } from "../../config";
 import { LEGAL_TITLES, TERMS_HEADINGS } from "../headings";
 
-const { liabilityCap, dataLiabilityCap } = LEGAL_PARTY;
+const { liabilityCap } = LEGAL_PARTY;
 
 export const TERMS_RISK = [
   section(
@@ -24,7 +24,7 @@ export const TERMS_RISK = [
       "To the maximum extent permitted by law, neither party will be liable to the other for any indirect, incidental, special, consequential, exemplary or punitive damages, or for lost profits, revenue, reimbursement or goodwill, however caused and even if advised of their possibility.",
     ),
     notice(
-      `To the maximum extent permitted by law, each party’s total liability arising out of or relating to these Terms and the BAA, whether in contract, tort or otherwise, will not exceed ${liabilityCap}. For breaches of the BAA, of “${TERMS_HEADINGS.confidentiality}” or of “${TERMS_HEADINGS.security}”, the limit is ${dataLiabilityCap}.`,
+      `To the maximum extent permitted by law, each party’s total liability arising out of or relating to these Terms and the BAA, whether in contract, tort or otherwise, will not exceed ${liabilityCap}.`,
     ),
     paragraph(
       `These exclusions and limits do not apply to your obligation to pay fees, to either party’s obligations under “${TERMS_HEADINGS.indemnities}”, to a party’s gross negligence, wilful misconduct or fraud, or to your breach of “${TERMS_HEADINGS.compliance}” or the ${LEGAL_TITLES["acceptable-use"]}. They apply even if a limited remedy fails of its essential purpose, and they reflect an allocation of risk that is part of our prices.`,

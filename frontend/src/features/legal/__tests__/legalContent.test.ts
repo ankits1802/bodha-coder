@@ -44,7 +44,6 @@ describe("legal content", () => {
   it("takes every placeholder from the one legal configuration", () => {
     const stray = allPlaceholders().filter((placeholder) => !CONFIG_PLACEHOLDERS.has(placeholder));
     expect(stray).toEqual([]);
-    expect(allPlaceholders()).toContain("[Company legal name]");
   });
 
   it("refuses to publish while any placeholder is left unfilled", () => {

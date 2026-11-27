@@ -39,7 +39,7 @@ export const TERMS_GENERAL = [
       `These Terms are governed by the laws of the State of ${governingLaw} and applicable United States federal law, without regard to conflict of laws rules. The United Nations Convention on Contracts for the International Sale of Goods does not apply.`,
     ),
     paragraph(
-      `Before starting a formal proceeding, the parties will try for ${LEGAL_PERIODS.cureDays} days to resolve a dispute through good-faith discussions between senior representatives. The state and federal courts located in ${venue} have exclusive jurisdiction over any dispute arising out of or relating to these Terms, and each party consents to their jurisdiction. Either party may seek urgent injunctive relief in any court of competent jurisdiction to protect its intellectual property, Confidential Information or PHI.`,
+      `Before starting a formal proceeding, the parties will try for ${LEGAL_PERIODS.cureDays} days to resolve a dispute through good-faith discussions between senior representatives. The state and federal courts located in ${venue} have exclusive jurisdiction over any dispute arising out of or relating to these Terms, and each party consents to their jurisdiction. Each party waives its right to a jury trial in any proceeding arising out of or relating to these Terms. Either party may seek urgent injunctive relief in any court of competent jurisdiction to protect its intellectual property, Confidential Information or PHI.`,
     ),
   ),
   section(
