@@ -59,11 +59,11 @@ describe("AssigneeControl", () => {
     vi.mocked(assignNotes).mockResolvedValue({ assigned: ["note-1"] });
     render(<AssigneeControl note={note(null, null)} />);
 
-    const picker = screen.getByRole("combobox", { name: "Assigned to" });
-    expect(await screen.findByRole("option", { name: "Omar Haddad" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("combobox", { name: "Assigned to" }));
+    const omar = await screen.findByRole("option", { name: "Omar Haddad" });
     expect(screen.queryByRole("option", { name: "Sam Okafor" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Ana Ruiz" })).not.toBeInTheDocument();
-    fireEvent.change(picker, { target: { value: "user-2" } });
+    fireEvent.click(omar);
     await waitFor(() => expect(assignNotes).toHaveBeenCalledWith(["note-1"], "user-2"));
   });
 });

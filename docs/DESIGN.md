@@ -42,6 +42,16 @@ Grouped panels with 14px radius, pill buttons (primary, secondary, plain, danger
 controls, macOS-style sidebar with small line icons, toggles in system green. One primary action
 per screen. No helper sentences: labels, layout and state carry the meaning.
 
+## Controls
+
+The app draws its own lists and calendars; no native select or date input appears anywhere. Neither
+control uses the action colour.
+
+| Control | Behaviour |
+|---|---|
+| Select | A field-shaped button with the chosen label and a chevron. It opens a floating list below the field, or above it when there is no room, at most 320 px tall and scrolling, never clipped by a dialog or a table. The chosen option carries a check mark and status options carry their dot. Arrow keys, Home, End and Page keys move; typing jumps to the first matching label; Enter or Space chooses; Escape closes and returns focus; Tab chooses and moves on, like a native select; a click outside closes. Lists of more than twelve options open with a search box that filters by label and says No matches. Forms use the full field, filter bars the compact pill, table rows the borderless inline form. |
+| Date picker | A text field showing the day as the app writes it (27 Nov 2026) with a calendar button. Typed days are read day first (27/11/2026), as ISO or in the written form; a day that cannot be read or lies outside the allowed range turns the field red when it loses focus and is not passed on. The calendar starts weeks on Monday, rings today, fills the chosen day in dark, disables days outside the range, and offers month and year lists and Today. Arrows move by day and week, Page Up and Page Down by month (with Shift by year), Home and End to the ends of the week, Enter picks, Escape closes; focus returns to the calendar button. A date range keeps its end on or after its start. |
+
 ## Feedback and flow
 
 A reversible action (approve, approve all) happens at once and offers Undo in a toast at the bottom

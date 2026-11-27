@@ -1,5 +1,6 @@
 import { Field } from "@/components/ui/Field";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import type { Channel, Place } from "@/lib/api/types";
 import { CHANNEL_LABELS } from "@/lib/labels";
@@ -38,38 +39,34 @@ export function ProviderFields({ draft, errors, places, onChange, onActive, onTo
       {text("name", words.name, "text", false)}
       <Field label={words.credential}>
         {(control) => (
-          <Select {...control} value={draft.credential} onChange={(event) => onChange("credential", event.target.value)}>
-            {CREDENTIALS.map((credential) => (
-              <option key={credential} value={credential}>
-                {credential}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.credential}
+            options={CREDENTIALS.map((credential) => ({ value: credential, label: credential }))}
+            onChange={(value) => onChange("credential", value)}
+          />
         )}
       </Field>
       {text("specialty", words.specialty)}
       {text("npi", words.npi)}
       <Field label={words.place} optional={words.optional}>
         {(control) => (
-          <Select {...control} value={draft.place_code} onChange={(event) => onChange("place_code", event.target.value)}>
-            <option value="">{words.noPlace}</option>
-            {places.map((place) => (
-              <option key={place.code} value={place.code}>
-                {`${place.name} (${place.code})`}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.place_code}
+            options={[{ value: "", label: words.noPlace }, ...places.map((place) => ({ value: place.code, label: `${place.name} (${place.code})` }))]}
+            onChange={(value) => onChange("place_code", value)}
+          />
         )}
       </Field>
       <Field label={words.channel}>
         {(control) => (
-          <Select {...control} value={draft.channel} onChange={(event) => onChange("channel", event.target.value)}>
-            {CHANNELS.map((channel) => (
-              <option key={channel} value={channel}>
-                {CHANNEL_LABELS[channel]}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.channel}
+            options={CHANNELS.map((channel) => ({ value: channel, label: CHANNEL_LABELS[channel] }))}
+            onChange={(value) => onChange("channel", value)}
+          />
         )}
       </Field>
       {text("email", words.email, "email")}

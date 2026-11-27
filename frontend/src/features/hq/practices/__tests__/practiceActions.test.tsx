@@ -23,6 +23,8 @@ const PRACTICE: HqPractice = {
   waiting: 0,
   renews_on: "2027-03-01",
   time_zone: "America/Chicago",
+  source: "hq",
+  signed_up_on: "2026-01-05",
   failed_24h: 0,
   last_failure: null,
   admin_name: "Priya Raman",

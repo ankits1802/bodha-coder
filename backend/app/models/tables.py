@@ -68,6 +68,7 @@ class Practice(IdMixin, Base):
     time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
     access_log_years: Mapped[int] = mapped_column(Integer, default=6)
     intake: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    signup: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
 class User(IdMixin, Base):
@@ -82,10 +83,20 @@ class User(IdMixin, Base):
     mfa_secret: Mapped[str | None] = mapped_column(String(200))
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_last_step: Mapped[int | None] = mapped_column(Integer)
-    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True)
     notify_digest: Mapped[bool] = mapped_column(Boolean, default=True)
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     last_active_at: Mapped[datetime | None] = timestamp()
+
+
+class UserIdentity(IdMixin, Base):
+    __tablename__ = "user_identities"
+    __table_args__ = (
+        UniqueConstraint("provider", "subject"),
+        UniqueConstraint("user_id", "provider"),
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    provider: Mapped[str] = mapped_column(String(16))
+    subject: Mapped[str] = mapped_column(String(255))
 
 
 class UserToken(IdMixin, Base):

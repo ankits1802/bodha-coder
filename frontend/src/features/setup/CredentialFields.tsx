@@ -1,5 +1,6 @@
 import { Field } from "@/components/ui/Field";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import type { BillsUnder } from "@/lib/api/types";
 import type { CredentialDraft, CredentialErrors, CredentialTextField } from "./credentialForm";
@@ -34,14 +35,12 @@ export function CredentialFields({ draft, errors, onChange, onSignature }: Crede
       {text("license_state", words.licenseState, { maxLength: 2 })}
       <Field label={words.billsUnder} optional={optional}>
         {(control) => (
-          <Select {...control} value={draft.bills_under} onChange={(event) => onChange("bills_under", event.target.value)}>
-            <option value="">{words.billsUnderUnset}</option>
-            {BILLS_UNDER.map((choice) => (
-              <option key={choice} value={choice}>
-                {words.billsUnderLabels[choice]}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.bills_under}
+            options={[{ value: "", label: words.billsUnderUnset }, ...BILLS_UNDER.map((choice) => ({ value: choice, label: words.billsUnderLabels[choice] }))]}
+            onChange={(value) => onChange("bills_under", value)}
+          />
         )}
       </Field>
       {text("group_npi", words.groupNpi, { maxLength: 10, inputMode: "numeric" })}

@@ -1,9 +1,27 @@
 import { clearSession, setSession } from "@/lib/session/store";
 import { request, requestNothing } from "./client";
-import type { LoginResult, MfaEnrolment, MfaVerified, SignedIn, SignInProviders, User } from "./types";
+import type {
+  IdentityProviderName,
+  LoginResult,
+  MfaChallenge,
+  MfaEnrolment,
+  MfaVerified,
+  SignedIn,
+  SignInProviders,
+  User,
+} from "./types";
 
-export const GOOGLE_START_PATH = "/api/auth/google/start";
 export const FORGOT_PASSWORD_PATH = "/forgot-password";
+export const SIGN_UP_PATH = "/sign-up";
+
+export function providerStartPath(provider: IdentityProviderName): string {
+  return `/api/auth/${provider}/start`;
+}
+
+export function mfaReturnPath(challenge: MfaChallenge): string {
+  const fragment = new URLSearchParams({ mfa: challenge.mfa_token, setup: challenge.mfa === "setup" ? "1" : "0" });
+  return `/sign-in#${fragment.toString()}`;
+}
 
 export function isSignedIn(result: LoginResult): result is SignedIn {
   return "access_token" in result;

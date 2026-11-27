@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { inviteMember } from "@/lib/api/team";
 import type { PracticeRole } from "@/lib/api/types";
@@ -74,13 +75,12 @@ export function InviteDialog({ onClose, onInvited }: InviteDialogProps) {
         </Field>
         <Field label={words.role}>
           {(control) => (
-            <Select {...control} value={role} onChange={(event) => setRole(event.target.value as PracticeRole)}>
-              {PRACTICE_ROLES.map((option) => (
-                <option key={option} value={option}>
-                  {ROLE_LABELS[option]}
-                </option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={role}
+              options={PRACTICE_ROLES.map((option) => ({ value: option, label: ROLE_LABELS[option] }))}
+              onChange={setRole}
+            />
           )}
         </Field>
         {invite.error ? <InlineAlert tone="bad">{invite.error}</InlineAlert> : null}

@@ -1,4 +1,4 @@
-import { localDateFromIso } from "./dates";
+import { isIsoDate, localDateFromIso, toIsoDate, type CalendarDate } from "./dates";
 
 const LOCALE = "en-GB";
 const MONEY_LOCALE = "en-US";
@@ -27,16 +27,44 @@ const shortDay = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short
 const longDay = new Intl.DateTimeFormat(LOCALE, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 const fullDay = new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long" });
 const dayWithYear = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short", year: "numeric" });
+const completeDay = new Intl.DateTimeFormat(LOCALE, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const timeOfDay = new Intl.DateTimeFormat(LOCALE, { hour: "2-digit", minute: "2-digit", hour12: false });
+const monthOfYear = new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric" });
+const monthName = new Intl.DateTimeFormat(LOCALE, { month: "long" });
+const weekdayNarrow = new Intl.DateTimeFormat(LOCALE, { weekday: "narrow" });
+const weekdayLong = new Intl.DateTimeFormat(LOCALE, { weekday: "long" });
 
-export type DayStyle = "short" | "long" | "full" | "year";
+export type DayStyle = "short" | "long" | "full" | "year" | "complete";
 
 const DAY_FORMATS: Record<DayStyle, Intl.DateTimeFormat> = {
   short: shortDay,
   long: longDay,
   full: fullDay,
   year: dayWithYear,
+  complete: completeDay,
 };
+
+export const WEEK_STARTS_ON = 1;
+
+const REFERENCE_YEAR = 2000;
+const REFERENCE_SUNDAY = { year: 2023, monthIndex: 11, day: 31 } as const;
+
+export const MONTH_NAMES: readonly string[] = Array.from({ length: 12 }, (_, index) => monthName.format(new Date(REFERENCE_YEAR, index, 1)));
+
+export interface WeekdayName {
+  narrow: string;
+  long: string;
+}
+
+export const WEEKDAY_NAMES: readonly WeekdayName[] = Array.from({ length: 7 }, (_, index) => {
+  const day = new Date(REFERENCE_SUNDAY.year, REFERENCE_SUNDAY.monthIndex, REFERENCE_SUNDAY.day + ((WEEK_STARTS_ON + index) % 7));
+  return { narrow: weekdayNarrow.format(day), long: weekdayLong.format(day) };
+});
+
+const ISO_LIKE_DAY = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+const NUMERIC_DAY = /^(\d{1,2})[./\-\s](\d{1,2})[./\-\s](\d{4})$/;
+const NAMED_DAY = /^(?:[a-z]+,?\s+)?(\d{1,2})\s+([a-z]+)\.?,?\s+(\d{4})$/i;
+const MIN_MONTH_PREFIX = 3;
 
 export function formatCount(value: number): string {
   return numberFormat.format(value);
@@ -69,6 +97,34 @@ export function formatCalendarDay(isoDate: string | null, style: DayStyle = "sho
   if (isoDate === null) return FORMAT_WORDS.empty;
   const local = localDateFromIso(isoDate);
   return local ? DAY_FORMATS[style].format(local).replace(",", "") : isoDate;
+}
+
+function monthFromName(word: string): number | null {
+  const lower = word.toLocaleLowerCase(LOCALE);
+  if (lower.length < MIN_MONTH_PREFIX) return null;
+  const index = MONTH_NAMES.findIndex((name) => name.toLocaleLowerCase(LOCALE).startsWith(lower));
+  return index === -1 ? null : index + 1;
+}
+
+function typedDayParts(text: string): CalendarDate | null {
+  const iso = ISO_LIKE_DAY.exec(text);
+  if (iso) return { year: Number(iso[1]), month: Number(iso[2]), day: Number(iso[3]) };
+  const numeric = NUMERIC_DAY.exec(text);
+  if (numeric) return { day: Number(numeric[1]), month: Number(numeric[2]), year: Number(numeric[3]) };
+  const named = NAMED_DAY.exec(text);
+  const month = named ? monthFromName(named[2] ?? "") : null;
+  return named && month ? { day: Number(named[1]), month, year: Number(named[3]) } : null;
+}
+
+export function parseCalendarDay(text: string): string | null {
+  const parts = typedDayParts(text.trim());
+  if (!parts) return null;
+  const iso = toIsoDate(parts);
+  return isIsoDate(iso) ? iso : null;
+}
+
+export function formatMonthYear(year: number, month: number): string {
+  return monthOfYear.format(new Date(year, month - 1, 1));
 }
 
 export function formatDay(moment: Date, style: DayStyle = "short"): string {

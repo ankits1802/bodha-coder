@@ -1,6 +1,6 @@
 "use client";
 
-import { FilterSelect } from "@/components/ui/FilterSelect";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { LOOKUP_SECONDS } from "@/hooks/remoteCache";
 import { useRemote } from "@/hooks/useRemote";
@@ -24,13 +24,12 @@ export function PayerSelect({ noteId, payer, onChanged }: PayerSelectProps) {
   }
 
   return (
-    <FilterSelect label={REVIEW_TEXT.tools.payer} value={payer ?? ""} onChange={(event) => void choose(event.target.value)}>
-      <option value="">{REVIEW_TEXT.tools.noPayer}</option>
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>
-          {option.name}
-        </option>
-      ))}
-    </FilterSelect>
+    <Select
+      variant="filter"
+      label={REVIEW_TEXT.tools.payer}
+      value={payer ?? ""}
+      options={[{ value: "", label: REVIEW_TEXT.tools.noPayer }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
+      onChange={(value) => void choose(value)}
+    />
   );
 }

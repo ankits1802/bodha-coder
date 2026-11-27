@@ -9,10 +9,24 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
-from app.adapters.google_oidc import build_google_sign_in
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
-from app.api.routes import account, auth, billing, google, health, hq, notes, practice, respond, team, uploads, work
+from app.adapters.oidc import build_identity_providers
+from app.api.routes import (
+    account,
+    auth,
+    billing,
+    health,
+    hq,
+    identity,
+    notes,
+    practice,
+    respond,
+    signup,
+    team,
+    uploads,
+    work,
+)
 from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
 from app.api.routes.defensibility import router as defensibility_router
@@ -31,9 +45,10 @@ configure_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
+    settings.refuse_unready_signup()
     app.state.store = S3ObjectStore(settings)
     app.state.messenger = build_messenger(settings)
-    app.state.google = build_google_sign_in(settings)
+    app.state.identity_providers = build_identity_providers(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
     yield
 
@@ -42,7 +57,7 @@ app = FastAPI(
     title="Bodha Coder", lifespan=lifespan, docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json"
 )
 
-for module in (health, auth, google, account, work, notes, uploads, billing, practice, team, respond, hq):
+for module in (health, auth, identity, signup, account, work, notes, uploads, billing, practice, team, respond, hq):
     app.include_router(module.router, prefix="/api")
 app.include_router(defensibility_router, prefix="/api")
 app.include_router(quality_router, prefix="/api")

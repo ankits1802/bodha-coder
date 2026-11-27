@@ -6,6 +6,10 @@ export interface FieldControlProps {
   "aria-invalid"?: boolean;
 }
 
+export function fieldLabelId(controlId: string): string {
+  return `${controlId}-label`;
+}
+
 interface FieldProps {
   label: ReactNode;
   error?: string | null;
@@ -22,7 +26,7 @@ export function Field({ label, error, hint, optional, className = "", children }
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={id} className="text-subhead font-medium text-label">
+      <label id={fieldLabelId(id)} htmlFor={id} className="text-subhead font-medium text-label">
         {label}
         {optional ? <span className="ml-1 font-normal text-tertiary">{optional}</span> : null}
       </label>

@@ -3,10 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { DateRange } from "@/components/ui/DateRange";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { useRemote } from "@/hooks/useRemote";
@@ -31,35 +33,31 @@ function TrainingFields({ draft, options, onChange }: FieldsProps) {
     <>
       <Field label={words.trainee}>
         {(control) => (
-          <Select {...control} value={draft.traineeId} onChange={(event) => set({ traineeId: event.target.value })}>
-            <option value="">{words.choose}</option>
-            {options.reviewers.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.name}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.traineeId}
+            options={[{ value: "", label: words.choose }, ...options.reviewers.map((person) => ({ value: person.id, label: person.name }))]}
+            onChange={(traineeId) => set({ traineeId })}
+          />
         )}
       </Field>
       <Field label={words.provider}>
         {(control) => (
-          <Select {...control} value={draft.providerId} onChange={(event) => set({ providerId: event.target.value })}>
-            <option value="">{words.anyProvider}</option>
-            {options.providers.map((provider) => (
-              <option key={provider.id} value={provider.id}>
-                {provider.name}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={draft.providerId}
+            options={[{ value: "", label: words.anyProvider }, ...options.providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
+            onChange={(providerId) => set({ providerId })}
+          />
         )}
       </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label={words.start}>
-          {(control) => <Input {...control} type="date" value={draft.start} onChange={(event) => set({ start: event.target.value })} />}
-        </Field>
-        <Field label={words.end}>
-          {(control) => <Input {...control} type="date" value={draft.end} onChange={(event) => set({ end: event.target.value })} />}
-        </Field>
+        <DateRange
+          start={draft.start || null}
+          end={draft.end || null}
+          labels={{ start: words.start, end: words.end }}
+          onChange={(range) => set({ start: range.start ?? "", end: range.end ?? "" })}
+        />
         <Field label={words.size}>
           {(control) => <Input {...control} inputMode="numeric" value={draft.size} onChange={(event) => set({ size: event.target.value.trim() })} />}
         </Field>

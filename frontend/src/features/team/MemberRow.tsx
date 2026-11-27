@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/ui/Avatar";
 import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
+import { Select } from "@/components/ui/Select";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Td, Tr } from "@/components/ui/Table";
 import type { PracticeRole, TeamMember } from "@/lib/api/types";
@@ -59,20 +60,13 @@ export function MemberRow({ member, isSelf, onRole, onConfirm, onSend }: MemberR
       </Td>
       <Td>
         {editable ? (
-          <label className="inline-flex">
-            <span className="sr-only">{TEAM_TEXT.roleFor(member.name)}</span>
-            <select
-              value={member.role}
-              onChange={(event) => onRole(member, event.target.value as PracticeRole)}
-              className="h-7 cursor-pointer rounded-nav bg-transparent px-2 text-callout text-label hover:bg-fill-plain-hover"
-            >
-              {PRACTICE_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {ROLE_LABELS[role]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select<PracticeRole>
+            variant="inline"
+            label={TEAM_TEXT.roleFor(member.name)}
+            value={member.role as PracticeRole}
+            options={PRACTICE_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }))}
+            onChange={(role) => onRole(member, role)}
+          />
         ) : (
           <span className="px-2 text-callout text-secondary">{ROLE_LABELS[member.role]}</span>
         )}

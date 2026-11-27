@@ -2,7 +2,7 @@ import { MenuButton, type MenuItem } from "@/components/ui/MenuButton";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { HqPractice } from "@/lib/api/types";
-import { FORMAT_WORDS, formatCount } from "@/lib/format";
+import { FORMAT_WORDS, formatCalendarDay, formatCount } from "@/lib/format";
 import { MEMBER_STATUS_LABELS, PLAN_LABELS } from "@/lib/labels";
 import { practiceStatusView, renewalLine } from "../practiceStatus";
 import { HQ_TEXT } from "../strings";
@@ -54,6 +54,18 @@ function AdminCell({ practice }: { practice: HqPractice }) {
   );
 }
 
+function SelfSignUp({ practice }: { practice: HqPractice }) {
+  if (practice.source !== "self") return null;
+  return (
+    <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-footnote text-secondary">
+      <StatusDot tone="low" className="text-footnote">
+        {words.selfSignUp}
+      </StatusDot>
+      <span>{formatCalendarDay(practice.signed_up_on, "year")}</span>
+    </span>
+  );
+}
+
 function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowActions) {
   const status = practiceStatusView(practice);
   return (
@@ -61,6 +73,7 @@ function PracticeRow({ practice, ...actions }: { practice: HqPractice } & RowAct
       <Td>
         <span className="font-medium">{practice.name}</span>
         <span className="block text-footnote text-secondary">{words.providers(practice.providers)}</span>
+        <SelfSignUp practice={practice} />
       </Td>
       <Td>
         <AdminCell practice={practice} />

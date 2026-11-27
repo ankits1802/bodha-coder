@@ -64,6 +64,7 @@ export const HQ_TEXT = {
       more: "More",
     },
     noAdmin: "No admin",
+    selfSignUp: "Self sign-up",
     moreFor: (name: string) => `More for ${name}`,
     menu: {
       edit: "Edit",
@@ -156,14 +157,3 @@ export const HQ_TEXT = {
     fileName: "bodha-activity.csv",
   },
 } as const;
-
-export const TIME_ZONE_LABELS: Record<string, string> = {
-  "America/New_York": "Eastern (New York)",
-  "America/Chicago": "Central (Chicago)",
-  "America/Denver": "Mountain (Denver)",
-  "America/Phoenix": "Arizona (Phoenix)",
-  "America/Los_Angeles": "Pacific (Los Angeles)",
-  "America/Anchorage": "Alaska (Anchorage)",
-  "Pacific/Honolulu": "Hawaii (Honolulu)",
-  UTC: "UTC",
-};

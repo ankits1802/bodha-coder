@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validation";
 import { SET_PASSWORD_TEXT } from "./strings";
 
@@ -43,9 +43,8 @@ export function PasswordForm({ pending, error, onSubmit }: PasswordFormProps) {
       <h2 className="m-0 text-center font-sans text-headline font-semibold tracking-snug">{SET_PASSWORD_TEXT.title}</h2>
       <Field label={SET_PASSWORD_TEXT.password} error={problems.password}>
         {(control) => (
-          <Input
+          <PasswordInput
             {...control}
-            type="password"
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -54,9 +53,8 @@ export function PasswordForm({ pending, error, onSubmit }: PasswordFormProps) {
       </Field>
       <Field label={SET_PASSWORD_TEXT.confirm} error={problems.confirm}>
         {(control) => (
-          <Input
+          <PasswordInput
             {...control}
-            type="password"
             autoComplete="new-password"
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}

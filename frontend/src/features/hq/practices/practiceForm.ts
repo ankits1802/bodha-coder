@@ -1,18 +1,11 @@
 import type { HqPractice, NewPractice, Plan, PracticeStatus, PracticeUpdate } from "@/lib/api/types";
 import { isIsoDate } from "@/lib/dates";
 import { isEmail } from "@/lib/validation";
-import { HQ_TEXT, TIME_ZONE_LABELS } from "../strings";
+import { HQ_TEXT } from "../strings";
 
 export const PLANS: readonly Plan[] = ["trial", "basic", "professional", "enterprise"];
 export const STATUSES: readonly PracticeStatus[] = ["trial", "active", "ended", "blocked"];
 const MAX_SEATS = 10_000;
-export const DEFAULT_TIME_ZONE = "America/Chicago";
-export const TIME_ZONES: readonly string[] = Object.keys(TIME_ZONE_LABELS);
-
-export function zoneOptions(current: string): { options: readonly string[]; labels: Record<string, string> } {
-  if (TIME_ZONES.includes(current)) return { options: TIME_ZONES, labels: TIME_ZONE_LABELS };
-  return { options: [...TIME_ZONES, current], labels: { ...TIME_ZONE_LABELS, [current]: current } };
-}
 
 const errors = HQ_TEXT.practices.form.errors;
 

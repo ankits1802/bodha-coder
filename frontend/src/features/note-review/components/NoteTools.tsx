@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { FilterSelect } from "@/components/ui/FilterSelect";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { deleteNotes } from "@/lib/api/notes";
 import type { NoteHeader } from "@/lib/api/types";
@@ -40,13 +40,13 @@ export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToo
     <section aria-label={words.label} className="flex flex-wrap items-center gap-3">
       <AssigneeControl note={note} />
       {permissions.editVisitType ? (
-        <FilterSelect label={words.visitType} value={note.visit_type} onChange={(event) => onVisitType(event.target.value)}>
-          {visitTypes.map((visitType) => (
-            <option key={visitType} value={visitType}>
-              {visitType}
-            </option>
-          ))}
-        </FilterSelect>
+        <Select
+          variant="filter"
+          label={words.visitType}
+          value={note.visit_type}
+          options={visitTypes.map((visitType) => ({ value: visitType, label: visitType }))}
+          onChange={onVisitType}
+        />
       ) : null}
       {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
       <DefensePacketButton noteId={note.id} size="sm" />

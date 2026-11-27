@@ -22,8 +22,13 @@ locals {
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
   ], [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
-  google_environment = var.google_client_id == "" ? [] : [{ name = "GOOGLE_CLIENT_ID", value = var.google_client_id }]
-  google_secrets     = var.google_client_id == "" ? [] : [{ name = "GOOGLE_CLIENT_SECRET", valueFrom = var.secret_arns["google-client-secret"] }]
+  identity_providers = {
+    GOOGLE    = { id = var.google_client_id, secret = "google-client-secret" }
+    MICROSOFT = { id = var.microsoft_client_id, secret = "microsoft-client-secret" }
+    YAHOO     = { id = var.yahoo_client_id, secret = "yahoo-client-secret" }
+  }
+  identity_environment = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_ID", value = provider.id } if provider.id != ""]
+  identity_secrets     = [for prefix, provider in local.identity_providers : { name = "${prefix}_CLIENT_SECRET", valueFrom = var.secret_arns[provider.secret] } if provider.id != ""]
   shared_secrets = [
     { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
     { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
@@ -37,11 +42,11 @@ locals {
       role    = aws_iam_role.app.arn
       port    = 8000
       stop    = 30
-      environment = concat(local.shared_environment, local.google_environment, [
+      environment = concat(local.shared_environment, local.identity_environment, [
         { name = "FORWARDED_ALLOW_IPS", value = var.vpc_cidr },
         { name = "WEB_CONCURRENCY", value = "1" },
       ])
-      secrets = concat(local.shared_secrets, local.google_secrets, [
+      secrets = concat(local.shared_secrets, local.identity_secrets, [
         { name = "MFA_ENCRYPTION_KEY", valueFrom = var.secret_arns["mfa-encryption-key"] },
       ])
     }

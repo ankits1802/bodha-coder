@@ -1,5 +1,6 @@
 from typing import Literal
 
+from app.adapters.oidc_providers import PROVIDER_NAMES
 from app.api.responses.base import Omittable, Role, View
 
 __all__ = [
@@ -10,7 +11,9 @@ __all__ = [
     "Preferences",
     "RecoveryCodeStatus",
     "RecoveryCodes",
+    "IdentityProviderName",
     "SignInProviders",
+    "SignUpOptions",
     "SignedIn",
     "SignedInDevice",
     "User",
@@ -59,8 +62,20 @@ class MfaEnrolment(View):
     qr_image: str
 
 
+IdentityProviderName = Literal[PROVIDER_NAMES]
+
+
+class SignUpOptions(View):
+    enabled: bool
+    terms_url: str | None
+    baa_url: str | None
+    privacy_url: str | None
+    test_data_only: bool
+
+
 class SignInProviders(View):
-    google: bool
+    providers: list[IdentityProviderName]
+    signup: SignUpOptions
 
 
 class SignedInDevice(View):

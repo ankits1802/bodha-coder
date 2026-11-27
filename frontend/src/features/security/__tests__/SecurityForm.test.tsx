@@ -21,8 +21,9 @@ describe("SecurityForm", () => {
     const onSaved = vi.fn();
     render(<SecurityForm settings={SETTINGS} onSaved={onSaved} />);
     const keep = screen.getByRole("combobox", { name: "Keep the access log for" });
-    expect(keep).toHaveValue("6");
-    expect(screen.getAllByRole("option", { name: /years$/ }).map((option) => option.textContent)).toEqual([
+    expect(keep).toHaveTextContent("6 years");
+    fireEvent.click(keep);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
       "6 years",
       "7 years",
       "8 years",
@@ -31,7 +32,8 @@ describe("SecurityForm", () => {
     ]);
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 
-    fireEvent.change(keep, { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("option", { name: "10 years" }));
+    expect(keep).toHaveTextContent("10 years");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));

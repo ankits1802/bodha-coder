@@ -1,4 +1,5 @@
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Td } from "@/components/ui/Table";
 import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
@@ -34,17 +35,11 @@ export function FileRowInputs({ entry, name, onUpdate }: FileRowInputsProps) {
       </Td>
       <Td className="align-top">
         <Select
-          aria-label={words.visitLabel(name)}
+          label={words.visitLabel(name)}
           value={entry.visitType ?? ""}
-          onChange={(event) => onUpdate(entry.id, { visitType: event.target.value || null })}
-        >
-          <option value="">{words.sameAsBatch}</option>
-          {VISIT_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </Select>
+          options={[{ value: "", label: words.sameAsBatch }, ...VISIT_TYPES.map((type) => ({ value: type, label: type }))]}
+          onChange={(visitType) => onUpdate(entry.id, { visitType: visitType || null })}
+        />
       </Td>
     </>
   );

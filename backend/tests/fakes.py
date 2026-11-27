@@ -4,7 +4,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.adapters.google_oidc import GoogleIdentity, GoogleRefused
+from app.adapters.oidc import ProviderIdentity
+from app.adapters.oidc_providers import IdentityRefused, provider_label
 from app.ai.contracts import ModelClient, ModelReply, ReviewInputs, ReviewOutcome, ReviewReport
 
 NOTE_TEXT = (
@@ -91,26 +92,37 @@ class FakeMessenger:
 
 
 @dataclass(frozen=True)
-class GoogleExchange:
+class ProviderExchange:
     code: str
     verifier: str
     nonce: str
 
 
 @dataclass
-class FakeGoogle:
+class FakeProvider:
+    name: str = "google"
     enabled: bool = True
-    identities: dict[str, GoogleIdentity] = field(default_factory=dict)
-    exchanges: list[GoogleExchange] = field(default_factory=list)
+    identities: dict[str, ProviderIdentity] = field(default_factory=dict)
+    refusals: dict[str, IdentityRefused] = field(default_factory=dict)
+    exchanges: list[ProviderExchange] = field(default_factory=list)
 
-    def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str:
-        return f"https://accounts.example.com/auth?state={state}"
+    @property
+    def label(self) -> str:
+        return provider_label(self.name)
 
-    async def identity(self, code: str, *, verifier: str, nonce: str) -> GoogleIdentity:
-        self.exchanges.append(GoogleExchange(code, verifier, nonce))
+    async def authorization_url(self, *, state: str, nonce: str, verifier: str) -> str:
+        return f"https://accounts.example.com/{self.name}/auth?state={state}"
+
+    async def identity(self, code: str, *, verifier: str, nonce: str) -> ProviderIdentity:
+        self.exchanges.append(ProviderExchange(code, verifier, nonce))
+        if code in self.refusals:
+            raise self.refusals[code]
         if code not in self.identities:
-            raise GoogleRefused("Google did not accept the sign-in")
+            raise IdentityRefused(f"{self.label} did not accept the sign-in")
         return self.identities[code]
+
+    def returns(self, code: str, *, subject: str, email: str, name: str = "") -> None:
+        self.identities[code] = ProviderIdentity(self.name, subject, email, name)
 
 
 @dataclass

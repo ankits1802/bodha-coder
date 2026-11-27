@@ -90,6 +90,8 @@ on the loopback address.
    | `LOCALSTACK_AUTH_TOKEN` | from a free LocalStack account; LocalStack requires one since its 2026.03 release |
    | `APP_URL`, `COOKIE_SECURE` | leave empty for `http://localhost:3000` and `true` |
    | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | empty unless testing Google sign-in |
+   | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT` | empty unless testing Microsoft sign-in; the tenant defaults to `common` |
+   | `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | empty unless testing Yahoo sign-in |
    | `BOOTSTRAP_HQ_EMAIL`, `BOOTSTRAP_HQ_PASSWORD` | the first HQ account |
 
 2. `docker compose --env-file .env.compose up --build`
@@ -200,11 +202,12 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `DATABASE_URL` (`postgresql+asyncpg://bodha_app:…@<endpoint>:5432/bodha?ssl=require`) | yes | yes | yes | secret |
 | `SECRET_KEY` | yes | yes | yes | secret |
 | `MFA_ENCRYPTION_KEY` | yes | | | secret |
-| `GOOGLE_CLIENT_SECRET` | yes | | | secret |
+| `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_SECRET`, `YAHOO_CLIENT_SECRET` | yes | | | secret |
 | `GOOGLE_CREDENTIALS_JSON` (the Vertex AI service account credential) | | yes | | secret |
 | `GEMINI_BACKEND=vertex`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` | | yes | | plain |
 | `APP_URL=https://coder.example.com`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
-| `GOOGLE_CLIENT_ID` | yes | | | plain |
+| `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_TENANT`, `YAHOO_CLIENT_ID` | yes | | | plain |
+| `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS` | | yes | | plain |
@@ -216,6 +219,40 @@ and `aws:kms` without a key id would use the AWS managed key rather than the buc
 `S3_ENDPOINT_URL`, `AWS_ENDPOINT_URL` or access keys on AWS: the task role supplies credentials.
 `ssl=require` encrypts the database connection; verifying the server certificate needs the RDS CA
 bundle in the image.
+
+### Self sign-up and sign-in services
+
+Practices can start a trial on their own ([0026](decisions/0026-self-serve-sign-up.md)).
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `SELF_SIGNUP_ENABLED` | `true` | `false` answers 404 on `/api/signup` and hides "Start a free trial"; a sign-in service then refuses an email without an account |
+| `TRIAL_DAYS` | `14` | the trial ends this many days after sign-up, in the practice's time zone |
+| `TRIAL_SEATS` | `5` | seats of a new trial practice |
+| `TERMS_URL` | empty | the terms of service, linked from the agreement checkbox |
+| `BAA_URL` | empty | the business associate agreement; while empty, the checkbox reads "I will use test data only" |
+| `PRIVACY_URL` | empty | the privacy policy, linked when set |
+| `AGREEMENT_VERSION` | `unpublished` | stored with each acceptance in `practices.signup`; change it whenever the terms or the BAA change |
+
+With `APP_ENVIRONMENT=production` and self sign-up on, the API refuses to start unless `BAA_URL` and
+`TERMS_URL` are set. Set both, or `SELF_SIGNUP_ENABLED=false`, before this release reaches production.
+Links must be `https://` (or `http://`) addresses.
+
+A sign-in service is on only when both its client id and secret are set. Register
+`{APP_URL}/api/auth/{provider}/callback` as the redirect URI of each:
+
+| Environment | Google | Microsoft | Yahoo |
+|---|---|---|---|
+| Local | `http://localhost:3000/api/auth/google/callback` | `http://localhost:3000/api/auth/microsoft/callback` | https only: a TLS tunnel's address + `/api/auth/yahoo/callback` |
+| Staging | `https://bodha-coder.vercel.app/api/auth/google/callback` | `https://bodha-coder.vercel.app/api/auth/microsoft/callback` | `https://bodha-coder.vercel.app/api/auth/yahoo/callback` |
+| Production | `https://coder.example.com/api/auth/google/callback` | `https://coder.example.com/api/auth/microsoft/callback` | `https://coder.example.com/api/auth/yahoo/callback` |
+
+- Google: an OAuth client of type "Web application"; scopes `openid email profile`.
+- Microsoft: an Entra ID app registration for "accounts in any organizational directory and personal
+  Microsoft accounts" (`MICROSOFT_TENANT=common`; `organizations`, `consumers` or one tenant id narrow
+  it), a client secret, and the optional ID token claims `email` and `xms_edov`. Without `xms_edov` only
+  personal Microsoft accounts are trusted.
+- Yahoo: an app with OpenID Connect permissions `openid`, `email` and `profile`.
 
 ### Database: RDS for PostgreSQL 17
 

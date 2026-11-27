@@ -31,38 +31,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/google/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["google_callback_api_auth_google_callback_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/google/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["google_start_api_auth_google_start_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -282,6 +250,38 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["end_session_api_auth_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/{provider}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["provider_callback_api_auth__provider__callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/{provider}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["provider_start_api_auth__provider__start_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1647,6 +1647,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["email_signup_api_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/signup/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pending_identity_api_signup_identity_get"];
+        put?: never;
+        post: operations["identity_signup_api_signup_identity_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team": {
         parameters: {
             query?: never;
@@ -2521,6 +2553,8 @@ export interface components {
             providers: number;
             renews_on: string | null;
             seats: number;
+            signed_up_on: string;
+            source: ("self" | "hq") | null;
             status: "trial" | "active" | "ended" | "blocked";
             time_zone: string;
             users: number;
@@ -2533,6 +2567,12 @@ export interface components {
             matched: number;
             missing: string[];
             reference: number;
+        };
+        IdentitySignupBody: {
+            agreed: true;
+            name: string;
+            practice_name: string;
+            time_zone: string;
         };
         ImportBody: {
             csv: string;
@@ -2816,6 +2856,11 @@ export interface components {
             id: string;
             name: string;
             plan_type: ("commercial" | "medicare" | "medicare_advantage" | "medicaid" | "other") | null;
+        };
+        PendingIdentity: {
+            email: string;
+            name: string;
+            provider: "google" | "microsoft" | "yahoo";
         };
         PersonProductivity: {
             approved: number;
@@ -3287,7 +3332,15 @@ export interface components {
             software: components["schemas"]["SetupSection"];
         };
         SignInProviders: {
-            google: boolean;
+            providers: ("google" | "microsoft" | "yahoo")[];
+            signup: components["schemas"]["SignUpOptions"];
+        };
+        SignUpOptions: {
+            baa_url: string | null;
+            enabled: boolean;
+            privacy_url: string | null;
+            terms_url: string | null;
+            test_data_only: boolean;
         };
         SignedIn: {
             access_token: string;
@@ -3301,6 +3354,13 @@ export interface components {
             ip: string | null;
             last_used_at: string;
             user_agent: string | null;
+        };
+        SignupBody: {
+            agreed: true;
+            email: string;
+            name: string;
+            practice_name: string;
+            time_zone: string;
         };
         SwitchBody: {
             request_id: string;
@@ -3479,69 +3539,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
-            };
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    google_callback_api_auth_google_callback_get: {
-        parameters: {
-            query?: {
-                code?: string | null;
-                state?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                bodha_google?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    google_start_api_auth_google_start_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            302: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             default: {
                 headers: {
@@ -4156,6 +4153,81 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    provider_callback_api_auth__provider__callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+            };
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: {
+                bodha_oidc?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    provider_start_api_auth__provider__start_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             422: {
                 headers: {
@@ -9334,6 +9406,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    email_signup_api_signup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupBody"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    pending_identity_api_signup_identity_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bodha_signup?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingIdentity"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    identity_signup_api_signup_identity_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bodha_signup?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentitySignupBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedIn"] | components["schemas"]["MfaChallenge"];
                 };
             };
             422: {

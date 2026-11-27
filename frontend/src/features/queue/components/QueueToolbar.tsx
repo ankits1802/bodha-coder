@@ -1,7 +1,7 @@
 "use client";
 
-import { FilterSelect } from "@/components/ui/FilterSelect";
 import { SegmentedControl, type Segment } from "@/components/ui/SegmentedControl";
+import { Select } from "@/components/ui/Select";
 import type { Lane, LaneCounts, Provider } from "@/lib/api/types";
 import { LANE_LABELS, LANE_ORDER } from "@/lib/labels";
 import { QUEUE_TEXT } from "../strings";
@@ -43,19 +43,24 @@ export function QueueToolbar(props: QueueToolbarProps) {
       />
       <div className="flex flex-wrap items-center gap-2">
         <QueueSearch value={search} onSearch={onSearch} />
-        <FilterSelect label={QUEUE_TEXT.provider} value={providerId} onChange={(event) => onProvider(event.target.value)}>
-          <option value="">{QUEUE_TEXT.allProviders}</option>
-          {providers.map((provider) => (
-            <option key={provider.id} value={provider.id}>
-              {provider.name}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label={QUEUE_TEXT.assignedFilter} value={assigned} onChange={(event) => onAssigned(event.target.value)}>
-          <option value="">{QUEUE_TEXT.anyone}</option>
-          <option value="me">{QUEUE_TEXT.mine}</option>
-          <option value="none">{QUEUE_TEXT.unassigned}</option>
-        </FilterSelect>
+        <Select
+          variant="filter"
+          label={QUEUE_TEXT.provider}
+          value={providerId}
+          options={[{ value: "", label: QUEUE_TEXT.allProviders }, ...providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
+          onChange={onProvider}
+        />
+        <Select
+          variant="filter"
+          label={QUEUE_TEXT.assignedFilter}
+          value={assigned}
+          options={[
+            { value: "", label: QUEUE_TEXT.anyone },
+            { value: "me", label: QUEUE_TEXT.mine },
+            { value: "none", label: QUEUE_TEXT.unassigned },
+          ]}
+          onChange={onAssigned}
+        />
       </div>
     </div>
   );

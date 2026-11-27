@@ -1,5 +1,6 @@
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Field } from "@/components/ui/Field";
-import { Input, Select } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import type { Place, Provider, UploadPlan } from "@/lib/api/types";
 import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
@@ -27,47 +28,40 @@ export function PlanPanel({ plan, providers, places, onChange }: PlanPanelProps)
     >
       <Field label={words.provider}>
         {(control) => (
-          <Select {...control} value={plan.provider_id} onChange={(event) => chooseProvider(event.target.value)}>
-            <option value="">{words.chooseProvider}</option>
-            {providers.map((provider) => (
-              <option key={provider.id} value={provider.id}>
-                {words.providerOption(provider.name, provider.credential)}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={plan.provider_id}
+            options={[
+              { value: "", label: words.chooseProvider },
+              ...providers.map((provider) => ({ value: provider.id, label: words.providerOption(provider.name, provider.credential) })),
+            ]}
+            onChange={chooseProvider}
+          />
         )}
       </Field>
       <Field label={words.date}>
         {(control) => (
-          <Input
-            {...control}
-            type="date"
-            value={plan.service_date}
-            onChange={(event) => onChange({ ...plan, service_date: event.target.value })}
-          />
+          <DatePicker {...control} value={plan.service_date || null} onChange={(day) => onChange({ ...plan, service_date: day ?? "" })} />
         )}
       </Field>
       <Field label={words.place}>
         {(control) => (
-          <Select {...control} value={plan.place_code} onChange={(event) => onChange({ ...plan, place_code: event.target.value })}>
-            <option value="">{words.choosePlace}</option>
-            {places.map((place) => (
-              <option key={place.code} value={place.code}>
-                {words.placeOption(place.name, place.code)}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={plan.place_code}
+            options={[{ value: "", label: words.choosePlace }, ...places.map((place) => ({ value: place.code, label: words.placeOption(place.name, place.code) }))]}
+            onChange={(place_code) => onChange({ ...plan, place_code })}
+          />
         )}
       </Field>
       <Field label={words.visitType}>
         {(control) => (
-          <Select {...control} value={plan.visit_type} onChange={(event) => onChange({ ...plan, visit_type: event.target.value })}>
-            {VISIT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Select>
+          <Select
+            {...control}
+            value={plan.visit_type}
+            options={VISIT_TYPES.map((type) => ({ value: type, label: type }))}
+            onChange={(visit_type) => onChange({ ...plan, visit_type })}
+          />
         )}
       </Field>
     </section>

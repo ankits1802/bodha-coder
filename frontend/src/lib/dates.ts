@@ -54,7 +54,49 @@ export function addDays(text: string, days: number): string | null {
   return localIsoDate(local);
 }
 
-export function isWeekend(text: string): boolean {
+export function weekdayOf(text: string): number | null {
   const local = localDateFromIso(text);
-  return local !== null && (local.getDay() === 0 || local.getDay() === 6);
+  return local ? local.getDay() : null;
+}
+
+export function isWeekend(text: string): boolean {
+  const weekday = weekdayOf(text);
+  return weekday === 0 || weekday === 6;
+}
+
+export function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+export function dayInMonth(year: number, month: number, day: number): string {
+  return toIsoDate({ year, month, day: Math.min(day, daysInMonth(year, month)) });
+}
+
+export function addMonths(text: string, months: number): string | null {
+  const parsed = parseIsoDate(text);
+  if (!parsed) return null;
+  const first = new Date(parsed.year, parsed.month - 1 + months, 1);
+  return dayInMonth(first.getFullYear(), first.getMonth() + 1, parsed.day);
+}
+
+export function clampIsoDate(text: string, min?: string | null, max?: string | null): string {
+  if (min && text < min) return min;
+  if (max && text > max) return max;
+  return text;
+}
+
+export function isWithin(text: string, min?: string | null, max?: string | null): boolean {
+  return clampIsoDate(text, min, max) === text;
+}
+
+export function monthWeeks(year: number, month: number, weekStartsOn: number): (string | null)[][] {
+  const lead = (new Date(year, month - 1, 1).getDay() - weekStartsOn + 7) % 7;
+  const days = Array.from({ length: daysInMonth(year, month) }, (_, index) => toIsoDate({ year, month, day: index + 1 }));
+  const cells: (string | null)[] = [...Array<null>(lead).fill(null), ...days];
+  const weeks: (string | null)[][] = [];
+  for (let start = 0; start < cells.length; start += 7) {
+    const week = cells.slice(start, start + 7);
+    weeks.push([...week, ...Array<null>(7 - week.length).fill(null)]);
+  }
+  return weeks;
 }

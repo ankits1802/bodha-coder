@@ -3,19 +3,24 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import Cookie, Depends, Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adapters.google_oidc import GoogleSignIn
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
+from app.adapters.oidc import IdentityProvider
 from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
-from app.models import User
+from app.core.errors import NotFound
+from app.models import Practice, User
+from app.services.auth import MfaChallenge, Tokens
 from app.services.practice_setup import practice_checks
 
 REFRESH_COOKIE = "bodha_refresh"
 REFRESH_PATH = "/api/auth"
-GOOGLE_COOKIE = "bodha_google"
-GOOGLE_PATH = "/api/auth/google"
+OIDC_COOKIE = "bodha_oidc"
+OIDC_PATH = "/api/auth/{provider}"
+SIGNUP_COOKIE = "bodha_signup"
+SIGNUP_PATH = "/api/signup"
 
 
 def store(request: Request) -> ObjectStore:
@@ -30,8 +35,15 @@ def icd(request: Request) -> IcdCatalog:
     return request.app.state.icd
 
 
-def google(request: Request) -> GoogleSignIn:
-    return request.app.state.google
+def identity_providers(request: Request) -> dict[str, IdentityProvider]:
+    return request.app.state.identity_providers
+
+
+def identity_provider(request: Request, provider: str) -> IdentityProvider:
+    found = identity_providers(request).get(provider)
+    if found is None:
+        raise NotFound("that sign-in provider is not known")
+    return found
 
 
 def client_of(request: Request) -> tuple[str | None, str | None]:
@@ -41,9 +53,11 @@ def client_of(request: Request) -> tuple[str | None, str | None]:
 Store = Annotated[ObjectStore, Depends(store)]
 Mail = Annotated[Messenger, Depends(messenger)]
 Icd = Annotated[IcdCatalog, Depends(icd)]
-Google = Annotated[GoogleSignIn, Depends(google)]
+IdentityProviders = Annotated[dict[str, IdentityProvider], Depends(identity_providers)]
+ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
-GoogleCookie = Annotated[str | None, Cookie(alias=GOOGLE_COOKIE)]
+OidcCookie = Annotated[str | None, Cookie(alias=OIDC_COOKIE)]
+SignupCookie = Annotated[str | None, Cookie(alias=SIGNUP_COOKIE)]
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
@@ -63,22 +77,42 @@ def clear_refresh_cookie(response: Response) -> None:
     response.delete_cookie(REFRESH_COOKIE, path=REFRESH_PATH)
 
 
-def set_google_cookie(response: Response, value: str, *, minutes: int) -> None:
-    response.set_cookie(
-        GOOGLE_COOKIE,
-        value,
-        max_age=minutes * 60,
-        httponly=True,
-        secure=get_settings().cookie_secure,
-        samesite="lax",
-        path=GOOGLE_PATH,
-    )
+def set_oidc_cookie(response: Response, provider: str, value: str, *, minutes: int) -> None:
+    _set_lax_cookie(response, OIDC_COOKIE, value, path=OIDC_PATH.format(provider=provider), minutes=minutes)
 
 
-def clear_google_cookie(response: Response) -> None:
-    response.delete_cookie(
-        GOOGLE_COOKIE, path=GOOGLE_PATH, httponly=True, secure=get_settings().cookie_secure, samesite="lax"
-    )
+def clear_oidc_cookie(response: Response, provider: str) -> None:
+    _clear_lax_cookie(response, OIDC_COOKIE, path=OIDC_PATH.format(provider=provider))
+
+
+def set_signup_cookie(response: Response, value: str, *, minutes: int) -> None:
+    _set_lax_cookie(response, SIGNUP_COOKIE, value, path=SIGNUP_PATH, minutes=minutes)
+
+
+def clear_signup_cookie(response: Response) -> None:
+    _clear_lax_cookie(response, SIGNUP_COOKIE, path=SIGNUP_PATH)
+
+
+def _set_lax_cookie(response: Response, name: str, value: str, *, path: str, minutes: int) -> None:
+    secure = get_settings().cookie_secure
+    response.set_cookie(name, value, max_age=minutes * 60, httponly=True, secure=secure, samesite="lax", path=path)
+
+
+def _clear_lax_cookie(response: Response, name: str, *, path: str) -> None:
+    response.delete_cookie(name, path=path, httponly=True, secure=get_settings().cookie_secure, samesite="lax")
+
+
+async def signed_in_body(db: AsyncSession, response: Response, tokens: Tokens) -> dict[str, Any]:
+    set_refresh_cookie(response, tokens.refresh)
+    practice = await db.get(Practice, tokens.user.practice_id) if tokens.user.practice_id else None
+    body: dict[str, Any] = {"access_token": tokens.access, "user": user_view(tokens.user, practice)}
+    if tokens.recovery_codes:
+        body["recovery_codes"] = list(tokens.recovery_codes)
+    return body
+
+
+def challenge_body(challenge: MfaChallenge) -> dict[str, str]:
+    return {"mfa": challenge.step, "mfa_token": challenge.token}
 
 
 def user_view(user: User, practice: Any | None) -> dict[str, Any]:

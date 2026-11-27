@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ASSIGNABLE_STATUSES } from "@/components/shared/noteStatus";
 import { Button } from "@/components/ui/Button";
-import { FilterSelect } from "@/components/ui/FilterSelect";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { useAssignees, type Assignee } from "@/hooks/useAssignees";
 import { assignNotes } from "@/lib/api/notes";
@@ -34,19 +34,14 @@ function PersonPicker({ user, current, pending, onPick }: PickerProps) {
       <span aria-hidden="true" className="text-subhead text-secondary">
         {words.assignee}
       </span>
-      <FilterSelect
+      <Select
+        variant="filter"
         label={words.assignee}
         value={current?.id ?? ""}
         disabled={pending}
-        onChange={(event) => onPick(people.find((person) => person.id === event.target.value) ?? null)}
-      >
-        <option value="">{words.nobody}</option>
-        {people.map((person) => (
-          <option key={person.id} value={person.id}>
-            {person.name}
-          </option>
-        ))}
-      </FilterSelect>
+        options={[{ value: "", label: words.nobody }, ...people.map((person) => ({ value: person.id, label: person.name }))]}
+        onChange={(id) => onPick(people.find((person) => person.id === id) ?? null)}
+      />
       {assignees.error ? <span className="text-footnote text-bad-text">{assignees.error}</span> : null}
     </span>
   );

@@ -8,9 +8,10 @@ import { useAction } from "@/hooks/useAction";
 import { updatePractice } from "@/lib/api/hq";
 import type { HqPractice } from "@/lib/api/types";
 import { PLAN_LABELS, PRACTICE_STATUS_LABELS } from "@/lib/labels";
+import { zoneOptions } from "@/lib/timeZones";
 import { HQ_TEXT } from "../strings";
-import { ChoiceField, TextField } from "./FormFields";
-import { PLANS, STATUSES, editDraftFrom, practiceChanges, seatsError, zoneOptions, type PracticeEditDraft } from "./practiceForm";
+import { ChoiceField, DayField, TextField } from "./FormFields";
+import { PLANS, STATUSES, editDraftFrom, practiceChanges, seatsError, type PracticeEditDraft } from "./practiceForm";
 
 const FORM_ID = "edit-practice";
 
@@ -67,7 +68,7 @@ export function EditPracticeDialog({ practice, onClose, onSaved }: EditPracticeD
         />
         <ChoiceField label={words.plan} value={draft.plan} options={PLANS} labels={PLAN_LABELS} onChange={set("plan")} />
         <TextField label={words.seats} type="number" min={1} inputMode="numeric" value={draft.seats} error={seats} onChange={set("seats")} />
-        <TextField label={words.renewsOn} type="date" value={draft.renews_on} onChange={set("renews_on")} />
+        <DayField label={words.renewsOn} value={draft.renews_on} onChange={set("renews_on")} />
         <ChoiceField
           label={words.timeZone}
           value={draft.time_zone}

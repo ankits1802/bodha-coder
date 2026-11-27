@@ -82,6 +82,8 @@ module "app" {
   desired_count         = 1
   public_url            = var.public_url
   google_client_id      = var.google_client_id
+  microsoft_client_id   = var.microsoft_client_id
+  yahoo_client_id       = var.yahoo_client_id
 }
 
 module "watch" {

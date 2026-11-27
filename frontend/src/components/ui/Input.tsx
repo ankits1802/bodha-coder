@@ -1,18 +1,10 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { FIELD_CLASSES } from "./fieldStyles";
 
-const CONTROL =
-  "w-full rounded-control bg-surface text-body text-label shadow-field outline-none transition-shadow placeholder:text-tertiary focus:shadow-field-focus aria-invalid:shadow-field-error disabled:bg-muted-panel disabled:text-tertiary";
+export const CONTROL = `w-full ${FIELD_CLASSES}`;
 
 export function Input({ className = "", ...rest }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={`${CONTROL} h-9 px-3 ${className}`} {...rest} />;
-}
-
-export function Select({ className = "", children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select className={`${CONTROL} h-9 appearance-auto px-3 ${className}`} {...rest}>
-      {children}
-    </select>
-  );
 }
 
 export function TextArea({ className = "", ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {

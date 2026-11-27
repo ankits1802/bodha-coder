@@ -54,7 +54,8 @@ describe("queue assignment and bulk actions", () => {
   it("filters to my notes from the menu and with the M key", async () => {
     render(<QueueScreen />);
     await screen.findByRole("link", { name: "Marisol Reyes" });
-    fireEvent.change(screen.getByRole("combobox", { name: "Assigned" }), { target: { value: "me" } });
+    fireEvent.click(screen.getByRole("combobox", { name: "Assigned" }));
+    fireEvent.click(screen.getByRole("option", { name: "Mine" }));
     expect(router.replace).toHaveBeenLastCalledWith("/queue?assigned=me", { scroll: false });
     router.replace.mockClear();
     fireEvent.keyDown(window, { key: "m" });
@@ -66,7 +67,8 @@ describe("queue assignment and bulk actions", () => {
     render(<QueueScreen />);
     fireEvent.click(await screen.findByRole("checkbox", { name: "Select Marisol Reyes" }));
     fireEvent.click(screen.getByRole("button", { name: "Assign to…" }));
-    fireEvent.change(screen.getByRole("combobox", { name: "Person" }), { target: { value: "user-1" } });
+    fireEvent.click(screen.getByRole("combobox", { name: "Person" }));
+    fireEvent.click(screen.getByRole("option", { name: "Priya Nair" }));
     fireEvent.click(screen.getByRole("button", { name: "Assign" }));
     await waitFor(() => expect(assignNotes).toHaveBeenCalledWith(["note-1"], "user-1"));
     expect(await screen.findByText("1 assigned")).toBeInTheDocument();

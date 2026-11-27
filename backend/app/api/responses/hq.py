@@ -3,6 +3,7 @@ from typing import Literal
 from app.api.responses.base import View
 from app.api.responses.team import MemberStatus
 from app.services.hq import PLANS, STATUSES
+from app.services.practice_accounts import SIGNUP_SOURCES
 
 __all__ = [
     "AdminLinkSent",
@@ -37,6 +38,8 @@ class HqPractice(View):
     waiting: int
     renews_on: str | None
     time_zone: str
+    source: Literal[SIGNUP_SOURCES] | None
+    signed_up_on: str
     failed_24h: int
     last_failure: str | None
     admin_name: str | None

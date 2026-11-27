@@ -1,8 +1,14 @@
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+WEB_SCHEMES = ("https://", "http://")
+
+
+class SignupNotReady(RuntimeError):
+    pass
 
 
 class Settings(BaseSettings):
@@ -19,7 +25,12 @@ class Settings(BaseSettings):
     mfa_issuer: str = "Bodha Coder"
     mfa_encryption_key: str | None = None
     google_client_id: str | None = None
-    google_client_secret: str | None = None
+    google_client_secret: SecretStr | None = None
+    microsoft_client_id: str | None = None
+    microsoft_client_secret: SecretStr | None = None
+    microsoft_tenant: str = "common"
+    yahoo_client_id: str | None = None
+    yahoo_client_secret: SecretStr | None = None
     bootstrap_hq_email: str | None = None
     bootstrap_hq_password: str | None = None
 
@@ -58,15 +69,38 @@ class Settings(BaseSettings):
     twilio_auth_token: str | None = None
     twilio_from: str | None = None
 
+    self_signup_enabled: bool = True
+    trial_days: int = Field(default=14, ge=1)
+    trial_seats: int = Field(default=5, ge=1)
+    terms_url: str | None = None
+    baa_url: str | None = None
+    privacy_url: str | None = None
+    agreement_version: str = Field(default="unpublished", min_length=1, max_length=40)
+
     turnaround_hours: int = 48
     addendum_link_hours: int = 72
     provider_session_minutes: int = 30
+
+    @field_validator("terms_url", "baa_url", "privacy_url", mode="before")
+    @classmethod
+    def _web_address_or_none(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        if not value.strip():
+            return None
+        if not value.strip().startswith(WEB_SCHEMES):
+            raise ValueError("TERMS_URL, BAA_URL and PRIVACY_URL must be web addresses")
+        return value.strip()
 
     @model_validator(mode="after")
     def _no_demo_model_in_production(self) -> Self:
         if self.gemini_backend == "demo" and self.app_environment == "production":
             raise ValueError("GEMINI_BACKEND=demo is refused when APP_ENVIRONMENT is production")
         return self
+
+    def refuse_unready_signup(self) -> None:
+        if self.app_environment == "production" and self.self_signup_enabled and not (self.baa_url and self.terms_url):
+            raise SignupNotReady("SELF_SIGNUP_ENABLED needs BAA_URL and TERMS_URL when APP_ENVIRONMENT is production")
 
 
 @lru_cache

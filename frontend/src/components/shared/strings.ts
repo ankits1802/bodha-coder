@@ -10,6 +10,12 @@ export const SHARED_TEXT = {
   brand: "Bodha Coder",
   tagline: "Clinical coding review",
   platformAdministration: "Platform administration",
+  password: { show: "Show password", hide: "Hide password" },
+  identityProviders: {
+    label: "Sign-in services",
+    names: { google: "Google", microsoft: "Microsoft", yahoo: "Yahoo" },
+    continueWith: (name: string) => `Continue with ${name}`,
+  },
   notAllowed: "Your role can't open this page.",
   goHome: "Go to my work",
   meta: {

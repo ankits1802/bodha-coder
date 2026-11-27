@@ -50,6 +50,16 @@ variable "google_client_id" {
   default = ""
 }
 
+variable "microsoft_client_id" {
+  type    = string
+  default = ""
+}
+
+variable "yahoo_client_id" {
+  type    = string
+  default = ""
+}
+
 variable "image_tag" {
   type    = string
   default = "bootstrap"

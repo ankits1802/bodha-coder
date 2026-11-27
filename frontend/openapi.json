@@ -4599,6 +4599,25 @@
             "title": "Seats",
             "type": "integer"
           },
+          "signed_up_on": {
+            "title": "Signed Up On",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "self",
+                  "hq"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
           "status": {
             "enum": [
               "trial",
@@ -4633,6 +4652,8 @@
           "waiting",
           "renews_on",
           "time_zone",
+          "source",
+          "signed_up_on",
           "failed_24h",
           "last_failure",
           "admin_name",
@@ -4685,6 +4706,42 @@
           "match"
         ],
         "title": "IcdComparison",
+        "type": "object"
+      },
+      "IdentitySignupBody": {
+        "additionalProperties": false,
+        "properties": {
+          "agreed": {
+            "const": true,
+            "title": "Agreed",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "practice_name": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "time_zone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "practice_name",
+          "time_zone",
+          "agreed"
+        ],
+        "title": "IdentitySignupBody",
         "type": "object"
       },
       "ImportBody": {
@@ -6487,6 +6544,35 @@
           "plan_type"
         ],
         "title": "PayerOption",
+        "type": "object"
+      },
+      "PendingIdentity": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "google",
+              "microsoft",
+              "yahoo"
+            ],
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "name",
+          "provider"
+        ],
+        "title": "PendingIdentity",
         "type": "object"
       },
       "PersonProductivity": {
@@ -9684,15 +9770,82 @@
       "SignInProviders": {
         "additionalProperties": false,
         "properties": {
-          "google": {
-            "title": "Google",
+          "providers": {
+            "items": {
+              "enum": [
+                "google",
+                "microsoft",
+                "yahoo"
+              ],
+              "type": "string"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "signup": {
+            "$ref": "#/components/schemas/SignUpOptions"
+          }
+        },
+        "required": [
+          "providers",
+          "signup"
+        ],
+        "title": "SignInProviders",
+        "type": "object"
+      },
+      "SignUpOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "baa_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baa Url"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "privacy_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Url"
+          },
+          "terms_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Url"
+          },
+          "test_data_only": {
+            "title": "Test Data Only",
             "type": "boolean"
           }
         },
         "required": [
-          "google"
+          "enabled",
+          "terms_url",
+          "baa_url",
+          "privacy_url",
+          "test_data_only"
         ],
-        "title": "SignInProviders",
+        "title": "SignUpOptions",
         "type": "object"
       },
       "SignedIn": {
@@ -9771,6 +9924,48 @@
           "current"
         ],
         "title": "SignedInDevice",
+        "type": "object"
+      },
+      "SignupBody": {
+        "additionalProperties": false,
+        "properties": {
+          "agreed": {
+            "const": true,
+            "title": "Agreed",
+            "type": "boolean"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "practice_name": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Practice Name",
+            "type": "string"
+          },
+          "time_zone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "practice_name",
+          "time_zone",
+          "agreed",
+          "email"
+        ],
+        "title": "SignupBody",
         "type": "object"
       },
       "SwitchBody": {
@@ -10470,114 +10665,6 @@
           }
         },
         "summary": "Forgot",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/auth/google/callback": {
-      "get": {
-        "operationId": "google_callback_api_auth_google_callback_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "code",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Code"
-            }
-          },
-          {
-            "in": "query",
-            "name": "state",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "State"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "bodha_google",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Bodha Google"
-            }
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "The request is not valid"
-          },
-          "default": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Any other error"
-          }
-        },
-        "summary": "Google Callback",
-        "tags": [
-          "auth"
-        ]
-      }
-    },
-    "/api/auth/google/start": {
-      "get": {
-        "operationId": "google_start_api_auth_google_start_get",
-        "responses": {
-          "302": {
-            "description": "Successful Response"
-          },
-          "default": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Any other error"
-          }
-        },
-        "summary": "Google Start",
         "tags": [
           "auth"
         ]
@@ -11527,6 +11614,144 @@
         "summary": "End Session",
         "tags": [
           "account"
+        ]
+      }
+    },
+    "/api/auth/{provider}/callback": {
+      "get": {
+        "operationId": "provider_callback_api_auth__provider__callback_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "bodha_oidc",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Oidc"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Provider Callback",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/{provider}/start": {
+      "get": {
+        "operationId": "provider_start_api_auth__provider__start_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Provider Start",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -19855,6 +20080,174 @@
         "summary": "Find Notes",
         "tags": [
           "work"
+        ]
+      }
+    },
+    "/api/signup": {
+      "post": {
+        "operationId": "email_signup_api_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Email Signup",
+        "tags": [
+          "signup"
+        ]
+      }
+    },
+    "/api/signup/identity": {
+      "get": {
+        "operationId": "pending_identity_api_signup_identity_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "bodha_signup",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Signup"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingIdentity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Pending Identity",
+        "tags": [
+          "signup"
+        ]
+      },
+      "post": {
+        "operationId": "identity_signup_api_signup_identity_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "bodha_signup",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bodha Signup"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentitySignupBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SignedIn"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallenge"
+                    }
+                  ],
+                  "title": "Response Identity Signup Api Signup Identity Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Identity Signup",
+        "tags": [
+          "signup"
         ]
       }
     },

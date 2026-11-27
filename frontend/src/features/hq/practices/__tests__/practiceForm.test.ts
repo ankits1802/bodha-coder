@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HqPractice } from "@/lib/api/types";
-import { editDraftFrom, practiceChanges, zoneOptions } from "../practiceForm";
+import { editDraftFrom, practiceChanges } from "../practiceForm";
 
 const PRACTICE: HqPractice = {
   id: "p1",
@@ -13,6 +13,8 @@ const PRACTICE: HqPractice = {
   waiting: 288,
   renews_on: "2027-03-01",
   time_zone: "America/Chicago",
+  source: "hq",
+  signed_up_on: "2026-01-05",
   failed_24h: 0,
   last_failure: null,
   admin_name: "Priya Raman",
@@ -35,14 +37,5 @@ describe("practiceChanges", () => {
     expect(practiceChanges(PRACTICE, { ...editDraftFrom(PRACTICE), name: "  Lakeside Family Care " })).toEqual({
       name: "Lakeside Family Care",
     });
-  });
-});
-
-describe("zoneOptions", () => {
-  it("keeps a zone outside the short list selectable", () => {
-    const zones = zoneOptions("Europe/London");
-    expect(zones.options).toContain("Europe/London");
-    expect(zones.labels["Europe/London"]).toBe("Europe/London");
-    expect(zoneOptions("America/Chicago").options).not.toContain("Europe/London");
   });
 });

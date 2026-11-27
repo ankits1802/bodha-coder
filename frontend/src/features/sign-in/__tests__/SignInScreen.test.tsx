@@ -21,7 +21,8 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/lib/api/auth", () => ({
   FORGOT_PASSWORD_PATH: "/forgot-password",
-  GOOGLE_START_PATH: "/api/auth/google/start",
+  SIGN_UP_PATH: "/sign-up",
+  providerStartPath: (provider: string) => `/api/auth/${provider}/start`,
   isSignedIn: (result: object) => "access_token" in result,
   login: vi.fn(),
   startMfaSetup: vi.fn(),
@@ -29,6 +30,9 @@ vi.mock("@/lib/api/auth", () => ({
   recoverMfa: vi.fn(),
   getSignInProviders: vi.fn(),
 }));
+
+const SIGN_UP_OFF = { enabled: false, terms_url: null, baa_url: null, privacy_url: null, test_data_only: true };
+const NO_EXTRAS = { providers: [], signup: SIGN_UP_OFF };
 
 const ADMIN: User = {
   id: "user-1",
@@ -55,7 +59,7 @@ async function reachVerifyStep(): Promise<void> {
 describe("SignInScreen recovery codes", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(getSignInProviders).mockResolvedValue({ google: false });
+    vi.mocked(getSignInProviders).mockResolvedValue(NO_EXTRAS);
     vi.mocked(login).mockResolvedValue({ mfa: "verify", mfa_token: "mfa-token-1" });
   });
 
@@ -89,5 +93,47 @@ describe("SignInScreen recovery codes", () => {
 
     expect(screen.getByRole("group", { name: "Six-digit code" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Recovery code")).not.toBeInTheDocument();
+  });
+});
+
+describe("SignInScreen other ways in", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("offers each enabled sign-in service and the free trial", async () => {
+    vi.mocked(getSignInProviders).mockResolvedValue({
+      providers: ["google", "microsoft"],
+      signup: { ...SIGN_UP_OFF, enabled: true },
+    });
+    render(<SignInScreen />);
+
+    expect(await screen.findByRole("link", { name: "Continue with Microsoft" })).toHaveAttribute(
+      "href",
+      "/api/auth/microsoft/start",
+    );
+    expect(screen.getByRole("link", { name: "Continue with Google" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Continue with Yahoo" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start a free trial" })).toHaveAttribute("href", "/sign-up");
+  });
+
+  it("hides the free trial when self sign-up is off", async () => {
+    vi.mocked(getSignInProviders).mockResolvedValue({ providers: ["yahoo"], signup: SIGN_UP_OFF });
+    render(<SignInScreen />);
+
+    expect(await screen.findByRole("link", { name: "Continue with Yahoo" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Start a free trial" })).not.toBeInTheDocument();
+  });
+
+  it("names the service whose account has no verified email", async () => {
+    vi.mocked(getSignInProviders).mockResolvedValue(NO_EXTRAS);
+    window.history.replaceState(null, "", "/sign-in#error=unverified_email&provider=microsoft");
+    render(<SignInScreen />);
+
+    expect(await screen.findByText("This Microsoft account has no verified email.")).toBeInTheDocument();
   });
 });

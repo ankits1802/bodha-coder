@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Select } from "@/components/ui/Input";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { useRemote } from "@/hooks/useRemote";
@@ -63,23 +63,27 @@ function IntakeForm({ data }: { data: IntakeData }) {
         </div>
         <Field label={INTAKE_TEXT.place} error={problems.place}>
           {(control) => (
-            <Select {...control} value={draft.placeCode} onChange={(event) => change({ placeCode: event.target.value })} className="max-w-80">
-              <option value="">{INTAKE_TEXT.choosePlace}</option>
-              {data.places.map((place) => (
-                <option key={place.code} value={place.code}>{INTAKE_TEXT.placeOption(place.code, place.name)}</option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={draft.placeCode}
+              options={[
+                { value: "", label: INTAKE_TEXT.choosePlace },
+                ...data.places.map((place) => ({ value: place.code, label: INTAKE_TEXT.placeOption(place.code, place.name) })),
+              ]}
+              onChange={(placeCode) => change({ placeCode })}
+              className="max-w-80"
+            />
           )}
         </Field>
         <Field label={INTAKE_TEXT.visitType}>
           {(control) => (
-            <Select {...control} value={draft.visitType} onChange={(event) => change({ visitType: event.target.value })} className="max-w-80">
-              {visitTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={draft.visitType}
+              options={visitTypes.map((type) => ({ value: type, label: type }))}
+              onChange={(visitType) => change({ visitType })}
+              className="max-w-80"
+            />
           )}
         </Field>
         <div className="flex flex-col gap-2">

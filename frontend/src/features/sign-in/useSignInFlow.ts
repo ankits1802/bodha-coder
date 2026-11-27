@@ -8,7 +8,7 @@ import { refreshSession } from "@/lib/api/client";
 import { UserFacingError, messageOf } from "@/lib/api/errors";
 import type { MfaEnrolment, MfaVerified, SignedIn } from "@/lib/api/types";
 import { setSession } from "@/lib/session/store";
-import { googleErrorText, googleReturnOf, type GoogleReturn } from "./googleReturn";
+import { providerErrorText, providerReturnOf, type ProviderReturn } from "./providerReturn";
 
 export type Step =
   | { kind: "credentials" }
@@ -24,27 +24,27 @@ async function signInStep(email: string, password: string): Promise<Step> {
   return { kind: "setup", mfaToken: result.mfa_token, enrolment: await startMfaSetup(result.mfa_token) };
 }
 
-function stepAfterGoogle(returned: GoogleReturn | null): Step {
+function stepAfterProvider(returned: ProviderReturn | null): Step {
   if (returned?.kind === "mfa" && !returned.setup) return { kind: "verify", mfaToken: returned.mfaToken, email: null };
   if (returned?.kind === "mfa" || returned?.kind === "signedIn") return { kind: "finishing" };
   return { kind: "credentials" };
 }
 
-async function finishGoogle(returned: GoogleReturn): Promise<Step | null> {
+async function finishProvider(returned: ProviderReturn): Promise<Step | null> {
   if (returned.kind === "mfa") {
     return { kind: "setup", mfaToken: returned.mfaToken, enrolment: await startMfaSetup(returned.mfaToken) };
   }
-  if (!(await refreshSession())) throw new UserFacingError(googleErrorText("failed"));
+  if (!(await refreshSession())) throw new UserFacingError(providerErrorText("failed", null));
   return null;
 }
 
-function needsFinishing(returned: GoogleReturn | null): returned is GoogleReturn {
+function needsFinishing(returned: ProviderReturn | null): returned is ProviderReturn {
   return returned?.kind === "signedIn" || (returned?.kind === "mfa" && returned.setup);
 }
 
 export function useSignInFlow() {
   const fragment = useFragmentToken();
-  const returned = googleReturnOf(fragment);
+  const returned = providerReturnOf(fragment);
   const [chosen, setChosen] = useState<Step | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const finishing = useRef(false);
@@ -53,10 +53,10 @@ export function useSignInFlow() {
   const recover = useAction(recoverMfa);
 
   useEffect(() => {
-    const pending = googleReturnOf(fragment);
+    const pending = providerReturnOf(fragment);
     if (finishing.current || !needsFinishing(pending)) return;
     finishing.current = true;
-    finishGoogle(pending).then(
+    finishProvider(pending).then(
       (step) => {
         if (step) setChosen(step);
       },
@@ -89,11 +89,12 @@ export function useSignInFlow() {
     setChosen({ kind: "credentials" });
   }
 
-  const step: Step = chosen ?? (failure ? { kind: "credentials" } : stepAfterGoogle(returned));
-  const googleError = chosen === null && returned?.kind === "error" ? googleErrorText(returned.reason) : null;
+  const step: Step = chosen ?? (failure ? { kind: "credentials" } : stepAfterProvider(returned));
+  const providerError =
+    chosen === null && returned?.kind === "error" ? providerErrorText(returned.reason, returned.provider) : null;
   return {
     step,
-    notice: failure ?? googleError,
+    notice: failure ?? providerError,
     signIn,
     verify,
     recover,

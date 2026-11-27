@@ -11,6 +11,10 @@ const DOTS: Record<StatusTone, string> = {
   neutral: "bg-neutral",
 };
 
+export function ToneDot({ tone }: { tone: StatusTone }) {
+  return <span aria-hidden="true" className={`size-2 flex-none rounded-full ${DOTS[tone]}`} />;
+}
+
 interface StatusDotProps {
   tone: StatusTone;
   children: ReactNode;
@@ -20,7 +24,7 @@ interface StatusDotProps {
 export function StatusDot({ tone, children, className = "" }: StatusDotProps) {
   return (
     <span className={`inline-flex items-center gap-1.75 text-subhead whitespace-nowrap text-label-soft ${className}`}>
-      <span aria-hidden="true" className={`size-2 flex-none rounded-full ${DOTS[tone]}`} />
+      <ToneDot tone={tone} />
       {children}
     </span>
   );

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Select } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { useAssignees } from "@/hooks/useAssignees";
 import type { User } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
@@ -29,17 +29,16 @@ function PersonField({ member, value, onChange }: { member: User; value: string;
     <>
       <Field label={QUEUE_TEXT.assignee}>
         {(control) => (
-          <Select {...control} value={value} onChange={(event) => onChange(event.target.value)}>
-            <option value="" disabled>
-              {QUEUE_TEXT.choosePerson}
-            </option>
-            {assignees.people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.name}
-              </option>
-            ))}
-            <option value={NOBODY}>{QUEUE_TEXT.nobody}</option>
-          </Select>
+          <Select
+            {...control}
+            value={value}
+            options={[
+              { value: "", label: QUEUE_TEXT.choosePerson, disabled: true },
+              ...assignees.people.map((person) => ({ value: person.id, label: person.name })),
+              { value: NOBODY, label: QUEUE_TEXT.nobody },
+            ]}
+            onChange={onChange}
+          />
         )}
       </Field>
       {assignees.error ? <InlineAlert tone="bad">{assignees.error}</InlineAlert> : null}

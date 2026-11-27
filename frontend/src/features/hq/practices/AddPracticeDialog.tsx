@@ -7,12 +7,11 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
 import { addPractice } from "@/lib/api/hq";
 import { PLAN_LABELS } from "@/lib/labels";
-import { HQ_TEXT, TIME_ZONE_LABELS } from "../strings";
+import { DEFAULT_TIME_ZONE, TIME_ZONES, TIME_ZONE_LABELS } from "@/lib/timeZones";
+import { HQ_TEXT } from "../strings";
 import { ChoiceField, TextField } from "./FormFields";
 import {
-  DEFAULT_TIME_ZONE,
   PLANS,
-  TIME_ZONES,
   newPracticeBody,
   validateNewPractice,
   type NewPracticeDraft,

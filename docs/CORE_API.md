@@ -6,7 +6,7 @@ Check here before writing a helper.
 
 | Module | Provides |
 |---|---|
-| `config.py` | `Settings` (refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default), `get_settings()` |
+| `config.py` | `Settings` (refuses `GEMINI_BACKEND=demo` when `APP_ENVIRONMENT` is `production`, the default; `refuse_unready_signup()` raises `SignupNotReady` when production has self sign-up on without `BAA_URL` and `TERMS_URL`, called first in the API lifespan; blank `TERMS_URL`, `BAA_URL`, `PRIVACY_URL` read as unset), `get_settings()` |
 | `db.py` | `engine`, `SessionFactory`, `get_session` |
 | `security.py` | `hash_password`, `verify_password`, `issue_token`, `read_token`, `digest`, `same_digest`, `random_token`, `random_code`, TOTP helpers (`mfa_step_for`, `mfa_uri`, `new_mfa_secret`), `seal_mfa_secret` / `open_mfa_secret` / `is_sealed_mfa_secret` (Fernet, `MFA_ENCRYPTION_KEY`), `MfaKeyUnavailable` |
 | `errors.py` | `AppError` and `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`, `Invalid`, `Unavailable`, `RateLimited` (429) |
@@ -65,7 +65,8 @@ Check here before writing a helper.
 | `pdf_writer.py` | `render_pdf(PdfDocument) -> bytes` (reportlab, Helvetica, page footer), blocks `PdfHeading`, `PdfText` (`body`, `secondary`, `quote`, `label`), `PdfFacts`, `PdfTable` (`weights`), `PdfPageBreak` |
 | `gemini.py` | `GeminiClient` (the `ModelClient` for Gemini on the Developer API or Vertex AI, `GEMINI_BACKEND`), `VERTEX_PDF_TOO_LARGE` |
 | `demo_model.py`, `demo_answers.py` | `DemoModelClient(DemoCodeBook)` (the `ModelClient` for `GEMINI_BACKEND=demo`: canned review bundles, model `DEMO_MODEL`), `demo_outcome(document)` (first SHA-256 byte modulo five over `DEMO_OUTCOMES`), `read_request(prompt, pdf)`; `DemoCodeBook` takes `em_ladder` and an ICD-10-CM describer from the worker, as adapters do not import `codes` |
-| `google_oidc.py` | `GoogleSignIn` protocol, `GoogleOidc`, `build_google_sign_in`, `GoogleIdentity`, `GoogleRefused`, `GoogleUnreachable`, `pkce_challenge` |
+| `oidc_providers.py` | the sign-in service registry `PROVIDERS` (`GOOGLE`, `MICROSOFT`, `YAHOO` as `ProviderSpec`: discovery address, algorithms, required claims, issuer rule, email-trust rule, settings names), `PROVIDER_NAMES`, `provider_label(name)`, `tenant_allowed(tenant, tid)`, `display_name(claims)`, `IdentityRefused`, `UnverifiedEmail`, `ProviderUnreachable` |
+| `oidc.py` | `IdentityProvider` protocol, `OidcProvider` (one OpenID Connect client: discovery, PKCE S256, code exchange, `identity_from(id_token, nonce=)`), `ProviderIdentity` (provider, subject, email, name), `ProviderConfig`, `Endpoints`, `endpoints_from(document)` (https endpoints only), `build_identity_providers(settings)`, `pkce_challenge` |
 
 ## backend/app/services (shared by several routes)
 
@@ -81,7 +82,10 @@ Check here before writing a helper.
 | `analysis.py` | `request_analysis`, `claim_next`, `run_analysis`, `next_revision`, `latest_codes` |
 | `audit_log.py` | `record_access`, `record_provider_access`, `record_system_access(db, actor, practice_id, action, note_id=, detail=)` for a `SystemActor` (id and name; written as kind `user`), `record_activity`, `record_sign_in` |
 | `auth.py` | `sign_in_user` (the one sign-in policy), `start_session`, `end_all_sessions`, `issue_user_token` |
-| `rate_limits.py` | `RateRule`, `hit(db, rule, key)`, the rules (`LOGIN_PER_EMAIL` and the rest) |
+| `identity_sign_in.py` | `start(provider)`, `finish(db, provider, returned, ip=, agent=)` (tokens, a two-step challenge, or the `ProviderIdentity` to sign up), `bind_identity(db, user, provider, subject)` (one subject per user and provider), `SignInRefused` (`reason`) |
+| `signup.py` | `signup_options(settings)`, `check_email_signup` (open, agreement, time zone, rate limits), `request_email_signup(db, messenger, form, ip=, agent=)` (the background half: existing-account email or trial practice and invite), `identity_token`, `pending_identity(token)`, `complete_identity_signup(db, token, form, visitor)`, `EmailSignup`, `IdentitySignup`, `Visitor` |
+| `practice_accounts.py` | `add_practice_with_admin(db, PracticeDraft, AdminDraft) -> NewPractice` (used by HQ and self sign-up), `email_in_use`, `normal_email`, `signup_source(practice)`, `SIGNUP_SOURCES` |
+| `rate_limits.py` | `RateRule`, `hit(db, rule, key)`, the rules (`LOGIN_PER_EMAIL`, `IDENTITY_PER_IP`, `SIGNUP_PER_IP`, `SIGNUP_PER_EMAIL` and the rest) |
 | `two_step.py` | `enrol_secret`, `accept_code` (replay-safe, re-encrypts legacy secrets), `forget_two_step` |
 | `recovery_codes.py` | `replace_recovery_codes`, `use_recovery_code`, `clear_recovery_codes`, `remaining_recovery_codes` |
 | `password_reset.py` | `send_reset_email` (used by forgot password, Team and HQ) |
@@ -126,7 +130,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `view.py` | `View` (base model, `extra="forbid"`) |
 | `errors.py` | `ErrorResponse` (`error`, `message`), `error_responses(path, endpoint, dependencies)` (the error responses a route can return, read from its dependency tree) |
 | `base.py` | re-exports `View` and `ErrorResponse`; `ExactRoute` (the `route_class` of every router: responses carry exactly the keys the service built, and errors are described by `error_responses`), `Omittable[T]` (a key a service may leave out: optional, never `null`, declared `= None`), `file_download(media_type)` (route options for a file response), `Created` (`id`), `DocumentLink` (`url`), the shared literals `NoteStatus`, `Lane`, `Role`, `PracticeRole`, `Channel`, `TextSource`, `RequestStatus`, `PlanType` (derived from the model and service constants) |
-| `auth.py` | `User`, `PracticeSummary`, `Checks`, `SignedIn` (`recovery_codes` omittable), `MfaChallenge`, `MfaEnrolment`, `SignInProviders`, `SignedInDevice`, `RecoveryCodeStatus`, `RecoveryCodes`, `Preferences` |
+| `auth.py` | `User`, `PracticeSummary`, `Checks`, `SignedIn` (`recovery_codes` omittable), `MfaChallenge`, `MfaEnrolment`, `SignInProviders` (`providers`, `signup`), `SignUpOptions`, `IdentityProviderName`, `SignedInDevice`, `RecoveryCodeStatus`, `RecoveryCodes`, `Preferences` |
 | `work.py` | `NoteSummary`, `QueueRow`, `ComplianceRow`, `LaneCount`, `LaneCounts`, `BatchProgress`, `TodaySummary`, `QueuePage`, `SearchResults`, `ComplianceList`, `LaneReason`, `EmAction` |
 | `notes.py` | `NoteDetail` and its parts (`NoteHeader`, `TextRevision`, `NoteText`, `AnalysisView`, `Finding`, `FindingAction`, `ClaimEstimates`, `NoteHistory`, `CodeJson` (`units` and `pointers` omittable), `AddendumRequestView`, `AddendumQuestion`, `AddendumAnswer`) |
 | `note_actions.py` | results of note actions (`NoteState`, `NoteLane`, `ComplianceOutcome`, `ApprovedNotes`, `AssignedNotes`, `DeletedNotes`, `QueuedNotes`, `NotePayer`, `RequestCancelled`, `RequestCreated`) and `ClaimPointers` |
@@ -135,6 +139,7 @@ dictionaries and the model validates them (see Architecture, API types).
 | `insights.py`, `defensibility.py` | `Insights`, `EmMix`, `QueryMetricsReport`; `NoteDay`, `FlaggedDays` (`from`, `to` by alias) |
 | `quality.py`, `training.py`, `evaluations.py` | `Rate`, `AgreementSummary`, `ElementComparison`, `ClaimElements`, sample, autonomy and level-mix views; blind review and training views; evaluation runs (`EvalSummary` all omittable, as a queued run stores `{}`) |
 | `health.py` | `Health`, `Readiness`, `PASSED`, `FAILED` |
+| `signup.py` | `PendingIdentity` (email, name, provider) |
 
 ## frontend/src (shared)
 
@@ -152,11 +157,20 @@ dictionaries and the model validates them (see Architecture, API types).
 | `hooks/useRemote.ts` | `useRemote(key, load, keepSeconds = 0)` (loading, error and success; serves a fresh cached or prefetched value at once and shares a request already running for the key) |
 | `hooks/remoteCache.ts` | `prefetchRemote(key, load)` (kept `PREFETCH_SECONDS`), `loadRemote`, `readRemote`, `keepRemote`, `writeRemote`, `editRemote`, `forgetRemote`, `LOOKUP_SECONDS` (places, payers, providers); emptied when the session ends |
 | `hooks/useRememberedParams.ts` | `useRememberedParams(screen, keys)` (restores a screen's last filters per user from local storage when it opens without any; never the search text), `rememberedParams` |
+| `components/ui/PasswordInput.tsx` | `PasswordInput` (every password field: a show or hide button inside the field with `aria-pressed`; focus stays in the field; `look` `boxed` or `bare`) |
+| `components/shared/sign-in-providers/` | `ProviderButtons` ("Continue with …" for each enabled service), `ProviderMark` (inline Google, Microsoft and Yahoo marks), `providerName` |
+| `hooks/useSignInOptions.ts` | `useSignInOptions()` (`GET /api/auth/providers`), `loadedOptions` |
+| `lib/timeZones.ts` | `TIME_ZONE_LABELS`, `TIME_ZONES`, `DEFAULT_TIME_ZONE`, `zoneOptions(current)`, `preferredTimeZone(detected)` (the browser's zone when listed, else Central) |
 | `components/ui/Skeleton.tsx` | `SkeletonFrame` (a `status` region with the loading label), `SkeletonBlock` |
 | `components/ui/Pager.tsx` | `Pager` (offset pages with a total; text from `SHARED_TEXT.pager`), `offsetFrom(param)` |
+| `components/ui/Select.tsx` | `Select` (the one single-choice control; options `{ value, label, disabled?, tone?, group? }` as `SelectOption`, `onChange(value)`, `label` when no `Field` labels it, `variant` `field`, `filter` or `inline`, `name` for forms; takes `id` and the ARIA props from `Field`; a search box above twelve options). Input's native `Select` remains only for `features/sign-up` ([0027](decisions/0027-own-select-and-date-picker.md)) |
+| `components/ui/DatePicker.tsx`, `DateRange.tsx` | `DatePicker` (an ISO day or `null` in and out; `min`, `max`, `today`, `label`, `variant` `field` or `filter`; typed days checked when the field loses focus), `DateRange` (two labelled pickers, each limited by the other) |
+| `components/ui/useFloating.ts`, `floating.ts` | `useFloating(anchor, panel, align)` (a fixed panel below its anchor or above it when there is no room; follows scrolling, closes on an outside click; used by `Select`, `DatePicker` and `MenuButton`), `floatingStyle` |
+| `components/ui/fieldStyles.ts`, `strings.ts` | `FIELD_CLASSES`, `FILTER_CLASSES` (field and compact filter shapes with their focus and error rings; `Input` exports `CONTROL`, the full-width field); `UI_TEXT` (the words the generic controls show) |
 | `components/shared/batchProgress.ts` | `batchCounts(batch)` (total, finished, pending, failed from counts by status) |
 | `components/shared/blind-coding/` | `BlindCodingPanel` (note text, PDF button and the blind form; renders nothing else of the note), `BlindCodingForm`, `parseAnswer`, `splitCodes`, `useBlindSession(sampleId)` (audits and training) |
 | `components/shared/rates.ts` | `formatRate` (`50% (9.5%–90.5%)`), `formatInterval`, `formatCounted` for a `Rate` with its 95% interval (Wilson or bootstrap) |
 | `lib/api/types.ts` | the API types screens import: aliases over the generated `components["schemas"]` and literal unions derived from them, plus the query and form types the client composes |
 | `lib/api/schema.ts` | generated by `npm run api:types` from `openapi.json`; never edited by hand |
-| `lib/format.ts` | `formatCalendarDay(isoDate \| null, style)` (`—` for null), `formatPercent`, `formatMoney`, `formatMinutes`, `formatDueIn`, `formatSince` and the other shared formatters |
+| `lib/format.ts` | `formatCalendarDay(isoDate \| null, style)` (`—` for null; `complete` spells the whole day), `parseCalendarDay(text)` (day first, ISO or `27 Nov 2026`; `null` when it cannot be read), `formatMonthYear`, `MONTH_NAMES`, `WEEKDAY_NAMES` and `WEEK_STARTS_ON` (Monday, as en-GB), `formatPercent`, `formatMoney`, `formatMinutes`, `formatDueIn`, `formatSince` and the other shared formatters |
+| `lib/dates.ts` | `parseIsoDate`, `toIsoDate`, `isIsoDate`, `localIsoDate`, `isoDateInZone`, `addDays`, `addMonths` (keeps the day where the month allows), `dayInMonth`, `daysInMonth`, `weekdayOf`, `clampIsoDate`, `isWithin`, `monthWeeks(year, month, weekStartsOn)` |

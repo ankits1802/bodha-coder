@@ -82,6 +82,14 @@ variable "google_client_id" {
   type = string
 }
 
+variable "microsoft_client_id" {
+  type = string
+}
+
+variable "yahoo_client_id" {
+  type = string
+}
+
 output "app_url" {
   value = local.app_url
 }

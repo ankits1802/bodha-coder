@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs, urlsplit
 
-from app.adapters.google_oidc import GoogleIdentity
+from app.core.config import get_settings
 from tests.builders import (
     PASSWORD,
     back_from_google,
@@ -49,18 +49,19 @@ async def test_a_reset_link_works_once_and_ends_existing_sessions(harness):
     assert "access_token" in login.json()
 
 
-async def test_google_refuses_an_email_without_an_account(harness):
+async def test_google_refuses_an_email_without_an_account_when_self_sign_up_is_off(harness, monkeypatch):
     await practice_with_coder(harness)
-    harness.google.identities["code-1"] = GoogleIdentity(sub="google-1", email="stranger@example.com")
+    monkeypatch.setattr(get_settings(), "self_signup_enabled", False)
+    harness.google.returns("code-1", subject="google-1", email="stranger@example.com")
     back = await back_from_google(harness, "code-1")
     assert back.status_code == 302
-    assert back.headers["location"] == sign_in_page("error=no_account")
+    assert back.headers["location"] == sign_in_page("error=no_account&provider=google")
 
 
 async def test_google_signs_in_a_known_email_and_sets_the_refresh_cookie(harness):
     practice = await practice_with_coder(harness)
     harness.client.cookies.clear()
-    harness.google.identities["code-2"] = GoogleIdentity(sub="google-sam", email=CODER)
+    harness.google.returns("code-2", subject="google-sam", email=CODER)
     back = await back_from_google(harness, "code-2")
     assert back.headers["location"] == sign_in_page("signed_in")
     assert harness.client.cookies.get("bodha_refresh", **REFRESH)
@@ -75,7 +76,7 @@ async def test_google_signs_in_a_known_email_and_sets_the_refresh_cookie(harness
 async def test_google_sends_a_two_step_role_to_the_code_step(harness):
     practice = await practice_with_coder(harness)
     harness.client.cookies.clear()
-    harness.google.identities["code-3"] = GoogleIdentity(sub="google-admin", email=ADMIN)
+    harness.google.returns("code-3", subject="google-admin", email=ADMIN)
     back = await back_from_google(harness, "code-3")
     fragment = urlsplit(back.headers["location"]).fragment
     assert back.headers["location"].startswith(sign_in_page("mfa="))
@@ -87,19 +88,19 @@ async def test_google_sends_a_two_step_role_to_the_code_step(harness):
 
 async def test_google_refuses_a_different_google_account_for_a_bound_email(harness):
     await practice_with_coder(harness)
-    harness.google.identities["first"] = GoogleIdentity(sub="google-sam", email=CODER)
-    harness.google.identities["other"] = GoogleIdentity(sub="google-impostor", email=CODER)
+    harness.google.returns("first", subject="google-sam", email=CODER)
+    harness.google.returns("other", subject="google-impostor", email=CODER)
     assert (await back_from_google(harness, "first")).headers["location"] == sign_in_page("signed_in")
     back = await back_from_google(harness, "other")
-    assert back.headers["location"] == sign_in_page("error=mismatch")
+    assert back.headers["location"] == sign_in_page("error=mismatch&provider=google")
 
 
 async def test_google_refuses_a_state_that_does_not_match_the_cookie(harness):
     await practice_with_coder(harness)
-    harness.google.identities["code-4"] = GoogleIdentity(sub="google-sam", email=CODER)
+    harness.google.returns("code-4", subject="google-sam", email=CODER)
     await harness.client.get("/api/auth/google/start")
     back = await harness.client.get("/api/auth/google/callback", params={"code": "code-4", "state": "forged"})
-    assert back.headers["location"] == sign_in_page("error=failed")
+    assert back.headers["location"] == sign_in_page("error=failed&provider=google")
     assert harness.google.exchanges == []
 
 
@@ -110,7 +111,7 @@ async def test_google_activates_an_invited_member(harness):
         headers=practice.admin,
         json={"name": "Ana Cruz", "email": "ana@lakeside.example.com", "role": "biller"},
     )
-    harness.google.identities["code-5"] = GoogleIdentity(sub="google-ana", email="ana@lakeside.example.com")
+    harness.google.returns("code-5", subject="google-ana", email="ana@lakeside.example.com")
     back = await back_from_google(harness, "code-5")
     assert back.headers["location"] == sign_in_page("signed_in")
     team = (await harness.client.get("/api/team", headers=practice.admin)).json()["members"]

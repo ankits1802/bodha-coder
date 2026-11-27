@@ -27,18 +27,22 @@ LOGIN_PER_IP = RateRule("login_ip", 30, timedelta(minutes=15))
 FORGOT_PER_EMAIL = RateRule("forgot_email", 3, timedelta(hours=1))
 FORGOT_PER_IP = RateRule("forgot_ip", 10, timedelta(hours=1))
 MFA_PER_USER = RateRule("mfa_user", 10, timedelta(minutes=15))
-GOOGLE_PER_IP = RateRule("google_ip", 30, timedelta(minutes=15))
+IDENTITY_PER_IP = RateRule("identity_ip", 30, timedelta(minutes=15))
 PROVIDER_CODE_PER_REQUEST = RateRule("provider_code", 5, timedelta(hours=1))
 DEMO_PER_IP = RateRule("demo_ip", 5, timedelta(hours=1))
+SIGNUP_PER_IP = RateRule("signup_ip", 5, timedelta(hours=1))
+SIGNUP_PER_EMAIL = RateRule("signup_email", 3, timedelta(hours=1))
 RULES = (
     LOGIN_PER_EMAIL,
     LOGIN_PER_IP,
     FORGOT_PER_EMAIL,
     FORGOT_PER_IP,
     MFA_PER_USER,
-    GOOGLE_PER_IP,
+    IDENTITY_PER_IP,
     PROVIDER_CODE_PER_REQUEST,
     DEMO_PER_IP,
+    SIGNUP_PER_IP,
+    SIGNUP_PER_EMAIL,
 )
 LONGEST_WINDOW = max(rule.window for rule in RULES)
 

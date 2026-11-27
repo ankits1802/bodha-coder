@@ -107,13 +107,26 @@ Every email is sent as plain text with an HTML version; no message contains pati
 |---|---|
 | `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
+| `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT` | an Entra ID app registration (tenant `common` by default). Sign in with Microsoft stays off until the id and secret are set |
+| `YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET` | a Yahoo app with OpenID Connect. Sign in with Yahoo stays off until both are set |
+| `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS` | self sign-up on or off (on by default), and the length (14 days) and seats (5) of a new trial |
+| `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | the documents a new practice agrees to and the version stored with its acceptance. Production refuses to start self sign-up without the terms and the BAA |
 
-Register `{APP_URL}/api/auth/google/callback` (for example `https://coder.example.com/api/auth/google/callback`)
-as the client's authorised redirect URI; requests reach the API through the web server's `/api` proxy.
-Google only signs in people who already have a Bodha Coder account with the same email, and two-step
-verification still applies to them. Sign-in, password reset, two-step codes, Google returns, provider
-codes and demo requests are rate limited per address and account, so uvicorn must see the visitor's
-address (`--proxy-headers` and `--forwarded-allow-ips`, above).
+Register `{APP_URL}/api/auth/{provider}/callback` (for example
+`https://coder.example.com/api/auth/microsoft/callback`) as each service's redirect URI; requests reach
+the API through the web server's `/api` proxy. The addresses for every environment are in
+[docs/DEPLOY.md](docs/DEPLOY.md#self-sign-up-and-sign-in-services).
+
+A practice can start a free trial at `/sign-up`, with its work email or with Google, Microsoft or
+Yahoo. The email path sends a set-password link (an email that already has an account gets a
+"sign in or reset your password" email instead, and the page answers the same way); the other path
+asks for the practice name and time zone and goes straight to two-step setup. A trial practice has
+`TRIAL_SEATS` seats until `TRIAL_DAYS` after sign-up, and HQ sees it marked "Self sign-up". A sign-in
+service signs in an existing account with the same verified email and binds that service's account
+to it; two-step verification still applies. With `SELF_SIGNUP_ENABLED=false` only existing accounts
+sign in and HQ adds every practice. Sign-in, sign-up, password reset, two-step codes, service returns,
+provider codes and demo requests are rate limited per address and account, so uvicorn must see the
+visitor's address (`--proxy-headers` and `--forwarded-allow-ips`, above).
 
 ### Gemini on Vertex AI
 

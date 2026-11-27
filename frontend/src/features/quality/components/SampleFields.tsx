@@ -1,6 +1,8 @@
+import { DateRange } from "@/components/ui/DateRange";
 import { Field } from "@/components/ui/Field";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Select } from "@/components/ui/Select";
 import type { QualityOptions } from "@/lib/api/types";
 import { ROLE_LABELS } from "@/lib/labels";
 import { SCOPES, defaultSize, toggled, type SampleDraft } from "../sampleDraft";
@@ -23,36 +25,34 @@ export function SampleFields({ draft, options, onChange }: SampleFieldsProps) {
       {draft.scope === "provider" ? (
         <Field label={words.provider}>
           {(control) => (
-            <Select {...control} value={draft.providerId} onChange={(event) => set({ providerId: event.target.value })}>
-              <option value="">{words.choose}</option>
-              {options.providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={draft.providerId}
+              options={[{ value: "", label: words.choose }, ...options.providers.map((provider) => ({ value: provider.id, label: provider.name }))]}
+              onChange={(providerId) => set({ providerId })}
+            />
           )}
         </Field>
       ) : null}
       {draft.scope === "specialty" ? (
         <Field label={words.specialty}>
           {(control) => (
-            <Select {...control} value={draft.specialty} onChange={(event) => set({ specialty: event.target.value })}>
-              <option value="">{words.choose}</option>
-              {options.specialties.map((specialty) => (
-                <option key={specialty}>{specialty}</option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={draft.specialty}
+              options={[{ value: "", label: words.choose }, ...options.specialties.map((specialty) => ({ value: specialty, label: specialty }))]}
+              onChange={(specialty) => set({ specialty })}
+            />
           )}
         </Field>
       ) : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label={words.start}>
-          {(control) => <Input {...control} type="date" value={draft.start} onChange={(event) => set({ start: event.target.value })} />}
-        </Field>
-        <Field label={words.end}>
-          {(control) => <Input {...control} type="date" value={draft.end} onChange={(event) => set({ end: event.target.value })} />}
-        </Field>
+        <DateRange
+          start={draft.start || null}
+          end={draft.end || null}
+          labels={{ start: words.start, end: words.end }}
+          onChange={(range) => set({ start: range.start ?? "", end: range.end ?? "" })}
+        />
         <Field label={words.size}>
           {(control) => (
             <Input

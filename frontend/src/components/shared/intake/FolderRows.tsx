@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import type { Provider } from "@/lib/api/types";
 import type { FolderRow } from "./intakeForm";
 import { INTAKE_TEXT } from "./strings";
@@ -32,18 +33,12 @@ export function FolderRows({ rows, providers, problems, onChange, onRemove }: Fo
                 className="max-w-56"
               />
               <Select
-                aria-label={INTAKE_TEXT.providerLabel(number)}
+                label={INTAKE_TEXT.providerLabel(number)}
                 value={row.providerId}
-                onChange={(event) => onChange({ ...row, providerId: event.target.value })}
+                options={[{ value: "", label: INTAKE_TEXT.chooseProvider }, ...active.map((provider) => ({ value: provider.id, label: provider.name }))]}
+                onChange={(providerId) => onChange({ ...row, providerId })}
                 className="max-w-64"
-              >
-                <option value="">{INTAKE_TEXT.chooseProvider}</option>
-                {active.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.name}
-                  </option>
-                ))}
-              </Select>
+              />
               <Button size="sm" variant="plain" aria-label={INTAKE_TEXT.removeLabel(number)} onClick={() => onRemove(row.id)}>
                 {INTAKE_TEXT.remove}
               </Button>

@@ -15,7 +15,7 @@ from app.core.security import hash_password
 from app.models import User
 from app.services.analysis import AnalysisDeps
 from app.worker import process_one
-from tests.fakes import NOTE_TEXT, FakeGoogle, FakeMessenger, FakeStore, ScriptedReviewer, text_pdf
+from tests.fakes import NOTE_TEXT, FakeMessenger, FakeProvider, FakeStore, ScriptedReviewer, text_pdf
 
 FILE_NAME = "2026-11-25 - REYES MARISOL - 99215 - Progress.pdf"
 BILLED = "99215, I10, E11.9, N18.30"
@@ -27,7 +27,11 @@ class Harness:
     client: AsyncClient
     store: FakeStore
     messenger: FakeMessenger
-    google: FakeGoogle
+    providers: dict[str, FakeProvider]
+
+    @property
+    def google(self) -> FakeProvider:
+        return self.providers["google"]
 
 
 async def sign_in(client: AsyncClient, email: str, *, secret_box: dict[str, str] | None = None) -> dict[str, str]:
@@ -164,10 +168,14 @@ async def invite_member(harness: Harness, practice: Practice, *, name: str, emai
 
 
 async def back_from_google(harness: Harness, code: str):
-    start = await harness.client.get("/api/auth/google/start")
+    return await back_from(harness, "google", code)
+
+
+async def back_from(harness: Harness, provider: str, code: str):
+    start = await harness.client.get(f"/api/auth/{provider}/start")
     assert start.status_code == 302, start.text
     state = parse_qs(urlsplit(start.headers["location"]).query)["state"][0]
-    return await harness.client.get("/api/auth/google/callback", params={"code": code, "state": state})
+    return await harness.client.get(f"/api/auth/{provider}/callback", params={"code": code, "state": state})
 
 
 def sign_in_page(fragment: str) -> str:

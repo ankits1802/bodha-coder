@@ -2,10 +2,11 @@
 
 import { SHARED_TEXT } from "@/components/shared/strings";
 import { Button } from "@/components/ui/Button";
-import { FilterSelect } from "@/components/ui/FilterSelect";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Pager, offsetFrom } from "@/components/ui/Pager";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { RemoteView } from "@/components/ui/RemoteView";
+import { Select } from "@/components/ui/Select";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import { usePracticeToday } from "@/hooks/usePracticeToday";
@@ -16,8 +17,6 @@ import { saveFile } from "@/lib/download";
 import { accessLogCsv } from "./accessLog";
 import { AccessLogTable } from "./AccessLogTable";
 import { SECURITY_TEXT } from "./strings";
-
-const CONTROL = "h-7.5 rounded-control bg-surface px-2.5 text-subhead text-label shadow-pop outline-none";
 
 export function AccessLogPanel() {
   const query = useQueryParams();
@@ -39,27 +38,23 @@ export function AccessLogPanel() {
 
   const filters = (
     <>
-      <FilterSelect label={words.person} value={person ?? ""} onChange={(event) => query.update({ user: event.target.value || null, offset: null })}>
-        <option value="">{words.anyone}</option>
-        {members.map((member) => (
-          <option key={member.id} value={member.id}>
-            {member.name}
-          </option>
-        ))}
-      </FilterSelect>
-      <label className="inline-flex">
-        <span className="sr-only">{words.day}</span>
-        <input
-          type="date"
-          value={day}
-          max={today}
-          onChange={(event) => {
-            const value = event.target.value;
-            if (isIsoDate(value)) query.update({ day: value === today ? null : value, offset: null });
-          }}
-          className={CONTROL}
-        />
-      </label>
+      <Select
+        variant="filter"
+        label={words.person}
+        value={person ?? ""}
+        options={[{ value: "", label: words.anyone }, ...members.map((member) => ({ value: member.id, label: member.name }))]}
+        onChange={(user) => query.update({ user: user || null, offset: null })}
+      />
+      <DatePicker
+        variant="filter"
+        label={words.day}
+        value={day}
+        max={today}
+        today={today}
+        onChange={(value) => {
+          if (value) query.update({ day: value === today ? null : value, offset: null });
+        }}
+      />
       <Button size="sm" disabled={entries.length === 0} onClick={exportCsv}>
         {words.export}
       </Button>

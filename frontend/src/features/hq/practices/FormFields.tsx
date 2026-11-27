@@ -1,6 +1,8 @@
 import type { InputHTMLAttributes } from "react";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Field } from "@/components/ui/Field";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 
 interface ChoiceFieldProps<V extends string> {
   label: string;
@@ -13,15 +15,21 @@ interface ChoiceFieldProps<V extends string> {
 export function ChoiceField<V extends string>({ label, value, options, labels, onChange }: ChoiceFieldProps<V>) {
   return (
     <Field label={label}>
-      {(control) => (
-        <Select {...control} value={value} onChange={(event) => onChange(event.target.value as V)}>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {labels[option]}
-            </option>
-          ))}
-        </Select>
-      )}
+      {(control) => <Select {...control} value={value} options={options.map((option) => ({ value: option, label: labels[option] }))} onChange={onChange} />}
+    </Field>
+  );
+}
+
+interface DayFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function DayField({ label, value, onChange }: DayFieldProps) {
+  return (
+    <Field label={label}>
+      {(control) => <DatePicker {...control} value={value || null} onChange={(day) => onChange(day ?? "")} />}
     </Field>
   );
 }

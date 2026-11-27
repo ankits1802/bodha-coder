@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { FilterSelect } from "@/components/ui/FilterSelect";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { refreshSession } from "@/lib/api/client";
 import { saveSecurity } from "@/lib/api/practice";
@@ -60,37 +60,29 @@ export function SecurityForm({ settings, onSaved }: SecurityFormProps) {
       <RolesPicker value={roles} onToggle={toggleRole} />
       <div className={ROW}>
         <span>{SECURITY_TEXT.idle}</span>
-        <FilterSelect
+        <Select
+          variant="filter"
           label={SECURITY_TEXT.idle}
-          value={idle}
-          onChange={(event) => {
+          value={String(idle)}
+          options={IDLE_CHOICES.map((minutes) => ({ value: String(minutes), label: SECURITY_TEXT.minutes(minutes) }))}
+          onChange={(next) => {
             setSaved(false);
-            setIdle(Number(event.target.value) as IdleMinutes);
+            setIdle(Number(next) as IdleMinutes);
           }}
-        >
-          {IDLE_CHOICES.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {SECURITY_TEXT.minutes(minutes)}
-            </option>
-          ))}
-        </FilterSelect>
+        />
       </div>
       <div className={ROW}>
         <span>{SECURITY_TEXT.keepLog}</span>
-        <FilterSelect
+        <Select
+          variant="filter"
           label={SECURITY_TEXT.keepLog}
-          value={years}
-          onChange={(event) => {
+          value={String(years)}
+          options={YEAR_CHOICES.map((count) => ({ value: String(count), label: SECURITY_TEXT.years(count) }))}
+          onChange={(next) => {
             setSaved(false);
-            setYears(Number(event.target.value) as AccessLogYears);
+            setYears(Number(next) as AccessLogYears);
           }}
-        >
-          {YEAR_CHOICES.map((count) => (
-            <option key={count} value={count}>
-              {SECURITY_TEXT.years(count)}
-            </option>
-          ))}
-        </FilterSelect>
+        />
       </div>
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-hairline px-4.5 py-3">
         {save.error ? <InlineAlert tone="bad">{save.error}</InlineAlert> : null}

@@ -1,7 +1,6 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from app.adapters.google_oidc import GoogleIdentity
 from tests.builders import (
     PASSWORD,
     back_from_google,
@@ -53,8 +52,10 @@ async def test_a_practice_past_its_renewal_date_is_refused_but_hq_is_not(harness
     assert refused.json() == {"error": "forbidden", "message": ENDED}
     login = await harness.client.post("/api/auth/login", json={"email": ADMIN, "password": PASSWORD})
     assert login.status_code == 403 and login.json()["message"] == ENDED
-    harness.google.identities["code-1"] = GoogleIdentity(sub="google-admin", email=ADMIN)
-    assert (await back_from_google(harness, "code-1")).headers["location"] == sign_in_page("error=plan_ended")
+    harness.google.returns("code-1", subject="google-admin", email=ADMIN)
+    assert (await back_from_google(harness, "code-1")).headers["location"] == sign_in_page(
+        "error=plan_ended&provider=google"
+    )
     assert (await harness.client.get("/api/hq/practices", headers=hq)).status_code == 200
 
 

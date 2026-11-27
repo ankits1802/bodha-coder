@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, type KeyboardEvent } from "react";
+import { useFloating } from "./useFloating";
 
 export interface MenuItem {
   key: string;
@@ -16,56 +17,29 @@ interface MenuButtonProps {
   disabled?: boolean;
 }
 
-interface Placement {
-  top: number;
-  right: number;
-}
-
 const STEP: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
 const ITEM_HEIGHT = 34;
-const GAP = 4;
-
-function placementFor(trigger: HTMLElement, count: number): Placement {
-  const rect = trigger.getBoundingClientRect();
-  const height = count * ITEM_HEIGHT + 2 * GAP;
-  const below = rect.bottom + GAP;
-  const top = below + height > window.innerHeight ? Math.max(GAP, rect.top - height - GAP) : below;
-  return { top, right: Math.max(GAP, window.innerWidth - rect.right) };
-}
+const PADDING = 8;
 
 export function MenuButton({ label, items, disabled = false }: MenuButtonProps) {
-  const [placement, setPlacement] = useState<Placement | null>(null);
-  const open = placement !== null;
   const menuId = useId();
   const menu = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const entries = useRef<(HTMLButtonElement | null)[]>([]);
+  const float = useFloating(trigger, menu, "end");
+  const open = float.style !== null;
 
   useEffect(() => {
-    if (!open) return;
-    entries.current.find((entry) => entry && !entry.disabled)?.focus();
-    const onPointer = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (!menu.current?.contains(target) && !trigger.current?.contains(target)) setPlacement(null);
-    };
-    const dismiss = () => setPlacement(null);
-    document.addEventListener("mousedown", onPointer);
-    window.addEventListener("resize", dismiss);
-    window.addEventListener("scroll", dismiss, true);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      window.removeEventListener("resize", dismiss);
-      window.removeEventListener("scroll", dismiss, true);
-    };
+    if (open) entries.current.find((entry) => entry && !entry.disabled)?.focus();
   }, [open]);
 
   function toggle(): void {
-    if (open || !trigger.current) setPlacement(null);
-    else setPlacement(placementFor(trigger.current, items.length));
+    if (open) float.hide();
+    else float.show(items.length * ITEM_HEIGHT + PADDING);
   }
 
   function close(): void {
-    setPlacement(null);
+    float.hide();
     trigger.current?.focus();
   }
 
@@ -98,15 +72,15 @@ export function MenuButton({ label, items, disabled = false }: MenuButtonProps) 
       >
         <span aria-hidden="true">···</span>
       </button>
-      {placement ? (
+      {float.style ? (
         <div
           ref={menu}
           id={menuId}
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKey}
-          style={{ top: placement.top, right: placement.right }}
-          className="fixed z-30 flex min-w-48 flex-col rounded-field bg-surface py-1 shadow-float"
+          style={float.style}
+          className="fixed z-30 flex min-w-48 flex-col overflow-y-auto rounded-field bg-surface py-1 shadow-float"
         >
           {items.map((item, index) => (
             <button
@@ -122,7 +96,7 @@ export function MenuButton({ label, items, disabled = false }: MenuButtonProps) 
                 close();
                 item.onSelect();
               }}
-              className={`h-8.5 cursor-pointer px-3.5 text-left text-body whitespace-nowrap hover:bg-row-hover focus:bg-row-selected focus:outline-none disabled:cursor-not-allowed disabled:text-tertiary ${item.tone === "danger" ? "text-bad-text" : "text-label"}`}
+              className={`h-8.5 flex-none cursor-pointer px-3.5 text-left text-body whitespace-nowrap hover:bg-row-hover focus:bg-row-selected focus:outline-none disabled:cursor-not-allowed disabled:text-tertiary ${item.tone === "danger" ? "text-bad-text" : "text-label"}`}
             >
               {item.label}
             </button>

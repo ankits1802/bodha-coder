@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { FORGOT_PASSWORD_PATH } from "@/lib/api/auth";
 import { QUIET_LINK } from "./QuietButton";
 import { SIGN_IN_TEXT } from "./strings";
@@ -16,7 +17,9 @@ interface CredentialsFormProps {
 
 const FIELD = "flex h-14 flex-col justify-center gap-px bg-surface px-4";
 const LABEL = "text-caption text-tertiary";
-const INPUT = "border-0 bg-transparent p-0 text-input tracking-snug text-label outline-none";
+const TEXT = "w-full border-0 bg-transparent text-input tracking-snug text-label outline-none";
+const INPUT = `${TEXT} p-0`;
+const PASSWORD = `${TEXT} py-0 pl-0`;
 
 export function CredentialsForm({ pending, error, onSubmit }: CredentialsFormProps) {
   const [email, setEmail] = useState("");
@@ -51,13 +54,13 @@ export function CredentialsForm({ pending, error, onSubmit }: CredentialsFormPro
           <label htmlFor="sign-in-password" className={LABEL}>
             {SIGN_IN_TEXT.password}
           </label>
-          <input
+          <PasswordInput
             id="sign-in-password"
-            type="password"
+            look="bare"
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className={INPUT}
+            className={PASSWORD}
           />
         </div>
       </div>

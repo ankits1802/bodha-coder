@@ -17,6 +17,13 @@ from app.models import Activity, Analysis, DemoRequest, Note, PlaceOfService, Pr
 from app.services.audit_log import record_activity
 from app.services.auth import end_all_sessions
 from app.services.password_reset import send_reset_email
+from app.services.practice_accounts import (
+    AdminDraft,
+    PracticeDraft,
+    add_practice_with_admin,
+    email_in_use,
+    signup_source,
+)
 from app.services.team import send_invite
 from app.services.worklists import count_of
 
@@ -24,6 +31,7 @@ PLANS = ("trial", "basic", "professional", "enterprise")
 STATUSES = ("trial", "active", "ended", "blocked")
 ACTIVITY_PAGE = 100
 ADMIN_ORDER = ((User.status == "blocked").asc(), User.created_at, User.id)
+HQ_SOURCE = "hq"
 
 
 async def overview(db: AsyncSession) -> dict[str, Any]:
@@ -80,6 +88,8 @@ def _practice_row(
         **{key: found.get(practice.id, 0) for key, found in counts.items()},
         "renews_on": practice.renews_on.isoformat() if practice.renews_on else None,
         "time_zone": practice.time_zone,
+        "source": signup_source(practice),
+        "signed_up_on": practice.created_at.astimezone(zone_named(practice.time_zone)).date().isoformat(),
         "failed_24h": failure[0],
         "last_failure": failure[1],
         "admin_name": admin.name if admin else None,
@@ -139,22 +149,13 @@ async def create_practice(
     if plan not in PLANS or seats < 1:
         raise Invalid("choose a plan and at least one seat")
     zone_named(time_zone)
-    address = admin_email.strip().lower()
-    if await db.scalar(select(User.id).where(User.email == address)):
+    if await email_in_use(db, admin_email):
         raise Conflict("someone already uses that email")
-    practice = Practice(
-        name=name.strip(),
-        plan=plan,
-        seats=seats,
-        status="trial" if plan == "trial" else "active",
-        time_zone=time_zone,
-    )
-    db.add(practice)
-    await db.flush()
-    admin = User(practice_id=practice.id, email=address, name=admin_name.strip(), role="admin", status="invited")
-    db.add(admin)
-    await db.flush()
-    await send_invite(db, messenger, admin, practice_name=practice.name)
+    status = "trial" if plan == "trial" else "active"
+    draft = PracticeDraft(name, plan, status, seats, time_zone, signup={"source": HQ_SOURCE})
+    created = await add_practice_with_admin(db, draft, AdminDraft(admin_name, admin_email, "invited"))
+    practice = created.practice
+    await send_invite(db, messenger, created.admin, practice_name=practice.name)
     record_activity(
         db, actor, "practice added", practice_id=practice.id, detail=f"{practice.name}, {plan}, {seats} seats"
     )

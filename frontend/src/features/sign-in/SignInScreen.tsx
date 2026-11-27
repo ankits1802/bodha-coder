@@ -8,9 +8,9 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { homeFor } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { CredentialsForm } from "./CredentialsForm";
-import { GoogleButton } from "./GoogleButton";
 import { MfaSetup } from "./MfaSetup";
 import { MfaVerify } from "./MfaVerify";
+import { OtherWays } from "./OtherWays";
 import { RecoveryCodesStep } from "./RecoveryCodesStep";
 import { SIGN_IN_TEXT } from "./strings";
 import { useSignInFlow } from "./useSignInFlow";
@@ -38,7 +38,7 @@ export function SignInScreen() {
             error={flow.signIn.error}
             onSubmit={(email, password) => void flow.submitCredentials(email, password)}
           />
-          <GoogleButton />
+          <OtherWays />
         </div>
       ) : null}
       {step.kind === "finishing" ? <LoadingState label={SIGN_IN_TEXT.finishing} /> : null}

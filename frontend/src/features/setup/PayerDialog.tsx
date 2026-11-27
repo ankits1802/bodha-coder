@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field } from "@/components/ui/Field";
 import { InlineAlert } from "@/components/ui/InlineAlert";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { addPayer, changePayer } from "@/lib/api/practice";
@@ -67,13 +68,12 @@ export function PayerDialog({ payer, onClose, onSaved }: PayerDialogProps) {
         </Field>
         <Field label={words.planType}>
           {(control) => (
-            <Select {...control} value={draft.plan_type} onChange={(event) => setDraft({ ...draft, plan_type: event.target.value as PlanType })}>
-              {PLAN_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {PAYER_TEXT.planTypes[type]}
-                </option>
-              ))}
-            </Select>
+            <Select
+              {...control}
+              value={draft.plan_type}
+              options={PLAN_TYPES.map((type) => ({ value: type, label: PAYER_TEXT.planTypes[type] }))}
+              onChange={(plan_type: PlanType) => setDraft({ ...draft, plan_type })}
+            />
           )}
         </Field>
         <div className="flex items-center justify-between gap-3 sm:col-span-2">

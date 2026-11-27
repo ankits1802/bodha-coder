@@ -37,6 +37,7 @@ from app.models import (
     Session,
     Suggestion,
     User,
+    UserIdentity,
     UserToken,
 )
 from app.services.analysis import next_revision, request_analysis
@@ -63,7 +64,7 @@ DELETABLE_PRACTICE_STATUSES = ("ended", "blocked")
 NOTE_CHILDREN = (Decision, Suggestion, NoteText)
 QUALITY_AND_REMITTANCE_TABLES = (AuditSample, EvalCase, EvalRun, Remittance)
 PRACTICE_TABLES = (Note, Batch, Provider, MipsList, AccessLog, Activity)
-USER_CHILDREN = (UserToken, Session, RecoveryCode)
+USER_CHILDREN = (UserToken, Session, RecoveryCode, UserIdentity)
 
 
 @dataclass(frozen=True)

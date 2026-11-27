@@ -30,6 +30,7 @@ from app.models.tables import (
     Session,
     Suggestion,
     User,
+    UserIdentity,
     UserToken,
 )
 
@@ -69,6 +70,7 @@ __all__ = [
     "Session",
     "Suggestion",
     "User",
+    "UserIdentity",
     "UserToken",
     "new_id",
     "utcnow",
