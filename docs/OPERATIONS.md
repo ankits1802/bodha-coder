@@ -13,7 +13,7 @@ session in the incident record.
 | Worker | log group `/bodha/<env>/worker` |
 | Queue | metrics `BodhaCoder/QueuedAnalyses` and `BodhaCoder/RunningAnalyses` (statistic Maximum) |
 | Load balancer | ALB metrics per target group: `HTTPCode_Target_5XX_Count`, `TargetResponseTime`, `UnHealthyHostCount` |
-| Readiness | `curl -fsS https://coder.example.com/api/health/ready` |
+| Readiness | `curl -fsS https://www.bodhaai.co/api/health/ready` |
 
 CloudWatch Logs Insights:
 

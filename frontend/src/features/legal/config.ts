@@ -1,6 +1,6 @@
 import { SHARED_TEXT } from "@/components/shared/strings";
 
-export const LEGAL_DRAFT = true;
+export const LEGAL_DRAFT = false;
 
 export const LEGAL_PARTY = {
   product: SHARED_TEXT.brand,
@@ -12,11 +12,11 @@ export const LEGAL_PARTY = {
   securityEmail: "info@chartmateapp.com",
   governingLaw: "New York",
   venue: "New York County, New York",
-  effectiveDate: "[effective date: the date these documents are published]",
+  effectiveDate: "November 27, 2026",
   liabilityCap: "the total amount the Customer paid us for the Service in the 12 months immediately before the event giving rise to the claim",
-  refundPolicy: "[refund policy, for example: fees are non-refundable except as these Terms or the law require]",
-  vertexRegion: "[Vertex AI US region, for example us-central1]",
-  onshoreAccess: "[Confirm before publishing: Business Associate’s workforce and Subcontractors do not access PHI from outside the United States.]",
+  refundPolicy: "Fees are non-refundable except as these Terms or the law require.",
+  vertexRegion: "us-central1",
+  onshoreAccess: "Business Associate’s workforce and Subcontractors do not access PHI from outside the United States.",
 } as const;
 
 export const LEGAL_PERIODS = {

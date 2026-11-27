@@ -31,7 +31,8 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
    MX and TXT records. Add them at the DNS host, leaving existing mail records alone, and forward the
    apex to `https://www.<domain>`.
 2. When `aws acm describe-certificate` reports `ISSUED` and `aws sesv2 get-email-identity` reports
-   DKIM `SUCCESS`, set `domain_live = true` and apply, then add
+   DKIM `SUCCESS`, set `domain_live = true` (the site) and `domain_mail_live = true` (the sender;
+   it can follow later) and apply, then add
    `https://www.<domain>/api/auth/<provider>/callback` to each sign-in provider and force a new
    deployment.
 

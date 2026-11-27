@@ -9,7 +9,7 @@ export const ACCEPTABLE_USE: LegalDocumentData = {
   slug: "acceptable-use",
   title: LEGAL_TITLES["acceptable-use"],
   summary: `The rules for using ${product} safely, lawfully and honestly.`,
-  version: "0.1",
+  version: "1.0",
   updated: "2026-11-27",
   numbered: true,
   sections: [

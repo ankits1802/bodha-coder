@@ -10,7 +10,7 @@ export const SUBPROCESSORS: LegalDocumentData = {
   slug: "subprocessors",
   title: LEGAL_TITLES.subprocessors,
   summary: `The companies that process customer data to provide ${product}.`,
-  version: "0.1",
+  version: "1.0",
   updated: "2026-11-27",
   numbered: false,
   sections: [

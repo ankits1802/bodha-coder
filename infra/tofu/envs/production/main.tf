@@ -39,7 +39,7 @@ locals {
   name        = "bodha-${local.stack}"
   site_host   = var.domain_name == "" ? "" : "www.${var.domain_name}"
   public_url  = var.domain_live ? "https://${local.site_host}" : var.public_url
-  sender      = var.domain_live ? "no-reply@${var.domain_name}" : var.mail_from_address
+  sender      = var.domain_mail_live ? "no-reply@${var.domain_name}" : var.mail_from_address
 }
 
 module "network" {

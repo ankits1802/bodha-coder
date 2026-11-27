@@ -207,7 +207,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `STRIPE_PRICE_*` (four), `PAYPAL_CLIENT_ID`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_ENVIRONMENT`, `PAYPAL_PLAN_*` (four), `BILLING_GRACE_DAYS` | yes | yes | | plain |
 | `GOOGLE_CREDENTIALS_JSON` (the Vertex AI service account credential) | | yes | | secret |
 | `GEMINI_BACKEND=vertex`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` | | yes | | plain |
-| `APP_URL=https://coder.example.com`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
+| `APP_URL=https://www.bodhaai.co`, `COOKIE_SECURE=true`, `APP_ENVIRONMENT=production` | yes | yes | | plain |
 | `GOOGLE_CLIENT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_TENANT`, `YAHOO_CLIENT_ID` | yes | | | plain |
 | `SELF_SIGNUP_ENABLED`, `TRIAL_DAYS`, `TRIAL_SEATS`, `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | yes | | | plain |
 | `S3_BUCKET`, `S3_REGION`, `S3_SERVER_SIDE_ENCRYPTION=` (empty) | yes | yes | | plain |
@@ -247,7 +247,7 @@ A sign-in service is on only when both its client id and secret are set. Registe
 |---|---|---|---|
 | Local | `http://localhost:3000/api/auth/google/callback` | `http://localhost:3000/api/auth/microsoft/callback` | https only: a TLS tunnel's address + `/api/auth/yahoo/callback` |
 | Staging | `https://bodha-coder.vercel.app/api/auth/google/callback` | `https://bodha-coder.vercel.app/api/auth/microsoft/callback` | `https://bodha-coder.vercel.app/api/auth/yahoo/callback` |
-| Production | `https://coder.example.com/api/auth/google/callback` | `https://coder.example.com/api/auth/microsoft/callback` | `https://coder.example.com/api/auth/yahoo/callback` |
+| Production | `https://www.bodhaai.co/api/auth/google/callback` | `https://www.bodhaai.co/api/auth/microsoft/callback` | `https://www.bodhaai.co/api/auth/yahoo/callback` |
 
 - Google: an OAuth client of type "Web application"; scopes `openid email profile`.
 - Microsoft: an Entra ID app registration for "accounts in any organizational directory and personal
@@ -295,7 +295,7 @@ Stripe (Dashboard):
 3. Settings, Billing, Subscriptions and emails: turn on Smart Retries and choose to mark the
    subscription unpaid or cancel it after the last retry; send failed-payment emails.
 4. Developers, Webhooks: add the endpoint `{APP_URL}/api/billing-webhooks/stripe` (for example
-   `https://coder.example.com/api/billing-webhooks/stripe`) with exactly these events:
+   `https://www.bodhaai.co/api/billing-webhooks/stripe`) with exactly these events:
    `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
    `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Copy its signing secret
    into `STRIPE_WEBHOOK_SECRET`.
@@ -451,7 +451,7 @@ back to the queue at once, without spending an attempt, so deploys do not delay 
    then `aws ecs wait tasks-stopped` and check the container's `exitCode` is `0` with
    `aws ecs describe-tasks`. A non-zero exit stops the release.
 5. Update `api`, `worker` and `web` to the new revisions and wait for `aws ecs wait services-stable`.
-6. `curl -fsS https://coder.example.com/api/health/ready`.
+6. `curl -fsS https://www.bodhaai.co/api/health/ready`.
 
 Old tasks keep serving while new ones start, so every migration must work with the code one
 release back: add columns and tables first, remove them a release later. Roll back by redeploying

@@ -81,6 +81,16 @@ variable "billing" {
   }
 }
 
+variable "domain_mail_live" {
+  type    = bool
+  default = false
+
+  validation {
+    condition     = !var.domain_mail_live || var.domain_name != ""
+    error_message = "domain_mail_live needs domain_name."
+  }
+}
+
 variable "google_client_id" {
   type    = string
   default = ""

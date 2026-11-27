@@ -83,7 +83,7 @@ Register `{APP_URL}/api/auth/{provider}/callback` with each provider:
 |---|---|---|---|
 | Local | `http://localhost:3000/api/auth/google/callback` | `http://localhost:3000/api/auth/microsoft/callback` | Yahoo accepts https only: use a TLS tunnel's address |
 | Staging | `https://bodha-coder.vercel.app/api/auth/google/callback` | `https://bodha-coder.vercel.app/api/auth/microsoft/callback` | `https://bodha-coder.vercel.app/api/auth/yahoo/callback` |
-| Production | `https://coder.example.com/api/auth/google/callback` | `https://coder.example.com/api/auth/microsoft/callback` | `https://coder.example.com/api/auth/yahoo/callback` |
+| Production | `https://www.bodhaai.co/api/auth/google/callback` | `https://www.bodhaai.co/api/auth/microsoft/callback` | `https://www.bodhaai.co/api/auth/yahoo/callback` |
 
 ## What HQ still controls
 

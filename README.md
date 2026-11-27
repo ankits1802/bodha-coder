@@ -113,7 +113,7 @@ Every email is sent as plain text with an HTML version; no message contains pati
 | `TERMS_URL`, `BAA_URL`, `PRIVACY_URL`, `AGREEMENT_VERSION` | the documents a new practice agrees to and the version stored with its acceptance. Production refuses to start self sign-up without the terms and the BAA |
 
 Register `{APP_URL}/api/auth/{provider}/callback` (for example
-`https://coder.example.com/api/auth/microsoft/callback`) as each service's redirect URI; requests reach
+`https://www.bodhaai.co/api/auth/microsoft/callback`) as each service's redirect URI; requests reach
 the API through the web server's `/api` proxy. The addresses for every environment are in
 [docs/DEPLOY.md](docs/DEPLOY.md#self-sign-up-and-sign-in-services).
 

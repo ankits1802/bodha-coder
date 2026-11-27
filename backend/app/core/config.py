@@ -72,7 +72,7 @@ class Settings(BaseSettings):
 
     email_transport: Literal["smtp", "ses", "outbox"] = "smtp"
     sms_transport: Literal["twilio", "sns", "outbox"] = "twilio"
-    mail_from: str = "Bodha Coder <no-reply@bodha.health>"
+    mail_from: str = "Bodha Coder <no-reply@bodhaai.co>"
     mail_outbox_dir: str | None = None
     aws_messaging_region: str = "us-east-1"
     ses_configuration_set: str | None = None
