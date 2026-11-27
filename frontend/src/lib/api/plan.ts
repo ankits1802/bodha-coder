@@ -1,8 +1,10 @@
 import { request, requestNothing } from "./client";
 import type { CheckoutRequest, PlanCatalog, PlanStatus, RedirectLink } from "./types";
 
+export const PLAN_CATALOG_PATH = "/api/plans";
+
 export function getPlanCatalog(): Promise<PlanCatalog> {
-  return request<PlanCatalog>("/api/plans", { auth: "none" });
+  return request<PlanCatalog>(PLAN_CATALOG_PATH, { auth: "none" });
 }
 
 export function getPlanStatus(): Promise<PlanStatus> {

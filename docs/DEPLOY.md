@@ -36,7 +36,8 @@ The web image is built once and pointed at an API at start: `BACKEND_URL` (requi
 starts. Next.js fixes rewrites at build time, so the build uses the placeholder
 `http://backend-url.invalid`, records every file that contains it, and fails if
 `.next/routes-manifest.json` is not one of them. Only those files and `.next/cache` are writable by
-the runtime user.
+the runtime user. The server also reads `BACKEND_URL` at request time to render `/pricing` with the plan
+catalog (kept an hour in `.next/cache`); nothing is fetched at build.
 
 Neither image contains a secret or an `.env` file; both `.dockerignore` files keep them out of the
 build context. Tag images with the git commit SHA, push to ECR with immutable tags and scan on

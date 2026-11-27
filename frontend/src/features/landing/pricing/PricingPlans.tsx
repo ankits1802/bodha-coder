@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 import { SIGN_UP_PATH } from "@/lib/api/auth";
-import type { BillingInterval, PlanTerms } from "@/lib/api/types";
+import type { BillingInterval, PlanCatalog, PlanTerms } from "@/lib/api/types";
 import { DemoRequestButton } from "../DemoRequestButton";
 import { StartTrialButton } from "../StartTrialButton";
 import { LANDING_TEXT } from "../strings";
@@ -26,23 +26,31 @@ function PlanAction({ terms }: { terms: PlanTerms }) {
   );
 }
 
-export function PricingPlans() {
-  const catalog = usePlanCatalog();
+function PlanGrid({ catalog }: { catalog: PlanCatalog }) {
   const [period, setPeriod] = useState<BillingInterval>("monthly");
   return (
+    <div className="flex w-full flex-col items-center gap-8">
+      <IntervalControl value={period} onChange={setPeriod} monthsFree={mostMonthsFree(catalog.plans)} />
+      <section aria-label={PRICING_TEXT.plansLabel} className="grid w-full gap-5 text-left sm:grid-cols-2 lg:grid-cols-4">
+        {catalog.plans.map((terms) => (
+          <PlanCard key={terms.key} terms={terms} interval={period} trialDays={catalog.trial_days}>
+            <PlanAction terms={terms} />
+          </PlanCard>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function FetchedPlans() {
+  const catalog = usePlanCatalog();
+  return (
     <RemoteView state={catalog.state} text={TEXT} onRetry={catalog.reload}>
-      {(data) => (
-        <div className="flex w-full flex-col items-center gap-8">
-          <IntervalControl value={period} onChange={setPeriod} monthsFree={mostMonthsFree(data.plans)} />
-          <section aria-label={PRICING_TEXT.plansLabel} className="grid w-full gap-5 text-left sm:grid-cols-2 lg:grid-cols-4">
-            {data.plans.map((terms) => (
-              <PlanCard key={terms.key} terms={terms} interval={period} trialDays={data.trial_days}>
-                <PlanAction terms={terms} />
-              </PlanCard>
-            ))}
-          </section>
-        </div>
-      )}
+      {(data) => <PlanGrid catalog={data} />}
     </RemoteView>
   );
+}
+
+export function PricingPlans({ catalog }: { catalog: PlanCatalog | null }) {
+  return catalog ? <PlanGrid catalog={catalog} /> : <FetchedPlans />;
 }

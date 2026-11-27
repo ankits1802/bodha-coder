@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
-
-const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8000";
+import { backendUrl } from "./src/lib/backend";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -14,7 +13,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
   async rewrites() {
-    return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
+    return [{ source: "/api/:path*", destination: `${backendUrl()}/api/:path*` }];
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
