@@ -52,7 +52,8 @@ describe("PracticeCompletionScreen", () => {
     expect(await screen.findByText("omar@harbor.example.com")).toBeInTheDocument();
     expect(screen.getByLabelText("Your name")).toHaveValue("Omar Haddad");
     await user.type(screen.getByLabelText("Practice name"), "Harbor Pediatrics");
-    await user.selectOptions(screen.getByLabelText("Time zone"), "America/New_York");
+    await user.click(screen.getByRole("combobox", { name: "Time zone" }));
+    await user.click(screen.getByRole("option", { name: "Eastern (New York)" }));
     await user.click(screen.getByRole("checkbox", { name: "I will use test data only" }));
     await user.click(screen.getByRole("button", { name: "Create practice" }));
 

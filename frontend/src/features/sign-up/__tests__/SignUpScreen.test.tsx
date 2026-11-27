@@ -42,7 +42,8 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>): Promise<void>
   await user.type(screen.getByLabelText("Your name"), "Rosa Diaz");
   await user.type(screen.getByLabelText("Practice name"), "Lakeside Family Medicine");
   await user.type(screen.getByLabelText("Work email"), "rosa@lakeside.example.com");
-  await user.selectOptions(screen.getByLabelText("Time zone"), "America/Denver");
+  await user.click(screen.getByRole("combobox", { name: "Time zone" }));
+  await user.click(screen.getByRole("option", { name: "Mountain (Denver)" }));
 }
 
 describe("SignUpScreen", () => {

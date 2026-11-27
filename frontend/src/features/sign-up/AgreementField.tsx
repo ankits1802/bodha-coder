@@ -21,9 +21,14 @@ export function agreementDocuments(options: SignUpOptions): AgreementDocument[] 
   return listed.flatMap(([key, href]) => (href ? [{ key, href }] : []));
 }
 
+const LIST = new Intl.ListFormat("en-US", { style: "long", type: "conjunction" });
+
+function documentNames(documents: AgreementDocument[]): string[] {
+  return documents.map((document) => SIGN_UP_TEXT.documents[document.key]);
+}
+
 function documentLinks(documents: AgreementDocument[]): ReactNode[] {
-  const names = documents.map((document) => SIGN_UP_TEXT.documents[document.key]);
-  const parts = new Intl.ListFormat("en-US", { style: "long", type: "conjunction" }).formatToParts(names);
+  const parts = LIST.formatToParts(documentNames(documents));
   const nodes: ReactNode[] = [];
   let next = 0;
   for (const [position, part] of parts.entries()) {
@@ -46,6 +51,11 @@ function leadText(options: SignUpOptions, documents: AgreementDocument[]): strin
   return documents.length > 0 ? SIGN_UP_TEXT.testDataAndAgree : SIGN_UP_TEXT.testDataOnly;
 }
 
+function spokenName(options: SignUpOptions, documents: AgreementDocument[]): string {
+  const lead = leadText(options, documents);
+  return documents.length > 0 ? `${lead} ${LIST.format(documentNames(documents))}` : lead;
+}
+
 export function AgreementField({ form, options }: { form: DraftForm; options: SignUpOptions }) {
   const id = useId();
   const error = form.errors.agreed;
@@ -57,6 +67,7 @@ export function AgreementField({ form, options }: { form: DraftForm; options: Si
           id={id}
           type="checkbox"
           checked={form.draft.agreed}
+          aria-label={spokenName(options, documents)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
           onChange={(event) => form.change("agreed", event.target.checked)}
