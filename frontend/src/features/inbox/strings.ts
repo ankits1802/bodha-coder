@@ -20,5 +20,6 @@ export const INBOX_TEXT = {
     paymentFailed: (day: string) => `Payment failed. Access continues until ${day}`,
     planEnding: (day: string) => `The plan ends on ${day}`,
     complianceReturned: (actor: string) => `${actor} returned a note`,
+    joinRequested: (actor: string) => `${actor} asked to join`,
   },
 } as const;

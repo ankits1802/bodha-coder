@@ -38,6 +38,8 @@ SIGNATURE_TOLERANCE_SECONDS = 300
 NETWORK_RETRIES = 2
 PRORATION = "create_prorations"
 CHECKOUT_COMPLETED = "checkout.session.completed"
+PRACTICE_KEY = "practice_id"
+ORGANIZATION_KEY = "organization_id"
 SUBSCRIPTION_EVENTS = (
     "customer.subscription.created",
     "customer.subscription.updated",
@@ -134,12 +136,12 @@ class StripeBilling:
 
 
 def checkout_params(request: CheckoutRequest) -> dict[str, Any]:
-    metadata = {"practice_id": request.practice_id, "plan": request.plan, "interval": request.interval}
+    metadata = {**_owner_metadata(request), "plan": request.plan, "interval": request.interval}
     customer = {"customer": request.customer_id} if request.customer_id else {"customer_email": request.email}
     return {
         "mode": "subscription",
         "line_items": [{"price": request.price_id, "quantity": request.quantity}],
-        "client_reference_id": request.practice_id,
+        "client_reference_id": request.organization_id or request.practice_id,
         "metadata": metadata,
         "subscription_data": {"metadata": metadata},
         "allow_promotion_codes": True,
@@ -147,6 +149,12 @@ def checkout_params(request: CheckoutRequest) -> dict[str, Any]:
         "cancel_url": request.cancel_url,
         **customer,
     }
+
+
+def _owner_metadata(request: CheckoutRequest) -> dict[str, str]:
+    if request.organization_id:
+        return {ORGANIZATION_KEY: request.organization_id}
+    return {PRACTICE_KEY: request.practice_id or ""}
 
 
 def event_subscription_id(kind: str, found: Mapping[str, Any]) -> str | None:
@@ -166,10 +174,12 @@ def subscription_state(data: Mapping[str, Any]) -> ProcessorSubscription:
         raise ValueError(f"unknown Stripe subscription status {status}")
     item = _first_item(data) or {}
     period_end = item.get("current_period_end") or data.get("current_period_end")
+    metadata = data.get("metadata") or {}
     return ProcessorSubscription(
         subscription_id=str(data["id"]),
         customer_id=_id_of(data.get("customer")),
-        practice_id=(data.get("metadata") or {}).get("practice_id"),
+        practice_id=metadata.get(PRACTICE_KEY) or None,
+        organization_id=metadata.get(ORGANIZATION_KEY) or None,
         price_id=_id_of(item.get("price")),
         status=STRIPE_STATUSES[status],
         current_period_end=datetime.fromtimestamp(int(period_end), UTC) if period_end else None,

@@ -18,8 +18,11 @@ router = APIRouter(tags=["hq"], route_class=ExactRoute)
 async def spend(
     db: Db,
     actor: HqActor,
+    *,
     start: Annotated[date, Query(alias="from")],
     end: Annotated[date, Query(alias="to")],
     practice_id: str | None = None,
+    organization_id: str | None = None,
 ) -> dict[str, Any]:
-    return await expenditure.expenditure(db, start=start, end=end, practice_id=practice_id)
+    chosen = expenditure.SpendScope(practice_id, organization_id)
+    return await expenditure.expenditure(db, start=start, end=end, scope=chosen)

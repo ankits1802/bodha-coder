@@ -39,7 +39,7 @@ class BillingUnavailable(Unavailable):
 
 @dataclass(frozen=True)
 class CheckoutRequest:
-    practice_id: str
+    practice_id: str | None
     plan: str
     interval: str
     price_id: str
@@ -48,6 +48,7 @@ class CheckoutRequest:
     customer_id: str | None
     success_url: str
     cancel_url: str
+    organization_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,7 @@ class ProcessorSubscription:
     current_period_end: datetime | None
     cancel_at_period_end: bool
     quantity: int
+    organization_id: str | None = None
 
 
 class BillingProvider(Protocol):

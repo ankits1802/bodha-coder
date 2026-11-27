@@ -50,6 +50,11 @@ export const PLAN_TEXT = {
     requested: "Cancellation requested",
   },
   checkout: { done: "Checkout complete", cancelled: "Checkout cancelled" },
+  billedBy: {
+    label: "Billing",
+    title: (organization: string) => `Billed through ${organization}`,
+    open: (organization: string) => `Open ${organization}`,
+  },
   sales: {
     button: "Contact sales",
     title: "Contact sales",

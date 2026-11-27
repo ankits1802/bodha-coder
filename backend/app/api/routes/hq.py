@@ -36,7 +36,7 @@ from app.api.wiring import Mail, Store, client_of
 from app.core.deps import Actor, Db, require
 from app.core.roles import HQ
 from app.models import DemoRequest
-from app.services import audit_chain, hq, hq_admins, hq_practice, hq_team, retention
+from app.services import audit_chain, hq, hq_admins, hq_places, hq_practice, hq_team, retention
 from app.services.rate_limits import DEMO_PER_IP, hit
 
 router = APIRouter(tags=["hq"], route_class=ExactRoute)
@@ -126,12 +126,12 @@ async def renew(practice_id: str, body: RenewBody, db: Db, actor: HqActor) -> di
 
 @router.get("/hq/places", response_model=list[HqPlace])
 async def places(db: Db, actor: HqActor) -> list[dict[str, Any]]:
-    return [{"code": p.code, "name": p.name, "active": p.active} for p in await hq.places(db)]
+    return [{"code": p.code, "name": p.name, "active": p.active} for p in await hq_places.places(db)]
 
 
 @router.put("/hq/places/{code}", status_code=204)
 async def set_place(code: str, body: PlaceBody, db: Db, actor: HqActor) -> None:
-    await hq.set_place(db, actor, code, name=body.name, active=body.active)
+    await hq_places.set_place(db, actor, code, name=body.name, active=body.active)
 
 
 @router.get("/hq/activity", response_model=HqActivityPage)
@@ -206,7 +206,7 @@ async def demo_requests(db: Db, actor: HqActor) -> list[dict[str, Any]]:
             "message": row.message,
             "received_at": row.created_at.isoformat(),
         }
-        for row in await hq.demo_requests(db)
+        for row in await hq_places.demo_requests(db)
     ]
 
 

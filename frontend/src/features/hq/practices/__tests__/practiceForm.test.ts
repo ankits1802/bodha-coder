@@ -26,6 +26,9 @@ const PRACTICE: HqPractice = {
   billing_provider: null,
   billing_status: null,
   billing_interval: null,
+  organization_id: null,
+  organization_name: null,
+  combined_billing: false,
 };
 
 describe("practiceChanges", () => {

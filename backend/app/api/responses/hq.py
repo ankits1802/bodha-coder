@@ -1,6 +1,7 @@
 from typing import Literal
 
 from app.api.responses.base import PracticeRole, View
+from app.api.responses.organizations import HqOrganizationHit
 from app.api.responses.team import MemberStatus
 from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, PRACTICE_STATUSES, SUBSCRIPTION_STATUSES
 from app.services.hq_admins import OUTCOMES
@@ -68,6 +69,9 @@ class HqPractice(View):
     billing_provider: Literal[BILLING_PROVIDERS] | None
     billing_status: Literal[SUBSCRIPTION_STATUSES] | None
     billing_interval: Literal[BILLING_INTERVALS] | None
+    organization_id: str | None
+    organization_name: str | None
+    combined_billing: bool
 
 
 class HqTeamMember(View):
@@ -196,6 +200,7 @@ class HqSearchPerson(View):
 
 
 class HqSearchResults(View):
+    organizations: list[HqOrganizationHit]
     practices: list[HqPracticeHit]
     people: list[HqSearchPerson]
     limit: int

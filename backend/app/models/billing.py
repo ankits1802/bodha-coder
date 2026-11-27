@@ -18,8 +18,10 @@ class Subscription(IdMixin, Base):
         one_of("interval", BILLING_INTERVALS),
         one_of("status", SUBSCRIPTION_STATUSES),
         CheckConstraint("quantity >= 1", name="quantity_min"),
+        CheckConstraint("(practice_id IS NULL) <> (organization_id IS NULL)", name="one_owner"),
     )
-    practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), unique=True)
+    practice_id: Mapped[str | None] = mapped_column(ForeignKey("practices.id"), unique=True)
+    organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), unique=True)
     provider: Mapped[str] = mapped_column(String(8))
     customer_id: Mapped[str | None] = mapped_column(String(255))
     subscription_id: Mapped[str] = mapped_column(String(255))

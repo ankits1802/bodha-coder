@@ -12,10 +12,11 @@ from app.core.calendar import today_in, zone_named
 from app.core.config import Settings, get_settings
 from app.core.deps import Actor, plan_ended_on
 from app.core.errors import Conflict, Invalid, NotFound
-from app.models import Practice, Subscription
+from app.models import Organization, Practice, Subscription
 from app.services.audit_log import record_activity
 from app.services.plan_limits import (
     active_provider_count,
+    governing_subscription,
     is_live,
     provider_limit,
     subscription_for,
@@ -26,20 +27,28 @@ from app.services.plan_notices import plan_ending_soon
 from app.services.plans import CATALOG, PlanTerms, annual_months_free, plan_terms, price_id, prices_complete
 
 __all__ = [
+    "BILLED_BY_ORGANIZATION",
+    "CANCEL_REQUESTED",
+    "CHECKOUT_STARTED",
     "MANAGED_BY",
     "MANAGE_ACTIONS",
     "PROVIDER_LABELS",
     "STANDINGS",
     "CheckoutChoice",
     "cancel_subscription",
+    "checkout_price",
     "manage_link",
     "offered_providers",
     "plan_catalog",
     "plan_overview",
+    "refuse_combined_change",
     "refuse_manual_change",
     "standing",
+    "standing_of",
     "start_checkout",
     "subscription_ref",
+    "subscription_view",
+    "terms_view",
 ]
 
 PLAN_PATH = "/settings/plan"
@@ -50,6 +59,7 @@ MANAGED_BY = {"stripe": "portal", "paypal": "cancel"}
 ENDED_STATUSES = ("canceled", "expired")
 STANDINGS = ("trial", "active", "past_due", "canceling", "canceled", "ended", "managed")
 MANAGE_ACTIONS = ("portal", "cancel")
+BILLED_BY_ORGANIZATION = "this practice is billed through its organization"
 
 
 @dataclass(frozen=True)
@@ -65,26 +75,30 @@ def offered_providers(providers: Mapping[str, BillingProvider], settings: Settin
 
 def plan_catalog(settings: Settings, offered: list[str]) -> dict[str, Any]:
     return {
-        "plans": [_terms_view(terms) for terms in CATALOG.values()],
+        "plans": [terms_view(terms) for terms in CATALOG.values()],
         "providers": offered,
         "trial_days": settings.trial_days,
     }
 
 
 def standing(practice: Practice, subscription: Subscription | None) -> str:
+    return standing_of(subscription, ended=plan_ended_on(practice) is not None, trial=practice.status == "trial")
+
+
+def standing_of(subscription: Subscription | None, *, ended: bool, trial: bool) -> str:
     if subscription is not None and subscription.status == "past_due":
         return "past_due"
     if subscription is not None and is_live(subscription):
         return "canceling" if subscription.cancel_at_period_end else "active"
     if subscription is not None and subscription.status in ENDED_STATUSES:
         return "canceled"
-    if plan_ended_on(practice) is not None:
+    if ended:
         return "ended"
-    return "trial" if practice.status == "trial" else "managed"
+    return "trial" if trial else "managed"
 
 
 async def plan_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]:
-    subscription = await subscription_for(db, practice.id)
+    subscription = await governing_subscription(db, practice)
     zone = zone_named(practice.time_zone)
     today = today_in(zone)
     trial_left = (practice.renews_on - today).days if practice.status == "trial" and practice.renews_on else None
@@ -98,20 +112,26 @@ async def plan_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]:
         "user_limit": user_limit(practice, subscription),
         "providers": await active_provider_count(db, practice.id),
         "provider_limit": provider_limit(practice),
-        "subscription": _subscription_view(subscription, zone) if subscription else None,
+        "subscription": subscription_view(subscription, zone) if subscription else None,
+        **await _payer(db, practice),
     }
+
+
+async def _payer(db: AsyncSession, practice: Practice) -> dict[str, Any]:
+    if not practice.combined_billing or practice.organization_id is None:
+        return {}
+    organization = await db.get_one(Organization, practice.organization_id)
+    return {"organization": {"id": organization.id, "name": organization.name}}
 
 
 async def start_checkout(
     db: AsyncSession, actor: Actor, providers: Mapping[str, BillingProvider], choice: CheckoutChoice
 ) -> str:
     practice, settings = actor.own_practice, get_settings()
+    if practice.combined_billing:
+        raise Conflict(BILLED_BY_ORGANIZATION)
     terms = plan_terms(choice.plan)
-    if not terms.self_checkout:
-        raise Invalid(f"the {terms.name} plan is arranged with sales")
-    chosen_price = price_id(settings, choice.provider, choice.plan, choice.interval)
-    if choice.provider not in offered_providers(providers, settings) or chosen_price is None:
-        raise NotFound("that payment method is not available")
+    chosen_price = checkout_price(providers, choice)
     stored = await subscription_for(db, practice.id)
     if is_live(stored):
         raise Conflict("this practice already has a subscription")
@@ -134,6 +154,17 @@ async def start_checkout(
     record_activity(db, actor, CHECKOUT_STARTED, practice_id=practice.id, detail=detail)
     await db.commit()
     return url
+
+
+def checkout_price(providers: Mapping[str, BillingProvider], choice: CheckoutChoice) -> str:
+    settings = get_settings()
+    terms = plan_terms(choice.plan)
+    if not terms.self_checkout:
+        raise Invalid(f"the {terms.name} plan is arranged with sales")
+    chosen_price = price_id(settings, choice.provider, choice.plan, choice.interval)
+    if choice.provider not in offered_providers(providers, settings) or chosen_price is None:
+        raise NotFound("that payment method is not available")
+    return chosen_price
 
 
 async def manage_link(db: AsyncSession, actor: Actor, providers: Mapping[str, BillingProvider]) -> str:
@@ -160,6 +191,11 @@ def subscription_ref(row: Subscription) -> SubscriptionRef:
     )
 
 
+def refuse_combined_change(practice: Practice) -> None:
+    if practice.combined_billing:
+        raise Conflict(f"{BILLED_BY_ORGANIZATION}; change the organization's plan instead")
+
+
 def refuse_manual_change(subscription: Subscription | None) -> None:
     if subscription is not None and is_live(subscription):
         label = PROVIDER_LABELS[subscription.provider]
@@ -183,7 +219,7 @@ async def _managed(
     return stored, provider
 
 
-def _terms_view(terms: PlanTerms) -> dict[str, Any]:
+def terms_view(terms: PlanTerms) -> dict[str, Any]:
     return {
         "key": terms.key,
         "pricing": terms.pricing,
@@ -195,7 +231,7 @@ def _terms_view(terms: PlanTerms) -> dict[str, Any]:
     }
 
 
-def _subscription_view(row: Subscription, zone: ZoneInfo) -> dict[str, Any]:
+def subscription_view(row: Subscription, zone: ZoneInfo) -> dict[str, Any]:
     return {
         "provider": row.provider,
         "interval": row.interval,

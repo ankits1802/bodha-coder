@@ -1,6 +1,6 @@
 from typing import Literal
 
-from app.api.responses.base import View
+from app.api.responses.base import Omittable, View
 from app.models import BILLING_INTERVALS, BILLING_PROVIDERS, SUBSCRIPTION_STATUSES
 from app.services.plans import PLAN_KEYS, PRICINGS
 from app.services.subscriptions import MANAGE_ACTIONS, STANDINGS
@@ -8,7 +8,9 @@ from app.services.subscriptions import MANAGE_ACTIONS, STANDINGS
 __all__ = [
     "BillingInterval",
     "BillingProviderName",
+    "PayerOrganization",
     "PlanCatalog",
+    "PlanKey",
     "PlanStatus",
     "PlanSubscription",
     "PlanTerms",
@@ -46,6 +48,11 @@ class PlanSubscription(View):
     managed_by: Literal[MANAGE_ACTIONS]
 
 
+class PayerOrganization(View):
+    id: str
+    name: str
+
+
 class PlanStatus(View):
     plan: PlanKey
     standing: Literal[STANDINGS]
@@ -57,6 +64,7 @@ class PlanStatus(View):
     providers: int
     provider_limit: int | None
     subscription: PlanSubscription | None
+    organization: Omittable[PayerOrganization] = None
 
 
 class RedirectLink(View):

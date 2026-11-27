@@ -23,6 +23,9 @@ describe("inbox sentences", () => {
     );
     expect(sentence({ kind: "plan_ending", actor_name: "Bodha", payload: { ends_on: "2026-12-01" } })).toBe("The plan ends on 1 Dec 2026");
     expect(sentence({ kind: "compliance_returned", actor_name: "Ruth Cole", payload: {} })).toBe("Ruth Cole returned a note");
+    expect(sentence({ kind: "join_requested", actor_name: "Dana Fox", note_id: null, payload: { request_id: "r-1" } })).toBe(
+      "Dana Fox asked to join",
+    );
   });
 
   it("names the patient and the visit day only when the note is known", () => {
@@ -38,6 +41,7 @@ describe("inbox targets", () => {
     expect(inboxTarget(inboxEntry({ kind: "training_assigned", note_id: null }))).toBe("/training");
     expect(inboxTarget(inboxEntry({ kind: "payment_failed", note_id: null }))).toBe("/settings/plan");
     expect(inboxTarget(inboxEntry({ kind: "plan_ending", note_id: null }))).toBe("/settings/plan");
+    expect(inboxTarget(inboxEntry({ kind: "join_requested", note_id: null }))).toBe("/settings/team");
     expect(inboxTarget(inboxEntry({ kind: "level_disagreed", note_id: null }))).toBeNull();
   });
 });

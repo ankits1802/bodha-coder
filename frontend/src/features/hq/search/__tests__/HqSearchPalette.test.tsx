@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 vi.mock("@/lib/api/hq", () => ({ searchHq: vi.fn() }));
 
 const RESULTS: HqSearchResults = {
+  organizations: [],
   practices: [{ id: "p1", name: "Lakeside Primary Care", status: "active" }],
   people: [
     {
@@ -84,7 +85,7 @@ describe("HqSearchPalette", () => {
 
   it("says when nothing matches", async () => {
     signIn("hq");
-    vi.mocked(searchHq).mockResolvedValue({ practices: [], people: [], limit: 20 });
+    vi.mocked(searchHq).mockResolvedValue({ organizations: [], practices: [], people: [], limit: 20 });
     render(<HqSearchPalette />);
     act(() => openOverlay("search"));
     fireEvent.change(await screen.findByRole("combobox", { name: "Search" }), { target: { value: "zz" } });

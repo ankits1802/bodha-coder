@@ -1,5 +1,6 @@
 import type { InboxEntry, InboxKind } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
+import { TEAM_PATH } from "@/lib/paths";
 import { PLAN_PATH } from "@/lib/roles";
 import { INBOX_TEXT } from "./strings";
 
@@ -15,12 +16,14 @@ const SENTENCES: Record<InboxKind, (entry: InboxEntry) => string> = {
   payment_failed: (entry) => words.paymentFailed(formatCalendarDay(entry.payload.access_until ?? null, "year")),
   plan_ending: (entry) => words.planEnding(formatCalendarDay(entry.payload.ends_on ?? null, "year")),
   compliance_returned: (entry) => words.complianceReturned(entry.actor_name),
+  join_requested: (entry) => words.joinRequested(entry.actor_name),
 };
 
 const FIXED_TARGETS: Partial<Record<InboxKind, string>> = {
   training_assigned: TRAINING_PATH,
   payment_failed: PLAN_PATH,
   plan_ending: PLAN_PATH,
+  join_requested: TEAM_PATH,
 };
 
 const NOTE_TABS: Partial<Record<InboxKind, string>> = { mentioned: "history" };

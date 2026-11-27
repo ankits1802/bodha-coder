@@ -4,16 +4,19 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Conflict
-from app.models import Practice, PracticeMembership, Provider, Subscription
+from app.models import CLOSED_STATUSES, Practice, PracticeMembership, Provider, Subscription
 from app.services.memberships import SEAT_HOLDING
 from app.services.plans import plan_terms
 
 __all__ = [
     "LIVE_STATUSES",
     "active_provider_count",
+    "combined_provider_count",
     "ensure_provider_room",
     "ensure_user_room",
+    "governing_subscription",
     "is_live",
+    "organization_subscription",
     "provider_limit",
     "subscription_for",
     "user_count",
@@ -32,9 +35,37 @@ async def subscription_for(db: AsyncSession, practice_id: str, *, lock: bool = F
     return await db.scalar(query.with_for_update() if lock else query)
 
 
+async def organization_subscription(
+    db: AsyncSession, organization_id: str, *, lock: bool = False
+) -> Subscription | None:
+    query = select(Subscription).where(Subscription.organization_id == organization_id)
+    return await db.scalar(query.with_for_update() if lock else query)
+
+
+async def governing_subscription(db: AsyncSession, practice: Practice) -> Subscription | None:
+    if practice.combined_billing and practice.organization_id is not None:
+        return await organization_subscription(db, practice.organization_id)
+    return await subscription_for(db, practice.id)
+
+
 async def active_provider_count(db: AsyncSession, practice_id: str) -> int:
     found = await db.scalar(
         select(func.count()).select_from(Provider).where(Provider.practice_id == practice_id, Provider.active.is_(True))
+    )
+    return found or 0
+
+
+async def combined_provider_count(db: AsyncSession, organization_id: str) -> int:
+    found = await db.scalar(
+        select(func.count())
+        .select_from(Provider)
+        .join(Practice, Practice.id == Provider.practice_id)
+        .where(
+            Practice.organization_id == organization_id,
+            Practice.combined_billing.is_(True),
+            Practice.status.not_in(CLOSED_STATUSES),
+            Provider.active.is_(True),
+        )
     )
     return found or 0
 
@@ -64,7 +95,7 @@ async def ensure_user_room(db: AsyncSession, practice: Practice) -> None:
     used = await user_count(db, practice.id)
     if terms.max_users is not None and used >= terms.max_users:
         raise Conflict(f"the {terms.name} plan allows up to {terms.max_users} users")
-    if not is_live(await subscription_for(db, practice.id)) and used >= practice.seats:
+    if not is_live(await governing_subscription(db, practice)) and used >= practice.seats:
         raise Conflict("all seats are in use")
 
 

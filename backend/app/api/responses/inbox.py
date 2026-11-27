@@ -18,6 +18,7 @@ class InboxPayload(View):
     access_until: Omittable[str] = None
     ends_on: Omittable[str] = None
     reason: Omittable[str] = None
+    request_id: Omittable[str] = None
 
 
 class InboxEntry(View):

@@ -7,6 +7,7 @@ import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 import { usePlanStatus } from "@/hooks/usePlanStatus";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useSession } from "@/lib/session/useSession";
+import { BilledByOrganization } from "./BilledByOrganization";
 import { PlanChooser } from "./PlanChooser";
 import { PlanSummary } from "./PlanSummary";
 import { PLAN_TEXT } from "./strings";
@@ -31,9 +32,13 @@ export function PlanScreen() {
         {(current) => (
           <>
             <PlanSummary status={current} />
-            <RemoteView state={catalog.state} text={TEXT} onRetry={catalog.reload}>
-              {(plans) => <PlanChooser status={current} catalog={plans} onChanged={status.reload} />}
-            </RemoteView>
+            {current.organization ? (
+              <BilledByOrganization organization={current.organization} />
+            ) : (
+              <RemoteView state={catalog.state} text={TEXT} onRetry={catalog.reload}>
+                {(plans) => <PlanChooser status={current} catalog={plans} onChanged={status.reload} />}
+              </RemoteView>
+            )}
           </>
         )}
       </RemoteView>

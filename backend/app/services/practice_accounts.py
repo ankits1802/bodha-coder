@@ -12,7 +12,7 @@ from app.models import Practice, PracticeMembership, User
 from app.services.account_lookup import normal_email
 from app.services.memberships import enrol
 
-SIGNUP_SOURCES = ("self", "hq")
+SIGNUP_SOURCES = ("self", "hq", "organization")
 
 
 @dataclass(frozen=True)

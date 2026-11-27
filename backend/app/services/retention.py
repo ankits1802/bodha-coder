@@ -87,6 +87,8 @@ async def close_practice(db: AsyncSession, actor: Actor, practice_id: str, *, co
         raise Conflict("end or block the practice before closing it")
     if is_live(await subscription_for(db, practice_id)):
         raise Conflict("cancel the practice's subscription before closing it")
+    if practice.combined_billing:
+        raise Conflict("take the practice out of combined billing before closing it")
     await _end_memberships(db, actor, practice.id)
     await db.execute(
         update(AddendumRequest)

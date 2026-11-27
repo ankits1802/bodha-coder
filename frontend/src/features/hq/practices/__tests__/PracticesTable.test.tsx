@@ -27,6 +27,9 @@ const BASE: HqPractice = {
   billing_provider: null,
   billing_status: null,
   billing_interval: null,
+  organization_id: null,
+  organization_name: null,
+  combined_billing: false,
 };
 
 const SELF: HqPractice = { ...BASE, id: "p2", name: "Harbor Pediatrics", status: "trial", plan: "trial", source: "self", signed_up_on: "2026-11-27" };

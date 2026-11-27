@@ -34,6 +34,9 @@ SIGNUP_PER_IP = RateRule("signup_ip", 5, timedelta(hours=1))
 SIGNUP_PER_EMAIL = RateRule("signup_email", 3, timedelta(hours=1))
 SIGNATURE_DRAFTS_PER_OWNER = RateRule("signature_drafts", 20, timedelta(hours=1))
 VERIFY_PER_IP = RateRule("verify_ip", 30, timedelta(minutes=15))
+DOMAIN_CHECKS_PER_CLAIM = RateRule("domain_check", 10, timedelta(hours=1))
+DOMAIN_EMAILS_PER_CLAIM = RateRule("domain_email", 3, timedelta(hours=1))
+DOMAIN_LINKS_PER_IP = RateRule("domain_link_ip", 30, timedelta(minutes=15))
 RULES = (
     LOGIN_PER_EMAIL,
     LOGIN_PER_IP,
@@ -47,6 +50,9 @@ RULES = (
     SIGNUP_PER_EMAIL,
     SIGNATURE_DRAFTS_PER_OWNER,
     VERIFY_PER_IP,
+    DOMAIN_CHECKS_PER_CLAIM,
+    DOMAIN_EMAILS_PER_CLAIM,
+    DOMAIN_LINKS_PER_IP,
 )
 LONGEST_WINDOW = max(rule.window for rule in RULES)
 

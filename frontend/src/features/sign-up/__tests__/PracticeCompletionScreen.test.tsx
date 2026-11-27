@@ -42,6 +42,7 @@ describe("PracticeCompletionScreen", () => {
       name: "Omar Haddad",
       provider: "microsoft",
       has_account: false,
+      join: null,
     });
   });
 

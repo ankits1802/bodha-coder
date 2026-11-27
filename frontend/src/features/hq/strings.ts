@@ -193,7 +193,10 @@ export const HQ_TEXT = {
       admin: "First admin",
       timeZone: "Time zone",
       started: "Started",
-      startedBy: { hq: "Added by HQ", self: "Self sign-up" } satisfies Record<NonNullable<HqPractice["source"]>, string>,
+      startedBy: { hq: "Added by HQ", self: "Self sign-up", organization: "Added by its organization" } satisfies Record<
+        NonNullable<HqPractice["source"]>,
+        string
+      >,
       startedOn: (how: string, day: string) => `${how} · ${day}`,
     },
     spendEmpty: "No model use in this range",

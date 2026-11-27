@@ -20,6 +20,7 @@ from app.models import PRACTICE_REALM, User, utcnow
 from app.services.account_lookup import account_by_email, email_in_use, normal_email
 from app.services.audit_log import record_activity
 from app.services.auth import MfaChallenge, Tokens, sign_in_user
+from app.services.domain_join import JoinTicket, join_offer_for, send_join_offer
 from app.services.identity_sign_in import admit, bind_identity
 from app.services.practice_accounts import (
     AdminDraft,
@@ -103,6 +104,17 @@ async def request_email_signup(
     if await email_in_use(db, form.email, PRACTICE_REALM):
         await _send_existing_account(messenger, normal_email(form.email))
         return
+    offer = await join_offer_for(db, form.email)
+    if offer is not None:
+        ticket = JoinTicket(normal_email(form.email), form.name.strip(), form.practice_name.strip(), form.time_zone)
+        await send_join_offer(messenger, ticket, offer)
+        return
+    await start_email_trial(db, messenger, signer, form, client)
+
+
+async def start_email_trial(
+    db: AsyncSession, messenger: Messenger, signer: RecordSigner, form: EmailSignup, client: Client
+) -> None:
     created = await _trial_practice(
         db, form.practice_name, form.time_zone, AdminDraft(form.name, form.email, "invited")
     )

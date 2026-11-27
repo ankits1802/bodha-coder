@@ -11,10 +11,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Invalid, NotFound
 from app.core.model_prices import usd_from_microusd
-from app.models import Analysis, Note, Practice, Provider
+from app.models import Analysis, Note, Organization, Practice, Provider
 from app.services.plans import CATALOG
 
-__all__ = ["SPEND_TIME_ZONE", "PracticeRef", "SpendRow", "expenditure", "spend_figures", "spend_report", "spend_since"]
+__all__ = [
+    "SPEND_TIME_ZONE",
+    "PracticeRef",
+    "SpendRow",
+    "SpendScope",
+    "expenditure",
+    "spend_figures",
+    "spend_report",
+    "spend_since",
+]
 
 SPEND_TIME_ZONE = "UTC"
 COST_PER_NOTE_PLACES = 4
@@ -43,15 +52,23 @@ class SpendRow:
     unpriced: int
 
 
-async def expenditure(db: AsyncSession, *, start: date, end: date, practice_id: str | None) -> dict[str, Any]:
+@dataclass(frozen=True)
+class SpendScope:
+    practice_id: str | None = None
+    organization_id: str | None = None
+
+
+async def expenditure(db: AsyncSession, *, start: date, end: date, scope: SpendScope) -> dict[str, Any]:
     if end < start:
         raise Invalid("the range must end on or after the day it starts")
     conditions = [Analysis.finished_at >= _midnight(start), Analysis.finished_at < _midnight(end + timedelta(days=1))]
-    listed = await _practices(db, practice_id)
-    if practice_id is not None:
-        if not listed:
+    listed = await _practices(db, scope)
+    if scope.practice_id is not None or scope.organization_id is not None:
+        if scope.organization_id is not None and await db.get(Organization, scope.organization_id) is None:
+            raise NotFound("organization not found")
+        if scope.practice_id is not None and not listed:
             raise NotFound("practice not found")
-        conditions.append(Note.practice_id == practice_id)
+        conditions.append(Note.practice_id.in_([practice.id for practice in listed]))
     return {
         "from": start.isoformat(),
         "to": end.isoformat(),
@@ -61,9 +78,13 @@ async def expenditure(db: AsyncSession, *, start: date, end: date, practice_id: 
     }
 
 
-async def _practices(db: AsyncSession, practice_id: str | None) -> list[PracticeRef]:
+async def _practices(db: AsyncSession, scope: SpendScope) -> list[PracticeRef]:
     query = select(Practice.id, Practice.name, Practice.plan).order_by(Practice.name, Practice.id)
-    rows = await db.execute(query if practice_id is None else query.where(Practice.id == practice_id))
+    if scope.practice_id is not None:
+        query = query.where(Practice.id == scope.practice_id)
+    if scope.organization_id is not None:
+        query = query.where(Practice.organization_id == scope.organization_id)
+    rows = await db.execute(query)
     return [PracticeRef(*row) for row in rows.tuples()]
 
 

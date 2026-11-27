@@ -72,6 +72,7 @@ class Practice(IdMixin, Base):
             f"(status IN ({', '.join(repr(item) for item in CLOSED_STATUSES)})) = (closed_at IS NOT NULL)",
             name="closed_when_closed_at",
         ),
+        CheckConstraint("NOT combined_billing OR organization_id IS NOT NULL", name="combined_in_organization"),
     )
     name: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(16), default="trial")
@@ -92,6 +93,8 @@ class Practice(IdMixin, Base):
     purged_at: Mapped[datetime | None] = timestamp()
     confirm_level_changes: Mapped[bool] = mapped_column(Boolean, default=False)
     hold_until_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    organization_id: Mapped[str | None] = mapped_column(ForeignKey("organizations.id"), index=True)
+    combined_billing: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
 
 
 class User(IdMixin, Base):

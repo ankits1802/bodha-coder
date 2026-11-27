@@ -23,10 +23,19 @@ def plan_ending_soon(renews_on: date | None, today: date) -> bool:
 
 
 async def notify_plans_ending(db: AsyncSession, now: datetime) -> int:
-    live = select(Subscription.practice_id).where(Subscription.status.in_(LIVE_STATUSES))
+    live = select(Subscription.practice_id).where(
+        Subscription.status.in_(LIVE_STATUSES), Subscription.practice_id.is_not(None)
+    )
+    paying = select(Subscription.organization_id).where(
+        Subscription.status.in_(LIVE_STATUSES), Subscription.organization_id.is_not(None)
+    )
+    paid_together = Practice.combined_billing.is_(True) & Practice.organization_id.in_(paying)
     practices = await db.scalars(
         select(Practice).where(
-            Practice.status.in_(OPEN_STATUSES), Practice.renews_on.is_not(None), Practice.id.not_in(live)
+            Practice.status.in_(OPEN_STATUSES),
+            Practice.renews_on.is_not(None),
+            Practice.id.not_in(live),
+            ~paid_together,
         )
     )
     told = 0

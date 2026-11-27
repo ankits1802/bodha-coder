@@ -31,6 +31,7 @@ __all__ = [
     "PayPalConfig",
     "checkout_body",
     "event_subscription_id",
+    "owner_reference",
     "paypal_client",
     "subscription_state",
 ]
@@ -69,6 +70,7 @@ SUBSCRIPTION_PAYMENT_FAILED = "BILLING.SUBSCRIPTION.PAYMENT.FAILED"
 SALE_PAYMENTS = {"PAYMENT.SALE.COMPLETED": PAYMENT_SUCCEEDED, "PAYMENT.SALE.DENIED": PAYMENT_FAILED}
 HANDLED_EVENTS = (*SUBSCRIPTION_EVENTS, SUBSCRIPTION_PAYMENT_FAILED, *SALE_PAYMENTS)
 BRAND_NAME = "Bodha Assure"
+ORGANIZATION_PREFIX = "organization:"
 CANCEL_REASON = "Cancelled by the practice admin"
 VERIFIED = "SUCCESS"
 TIMEOUT_SECONDS = 20
@@ -164,7 +166,7 @@ def checkout_body(request: CheckoutRequest) -> dict[str, Any]:
     return {
         "plan_id": request.price_id,
         "quantity": str(request.quantity),
-        "custom_id": request.practice_id,
+        "custom_id": owner_reference(request),
         "subscriber": {"email_address": request.email},
         "application_context": {
             "brand_name": BRAND_NAME,
@@ -174,6 +176,12 @@ def checkout_body(request: CheckoutRequest) -> dict[str, Any]:
             "cancel_url": request.cancel_url,
         },
     }
+
+
+def owner_reference(request: CheckoutRequest) -> str:
+    if request.organization_id:
+        return f"{ORGANIZATION_PREFIX}{request.organization_id}"
+    return request.practice_id or ""
 
 
 def event_subscription_id(kind: str, resource: Mapping[str, Any]) -> str | None:
@@ -191,10 +199,13 @@ def subscription_state(data: Mapping[str, Any]) -> ProcessorSubscription:
     if status not in PAYPAL_STATUSES:
         raise ValueError(f"unknown PayPal subscription status {status}")
     next_billing = (data.get("billing_info") or {}).get("next_billing_time")
+    owner = str(data.get("custom_id") or "")
+    organization = owner.removeprefix(ORGANIZATION_PREFIX) if owner.startswith(ORGANIZATION_PREFIX) else None
     return ProcessorSubscription(
         subscription_id=str(data["id"]),
         customer_id=(data.get("subscriber") or {}).get("payer_id"),
-        practice_id=data.get("custom_id"),
+        practice_id=None if organization or not owner else owner,
+        organization_id=organization or None,
         price_id=data.get("plan_id"),
         status=PAYPAL_STATUSES[status],
         current_period_end=datetime.fromisoformat(next_billing) if next_billing else None,

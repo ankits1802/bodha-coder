@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app.adapters.billing_providers import build_billing_providers
+from app.adapters.dns_txt import DnsTxtResolver
 from app.adapters.image_models import build_image_model
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
@@ -39,8 +40,11 @@ from app.api.routes import (
 from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
 from app.api.routes.defensibility import router as defensibility_router
+from app.api.routes.domains import router as domains_router
 from app.api.routes.expenditure import router as expenditure_router
+from app.api.routes.hq_organizations import router as hq_organizations_router
 from app.api.routes.intake import router as intake_router
+from app.api.routes.organizations import router as organizations_router
 from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
@@ -64,6 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.billing_providers = build_billing_providers(settings)
     app.state.icd = await asyncio.to_thread(load_catalog)
     app.state.image_model = build_image_model(settings)
+    app.state.txt_resolver = DnsTxtResolver()
     yield
     await app.state.image_model.aclose()
 
@@ -103,6 +108,9 @@ app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
 app.include_router(expenditure_router, prefix="/api")
 app.include_router(review_records_router, prefix="/api")
+app.include_router(organizations_router, prefix="/api")
+app.include_router(domains_router, prefix="/api")
+app.include_router(hq_organizations_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

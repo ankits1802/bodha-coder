@@ -8,7 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFound
 from app.core.text_search import LIKE_ESCAPE, contains_pattern, search_term
-from app.models import PRACTICE_REALM, Note, PlaceOfService, Practice, PracticeMembership, Provider, User
+from app.models import (
+    PRACTICE_REALM,
+    Note,
+    Organization,
+    PlaceOfService,
+    Practice,
+    PracticeMembership,
+    Provider,
+    User,
+)
 from app.services.hq import practice_row
 from app.services.memberships import BLOCKED, LIVE
 
@@ -82,7 +91,14 @@ async def hq_search(db: AsyncSession, text: str) -> dict[str, Any]:
     )
     found = list(people.all())
     places = await _memberships_of(db, [user.id for user in found])
+    groups = await db.execute(
+        select(Organization.id, Organization.name, Organization.status)
+        .where(Organization.name.ilike(pattern, escape=LIKE_ESCAPE))
+        .order_by(Organization.name, Organization.id)
+        .limit(HQ_SEARCH_LIMIT)
+    )
     return {
+        "organizations": [{"id": row.id, "name": row.name, "status": row.status} for row in groups],
         "practices": [{"id": row.id, "name": row.name, "status": row.status} for row in practices],
         "people": [
             {"id": user.id, "name": user.name, "email": user.email, "practices": places.get(user.id, [])}

@@ -2,11 +2,13 @@ from typing import Literal
 
 from app.adapters.oidc_providers import PROVIDER_NAMES
 from app.api.responses.base import Omittable, PracticeRole, Role, View
+from app.models import ORGANIZATION_ROLES
 
 __all__ = [
     "Checks",
     "MfaChallenge",
     "MfaEnrolment",
+    "OrganizationChoice",
     "PracticeChoice",
     "PracticeSummary",
     "Preferences",
@@ -45,6 +47,12 @@ class PracticeChoice(View):
     role: PracticeRole
 
 
+class OrganizationChoice(View):
+    id: str
+    name: str
+    role: Literal[ORGANIZATION_ROLES]
+
+
 class User(View):
     id: str
     name: str
@@ -53,6 +61,7 @@ class User(View):
     billing_only: bool
     practice: PracticeSummary | None
     practices: list[PracticeChoice]
+    organizations: Omittable[list[OrganizationChoice]] = None
 
 
 class SignedIn(View):

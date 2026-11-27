@@ -6,6 +6,7 @@ from fastapi import Cookie, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.billing_contract import BillingProvider
+from app.adapters.dns_txt import TxtResolver
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
@@ -14,9 +15,10 @@ from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
 from app.core.deps import Client, PracticeAccess, billing_only_since
 from app.core.errors import NotFound
-from app.models import User
+from app.models import HQ_REALM, User
 from app.services.auth import MfaChallenge, Tokens
 from app.services.memberships import practices_of
+from app.services.organizations import organizations_of
 from app.services.practice_setup import practice_checks
 from app.services.signatures import SignatureTools
 
@@ -55,6 +57,10 @@ def billing_providers(request: Request) -> dict[str, BillingProvider]:
     return request.app.state.billing_providers
 
 
+def txt_resolver(request: Request) -> TxtResolver:
+    return request.app.state.txt_resolver
+
+
 def record_signer(request: Request) -> RecordSigner:
     return request.app.state.signer
 
@@ -74,6 +80,7 @@ IdentityProviders = Annotated[dict[str, IdentityProvider], Depends(identity_prov
 ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
 BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_providers)]
 Sealer = Annotated[RecordSigner, Depends(record_signer)]
+Resolver = Annotated[TxtResolver, Depends(txt_resolver)]
 SigningTools = Annotated[SignatureTools, Depends(signature_tools)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
 OidcCookie = Annotated[str | None, Cookie(alias=OIDC_COOKIE)]
@@ -161,4 +168,12 @@ async def user_view(db: AsyncSession, user: User, standing: PracticeAccess) -> d
         "practices": [
             {"id": choice.id, "name": choice.name, "role": choice.role} for choice in await practices_of(db, user)
         ],
+        **await _organizations_view(db, user),
     }
+
+
+async def _organizations_view(db: AsyncSession, user: User) -> dict[str, Any]:
+    if user.realm == HQ_REALM:
+        return {}
+    choices = await organizations_of(db, user)
+    return {"organizations": [{"id": choice.id, "name": choice.name, "role": choice.role} for choice in choices]}

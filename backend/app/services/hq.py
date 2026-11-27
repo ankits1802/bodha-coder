@@ -9,7 +9,6 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
-from app.codes.places import UnknownPlaceOfService, setting_for
 from app.core.calendar import today_in, zone_named
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
@@ -19,9 +18,8 @@ from app.models import (
     PRACTICE_REALM,
     Activity,
     Analysis,
-    DemoRequest,
     Note,
-    PlaceOfService,
+    Organization,
     Practice,
     PracticeMembership,
     Provider,
@@ -45,7 +43,7 @@ from app.services.practice_accounts import (
     signup_source,
 )
 from app.services.retention import purge_after
-from app.services.subscriptions import refuse_manual_change
+from app.services.subscriptions import refuse_combined_change, refuse_manual_change
 from app.services.team import EMAIL_TAKEN, send_added, send_invite
 from app.services.user_sessions import end_practice_sessions
 from app.services.worklists import count_of
@@ -114,12 +112,16 @@ async def practices(db: AsyncSession, *, practice_id: str | None = None) -> list
     admins = await _first_admins(db)
     failures = await _recent_failures(db, utcnow() - timedelta(hours=24))
     billing = {row.practice_id: row for row in await db.scalars(select(Subscription))}
+    groups = dict((await db.execute(select(Organization.id, Organization.name))).tuples().all())
     query = select(Practice).order_by(Practice.name)
     rows = await db.scalars(query if practice_id is None else query.where(Practice.id == practice_id))
     return [
         {
             **_practice_row(p, counts, admins.get(p.id), failures.get(p.id, (0, None))),
             **_billing_view(billing.get(p.id)),
+            "organization_id": p.organization_id,
+            "organization_name": groups.get(p.organization_id) if p.organization_id else None,
+            "combined_billing": p.combined_billing,
         }
         for p in rows
     ]
@@ -248,6 +250,7 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
         raise Invalid("status, plan or seats is not allowed")
     renewal_changed = "renews_on" in changes and changes["renews_on"] != practice.renews_on
     if renewal_changed or (plan and plan != practice.plan):
+        refuse_combined_change(practice)
         refuse_manual_change(await subscription_for(db, practice.id))
     if changes.get("time_zone"):
         practice.time_zone = zone_named(changes["time_zone"]).key
@@ -288,38 +291,6 @@ async def _close_sessions(db: AsyncSession, actor: Actor, practice_id: str) -> N
     members = select(User).join(PracticeMembership, PracticeMembership.user_id == User.id)
     for user in (await db.scalars(members.where(PracticeMembership.practice_id == practice_id))).all():
         await end_practice_sessions(db, user, practice_id, reason=PRACTICE_CLOSED, client=actor.client)
-
-
-async def places(db: AsyncSession) -> list[PlaceOfService]:
-    return list((await db.scalars(select(PlaceOfService).order_by(PlaceOfService.code))).all())
-
-
-async def set_place(db: AsyncSession, actor: Actor, code: str, *, name: str | None, active: bool) -> PlaceOfService:
-    place = await db.get(PlaceOfService, code)
-    if place is None:
-        if not name:
-            raise Invalid("a new place needs a name")
-        try:
-            setting_for(code)
-        except UnknownPlaceOfService as error:
-            raise Invalid(f"Bodha has no care setting for place of service {code}") from error
-        place = PlaceOfService(code=code, name=name.strip(), active=active)
-        db.add(place)
-    else:
-        place.active, place.name = active, (name or place.name).strip()
-    record_activity(
-        db,
-        actor,
-        "place of service changed",
-        practice_id=None,
-        detail=f"{place.name} ({code}) {'on' if active else 'off'}",
-    )
-    await db.commit()
-    return place
-
-
-async def demo_requests(db: AsyncSession) -> list[DemoRequest]:
-    return list((await db.scalars(select(DemoRequest).order_by(DemoRequest.created_at.desc()).limit(200))).all())
 
 
 @dataclass(frozen=True)
@@ -369,6 +340,7 @@ async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, 
 
 async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str, until: date | None) -> date | None:
     practice = await _practice(db, practice_id)
+    refuse_combined_change(practice)
     refuse_manual_change(await subscription_for(db, practice.id))
     if until is not None and until <= today_in(zone_named(practice.time_zone)):
         raise Invalid(RENEWAL_IN_PAST)
