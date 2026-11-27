@@ -5,8 +5,8 @@ export const LANDING_TEXT = {
   nav: { label: "Site", how: "How it works", security: "Security", signIn: "Sign in" },
   requestDemo: "Request a demo",
   hero: {
-    title: "Every note, checked.",
-    lead: "Bodha Coder reads each visit note and shows your coders exactly what to bill.",
+    title: "Bill the level you can defend.",
+    lead: "Bodha Coder checks every visit note against the codes you bill, too high or too low, and shows the sentence behind each change.",
     signIn: "Sign in ›",
   },
   product: {
@@ -30,18 +30,18 @@ export const LANDING_TEXT = {
     ],
   },
   how: {
-    title: "Upload. Review. Bill.",
+    title: "Upload. Review. Defend.",
     features: [
-      { title: "Reads every note.", body: "Drop the day's PDFs. Patient, date and billed code are taken from each file." },
-      { title: "Explains every code.", body: "Each suggestion points to the sentence in the note that supports it." },
-      { title: "Asks the provider.", body: "Questions go out as a secure link. The answer comes back as a signed addendum." },
+      { title: "Shows its evidence.", body: "Every level and code points to the sentence that supports it, checked against the code set for the date of service." },
+      { title: "Asks the provider.", body: "Non-leading questions go out as a secure link. The answer comes back as a signed addendum." },
+      { title: "Keeps the record.", body: "Every read, decision and addendum is kept, ready for a payer or an auditor." },
     ],
   },
   numbers: {
     label: "At a glance",
     items: [
-      { value: "3,000", label: "notes a day" },
-      { value: "48 h", label: "from visit to ready to bill" },
+      { value: "100%", label: "of suggested codes checked against the official code set" },
+      { value: "Both ways", label: "billed too high and billed too low" },
       { value: "1 click", label: "to approve" },
     ],
   },
