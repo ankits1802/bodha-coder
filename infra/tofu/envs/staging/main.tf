@@ -91,6 +91,8 @@ module "watch" {
   monthly_budget      = var.monthly_budget
   load_balancer       = module.app.load_balancer
   database_identifier = module.data.database_identifier
+  region              = var.region
+  cluster             = module.app.cluster
 }
 
 module "deploy" {
