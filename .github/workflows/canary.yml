@@ -1,0 +1,45 @@
+name: production canary
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    if: github.repository == 'CHARTMATE-APP/bodha-coder'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CANARY_SITE_URL: ${{ vars.CANARY_SITE_URL || 'https://www.bodhaai.co' }}
+      CANARY_ADMIN_URL: ${{ vars.CANARY_ADMIN_URL || 'https://admin.bodhaai.co' }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps --only-shell chromium
+      - name: Walk production read-only
+        env:
+          CANARY_PRACTICE_EMAIL: ${{ secrets.CANARY_PRACTICE_EMAIL }}
+          CANARY_PRACTICE_PASSWORD: ${{ secrets.CANARY_PRACTICE_PASSWORD }}
+          CANARY_PRACTICE_TOTP_SECRET: ${{ secrets.CANARY_PRACTICE_TOTP_SECRET }}
+          CANARY_HQ_EMAIL: ${{ secrets.CANARY_HQ_EMAIL }}
+          CANARY_HQ_PASSWORD: ${{ secrets.CANARY_HQ_PASSWORD }}
+          CANARY_HQ_TOTP_SECRET: ${{ secrets.CANARY_HQ_TOTP_SECRET }}
+        run: npx playwright test --config e2e/canary/playwright.config.ts

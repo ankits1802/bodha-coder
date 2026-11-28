@@ -28,3 +28,6 @@ crash.log
 plan.txt
 .vercel/
 apply.txt
+test-results/
+playwright-report/
+blob-report/
