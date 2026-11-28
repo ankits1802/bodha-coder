@@ -105,3 +105,10 @@ is not reliably in the message headers. It requires every SES spam and virus ver
 `PASS`, a single `From` address on the inbox's sender list (the list is required) and a date of
 service in the subject; without a date it writes nothing rather than guess the date of service. It
 names PDFs by their checksum and deletes the raw message.
+
+## Amended 2026-11-28
+
+**Email intake is replaced.** The function no longer maps recipients, checks senders or writes PDFs: it
+records each message's envelope and SES verdicts beside the stored message, and the worker checks the
+practice's own address and allowed senders, matches each PDF from page 1 and records every message
+([0045](0045-email-intake.md)). The paragraph "Email intake function" above describes the earlier design.

@@ -14,6 +14,9 @@ session in the incident record.
 | Queue | metrics `BodhaCoder/QueuedAnalyses` and `BodhaCoder/RunningAnalyses` (statistic Maximum) |
 | Load balancer | ALB metrics per target group: `HTTPCode_Target_5XX_Count`, `TargetResponseTime`, `UnHealthyHostCount` |
 | Readiness | `curl -fsS https://www.bodhaai.co/api/health/ready` |
+| Email intake function | log group `/aws/lambda/bodha-<env>-ses-intake`, one `ses intake` line per message (message id and recipient count) |
+| Email intake outcomes | each practice's Settings, Setup, Automatic intake, Received; `intake_messages` for SQL |
+| Error tracking | the Sentry projects, when `SENTRY_DSN` and `WEB_SENTRY_DSN` are set ([DEPLOY.md](DEPLOY.md#error-tracking-sentry)); events carry the release (`APP_VERSION`) and exception types and frames only |
 
 CloudWatch Logs Insights:
 
@@ -137,6 +140,35 @@ filter message = "orphan file sweep"
 `aws s3 ls --recursive s3://<bucket>/practices/<practice id>/` (keys hold ids only) and find their source.
 Do not delete them by hand while they may belong to a record; Object Lock keeps every version for seven
 years in any case.
+
+## Email intake: a message did not arrive
+
+Work from the outside in. Never open a stored message to find out: the records say what happened.
+
+1. DNS: `nslookup -type=mx intake.bodhaai.co` must answer `10 inbound-smtp.us-east-1.amazonaws.com`.
+2. SES: `aws ses describe-active-receipt-rule-set --region us-east-1` must name `bodha-staging-intake`
+   with its rule enabled. If another rule set is active, someone activated it; do not switch it back
+   without the owner.
+3. Storage: `aws s3 ls s3://<bucket>/ses-inbound/` lists messages not yet handled. A message without its
+   `.json` envelope means the function did not run or failed: read its log group (and the function's
+   errors metric). An envelope that stays more than a few minutes means the worker failed on it: search
+   the worker log for `email intake message <message id> failed`; the worker retries it every minute.
+   `AMAZON_SES_SETUP_NOTIFICATION` is the test object SES writes when the rule is created and stays.
+4. Worker: `EMAIL_INTAKE_DOMAIN` must be set on the worker task, or it skips email intake.
+5. Records: the message's row in Received (or, for an address no practice holds, in SQL) gives the
+   outcome and reason:
+
+   ```
+   select message_key, practice_id, outcome, reason, accepted_files, refused_files, created_at
+   from intake_messages where created_at > now() - interval '1 day' order by created_at desc;
+   ```
+
+   `not_authenticated` means the sender's domain did not pass DMARC (or has no DMARC record);
+   `sender_not_allowed` that the practice has not allowed that address or domain; `files_refused` that no
+   PDF could be placed from page 1 (the file reasons say why).
+
+A practice whose address may have leaked chooses New address; mail to the old one is then refused and
+recorded. Raw messages stay under `ses-retained/` for seven years like every stored document.
 
 ## Restore from backup
 

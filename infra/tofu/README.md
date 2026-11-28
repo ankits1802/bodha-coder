@@ -6,7 +6,7 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
 | Stack | Holds | State |
 |---|---|---|
 | `bootstrap` | the state bucket and the operator's `bodha-staging-edge` policy | `bootstrap/terraform.tfstate` in the state bucket |
-| `envs/production` | network, data, app, alarms, uptime check and the GitHub deploy role | `production/terraform.tfstate` |
+| `envs/production` | network, data, app, email intake, alarms, uptime check and the GitHub deploy role | `production/terraform.tfstate` |
 
 ## First run
 
@@ -86,9 +86,37 @@ emergency (misfiled PHI, a court order); the application roles have neither.
 Rotate the database password by raising `database_password_version` and applying, then forcing a new
 deployment of the three services.
 
-## Vercel previews
+## Email intake
 
-The live site is the ECS `web` service behind CloudFront; the `SITE_URL` repository variable gives
-its image the public address. Vercel only serves previews from the operator's machine, kept apart
-from any other Vercel login by a dedicated global-config folder: `vercel -Q <folder> deploy` from
-`frontend/` in a clean worktree of a green commit.
+Practices email visit notes to their own address at a subdomain
+([0045](../../docs/decisions/0045-email-intake.md), [DEPLOY-INTAKE.md](../../docs/DEPLOY-INTAKE.md#option-3-email-to-the-practices-own-address)).
+The apex domain's mail records (Microsoft 365) are not touched.
+
+1. Apply `bootstrap` once more: the operator's `bodha-staging-edge` policy gains the SES receipt-rule
+   actions (on `*`, as SES offers no resource-level permissions for them) and the Lambda actions on
+   `function:bodha-*`.
+2. Set `email_intake_subdomain = "intake"` and apply. This builds the function `bodha-staging-ses-intake`
+   from `infra/ses_intake/handler.py`, its log group (2557 days), its role, the SES receipt role, the rule
+   set `bodha-staging-intake` with its one rule, and the permission for SES to invoke the function. The
+   rule set is not active yet, and the app still answers that email intake is unavailable. If the first
+   apply stops at the receipt rule with "Could not write to bucket", the new role had not propagated:
+   apply again.
+3. Add the record `tofu output dns_records` now lists at GoDaddy, in the `bodhaai.co` zone:
+   type `MX`, host `intake`, points to `inbound-smtp.us-east-1.amazonaws.com`, priority `10`, TTL one
+   hour. Leave every other record as it is. `nslookup -type=mx intake.bodhaai.co` should answer it.
+4. Run `aws ses describe-active-receipt-rule-set --region us-east-1`. Only one receipt rule set can be
+   active per account and region, and this account is shared: if it names a rule set other than
+   `bodha-staging-intake`, stop and ask the owner, because activating ours would switch that one off.
+5. With nothing else active, set `email_intake_live = true`, apply and force a new deployment of `api`
+   and `worker`: the rule set becomes active and `EMAIL_INTAKE_DOMAIN=intake.bodhaai.co` reaches both.
+   An admin can then get an address and Send a test (Settings, Setup, Automatic intake).
+
+To stop receiving, set `email_intake_live = false` and apply (the rule set is deactivated and the app
+stops offering addresses; addresses and records stay), then remove the MX record.
+
+## Error tracking
+
+Set `sentry_dsn` (the Python project) and `web_sentry_dsn` (the Next.js project) and apply, after the
+legal step in `docs/DEPLOY.md` (Error tracking). Each non-empty DSN is stored write-only as
+`bodha/staging/sentry-dsn` or `bodha/staging/web-sentry-dsn` and read by the task definitions; empty
+means no secret and no SDK. Force a new deployment afterwards.

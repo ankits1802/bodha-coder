@@ -178,6 +178,40 @@ data "aws_iam_policy_document" "edge" {
   }
 
   statement {
+    sid = "SesReceiving"
+    actions = [
+      "ses:CreateReceiptRuleSet",
+      "ses:DeleteReceiptRuleSet",
+      "ses:DescribeReceiptRuleSet",
+      "ses:ListReceiptRuleSets",
+      "ses:CreateReceiptRule",
+      "ses:UpdateReceiptRule",
+      "ses:DeleteReceiptRule",
+      "ses:DescribeReceiptRule",
+      "ses:SetActiveReceiptRuleSet",
+      "ses:DescribeActiveReceiptRuleSet",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "IntakeFunction"
+    actions = [
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "lambda:Get*",
+      "lambda:List*",
+    ]
+    resources = ["arn:aws:lambda:${var.region}:${var.account_id}:function:bodha-*"]
+  }
+
+  statement {
     sid = "Certificates"
     actions = [
       "acm:RequestCertificate",

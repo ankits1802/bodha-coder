@@ -31,6 +31,24 @@ resource "aws_secretsmanager_secret" "this" {
   recovery_window_in_days = 7
 }
 
+locals {
+  error_report_dsns = { "sentry-dsn" = var.sentry_dsn, "web-sentry-dsn" = var.web_sentry_dsn }
+}
+
+resource "aws_secretsmanager_secret" "error_reports" {
+  for_each                = toset([for name, dsn in local.error_report_dsns : name if dsn != ""])
+  name                    = "${var.secret_prefix}/${each.key}"
+  kms_key_id              = aws_kms_key.this.arn
+  recovery_window_in_days = 7
+}
+
+resource "aws_secretsmanager_secret_version" "error_reports" {
+  for_each                 = aws_secretsmanager_secret.error_reports
+  secret_id                = each.value.id
+  secret_string_wo         = local.error_report_dsns[each.key]
+  secret_string_wo_version = parseint(substr(sha256(local.error_report_dsns[each.key]), 0, 8), 16)
+}
+
 resource "aws_secretsmanager_secret_version" "database_url" {
   secret_id                = aws_secretsmanager_secret.this["database-url"].id
   secret_string_wo         = "postgresql+asyncpg://bodha_app:${ephemeral.random_password.database.result}@${aws_db_instance.this.address}:5432/bodha?ssl=require"

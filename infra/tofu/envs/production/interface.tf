@@ -42,7 +42,7 @@ variable "gemini_backend" {
 
 variable "public_url" {
   type    = string
-  default = "https://bodha-coder.vercel.app"
+  default = ""
 }
 
 variable "domain_name" {
@@ -137,6 +137,46 @@ variable "yahoo_client_id" {
   default = ""
 }
 
+variable "email_intake_subdomain" {
+  type    = string
+  default = ""
+
+  validation {
+    condition     = var.email_intake_subdomain == "" || can(regex("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$", var.email_intake_subdomain))
+    error_message = "email_intake_subdomain is one DNS label, such as intake."
+  }
+}
+
+variable "email_intake_live" {
+  type    = bool
+  default = false
+
+  validation {
+    condition     = !var.email_intake_live || (var.email_intake_subdomain != "" && var.domain_name != "")
+    error_message = "email_intake_live needs domain_name and email_intake_subdomain."
+  }
+}
+
+variable "sentry_dsn" {
+  type    = string
+  default = ""
+
+  validation {
+    condition     = var.sentry_dsn == "" || can(regex("^https://[0-9a-f]+@[a-z0-9.-]+(:[0-9]+)?/[0-9]+$", var.sentry_dsn))
+    error_message = "sentry_dsn is the https DSN of the Python Sentry project."
+  }
+}
+
+variable "web_sentry_dsn" {
+  type    = string
+  default = ""
+
+  validation {
+    condition     = var.web_sentry_dsn == "" || can(regex("^https://[0-9a-f]+@[a-z0-9.-]+(:[0-9]+)?/[0-9]+$", var.web_sentry_dsn))
+    error_message = "web_sentry_dsn is the https DSN of the Next.js Sentry project."
+  }
+}
+
 variable "image_tag" {
   type    = string
   default = "bootstrap"
@@ -161,7 +201,17 @@ output "backend_url" {
 }
 
 output "dns_records" {
-  value = concat(module.app.site_records, module.data.mail_records)
+  value = concat(module.app.site_records, module.data.mail_records, flatten(module.intake[*].dns_records))
+}
+
+output "email_intake" {
+  value = one([for intake in module.intake : {
+    domain    = local.intake_host
+    live      = var.email_intake_live
+    function  = intake.function_name
+    rule_set  = intake.rule_set_name
+    mx_record = intake.dns_records[0]
+  }])
 }
 
 output "deploy" {

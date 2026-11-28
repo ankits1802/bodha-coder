@@ -25,7 +25,12 @@ locals {
     { name = "MAIL_OUTBOX_DIR", value = "/tmp/outbox" },
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
+    { name = "EMAIL_INTAKE_DOMAIN", value = var.email_intake_domain },
   ], var.sms_origination_number == "" ? [] : [{ name = "SNS_ORIGINATION_NUMBER", value = var.sms_origination_number }], local.legal_links, local.billing_environment, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
+  error_report_secrets = {
+    python = contains(keys(var.secret_arns), "sentry-dsn") ? [{ name = "SENTRY_DSN", valueFrom = var.secret_arns["sentry-dsn"] }] : []
+    web    = contains(keys(var.secret_arns), "web-sentry-dsn") ? [{ name = "WEB_SENTRY_DSN", valueFrom = var.secret_arns["web-sentry-dsn"] }] : []
+  }
   stripe_on = length(var.billing.stripe_prices) > 0
   paypal_on = var.billing.paypal_client_id != ""
   billing_environment = concat(
@@ -57,7 +62,7 @@ locals {
   ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [], local.billing_secrets)
   shared_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns[var.runtime_database ? "runtime-database-url" : "database-url"] },
-  ], local.base_secrets)
+  ], local.base_secrets, local.error_report_secrets.python)
   migration_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
     { name = "MIGRATION_DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
@@ -124,8 +129,8 @@ locals {
       role        = aws_iam_role.plain.arn
       port        = 3000
       stop        = 30
-      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }, { name = "SITE_URL", value = local.app_url }, { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" }]
-      secrets     = []
+      environment = [{ name = "BACKEND_URL", value = "http://${aws_lb.this.dns_name}" }, { name = "SITE_URL", value = local.app_url }, { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" }, { name = "APP_ENVIRONMENT", value = var.environment }]
+      secrets     = local.error_report_secrets.web
     }
   }
 }

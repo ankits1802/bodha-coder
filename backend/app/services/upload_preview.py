@@ -18,7 +18,7 @@ from app.services.audit_log import record_access
 from app.services.upload_matching import FileMatch, ProviderRef, match_file
 from app.services.uploads import check_pdf
 
-__all__ = ["MAX_PREVIEW_FILES", "PreviewFile", "preview_files"]
+__all__ = ["MAX_PREVIEW_FILES", "PreviewFile", "active_places", "active_providers", "first_page_text", "preview_files"]
 
 MAX_PREVIEW_FILES = 100
 PREVIEWED = "previewed uploads"
@@ -41,16 +41,14 @@ async def preview_files(db: AsyncSession, actor: Actor, files: list[PreviewFile]
         raise Invalid(f"add at most {MAX_PREVIEW_FILES} PDFs at a time")
     for file in files:
         check_pdf(file.name, file.data)
-    providers = await _active_providers(db, actor.practice_id)
-    places = dict(
-        (await db.execute(select(PlaceOfService.code, PlaceOfService.name).where(PlaceOfService.active))).tuples().all()
-    )
+    providers = await active_providers(db, actor.practice_id)
+    places = await active_places(db)
     held = await _held(db, actor.practice_id, [file.sha256 for file in files])
     today = today_in(actor.zone)
     previews = []
     for file in files:
         facts = parse_note_filename(file.name)
-        text = await asyncio.to_thread(_first_page, file.data)
+        text = await asyncio.to_thread(first_page_text, file.data)
         match = match_file(text, facts, providers, places, today=today)
         previews.append(_view(file, facts, match, duplicate=file.sha256 in held))
     record_access(db, actor, PREVIEWED, detail=f"{len(files)} files")
@@ -58,14 +56,19 @@ async def preview_files(db: AsyncSession, actor: Actor, files: list[PreviewFile]
     return previews
 
 
-def _first_page(data: bytes) -> str:
+def first_page_text(data: bytes) -> str:
     try:
         return read_first_page_text(data)
     except DocumentUnreadable:
         return ""
 
 
-async def _active_providers(db: AsyncSession, practice_id: str) -> list[ProviderRef]:
+async def active_places(db: AsyncSession) -> dict[str, str]:
+    rows = await db.execute(select(PlaceOfService.code, PlaceOfService.name).where(PlaceOfService.active))
+    return dict(rows.tuples().all())
+
+
+async def active_providers(db: AsyncSession, practice_id: str) -> list[ProviderRef]:
     rows = await db.execute(
         select(Provider.id, Provider.name, Provider.npi, Provider.place_code)
         .where(Provider.practice_id == practice_id, Provider.active)

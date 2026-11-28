@@ -31,6 +31,16 @@ describe("proxy", () => {
     );
   });
 
+  it("adds the Sentry ingest host to the policy only when the web DSN is set", () => {
+    expect(policyFor("/today")).toContain("connect-src 'self';");
+    vi.stubEnv("WEB_SENTRY_DSN", "https://0123456789abcdef0123456789abcdef@o1.ingest.us.sentry.io/2");
+    try {
+      expect(policyFor("/today")).toContain("connect-src 'self' https://o1.ingest.us.sentry.io;");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("makes a new nonce for every request", () => {
     const nonces = ["/", "/", "/queue"].map((path) => policyFor(path)?.match(NONCE_SOURCE)?.[1]);
     expect(nonces.every(Boolean)).toBe(true);

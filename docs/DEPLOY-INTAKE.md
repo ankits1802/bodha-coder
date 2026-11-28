@@ -76,26 +76,31 @@ For a practice whose EHR or scanning vendor can only send by SFTP:
 
 Transfer Family is HIPAA eligible under the AWS BAA; turn on its CloudWatch logging.
 
-## Option 3: email to an inbound address
+## Option 3: email to the practice's own address
 
-For a practice that can only email documents, with the function in
-[infra/ses_intake](../infra/ses_intake/README.md) (receipt rule, bucket and key policy, role and
-deployment are there).
+For a practice that can only email or forward documents ([0045](decisions/0045-email-intake.md)). Bodha
+runs it; the practice needs no AWS access.
 
-1. Verify a receiving domain in SES (for example `intake.<your domain>`) with an MX record to the
-   SES inbound endpoint of the region.
-2. Add a receipt rule for each practice address (for example `lakeside-varga@intake.<your domain>`,
-   one address per provider folder) with Require TLS and spam and virus scanning on, and an S3
-   action that saves the raw message under `ses-inbound/<local part>/`, outside `practices/`.
-3. Map the address in the function's `INTAKE_ADDRESSES` to the practice id, the provider folder and
-   the senders allowed to use it.
-4. The practice emails the PDFs with the date of service in the subject (`YYYY-MM-DD`). The function
-   refuses a message SES did not pass for spam and viruses, a sender not on the list or a subject
-   without a date; otherwise it writes each PDF attachment to
-   `practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<sha256>.pdf`. It keeps every raw
-   message under `ses-retained/<local part>/` before reading it, then removes it from `ses-inbound/`,
-   and logs outcomes and counts only. Billed codes are not read from attachment
-   names.
+1. Bodha's operator applies email intake once for every practice (`email_intake_subdomain`, the MX record,
+   then `email_intake_live`: [infra/tofu/README.md](../infra/tofu/README.md#email-intake)).
+2. The admin opens Settings, Setup, Automatic intake, chooses Get an address and copies it. New address
+   replaces it (the old one stops working and stays in Earlier addresses); Turn off retires it.
+3. The admin adds the allowed senders: each scanner or person's address, or the practice's whole domain.
+   A public mail service such as gmail.com can only be allowed address by address.
+4. Send a test emails the address from Bodha and shows when it arrived. Then send one note from the
+   scanner and check Received.
+5. The practice emails or forwards PDFs to the address. Each PDF must show the provider (name or NPI) and
+   the date of service on page 1 clearly enough, as for a drop upload; the billed CPT can be in the file
+   name. The place of service is read from page 1, else the provider's usual place, else the place set
+   for intake above; the visit type is the one set for intake.
 
-Email between the practice and SES is only as private as the practice's mail server's TLS; prefer
-options 1 or 2 when the practice can use them.
+Mail is refused, recorded and never read when it goes to an earlier address, when SES did not pass it
+for spam and viruses, when the sender's domain does not pass DMARC (a domain without a DMARC record is
+"sender not verified"; publish one), when the sender is not allowed, when it carries no PDF or more than
+50 files, or while the practice is not open. Forwarding by hand from an allowed mailbox works; a server
+rule that forwards mail on with the original sender usually fails DMARC. Each message appears in Received
+with its time, sender and outcome, and each refused file with its reason; subjects, bodies and file names
+are never shown or stored. Accepted notes appear in Upload history as uploaded by Intake.
+
+Email between the practice and Bodha is protected by TLS, which SES requires of the sending server;
+prefer options 1 or 2 when the practice can use them.
