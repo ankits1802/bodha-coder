@@ -224,7 +224,7 @@ axe on every page. Each test seeds its own synthetic practice through
 screenshot. A nightly workflow (`.github/workflows/canary.yml`) signs in to
 production read-only as two canary accounts
 ([docs/OPERATIONS.md](docs/OPERATIONS.md#production-canary),
-[0049](docs/decisions/0049-browser-journeys-and-production-canary.md)).
+[0050](docs/decisions/0050-browser-journeys-and-production-canary.md)).
 
 ## Data sources
 
