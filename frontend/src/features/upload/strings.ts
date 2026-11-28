@@ -3,6 +3,7 @@ export const UPLOAD_TEXT = {
   loading: "Loading providers",
   retry: "Try again",
   noProviders: "Add a provider in Practice setup first.",
+  noProvidersAskAdmin: "No providers yet. Ask an admin to add one.",
   openSetup: "Open Practice setup",
   plan: {
     label: "All files",

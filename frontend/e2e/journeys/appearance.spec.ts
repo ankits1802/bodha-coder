@@ -26,6 +26,7 @@ async function choose(page: Page, group: string, option: string): Promise<void> 
 test("a person's appearance applies at once, is kept for them and paints before the page shows", async ({ page, context }) => {
   const { admin } = await seed<AdminDay>("admin-day");
   await signIn(page, admin);
+  await expect(page).not.toHaveURL(/\/sign-in/);
   await page.goto("/account");
   await expect(heading(page, SECURITY_TEXT.accountTitle)).toBeVisible();
   const root = page.locator("html");

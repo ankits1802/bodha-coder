@@ -11,11 +11,12 @@ import { batchQueueHref, uploadStatus } from "../uploadHistory";
 interface UploadHistoryTableProps {
   batches: UploadedBatch[];
   placeNames: PlaceNames;
+  linked: boolean;
 }
 
 const words = UPLOAD_TEXT.history;
 
-function HistoryRow({ batch, placeNames }: { batch: UploadedBatch; placeNames: PlaceNames }) {
+function HistoryRow({ batch, placeNames, linked }: { batch: UploadedBatch; placeNames: PlaceNames; linked: boolean }) {
   const status = uploadStatus(batch);
   const day = formatCalendarDay(batch.service_date);
   return (
@@ -24,13 +25,17 @@ function HistoryRow({ batch, placeNames }: { batch: UploadedBatch; placeNames: P
         <time dateTime={batch.created_at}>{formatDateTime(batch.created_at)}</time>
       </Td>
       <Td>
-        <Link
-          href={batchQueueHref(batch.id)}
-          aria-label={words.openBatch(batch.provider_name, day)}
-          className="font-medium underline-offset-2 hover:underline"
-        >
-          {batch.provider_name}
-        </Link>
+        {linked ? (
+          <Link
+            href={batchQueueHref(batch.id)}
+            aria-label={words.openBatch(batch.provider_name, day)}
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            {batch.provider_name}
+          </Link>
+        ) : (
+          <span className="font-medium">{batch.provider_name}</span>
+        )}
       </Td>
       <Td className="whitespace-nowrap tabular-nums">{day}</Td>
       <Td className="text-secondary">{placeName(placeNames, batch.place_code)}</Td>
@@ -43,7 +48,7 @@ function HistoryRow({ batch, placeNames }: { batch: UploadedBatch; placeNames: P
   );
 }
 
-export function UploadHistoryTable({ batches, placeNames }: UploadHistoryTableProps) {
+export function UploadHistoryTable({ batches, placeNames, linked }: UploadHistoryTableProps) {
   const columns = words.columns;
   return (
     <Table label={words.tableLabel} minWidth="lg">
@@ -60,7 +65,7 @@ export function UploadHistoryTable({ batches, placeNames }: UploadHistoryTablePr
       </thead>
       <tbody>
         {batches.map((batch) => (
-          <HistoryRow key={batch.id} batch={batch} placeNames={placeNames} />
+          <HistoryRow key={batch.id} batch={batch} placeNames={placeNames} linked={linked} />
         ))}
       </tbody>
     </Table>

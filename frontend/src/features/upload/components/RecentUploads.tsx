@@ -8,6 +8,8 @@ import { usePlaceNames } from "@/hooks/usePlaceNames";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import { getUploadHistory } from "@/lib/api/uploads";
+import { canReach } from "@/lib/roles";
+import { useSession } from "@/lib/session/useSession";
 import { UPLOAD_TEXT } from "../strings";
 import { UploadHistoryTable } from "./UploadHistoryTable";
 
@@ -15,6 +17,7 @@ const words = UPLOAD_TEXT.history;
 const REMOTE_TEXT = { loading: words.loading, empty: words.empty, retry: words.retry };
 
 export function RecentUploads({ refresh }: { refresh: number }) {
+  const { user } = useSession();
   const query = useQueryParams();
   const offset = offsetFrom(query.get("offset"));
   const history = useRemote(`upload-history:${offset}:${refresh}`, () => getUploadHistory(offset));
@@ -40,7 +43,7 @@ export function RecentUploads({ refresh }: { refresh: number }) {
         isEmpty={(data) => data.items.length === 0 && data.offset === 0}
         onRetry={history.reload}
       >
-        {(data) => <UploadHistoryTable batches={data.items} placeNames={placeNames} />}
+        {(data) => <UploadHistoryTable batches={data.items} placeNames={placeNames} linked={canReach(user, "queue")} />}
       </RemoteView>
     </Panel>
   );

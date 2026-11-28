@@ -208,3 +208,14 @@ async def test_spent_credits_are_named_and_not_retried() -> None:
     with pytest.raises(ModelRequestRejected, match="no credits left"):
         await client.generate("review", schema=SCHEMA)
     assert len(models.calls) == 1
+
+
+async def test_an_image_check_sends_the_picture_before_the_prompt_and_reads_the_reply() -> None:
+    client, models, _ = gemini(answer('{"is_signature": true}'))
+
+    reply = await client.inspect_image("is this a signature", schema=SCHEMA, image=b"\x89PNG", mime_type="image/png")
+
+    assert (reply.text, reply.model) == ('{"is_signature": true}', "gemini-test-001")
+    contents = models.calls[0]["contents"]
+    assert contents[1] == "is this a signature"
+    assert models.calls[0]["config"].response_schema == SCHEMA

@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BatchPage, UploadedBatch } from "@/lib/api/types";
 import { getPlaces, getUploadHistory } from "@/lib/api/uploads";
+import { clearSession, setSession } from "@/lib/session/store";
+import { CODER } from "@/features/queue/__tests__/fixtures";
 import { RecentUploads } from "../components/RecentUploads";
 import { uploadStatus } from "../uploadHistory";
 
@@ -44,6 +46,18 @@ describe("RecentUploads", () => {
     navigation.search = "";
     navigation.replace.mockReset();
     vi.mocked(getPlaces).mockResolvedValue([{ code: "11", name: "Office" }]);
+    setSession({ access_token: "token", user: CODER });
+  });
+
+  afterEach(() => clearSession());
+
+  it("shows a viewer the uploads without links into a queue they cannot open", async () => {
+    setSession({ access_token: "token", user: { ...CODER, role: "viewer" } });
+    vi.mocked(getUploadHistory).mockResolvedValue(page([BATCH], 1));
+    render(<RecentUploads refresh={0} />);
+
+    expect(await screen.findByText("Elena Varga")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /review queue/ })).not.toBeInTheDocument();
   });
 
   it("lists each upload with its counts and a link to its notes in the queue", async () => {

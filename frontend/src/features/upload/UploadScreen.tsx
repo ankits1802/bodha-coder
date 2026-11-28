@@ -28,14 +28,15 @@ async function loadReferences(): Promise<UploadReferences> {
   return { providers: providers.filter((provider) => provider.active), places, payers };
 }
 
-const REMOTE_TEXT = { loading: UPLOAD_TEXT.loading, empty: UPLOAD_TEXT.noProviders, retry: UPLOAD_TEXT.retry };
 
 function UploadContent() {
   const { user } = useSession();
   const references = useRemote("upload:references", loadReferences);
   const [uploads, setUploads] = useState(0);
   const usage = useUsageTask("upload");
-  const setupLink = canUse(user?.role, "setup") ? (
+  const canSetUp = canUse(user?.role, "setup");
+  const text = { loading: UPLOAD_TEXT.loading, empty: canSetUp ? UPLOAD_TEXT.noProviders : UPLOAD_TEXT.noProvidersAskAdmin, retry: UPLOAD_TEXT.retry };
+  const setupLink = canSetUp ? (
     <ButtonLink href={setupSectionPath("providers")} size="sm">
       {UPLOAD_TEXT.openSetup}
     </ButtonLink>
@@ -44,7 +45,7 @@ function UploadContent() {
     <>
       <RemoteView
         state={references.state}
-        text={REMOTE_TEXT}
+        text={text}
         isEmpty={(data) => data.providers.length === 0}
         emptyAction={setupLink}
         onRetry={references.reload}
