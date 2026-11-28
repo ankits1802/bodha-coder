@@ -129,6 +129,10 @@ variable "yahoo_client_id" {
   type = string
 }
 
+variable "email_intake_domain" {
+  type = string
+}
+
 output "app_url" {
   value = local.app_url
 }

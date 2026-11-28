@@ -232,10 +232,13 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `SIGNING_KEY_ID` (the ARN of the `ECC_NIST_P256` `SIGN_VERIFY` KMS key that seals signed records) | yes | | | plain |
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS`, `MODEL_PRICES` | | yes | | plain |
+| `EMAIL_INTAKE_DOMAIN` (the intake host, `intake.bodhaai.co`; empty keeps email intake unavailable, [0046](decisions/0046-email-intake.md)) | yes | yes | | plain |
+| `SENTRY_DSN` (optional; empty keeps error tracking off, [Error tracking](#error-tracking-sentry)) | yes | yes | | secret |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
 The `web` service needs `SITE_URL=https://www.bodhaai.co` and `ADMIN_URL=https://admin.bodhaai.co` as
-well (read at request time; see [HQ on its own host](#hq-on-its-own-host)).
+well (read at request time; see [HQ on its own host](#hq-on-its-own-host)), `APP_ENVIRONMENT`, the
+`APP_VERSION` the release writes, and optionally `WEB_SENTRY_DSN` (secret).
 
 With `APP_ENVIRONMENT=production` the API refuses to start without `SIGNING_KEY_ID`; elsewhere an unset
 key seals with a fixed development key that production never accepts
@@ -285,7 +288,6 @@ callback of the host it started on.
 |---|---|---|---|
 | Local | `http://localhost:3000/api/auth/google/callback` | `http://localhost:3000/api/auth/microsoft/callback` | https only: a TLS tunnel's address + `/api/auth/yahoo/callback` |
 | Local, HQ host | `http://admin.localhost:3000/api/auth/google/callback` | `http://admin.localhost:3000/api/auth/microsoft/callback` | https only, as above |
-| Staging | `https://bodha-coder.vercel.app/api/auth/google/callback` | `https://bodha-coder.vercel.app/api/auth/microsoft/callback` | `https://bodha-coder.vercel.app/api/auth/yahoo/callback` |
 | Production | `https://www.bodhaai.co/api/auth/google/callback` | `https://www.bodhaai.co/api/auth/microsoft/callback` | `https://www.bodhaai.co/api/auth/yahoo/callback` |
 | Production, HQ host | `https://admin.bodhaai.co/api/auth/google/callback` | `https://admin.bodhaai.co/api/auth/microsoft/callback` | `https://admin.bodhaai.co/api/auth/yahoo/callback` |
 
@@ -452,9 +454,13 @@ admin's email, the practice id, the plan and the provider count.
 - The worker deletes, once a day, objects older than 24 hours whose record does not exist (the orphan
   sweep in [ARCHITECTURE.md](ARCHITECTURE.md#records-replaced-pdfs-retention-voids-and-closing-a-practice));
   under Object Lock that only adds a delete marker. It needs no permission beyond its task role's.
-- Email intake adds the `ses-inbound/` and `ses-retained/` prefixes, an SES statement in this bucket
-  policy and the key policy, and a Lambda function that keeps every raw message under `ses-retained/`:
-  [infra/ses_intake](../infra/ses_intake/README.md).
+- Email intake adds the `ses-inbound/` and `ses-retained/` prefixes and changes neither the bucket policy
+  nor the key policy: SES writes `ses-inbound/<message id>` through the role `bodha-staging-ses-receipt`
+  (`s3:PutObject` on `ses-inbound/*`, `kms:GenerateDataKey` and `kms:Decrypt` on the documents key,
+  assumable only by SES for the intake receipt rule), the function `bodha-staging-ses-intake` puts only
+  `ses-inbound/*.json`, and the worker keeps every message under `ses-retained/` with its own role. Object
+  Lock and the lifecycle rules apply as to every object. OpenTofu builds all of it
+  (`email_intake_subdomain`, `email_intake_live`; [infra/tofu/README.md](../infra/tofu/README.md#email-intake)).
 
 ### Email: SES
 
@@ -492,6 +498,8 @@ admin's email, the practice id, the plan and the provider count.
 | `bodha/<env>/google-credentials` (Vertex AI service account) | worker, as `GOOGLE_CREDENTIALS_JSON` |
 | `bodha/<env>/stripe` (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) | api, worker |
 | `bodha/<env>/paypal-client-secret` | api, worker |
+| `bodha/<env>/sentry-dsn` (only when `sentry_dsn` is set) | api, worker, as `SENTRY_DSN` |
+| `bodha/<env>/web-sentry-dsn` (only when `web_sentry_dsn` is set) | web, as `WEB_SENTRY_DSN` |
 | `bodha/<env>/bootstrap-hq` | the one-off bootstrap task, deleted afterwards |
 
 Encrypt every secret with a customer managed key and inject them through the task definition's
@@ -504,8 +512,8 @@ Fargate tasks do not have, so it needs a credential supplier the adapter does no
 
 ### Logs, metrics and alarms: CloudWatch
 
-- Log groups `/bodha/<env>/api`, `/worker`, `/web`, `/migrate`, encrypted with KMS, kept seven years
-  (2557 days). The PHI access log lives in Postgres (`access_log`), kept for each practice's retention
+- Log groups `/bodha/<env>/api`, `/worker`, `/web`, `/migrate` and the intake function's
+  `/aws/lambda/bodha-<env>-ses-intake`, encrypted with KMS, kept seven years (2557 days). The PHI access log lives in Postgres (`access_log`), kept for each practice's retention
   period (7 to 10 years) and hash-chained.
 - CloudTrail records management events for the account, and data events for the documents bucket, to a
   separate locked log bucket kept seven years.
@@ -521,6 +529,27 @@ Fargate tasks do not have, so it needs a credential supplier the adapter does no
 | Worker down | `RunningTaskCount` of `worker` below 1 for 3 minutes, or `QueuedAnalyses` missing for 5 minutes (missing data is breaching) |
 | Queue age | `QueuedAnalyses` (Maximum) above 0 while `RunningAnalyses` is 0 for 10 minutes, or above 100 for 30 minutes |
 | Database | `CPUUtilization` above 80%, `FreeStorageSpace` below 20%, `DatabaseConnections` above 80% of the limit |
+
+### Error tracking (Sentry)
+
+Off until a DSN is set ([0047](decisions/0047-error-tracking-off-until-configured.md)). Without
+`SENTRY_DSN` the api and worker never start the SDK; without `WEB_SENTRY_DSN` the web server never loads
+it and the browser never receives it.
+
+1. Legal first, because Sentry becomes a subprocessor the moment a DSN is set: add Sentry (Functional
+   Software, Inc.) to the "Service providers that do not receive PHI" table in
+   `frontend/src/features/legal/content/subprocessors.ts` (purpose: error tracking; data: exception types
+   and stack frames, release and environment, with messages, request data and user details removed;
+   location: the region of the Sentry organization), raise its `version` and `updated` date, release it,
+   and email customer administrators the notice the page promises before going further.
+2. In Sentry, create one project for Python (FastAPI) and one for Next.js in a US organization, turn on
+   the organization's data scrubbing and IP address scrubbing, and copy each project's DSN.
+3. In `production.auto.tfvars` set `sentry_dsn` (Python) and `web_sentry_dsn` (Next.js) and apply. OpenTofu
+   stores them as `bodha/staging/sentry-dsn` and `bodha/staging/web-sentry-dsn` and adds `SENTRY_DSN` to the
+   api and worker task definitions and `WEB_SENTRY_DSN` to the web one.
+4. Release (or force a new deployment of `api`, `worker` and `web`). Events carry `APP_VERSION` as the
+   release. The page policy then allows `connect-src` to the DSN's ingest host only.
+5. To turn it off, set both back to `""`, apply and redeploy.
 
 ### Worker autoscaling
 

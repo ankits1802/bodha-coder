@@ -119,10 +119,17 @@ async def create_upload(
 async def create_intake_upload(
     db: AsyncSession, store: ObjectStore, practice: Practice, plan: UploadPlan, files: list[UploadFile]
 ) -> UploadResult:
-    uploader = Uploader(practice.id, zone_named(practice.time_zone), None, INTAKE_SOURCE)
-    result = await _store_batches(db, store, uploader, [(plan, files)])
-    record_system_access(db, INTAKE_ACTOR, practice.id, UPLOADED_NOTES, detail=result.detail())
+    result = await stage_intake_upload(db, store, practice, [(plan, files)])
     await db.commit()
+    return result
+
+
+async def stage_intake_upload(
+    db: AsyncSession, store: ObjectStore, practice: Practice, batches: list[PlannedBatch]
+) -> UploadResult:
+    uploader = Uploader(practice.id, zone_named(practice.time_zone), None, INTAKE_SOURCE)
+    result = await _store_batches(db, store, uploader, batches)
+    record_system_access(db, INTAKE_ACTOR, practice.id, UPLOADED_NOTES, detail=result.detail())
     return result
 
 
@@ -225,6 +232,15 @@ def _billed_set(note_id: str, uploader: Uploader, billed: tuple[Code, ...]) -> C
         actor_id=uploader.user_id,
         codes=[code.as_json() for code in billed],
     )
+
+
+def file_problem(file: UploadFile) -> str | None:
+    try:
+        check_pdf(file.name, file.data)
+        billed_codes_for(file)
+    except Invalid as error:
+        return error.message
+    return None
 
 
 def check_pdf(name: str, data: bytes) -> None:

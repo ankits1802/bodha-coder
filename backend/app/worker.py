@@ -23,11 +23,13 @@ from app.codes.em import em_ladder
 from app.codes.icd import IcdCatalog, IcdReleaseUnavailable, load_catalog
 from app.core.config import Settings, get_settings
 from app.core.db import SessionFactory
+from app.core.error_reports import start_error_reports
 from app.core.logging import configure_logging, log_queue_metrics
 from app.core.model_prices import PriceBook
 from app.models import Analysis, utcnow
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
 from app.services.digests import send_due_digests
+from app.services.email_intake import poll_email_intake
 from app.services.evaluation_runs import fail_evaluation, fail_stale_evaluations, next_queued_evaluation, run_evaluation
 from app.services.file_sweep import sweep_orphan_files
 from app.services.intake import poll_intake
@@ -154,6 +156,11 @@ async def poll_intake_once(store: S3ListingStore) -> None:
         await poll_intake(db, store, utcnow())
 
 
+async def poll_email_intake_once(store: S3ListingStore) -> None:
+    async with SessionFactory() as db:
+        await poll_email_intake(db, store, utcnow())
+
+
 async def sweep_files_once(store: S3ListingStore) -> None:
     async with SessionFactory() as db:
         await sweep_orphan_files(db, store, utcnow())
@@ -206,6 +213,7 @@ async def purge_loop() -> None:
 
 async def run() -> None:
     settings = get_settings()
+    start_error_reports(settings, process="worker")
     icd = await asyncio.to_thread(load_catalog)
     deps = AnalysisDeps(
         review_note, model_client(settings, icd), S3ObjectStore(settings), icd, PriceBook(settings.model_prices)
@@ -220,6 +228,7 @@ async def run() -> None:
         metrics_loop(),
         purge_loop(),
         every(INTAKE_INTERVAL_SECONDS, "intake", lambda: poll_intake_once(listing)),
+        every(INTAKE_INTERVAL_SECONDS, "email intake", lambda: poll_email_intake_once(listing)),
         every(EVALUATION_INTERVAL_SECONDS, "evaluation", lambda: evaluate_once(deps)),
         every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
         every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),

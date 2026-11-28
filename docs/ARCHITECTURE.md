@@ -16,7 +16,12 @@ with a fresh link. Once a day it deletes stored files that no record holds (the 
 and removes access-log entries past their retention, never younger than 2557 days (Records, below).
 Every 15 minutes it brings each live subscription's billed quantity in line with the practice's active
 providers, or those of the organization's combined practices (Plans and billing, below), and every hour it tells the admins of a practice whose plan ends within
-three days (Inbox, below).
+three days (Inbox, below). Every minute it reads the watched folders and the email that arrived for
+intake (Intake, below).
+
+With `SENTRY_DSN` (api, worker) or `WEB_SENTRY_DSN` (web) set, errors also go to Sentry, scrubbed to
+exception types and stack frames; without them no SDK is started
+([0047](decisions/0047-error-tracking-off-until-configured.md)).
 
 ## API types
 
@@ -79,6 +84,10 @@ triggers, database timestamps, hash chains and a least-privilege runtime role (R
 | `practices.closed_at`, `closed_by`, `purged_at` | when HQ closed the practice (stamped by Postgres, final) and when its records were purged | written once |
 | `practices.signup` | how the practice began: `{"source": "hq"}`, or for self sign-up `source` `self`, `agreement_version`, `accepted_at`, `accepted_by` (user id), `method` (`email` or the provider) and `ip` | written once when the practice is created |
 | `rate_events` | one row per counted attempt (bucket, hashed key, time) | deleted once outside the window |
+| `intake_addresses` | a practice's email intake address: random `local_part` (16 base32 characters), who made it, `retired_at` and `retired_by`; at most one unretired per practice | columns written once (`bodha_write_once`); never deleted, removed with the practice by `bodha_purge_practice` |
+| `intake_senders` | an allowed sender of a practice: `pattern` (an address, or a domain without `@`), `kind` (`address`, `domain`), who added it, `removed_at` and `removed_by`; unique while not removed | columns written once; never deleted, removed with the practice by a purge |
+| `intake_messages` | one row per email and address: SES message key, practice and address (none for an unknown address), received time, the single `From` address (none for an unknown address), `outcome` (`accepted`, `refused`, `test`), `reason` when refused, accepted and refused file counts, per file the SHA-256, size, outcome, reason and note id, and the SES verdicts; never a subject, body or file name | append-only (refused updates, deletes and truncation); unique per message key and address |
+| `intake_tests` | each Send a test: practice, address, SHA-256 of the token in the subject, who sent it, and once it arrives `arrived_at` and the message | columns written once; removed with the practice by a purge |
 | `organizations` | a group of practices: name, `status` (`active`, `closed`, `purged`), the combined `plan` and `renews_on`, `closed_at` (stamped by Postgres, final), `closed_by`, `purged_at` ([0044](decisions/0044-organizations-and-domain-join.md)) | current state; never deleted (a purge leaves the row as a tombstone) |
 | `practices.organization_id`, `practices.combined_billing` | the organization a practice belongs to (at most one) and whether the organization pays for it; a combined practice carries the organization's plan and renewal, copied whenever they change | current state; changes in `activity` |
 | `organization_memberships` | organization admins: person, organization, `role` (`admin`), `added_by`, `ended_at`; `realm` fixed to `practice` | current state; removal and closing set `ended_at`; never deleted, removed only by `bodha_purge_organization` |
@@ -114,8 +123,9 @@ and one `analysis_failures` row per failed attempt.
 | `practices/{practice}/evaluations/{run}/{case}-{attempt}.json` | the raw replies of each read of an evaluation case |
 | `practices/{practice}/inbox/processed/{day}/{sha256}.pdf` | a dropped PDF that became a note (the note keeps its own copy) |
 | `practices/{practice}/inbox/rejected/{day}/{sha256}{ext}` and `….reason.txt` | a dropped file that was refused, and the reason with its path after renaming |
-| `ses-inbound/{recipient}/{message}` | a raw email stored by SES for email intake; removed by the intake function once kept and handled ([infra/ses_intake](../infra/ses_intake/README.md)) |
-| `ses-retained/{recipient}/{message}` | every raw email received for intake, kept by the intake function before it reads it |
+| `ses-inbound/{message}` | a raw email stored by SES for email intake (`{message}` is the SES message id); deleted by the worker once kept and recorded ([0046](decisions/0046-email-intake.md)) |
+| `ses-inbound/{message}.json` | its envelope from the intake function: envelope recipients and SES verdicts ([infra/ses_intake](../infra/ses_intake/README.md)); deleted with the message |
+| `ses-retained/{message}` | every raw email received for intake, copied by the worker before it reads it |
 | `archives/practices/{practice}/access-log.csv` | a purged practice's whole access log with its chain columns; its SHA-256 is in HQ activity |
 | `people/{user}/signatures/{signature}.png` | a person's captured signature (one set per person across practices); removed when a purge removes the person |
 | `practices/{practice}/signatures/{signature}.png` | a provider's signature captured on the secure link |
@@ -451,7 +461,9 @@ Decision: [0042](decisions/0042-inbox-upload-matching-queue-views-hq-page.md).
 
 ## Intake
 
-A practice can drop PDFs into its own prefix instead of uploading them.
+A practice can drop PDFs into its own prefix, or email them, instead of uploading them.
+
+### Watched folder
 
 | Piece | How it works |
 |---|---|
@@ -459,6 +471,23 @@ A practice can drop PDFs into its own prefix instead of uploading them.
 | Layout | `practices/{practice}/inbox/{provider folder}/{YYYY-MM-DD}/{file}.pdf`; the day folder is the date of service. `processed` and `rejected` are reserved folder names |
 | Poll | `services.intake.poll_intake(db, store, now) -> int` (notes created), with a `ListingStore` (`adapters/object_listing.S3ListingStore`). Each enabled, open practice is polled under a Postgres advisory lock held on its own connection (`pg_try_advisory_xact_lock`), so two workers never ingest the same practice at once. Files are grouped by folder and day; every file is first renamed in its folder to `intake.arrival_name`: the SHA-256 of its content, ` - {CPT}` when the name carried a CPT code, and its suffix, so a patient name in a file name lives at most one poll; a name already of that shape is kept. Then each is checked with the upload checks (`uploads.check_pdf`, `uploads.billed_codes_for`, codes from the renamed file name) and each group goes through `uploads.create_intake_upload` as one batch: `batches.source` `intake` with no `created_by`, billed code sets with no actor, and the `uploaded notes` access entry by `Bodha intake` (`audit_log.record_system_access`, actor id `bodha-intake`, kind `user` because the access log allows only user and provider). Upload history shows Intake as the uploader |
 | Results | accepted files move to `inbox/processed/{day}/{sha256}.pdf`; files in the wrong place, of the wrong type, for an unmapped folder, a future date, a failed check or a duplicate move to `inbox/rejected/{day}/` with a `.reason.txt`. Writes the `uploaded notes` access entry and an `intake processed` activity with counts |
+
+### Email
+
+A practice can email or forward PDFs to its own address instead
+([0046](decisions/0046-email-intake.md)).
+
+| Piece | How it works |
+|---|---|
+| Address | `POST /api/practice/email-intake/address` (admins) issues `{16 base32 characters}@{EMAIL_INTAKE_DOMAIN}` and retires the current one; `DELETE` retires it (email intake off). `GET /api/practice/email-intake` answers `available` (whether Bodha has an intake domain), the address and since when, earlier addresses and the allowed senders. Writes `email intake address issued` and `email intake address retired` |
+| Senders | `POST /api/practice/email-intake/senders {sender}` allows an address or a whole domain (a public mail service only by address; 409 for one already allowed; at most 100); `DELETE …/senders/{id}` removes one, keeping the row. Writes `email intake sender added` and `removed` |
+| Receiving | SES receives for the domain (TLS required, spam and virus scan), stores the raw message at `ses-inbound/{message}`, then the function writes `ses-inbound/{message}.json` with the envelope recipients and the spam, virus, SPF, DKIM and DMARC verdicts |
+| Worker | `services.email_intake.poll_email_intake(db, store, now)` every minute, under one advisory lock: for each envelope it copies the message to `ses-retained/`, reads it (`services.intake_mail`), records one `intake_messages` row per address it names (recorded once per message and address), commits, and deletes the message and envelope from `ses-inbound/` |
+| Refusals | in order: unknown address; then a message carrying a pending test reference of that address is recorded as `test`; then retired address, practice not open, spam or virus verdict not `PASS`, DMARC not `PASS`, sender not allowed (the single `From` address or its exact domain), no PDF, more than 50 attachments. A refused message is recorded and nothing in it is read |
+| Files | each attachment is renamed to its checksum name (`intake.arrival_name`), checked (`uploads.file_problem`: PDF signature, `MAX_UPLOAD_MB`, codes from the name), and matched from page 1 (`upload_matching.match_file`); provider and date of service must each reach 0.8, the place is the matched one or the intake place of service, the visit type the intake one. Accepted files become one batch per provider, date and place (`uploads.stage_intake_upload`, uploaded by Bodha intake) in the same transaction as the message row; refused files are listed with their reason. A message with no accepted file is refused as `files_refused` |
+| Test | `POST /api/practice/email-intake/tests` (five an hour per practice) emails the current address from `MAIL_FROM` with `Bodha intake test {id}.{token}` in the subject and stores the token's SHA-256; the message that carries it is recorded as `test` and sets `arrived_at`, read by `GET …/tests/{id}`. Writes `email intake test sent` |
+| Received | `GET /api/practice/email-intake/messages?offset=` (admins, 50 a page): time, sender, outcome, reason, counts and each file's outcome, reason and note; never a subject, body or file name |
+| Screen | Settings, Setup, Automatic intake: `components/shared/intake/EmailIntake.tsx` (address with Copy, New address and Turn off, allowed senders, Send a test, Received) above the watched folder |
 
 How a practice drops files: [DEPLOY-INTAKE.md](DEPLOY-INTAKE.md); the email intake function: [infra/ses_intake](../infra/ses_intake/README.md).
 

@@ -36,7 +36,7 @@ export async function errorFromResponse(response: Response): Promise<ApiError> {
   return new ApiError(response.status, "error", fallbackMessage(response.status));
 }
 
-function sentence(text: string): string {
+export function sentence(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 

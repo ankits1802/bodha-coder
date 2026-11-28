@@ -75,3 +75,8 @@ agreements.
 Cost rises to about $80 a month: on demand `worker` and `web` add about $13 and the health check
 about $2. Still open before real patient documents: Gemini on Vertex AI under the Google BAA (the
 developer API key is not covered), a Multi-AZ database, and tasks in private subnets behind NAT.
+
+## Amended 2026-11-28
+
+Vercel is retired: nothing is hosted there, the subprocessors page no longer lists it and its
+configuration is removed ([0048](0048-vercel-retired.md)).

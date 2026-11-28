@@ -15,13 +15,13 @@ from app.adapters.object_listing import ListingStore
 from app.codes.billing_codes import parse_note_filename
 from app.core.calendar import zone_named
 from app.core.deps import ACTIVE_PRACTICE_STATUSES
-from app.core.errors import AppError, Invalid
+from app.core.errors import AppError
 from app.models import Practice
 from app.services.audit_log import record_activity
 from app.services.intake_settings import PROCESSED, REJECTED, IntakeConfig, inbox_prefix, intake_config
-from app.services.uploads import UploadFile, UploadPlan, billed_codes_for, check_pdf, create_intake_upload
+from app.services.uploads import UploadFile, UploadPlan, create_intake_upload, file_problem
 
-__all__ = ["InboxGroup", "InboxSort", "arrival_name", "poll_intake", "sort_inbox"]
+__all__ = ["ALREADY_UPLOADED", "InboxGroup", "InboxSort", "accepts_intake", "arrival_name", "poll_intake", "sort_inbox"]
 
 INTAKE_DONE = "intake processed"
 PDF_SUFFIX = ".pdf"
@@ -140,11 +140,13 @@ async def _intake_practices(db: AsyncSession, now: datetime) -> list[Practice]:
             .order_by(Practice.created_at, Practice.id)
         )
     ).all()
-    return [
-        practice
-        for practice in rows
-        if practice.renews_on is None or practice.renews_on >= now.astimezone(zone_named(practice.time_zone)).date()
-    ]
+    return [practice for practice in rows if accepts_intake(practice, now)]
+
+
+def accepts_intake(practice: Practice, now: datetime) -> bool:
+    if practice.status not in ACTIVE_PRACTICE_STATUSES:
+        return False
+    return practice.renews_on is None or practice.renews_on >= now.astimezone(zone_named(practice.time_zone)).date()
 
 
 async def _locked_poll(db: AsyncSession, store: ListingStore, practice: Practice, now: datetime) -> int:
@@ -199,7 +201,7 @@ async def _ingest(db: AsyncSession, store: ListingStore, run: IntakeRun, group: 
     counts: Counter[str] = Counter()
     for key in group.keys:
         file = UploadFile(PurePosixPath(key).name, await store.get(key), None, None)
-        problem = _file_problem(file)
+        problem = file_problem(file)
         if problem is None:
             ready.append((key, file))
             continue
@@ -227,15 +229,6 @@ async def _upload_group(
         else:
             await _keep(store, run.stamp, key, file.data)
     return Counter(created=len(result.accepted), rejected=len(duplicates))
-
-
-def _file_problem(file: UploadFile) -> str | None:
-    try:
-        check_pdf(file.name, file.data)
-        billed_codes_for(file)
-    except Invalid as error:
-        return error.message
-    return None
 
 
 def _content_type(key: str) -> str:

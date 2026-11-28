@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from functools import lru_cache
 from typing import Literal, Self
@@ -9,6 +10,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.model_prices import ModelPrice
 
 WEB_SCHEMES = ("https://", "http://")
+HOST_NAME = re.compile(r"^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")
+SENTRY_DSN = re.compile(r"^https://[0-9a-f]+@[a-z0-9.-]+(?::[0-9]+)?/[0-9]+$")
 RETENTION_FLOOR_DAYS = 2557
 DEFAULT_GEMINI_MODEL = "gemini-3.8-flash"
 DEFAULT_MODEL_PRICES = {DEFAULT_GEMINI_MODEL: ModelPrice(input=Decimal("0.50"), output=Decimal("3.00"))}
@@ -102,6 +105,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str | None = None
     twilio_from: str | None = None
     sns_origination_number: str | None = None
+    email_intake_domain: str = ""
+    sentry_dsn: str = ""
 
     self_signup_enabled: bool = True
     trial_days: int = Field(default=14, ge=1)
@@ -168,6 +173,24 @@ class Settings(BaseSettings):
         if not address.startswith(WEB_SCHEMES) or not parts.netloc or parts.path or parts.query:
             raise ValueError("ADMIN_URL must be a web address with no path, such as https://admin.example.com")
         return address
+
+    @field_validator("email_intake_domain", mode="before")
+    @classmethod
+    def _host_or_empty(cls, value: object) -> object:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return ""
+        if not isinstance(value, str) or HOST_NAME.fullmatch(value.strip().lower()) is None:
+            raise ValueError("EMAIL_INTAKE_DOMAIN must be a domain such as intake.example.com")
+        return value.strip().lower()
+
+    @field_validator("sentry_dsn", mode="before")
+    @classmethod
+    def _dsn_or_empty(cls, value: object) -> object:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return ""
+        if not isinstance(value, str) or SENTRY_DSN.fullmatch(value.strip()) is None:
+            raise ValueError("SENTRY_DSN must be the https DSN of a Sentry project")
+        return value.strip()
 
     @model_validator(mode="after")
     def _admin_on_its_own_host(self) -> Self:

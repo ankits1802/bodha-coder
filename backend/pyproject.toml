@@ -24,6 +24,7 @@ dependencies = [
     "boto3==1.44.12",
     "httpx==0.28.1",
     "stripe==17.1.0",
+    "sentry-sdk==3.0.1",
     "tzdata==2026.6",
 ]
 
