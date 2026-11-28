@@ -203,6 +203,7 @@ class ProviderBody(Body):
     channel: Literal["email", "sms"] | None = None
     active: bool = True
     details: ProviderDetailsBody | None = None
+    payer: str | None = Field(default=None, max_length=64)
 
 
 class PayerBody(Body):

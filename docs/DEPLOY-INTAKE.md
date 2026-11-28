@@ -18,6 +18,11 @@ s3://<bucket>/practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<file
 | file | a PDF. The billed CPT can be in the name as in a manual upload (`2026-11-20 - 99214 - Progress.pdf`). Name files without patient details (no names, dates of birth or record numbers): Bodha reads the patient from the note. The first poll that sees a file, about a minute after it lands, renames it to the SHA-256 of its content (`<sha256> - 99214.pdf` keeps a CPT code from the name), so a name lives at most one poll, and only the new name reaches the note and the reason files |
 
 The admin turns intake on with a place of service, a visit type and at least one provider folder.
+Each note's payer is the one its page 1 names clearly (an insurance or plan name from the practice's payer
+list, or a labelled Medicare or Medicaid member id when the list has one payer of that kind), else the
+provider's usual payer set in Settings, Setup, Providers, else none; the payer is recommended, never
+required, and a missing one never refuses a file
+([0059](decisions/0059-payer-known-when-the-note-is-read.md)). The member id is only matched, never kept.
 Every file is then moved out of the inbox: notes to `inbox/processed/<day>/`, everything else to
 `inbox/rejected/<day>/` beside a `.reason.txt` that names the path (after renaming) and the reason.
 Each batch appears in Upload history as uploaded by Intake, and the access log records the upload by
@@ -92,7 +97,8 @@ runs it; the practice needs no AWS access.
 5. The practice emails or forwards PDFs to the address. Each PDF must show the provider (name or NPI) and
    the date of service on page 1 clearly enough, as for a drop upload; the billed CPT can be in the file
    name. The place of service is read from page 1, else the provider's usual place, else the place set
-   for intake above; the visit type is the one set for intake.
+   for intake above; the visit type is the one set for intake. The payer is the one page 1 names clearly,
+   else the provider's usual payer, else none, as in the inbox.
 
 Mail is refused, recorded and never read when it goes to an earlier address, when SES did not pass it
 for spam and viruses, when the sender's domain does not pass DMARC (a domain without a DMARC record is

@@ -13,6 +13,7 @@ from app.adapters.object_store import ObjectStore, analysis_response_key
 from app.adapters.pdf_text import read_pdf_text
 from app.ai.contracts import BilledCode, ModelClient, ReviewInputs, ReviewOutcome
 from app.ai.prompts.context import labelled_addendum
+from app.ai.prompts.payer import payer_record
 from app.codes.billing_codes import Code
 from app.codes.icd import IcdCatalog
 from app.codes.places import setting_for
@@ -23,6 +24,7 @@ from app.services.code_sets import latest_codes, next_revision
 from app.services.findings import Finding, build_findings
 from app.services.mips_lists import practice_mips_scope
 from app.services.note_texts import current_texts, note_texts
+from app.services.payers import review_payer
 from app.services.placement import refresh_placement
 
 SECTION_BY_CHECK = {"em": "em", "icd": "diagnoses", "cdi": "cdi", "audit": "audit", "mips": "mips", "hcc": "hcc"}
@@ -124,6 +126,7 @@ async def _inputs(
         note_text=source.text,
         pdf=source.pdf,
         mips_scope=await practice_mips_scope(db, practice.id),
+        payer=review_payer(practice, note.payer),
     )
 
 
@@ -138,6 +141,7 @@ def _context(inputs: ReviewInputs) -> dict[str, Any]:
         "mips_measures": list(scope.listed_ids) if scope else None,
         "practice_measures": [measure.version_id for measure in scope.practice_measures] if scope else [],
         "source": "pdf" if inputs.note_text is None else "text and pdf" if inputs.pdf else "text",
+        "payer": payer_record(inputs.payer),
     }
 
 

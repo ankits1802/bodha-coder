@@ -20,6 +20,7 @@ __all__ = [
     "CASE_ID",
     "MDM_LEVELS",
     "PAYERS",
+    "PAYER_NAMES",
     "SCHEMA_VERSION",
     "VISIT_TYPES",
     "Facility",
@@ -44,6 +45,7 @@ SCHEMA_VERSION = 1
 CASE_ID = re.compile(r"^GS-(\d{2})$")
 MDM_LEVELS = ("Straightforward", "Low", "Moderate", "High")
 PAYERS = ("medicare", "medicaid", "commercial")
+PAYER_NAMES = {"medicare": "Medicare Part B", "medicaid": "Medicaid", "commercial": "Commercial PPO"}
 VISIT_TYPES = ("New patient", "Established patient")
 SEXES = ("female", "male")
 

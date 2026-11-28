@@ -134,6 +134,7 @@ async def providers(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_RO
                     "phone",
                     "channel",
                     "active",
+                    "payer",
                 )
             },
             "details": details_view(row.details or {}),

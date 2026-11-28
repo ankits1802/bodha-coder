@@ -4,7 +4,7 @@ from datetime import date
 from io import BytesIO
 from xml.sax.saxutils import escape
 
-from gold_cases import GoldCase, GoldSet, Section, Table
+from gold_cases import PAYER_NAMES, GoldCase, GoldSet, Section, Table
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -17,7 +17,6 @@ __all__ = ["render_note"]
 
 MARGIN = 0.7 * inch
 FOOTER = "Synthetic record for software evaluation. Not a real patient."
-PAYER_NAMES = {"medicare": "Medicare Part B", "medicaid": "Medicaid", "commercial": "Commercial PPO"}
 PLACE_NAMES = {
     "11": "Office",
     "02": "Telehealth, patient not at home",

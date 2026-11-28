@@ -10,6 +10,7 @@ export interface ReviewPermissions {
   flag: boolean;
   compliance: boolean;
   retry: boolean;
+  readAgain: boolean;
   reopen: boolean;
   remind: boolean;
   cancelRequest: boolean;
@@ -33,6 +34,7 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     flag: ready && !inCompliance && canDo(role, "flag"),
     compliance: ready && inCompliance && canDo(role, "complianceDecision"),
     retry: status === "failed" && canDo(role, "retry"),
+    readAgain: ready && detail.analysis?.payer_changed === true && canDo(role, "retry"),
     reopen: status === "approved" && canDo(role, "approve"),
     remind: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),
     cancelRequest: canDo(role, "ask") && detail.requests.some((request) => request.status === "sent"),

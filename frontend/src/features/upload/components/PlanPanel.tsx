@@ -3,7 +3,8 @@ import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
-import { sharedValue, type Placement, type References, type UploadEntry } from "../uploadEntries";
+import { includedEntries, sharedValue, type Placement, type References, type UploadEntry } from "../uploadEntries";
+import { MIXED_PAYER, batchPayerOptions, sharedPayer } from "../uploadPayers";
 import { placeOptions, providerOptions } from "./placementOptions";
 
 interface PlanPanelProps {
@@ -11,14 +12,16 @@ interface PlanPanelProps {
   references: References;
   visitType: string;
   onPlace: (change: Partial<Placement>) => void;
+  onPayer: (payerId: string) => void;
   onVisitType: (visitType: string) => void;
 }
 
-export function PlanPanel({ entries, references, visitType, onPlace, onVisitType }: PlanPanelProps) {
+export function PlanPanel({ entries, references, visitType, onPlace, onPayer, onVisitType }: PlanPanelProps) {
   const words = UPLOAD_TEXT.plan;
   const providerId = sharedValue(entries, "providerId");
   const serviceDate = sharedValue(entries, "serviceDate");
   const placeCode = sharedValue(entries, "placeCode");
+  const payer = sharedPayer(includedEntries(entries));
   const blank = (value: string, choose: string) => (value || entries.length < 2 ? choose : words.mixed);
 
   return (
@@ -57,6 +60,20 @@ export function PlanPanel({ entries, references, visitType, onPlace, onVisitType
           />
         )}
       </Field>
+      {references.payers.length > 0 ? (
+        <Field label={words.payer} optional={words.recommended}>
+          {(control) => (
+            <Select
+              {...control}
+              value={payer ?? MIXED_PAYER}
+              options={batchPayerOptions(references.payers, payer)}
+              onChange={(chosen) => {
+                if (chosen !== MIXED_PAYER) onPayer(chosen);
+              }}
+            />
+          )}
+        </Field>
+      ) : null}
       <Field label={words.visitType}>
         {(control) => (
           <Select {...control} value={visitType} options={VISIT_TYPES.map((type) => ({ value: type, label: type }))} onChange={onVisitType} />

@@ -191,6 +191,7 @@ class Provider(IdMixin, Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     auto_approve: Mapped[bool] = mapped_column(Boolean, default=False)
+    payer: Mapped[str | None] = mapped_column(String(64))
 
 
 class Batch(LedgerMixin, Base):
@@ -384,11 +385,3 @@ class AddendumRequest(IdMixin, Base):
     answered_at: Mapped[datetime | None] = timestamp()
     purpose: Mapped[str] = mapped_column(String(12), default="questions")
     approved_claim_id: Mapped[str | None] = mapped_column(ForeignKey("approved_claims.id"))
-
-
-class MipsList(IdMixin, Base):
-    __tablename__ = "mips_lists"
-    practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), unique=True)
-    measure_ids: Mapped[list[str]] = mapped_column(JSONB)
-    updated_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

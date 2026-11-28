@@ -54,6 +54,7 @@ describe("credentialing details", () => {
       specialty: null,
       npi: null,
       place_code: null,
+      payer: "payer-medicare",
       email: "okafor@clinic.example.com",
       phone: null,
       channel: "email",
@@ -62,6 +63,8 @@ describe("credentialing details", () => {
     };
     const providerDraft = draftFrom(provider, true);
     expect(inputFrom(providerDraft).details).toEqual(provider.details);
+    expect(inputFrom(providerDraft).payer).toBe("payer-medicare");
+    expect(inputFrom({ ...providerDraft, payer: "" }).payer).toBeNull();
     const wrong = { ...providerDraft, details: { ...providerDraft.details, dea_number: "AB12" } };
     expect(validateProvider(wrong)).toEqual({ dea_number: "Use 2 letters and 7 digits" });
   });

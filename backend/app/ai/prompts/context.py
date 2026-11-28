@@ -5,6 +5,7 @@ from typing import Any
 
 from app.ai.contracts import ReviewInputs
 from app.ai.json_text import render_json_template
+from app.ai.prompts.payer import payer_facts
 
 __all__ = [
     "ADDENDUM_HEADING_PATTERN",
@@ -32,7 +33,9 @@ _CONTEXT_BLOCK = (
     + CONTEXT_HEADING
     + """
 These facts come from the claim, not from the note. They are ground truth for the care setting, the place of
-service, the visit type, the date of service and the codes billed (billedCodes is empty when nothing was billed).
+service, the visit type, the date of service, the payer and the codes billed (billedCodes is empty when nothing was
+billed). payer is null when the payer is not known yet; otherwise its planType is "medicare", "medicare_advantage",
+"medicaid", "commercial" or "other", and its family is "cigna" or null.
 {{json .}}
 """
 )
@@ -78,6 +81,7 @@ def encounter_context(inputs: ReviewInputs) -> dict[str, Any]:
         "placeOfService": inputs.place_of_service,
         "visitType": inputs.visit_type,
         "dateOfService": inputs.service_date.isoformat(),
+        "payer": payer_facts(inputs.payer),
         "billedCodes": [
             {"code": code.code, "type": code.type, "modifiers": list(code.modifiers), "units": code.units}
             for code in inputs.billed_codes

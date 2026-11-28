@@ -15,7 +15,8 @@ from app.core.deps import Actor
 from app.core.errors import Invalid
 from app.models import VOIDED, Note, PlaceOfService, Provider
 from app.services.audit_log import record_access
-from app.services.upload_matching import FileMatch, ProviderRef, match_file
+from app.services.payer_matching import confident_payer, payer_in, payer_refs
+from app.services.upload_matching import FileMatch, Matched, ProviderRef, match_file
 from app.services.uploads import check_pdf
 
 __all__ = ["MAX_PREVIEW_FILES", "PreviewFile", "active_places", "active_providers", "first_page_text", "preview_files"]
@@ -43,6 +44,7 @@ async def preview_files(db: AsyncSession, actor: Actor, files: list[PreviewFile]
         check_pdf(file.name, file.data)
     providers = await active_providers(db, actor.practice_id)
     places = await active_places(db)
+    payers = payer_refs(actor.own_practice)
     held = await _held(db, actor.practice_id, [file.sha256 for file in files])
     today = today_in(actor.zone)
     previews = []
@@ -50,7 +52,8 @@ async def preview_files(db: AsyncSession, actor: Actor, files: list[PreviewFile]
         facts = parse_note_filename(file.name)
         text = await asyncio.to_thread(first_page_text, file.data)
         match = match_file(text, facts, providers, places, today=today)
-        previews.append(_view(file, facts, match, duplicate=file.sha256 in held))
+        view = _view(file, facts, match, duplicate=file.sha256 in held)
+        previews.append(view | _payer_view(payer_in(text, payers)))
     record_access(db, actor, PREVIEWED, detail=f"{len(files)} files")
     await db.commit()
     return previews
@@ -103,4 +106,12 @@ def _view(file: PreviewFile, facts: FilenameFacts, match: FileMatch, *, duplicat
         },
         "overall": match.confidence,
         "check": match.needs_check,
+    }
+
+
+def _payer_view(payer: Matched[str]) -> dict[str, Any]:
+    return {
+        "payer_id": payer.value,
+        "payer_confidence": payer.confidence,
+        "payer_confident": bool(confident_payer(payer)),
     }

@@ -23,7 +23,7 @@ function entry(file: File, id: string, change: Partial<UploadEntry> = {}): Uploa
   return { ...newEntry(file, id), ...PLACED, ...change };
 }
 
-function provider(id: string, placeCode: string | null): Provider {
+function provider(id: string, placeCode: string | null, payer: string | null = null): Provider {
   return {
     id,
     name: `Provider ${id}`,
@@ -31,6 +31,7 @@ function provider(id: string, placeCode: string | null): Provider {
     specialty: null,
     npi: null,
     place_code: placeCode,
+    payer,
     email: null,
     phone: null,
     channel: "email",
@@ -40,10 +41,14 @@ function provider(id: string, placeCode: string | null): Provider {
 }
 
 const REFERENCES: References = {
-  providers: [provider("prov-1", "11"), provider("prov-2", "31"), provider("prov-3", "99")],
+  providers: [provider("prov-1", "11", "payer-medicare"), provider("prov-2", "31", "payer-retired"), provider("prov-3", "99")],
   places: [
     { code: "11", name: "Office" },
     { code: "31", name: "Skilled nursing facility" },
+  ],
+  payers: [
+    { id: "payer-medicare", name: "Medicare Part B", plan_type: "medicare" },
+    { id: "payer-aetna", name: "Aetna", plan_type: "commercial" },
   ],
 };
 
@@ -59,6 +64,9 @@ function preview(change: Partial<FilePreview>): FilePreview {
     confidence: { provider: 0, service_date: 0, place: 0, patient: 0 },
     overall: 0,
     check: true,
+    payer_id: null,
+    payer_confidence: 0,
+    payer_confident: false,
     ...change,
   };
 }
@@ -66,7 +74,7 @@ function preview(change: Partial<FilePreview>): FilePreview {
 describe("makeUploadForm", () => {
   it("sends the default visit type and one detail per file with its own provider, date and place, in file order", () => {
     const entries = [
-      entry(pdf("2026-11-25 - REYES MARISOL - 99215.pdf"), "1", { billed: " 99215, I10 " }),
+      entry(pdf("2026-11-25 - REYES MARISOL - 99215.pdf"), "1", { billed: " 99215, I10 ", payerId: "payer-medicare" }),
       entry(pdf("scan_0042.pdf", "%PDF other"), "2", { providerId: "prov-2", serviceDate: "2026-11-24", placeCode: "31" }),
       entry(pdf("2026-11-25 - OKONKWO DAVID - 99204.pdf", "%PDF third"), "3", { billed: "99204", visitType: "New patient" }),
     ];
@@ -74,9 +82,9 @@ describe("makeUploadForm", () => {
     expect(form.get("visit_type")).toBe("Established patient");
     expect(form.get("provider_id")).toBeNull();
     expect(JSON.parse(String(form.get("details")))).toEqual([
-      { billed: "99215, I10", visit_type: null, provider_id: "prov-1", service_date: "2026-11-25", place_code: "11" },
-      { billed: null, visit_type: null, provider_id: "prov-2", service_date: "2026-11-24", place_code: "31" },
-      { billed: "99204", visit_type: "New patient", provider_id: "prov-1", service_date: "2026-11-25", place_code: "11" },
+      { billed: "99215, I10", visit_type: null, provider_id: "prov-1", service_date: "2026-11-25", place_code: "11", payer: "payer-medicare" },
+      { billed: null, visit_type: null, provider_id: "prov-2", service_date: "2026-11-24", place_code: "31", payer: null },
+      { billed: "99204", visit_type: "New patient", provider_id: "prov-1", service_date: "2026-11-25", place_code: "11", payer: null },
     ]);
     expect((form.getAll("files") as File[]).map((file) => file.name)).toEqual([
       "2026-11-25 - REYES MARISOL - 99215.pdf",
@@ -108,7 +116,7 @@ describe("applyPreview", () => {
     const read = applyPreview(rows, ["1", "2"], [
       preview({ provider_id: "prov-2", service_date: "2026-11-24", place_code: "31", patient_name: "Ruth Abernathy", cpt: "99309", overall: 0.95, check: false }),
       preview({ provider_id: "prov-1", service_date: null, place_code: "11", overall: 0, check: true, duplicate: true }),
-    ]);
+    ], REFERENCES);
     expect(read[0]).toMatchObject({ providerId: "prov-2", serviceDate: "2026-11-24", placeCode: "31", patientName: "Ruth Abernathy", billed: "99309", check: false });
     expect(read[1]).toMatchObject({ providerId: "prov-1", serviceDate: "", check: true, serverDuplicate: true });
     expect(read.map(entryStatus)).toEqual(["ready", "uploaded"]);
@@ -118,7 +126,7 @@ describe("applyPreview", () => {
   it("never overwrites what the user already chose", () => {
     const chosen = newEntry(pdf("a.pdf"), "1");
     const edited = { ...chosen, providerId: "prov-3", billed: "99213" };
-    const [read] = applyPreview([edited], ["1"], [preview({ provider_id: "prov-1", cpt: "99215", service_date: "2026-11-20" })]);
+    const [read] = applyPreview([edited], ["1"], [preview({ provider_id: "prov-1", cpt: "99215", service_date: "2026-11-20" })], REFERENCES);
     expect(read).toMatchObject({ providerId: "prov-3", billed: "99213", serviceDate: "2026-11-20" });
   });
 });

@@ -43,6 +43,7 @@ export function FileTable({ entries, references, previewing, onFiles, ...actions
             <Th>{words.provider}</Th>
             <Th>{words.date}</Th>
             <Th>{words.place}</Th>
+            {references.payers.length > 0 ? <Th>{words.payer}</Th> : null}
             <Th>{words.billed}</Th>
             <Th>{words.visitType}</Th>
             <Th>{words.status}</Th>

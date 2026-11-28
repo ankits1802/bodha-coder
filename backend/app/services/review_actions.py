@@ -17,12 +17,14 @@ from app.services.audit_log import record_access
 from app.services.findings import Finding, build_findings
 from app.services.note_change_history import record_note_change
 from app.services.override_reasons import OverrideReason, departs_from_bodha, reason_text
+from app.services.payers import payer_changed
 from app.services.placement import current_decisions, current_findings, refresh_placement
 from app.services.pointer_decisions import POINTER_CHOICE, POINTER_KEY, pointer_key, read_pointer_key
 from app.services.routing import choices_for, claim
 
 INFO_KINDS = ("cdi_gap", "audit_risk", "audit_finding", "mips")
 RETRY_LIMIT = 500
+PAYER_READ = "payer"
 OVERRIDE_ACTION = "override reason"
 
 
@@ -200,12 +202,24 @@ async def _rederive(db: AsyncSession, note: Note, current: Analysis, billed: tup
 
 async def retry(db: AsyncSession, actor: Actor, note_id: str) -> Note:
     note = await note_for(db, actor, note_id)
-    if note.status != "failed":
-        raise Conflict("only notes that could not be read can be retried")
+    reason = await _read_again_reason(db, actor, note)
     note.status = "queued"
-    await request_analysis(db, note, reason="retry")
+    await request_analysis(db, note, reason=reason)
+    if reason == PAYER_READ:
+        record_access(db, actor, "read again with payer", note_id=note.id)
     await db.commit()
     return note
+
+
+async def _read_again_reason(db: AsyncSession, actor: Actor, note: Note) -> str:
+    if note.status == "failed":
+        return "retry"
+    if note.status != "ready":
+        raise Conflict("only notes that could not be read can be retried")
+    analysis = await db.get(Analysis, note.current_analysis_id) if note.current_analysis_id else None
+    if not payer_changed(actor.practice, note, analysis):
+        raise Conflict("the payer has not changed since this note was read")
+    return PAYER_READ
 
 
 async def reopen(db: AsyncSession, actor: Actor, note_id: str) -> Note:

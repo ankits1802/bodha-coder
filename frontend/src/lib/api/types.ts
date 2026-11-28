@@ -487,6 +487,7 @@ export interface FilePlacement {
 export interface FileDetail extends FilePlacement {
   billed: string | null;
   visit_type: string | null;
+  payer: string | null;
 }
 
 export interface UploadPlan extends FilePlacement {

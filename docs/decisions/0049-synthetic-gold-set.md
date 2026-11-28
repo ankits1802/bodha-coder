@@ -62,7 +62,11 @@ result is checked, and the note is approved (through the compliance confirm when
 compliance lane). Then it is marked as an evaluation case. Accepting only Bodha's suggestions was
 rejected: cases where Bodha suggests nothing useful could not reach their expected claim, which would
 bias the set toward cases Bodha already gets right. A re-run skips loaded cases, picks up notes still
-being read and refuses to mark a note approved with any other claim.
+being read and refuses to mark a note approved with any other claim. Amended 2026-11-28 by
+[0059](0059-payer-known-when-the-note-is-read.md): the loader lists one payer per plan type under the name
+the PDF prints as its coverage (Medicare Part B, Medicaid, Commercial PPO), uploads each case with its
+payer and sets it before approval on a note uploaded without one, so evaluation runs read Medicare cases
+with the Medicare guidance.
 
 **The harness reads the billed claim as uploaded.** An evaluation run now gives the model the first
 billed code set of the note (`code_sets.original_codes`), with units, instead of the latest one. A

@@ -6,6 +6,7 @@ from typing import Any
 
 from app.ai.contracts import BilledCode, ReviewInputs, Section
 from app.codes.mips_scope import MipsScope
+from app.codes.payer_rules import Payer
 
 NOTE = (
     "Follow-up visit. 67-year-old woman with type 2 diabetes and hypertension. A1c 8.4 on 11/02. BP 148/92. "
@@ -24,6 +25,7 @@ def review_inputs(
     pdf: bytes | None = None,
     billed: tuple[BilledCode, ...] = BILLED,
     scope: MipsScope | None = None,
+    payer: Payer | None = None,
 ) -> ReviewInputs:
     return ReviewInputs(
         sections=frozenset(sections),
@@ -35,6 +37,7 @@ def review_inputs(
         note_text=note_text,
         pdf=pdf,
         mips_scope=scope,
+        payer=payer,
     )
 
 

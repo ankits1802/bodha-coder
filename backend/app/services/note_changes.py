@@ -10,7 +10,7 @@ from app.services.analysis import request_analysis
 from app.services.audit_log import record_access
 from app.services.note_change_history import record_note_change
 from app.services.note_voids import refuse_voided
-from app.services.payers import payer_list
+from app.services.payers import listed_payer
 from app.services.placement import refresh_placement
 from app.services.review_actions import note_for
 
@@ -53,8 +53,7 @@ async def set_payer(db: AsyncSession, actor: Actor, note_id: str, payer_id: str 
     refuse_voided(note)
     if note.status == "exported":
         raise Conflict("an exported note keeps its payer")
-    known = actor.practice is not None and any(payer.get("id") == payer_id for payer in payer_list(actor.practice))
-    if payer_id is not None and not known:
+    if payer_id is not None and listed_payer(actor.practice, payer_id) is None:
         raise NotFound("payer not found")
     if note.payer != payer_id:
         record_note_change(db, actor, note, "payer", old=note.payer, new=payer_id)

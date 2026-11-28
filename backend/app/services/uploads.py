@@ -19,6 +19,7 @@ from app.core.errors import Invalid, NotFound
 from app.models import VOIDED, Batch, CodeSet, Note, PlaceOfService, Practice, Provider, User, new_id
 from app.services.analysis import request_analysis
 from app.services.audit_log import SystemActor, record_access, record_system_access
+from app.services.payers import INACTIVE_PAYER, is_active_payer
 
 PDF_MAGIC = b"%PDF"
 HISTORY_PAGE = 50
@@ -30,6 +31,7 @@ INTAKE_ACTOR = SystemActor("bodha-intake", "Bodha intake")
 FHIR_ACTOR = SystemActor("bodha-ehr", "Bodha EHR connection")
 SYSTEM_ACTORS = {INTAKE_SOURCE: INTAKE_ACTOR, FHIR_SOURCE: FHIR_ACTOR}
 UPLOADER_LABELS = {INTAKE_SOURCE: "Intake", FHIR_SOURCE: "EHR"}
+NO_PAYER = ""
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,7 @@ class UploadFile:
     data: bytes
     billed: str | None
     visit_type: str | None
+    payer: str | None = None
 
 
 @dataclass(frozen=True)
@@ -148,30 +151,55 @@ async def _store_batches(
 ) -> UploadResult:
     if not batches or not all(files for _, files in batches):
         raise Invalid("add at least one PDF")
+    practice = await db.get_one(Practice, uploader.practice_id)
     for plan, files in batches:
         await _check_plan(db, uploader.practice_id, plan)
         for file in files:
             check_pdf(file.name, file.data)
             billed_codes_for(file)
+            _check_payer(practice, file)
     batch_ids: list[str] = []
     accepted: list[str] = []
     duplicates: list[str] = []
     for plan, files in batches:
-        stored = await _store_batch(db, store, uploader, (plan, files), opened)
+        usual = await _usual_payer(db, practice, plan.provider_id)
+        stored = await _store_batch(db, store, uploader, (plan, files), opened, usual=usual)
         batch_ids.append(stored.batch_id)
         accepted += stored.accepted
         duplicates += stored.duplicates
     return UploadResult(batch_ids, accepted, duplicates)
 
 
+def _check_payer(practice: Practice, file: UploadFile) -> None:
+    if file.payer and not is_active_payer(practice, file.payer):
+        raise Invalid(f"{file.name}: {INACTIVE_PAYER}")
+
+
+async def _usual_payer(db: AsyncSession, practice: Practice, provider_id: str) -> str | None:
+    provider = await db.get_one(Provider, provider_id)
+    return provider.payer if is_active_payer(practice, provider.payer) else None
+
+
+def _note_payer(file: UploadFile, usual: str | None) -> str | None:
+    if file.payer is None:
+        return usual
+    return file.payer or None
+
+
 async def _store_batch(
-    db: AsyncSession, store: ObjectStore, uploader: Uploader, planned: PlannedBatch, opened: OpenBatches
+    db: AsyncSession,
+    store: ObjectStore,
+    uploader: Uploader,
+    planned: PlannedBatch,
+    opened: OpenBatches,
+    *,
+    usual: str | None,
 ) -> UploadResult:
     plan, files = planned
     batch = await _open_batch(db, uploader, plan, opened)
     accepted, duplicates = [], []
     for file in files:
-        note = await _add_note(db, store, uploader, batch, file)
+        note = await _add_note(db, store, uploader, batch, file, payer=_note_payer(file, usual))
         (accepted if note else duplicates).append(file.name)
     return UploadResult([batch.id], accepted, duplicates)
 
@@ -206,7 +234,7 @@ async def _check_plan(db: AsyncSession, practice_id: str, plan: UploadPlan) -> N
 
 
 async def _add_note(
-    db: AsyncSession, store: ObjectStore, uploader: Uploader, batch: Batch, file: UploadFile
+    db: AsyncSession, store: ObjectStore, uploader: Uploader, batch: Batch, file: UploadFile, *, payer: str | None
 ) -> Note | None:
     sha256 = hashlib.sha256(file.data).hexdigest()
     held = await db.scalar(
@@ -235,6 +263,7 @@ async def _add_note(
         visit_type=file.visit_type or batch.visit_type,
         place_code=batch.place_code,
         due_at=due_at(batch.service_date, uploader.zone),
+        payer=payer,
     )
     db.add(note)
     await db.flush()

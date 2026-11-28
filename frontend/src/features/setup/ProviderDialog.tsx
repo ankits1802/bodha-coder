@@ -8,7 +8,7 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
 import { useCanSendTexts } from "@/hooks/useCanSendTexts";
 import { addProvider, editProvider } from "@/lib/api/practice";
-import type { Channel, Place, Provider, ProviderInput } from "@/lib/api/types";
+import type { Channel, PayerOption, Place, Provider, ProviderInput } from "@/lib/api/types";
 import { CredentialFields } from "./CredentialFields";
 import type { CredentialTextField } from "./credentialForm";
 import { ProviderFields } from "./ProviderFields";
@@ -30,6 +30,7 @@ const FORM_ID = "provider-form";
 interface ProviderDialogProps {
   provider: Provider | null;
   places: Place[];
+  payers: PayerOption[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -38,7 +39,7 @@ function saveProvider(provider: Provider | null, input: ProviderInput): Promise<
   return provider ? editProvider(provider.id, input) : addProvider(input);
 }
 
-export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderDialogProps) {
+export function ProviderDialog({ provider, places, payers, onClose, onSaved }: ProviderDialogProps) {
   const canSendTexts = useCanSendTexts();
   const moreId = useId();
   const [draft, setDraft] = useState<ProviderDraft>(() => draftFrom(provider, canSendTexts));
@@ -83,7 +84,7 @@ export function ProviderDialog({ provider, places, onClose, onSaved }: ProviderD
   return (
     <Dialog open onClose={onClose} size="lg" title={provider ? words.editTitle : words.addTitle} footer={footer}>
       <form id={FORM_ID} noValidate onSubmit={submit} className="-m-1 flex max-h-[60svh] flex-col gap-4 overflow-y-auto p-1">
-        <ProviderFields {...handlers} places={places} />
+        <ProviderFields {...handlers} places={places} payers={payers} />
         <Button variant="plain" size="sm" className="-ml-3 self-start" aria-expanded={more} aria-controls={moreId} onClick={() => setMore((open) => !open)}>
           {words.more}
           <Chevron direction={more ? "down" : "right"} className="ml-1 flex-none text-secondary" />

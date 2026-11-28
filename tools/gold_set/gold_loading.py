@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from gold_api import ENV_PRACTICE, ApiError, BodhaApi, Credentials, SetupError
-from gold_cases import GoldCase, GoldSet
+from gold_cases import PAYER_NAMES, GoldCase, GoldSet
 
 from app.codes.billing_codes import Code, parse_code_list
 
@@ -68,6 +68,7 @@ class Waiting:
 class Practice:
     provider_ids: Mapping[str, str]
     marked: set[str] = field(default_factory=set)
+    payer_ids: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -99,7 +100,7 @@ def preflight(api: BodhaApi, gold: GoldSet, credentials: Credentials) -> Practic
     if missing:
         raise SetupError(f"places of service {missing} are not active")
     marked = {row["note_id"] for row in api.get("/api/quality/eval-cases")["items"]}
-    return Practice(_provider_ids(api, gold), marked)
+    return Practice(_provider_ids(api, gold), marked, _payer_ids(api, gold))
 
 
 def load_cases(context: LoadContext, cases: Iterable[GoldCase]) -> list[Outcome]:
@@ -166,6 +167,18 @@ def _provider_ids(api: BodhaApi, gold: GoldSet) -> dict[str, str]:
     return found
 
 
+def _payer_ids(api: BodhaApi, gold: GoldSet) -> dict[str, str]:
+    listed = {(row["name"], row["plan_type"]): row["id"] for row in api.get("/api/payers")}
+    found: dict[str, str] = {}
+    for plan in sorted({case.visit.payer for case in gold.cases}):
+        name = PAYER_NAMES[plan]
+        payer_id = listed.get((name, plan))
+        if payer_id is None:
+            payer_id = api.post("/api/practice/payers", json={"name": name, "plan_type": plan})["id"]
+        found[plan] = payer_id
+    return found
+
+
 def _failure(case: GoldCase, error: Exception) -> Outcome:
     return Outcome(case.id, WAITING if isinstance(error, StillReading) else FAILED, str(error))
 
@@ -176,6 +189,7 @@ def _ensure_uploaded(context: LoadContext, case: GoldCase) -> None:
     provider_id = context.practice.provider_ids[case.visit.provider]
     detail = {"billed": case.billed_text, "visit_type": case.visit.visit_type, "provider_id": provider_id}
     detail |= {"service_date": case.visit.service_date.isoformat(), "place_code": case.visit.place_of_service}
+    detail |= {"payer": context.practice.payer_ids[case.visit.payer]}
     form = {"visit_type": case.visit.visit_type, "details": json.dumps([detail])}
     files = [("files", (case.file_name, context.render(case), "application/pdf"))]
     result = context.api.upload("/api/uploads", form, files)
@@ -191,6 +205,7 @@ def _load_case(context: LoadContext, case: GoldCase) -> Outcome:
     detail = _read(context, note["id"])
     if detail["note"]["status"] in SETTLED:
         return _finish_settled(context, case, detail)
+    _ensure_payer(context, case, detail["note"])
     detail = _settle(context.api, case, detail)
     _approve(context.api, detail)
     _mark(context, note["id"])
@@ -221,6 +236,12 @@ def _read(context: LoadContext, note_id: str) -> dict[str, Any]:
         if context.waiting.clock() >= deadline:
             raise StillReading("Bodha's review is not finished yet; run the loader again later")
         context.waiting.sleep(context.waiting.poll_seconds)
+
+
+def _ensure_payer(context: LoadContext, case: GoldCase, note: Mapping[str, Any]) -> None:
+    payer = context.practice.payer_ids[case.visit.payer]
+    if note.get("payer") != payer:
+        context.api.put(f"/api/notes/{note['id']}/payer", {"payer": payer})
 
 
 def _settle(api: BodhaApi, case: GoldCase, detail: dict[str, Any]) -> dict[str, Any]:

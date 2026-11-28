@@ -2,13 +2,17 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { addProvider, editProvider } from "@/lib/api/practice";
-import type { Provider, User } from "@/lib/api/types";
+import type { PayerOption, Provider, User } from "@/lib/api/types";
 import { clearSession, setSession } from "@/lib/session/store";
 import { ProviderDialog } from "../ProviderDialog";
 
 vi.mock("@/lib/api/practice", () => ({ addProvider: vi.fn(), editProvider: vi.fn() }));
 
 const PHONE = "+15555550142";
+const PAYERS: PayerOption[] = [
+  { id: "payer-medicare", name: "Medicare Part B", plan_type: "medicare" },
+  { id: "payer-aetna", name: "Aetna", plan_type: "commercial" },
+];
 
 const PREFERS_TEXT: Provider = {
   id: "prov-1",
@@ -17,6 +21,7 @@ const PREFERS_TEXT: Provider = {
   specialty: null,
   npi: "1234567893",
   place_code: null,
+  payer: null,
   email: "varga@clinic.example.com",
   phone: PHONE,
   channel: "sms",
@@ -66,7 +71,7 @@ describe("ProviderDialog", () => {
     signIn(false);
     vi.mocked(editProvider).mockResolvedValue(undefined);
     const onSaved = vi.fn();
-    render(<ProviderDialog provider={PREFERS_TEXT} places={[]} onClose={vi.fn()} onSaved={onSaved} />);
+    render(<ProviderDialog provider={PREFERS_TEXT} places={[]} payers={[]} onClose={vi.fn()} onSaved={onSaved} />);
 
     expect(screen.queryByRole("combobox", { name: "Send questions by" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/Mobile phone/)).not.toBeInTheDocument();
@@ -78,7 +83,7 @@ describe("ProviderDialog", () => {
 
   it("offers text messages and the mobile phone under More when texts can be sent", async () => {
     signIn(true);
-    render(<ProviderDialog provider={PREFERS_TEXT} places={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
+    render(<ProviderDialog provider={PREFERS_TEXT} places={[]} payers={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
 
     expect(screen.queryByRole("combobox", { name: "Send questions by" })).not.toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "More" }));
@@ -88,7 +93,7 @@ describe("ProviderDialog", () => {
 
   it("shows only the name, credential, NPI, usual place and email until More is opened", async () => {
     signIn(false);
-    render(<ProviderDialog provider={null} places={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
+    render(<ProviderDialog provider={null} places={[]} payers={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
     const form = screen.getByRole("dialog");
     expect(within(form).getAllByRole("textbox")).toHaveLength(3);
     expect(within(form).getByRole("textbox", { name: "Name" })).toBeInTheDocument();
@@ -107,7 +112,7 @@ describe("ProviderDialog", () => {
   it("opens More when a field there needs fixing and saves nothing", async () => {
     signIn(false);
     const user = userEvent.setup();
-    render(<ProviderDialog provider={null} places={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
+    render(<ProviderDialog provider={null} places={[]} payers={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Dana Whitaker");
     await user.type(screen.getByRole("textbox", { name: "Email" }), "dana@clinic.example.com");
     await user.click(screen.getByRole("button", { name: "More" }));
@@ -117,5 +122,26 @@ describe("ProviderDialog", () => {
     expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Add the license number")).toBeInTheDocument();
     expect(addProvider).not.toHaveBeenCalled();
+  });
+
+  it("saves the usual payer chosen from the practice's payers", async () => {
+    signIn(false);
+    vi.mocked(editProvider).mockResolvedValue(undefined);
+    const onSaved = vi.fn();
+    const user = userEvent.setup();
+    render(<ProviderDialog provider={PREFERS_TEXT} places={[]} payers={PAYERS} onClose={vi.fn()} onSaved={onSaved} />);
+
+    await user.click(screen.getByRole("combobox", { name: "Usual payer, optional" }));
+    await user.click(screen.getByRole("option", { name: "Medicare Part B" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    expect(editProvider).toHaveBeenCalledWith("prov-1", expect.objectContaining({ payer: "payer-medicare" }));
+  });
+
+  it("offers no usual payer while the practice lists none", () => {
+    signIn(false);
+    render(<ProviderDialog provider={null} places={[]} payers={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
+    expect(screen.queryByRole("combobox", { name: /Usual payer/ })).not.toBeInTheDocument();
   });
 });

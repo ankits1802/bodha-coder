@@ -1,14 +1,15 @@
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
-import type { Place } from "@/lib/api/types";
+import type { PayerOption, Place } from "@/lib/api/types";
 import { ProviderTextInput, type ProviderInputHandlers } from "./ProviderTextInput";
 import { CREDENTIALS, PROVIDER_TEXT } from "./strings";
 
 interface ProviderFieldsProps extends ProviderInputHandlers {
   places: Place[];
+  payers: PayerOption[];
 }
 
-export function ProviderFields({ places, ...handlers }: ProviderFieldsProps) {
+export function ProviderFields({ places, payers, ...handlers }: ProviderFieldsProps) {
   const words = PROVIDER_TEXT.dialog;
   const { draft, onChange } = handlers;
   return (
@@ -35,6 +36,18 @@ export function ProviderFields({ places, ...handlers }: ProviderFieldsProps) {
           />
         )}
       </Field>
+      {payers.length > 0 ? (
+        <Field label={words.payer} optional={words.optional}>
+          {(control) => (
+            <Select
+              {...control}
+              value={draft.payer}
+              options={[{ value: "", label: words.noPayer }, ...payers.map((payer) => ({ value: payer.id, label: payer.name }))]}
+              onChange={(value) => onChange("payer", value)}
+            />
+          )}
+        </Field>
+      ) : null}
       <ProviderTextInput {...handlers} field="email" label={words.email} type="email" optional={draft.channel !== "email"} />
     </div>
   );

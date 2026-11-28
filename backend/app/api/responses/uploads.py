@@ -21,6 +21,9 @@ class FilePreview(View):
     confidence: MatchConfidence
     overall: float
     check: bool
+    payer_id: str | None
+    payer_confidence: float
+    payer_confident: bool
 
 
 class UploadResult(View):

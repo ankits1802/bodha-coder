@@ -33,6 +33,7 @@ from tests.api.ehr_helpers import (
     runs,
     visit,
 )
+from tests.api.payer_helpers import add_payer, set_usual_payer
 from tests.builders import backdate_closure, sign_in
 from tests.ehr_fakes import attachment, document, encounter, practitioner
 
@@ -99,6 +100,17 @@ async def test_a_final_progress_note_becomes_a_note_from_the_ehr(harness, ehr):
     assert search["_lastUpdated"] == [f"ge{_instant(_start_of(START))}", f"lt{_instant(NOW - SETTLE)}"]
     history = (await harness.client.get("/api/batches", headers=practice.admin)).json()["items"]
     assert [item["uploaded_by"] for item in history] == ["EHR"]
+
+
+async def test_a_note_pulled_from_the_ehr_takes_the_providers_usual_payer(harness, ehr):
+    practice = await connected(harness)
+    medicare = await add_payer(harness, practice, "Medicare Part B", "medicare")
+    assert (await set_usual_payer(harness, practice, medicare)).status_code == 204
+    one_note(ehr)
+
+    assert await poll(harness) == 1
+
+    assert [note.payer for note in await _notes(practice.id)] == [medicare]
 
 
 async def test_the_next_pull_resumes_from_the_cursor_and_skips_what_it_already_recorded(harness, ehr):

@@ -20,6 +20,7 @@ from app.services.note_history import note_history
 from app.services.note_returns import open_return, return_records, undecided_items
 from app.services.note_texts import current_texts
 from app.services.override_reasons import departing_choices, departs_from_bodha
+from app.services.payers import payer_changed
 from app.services.placement import current_findings
 from app.services.review_actions import allowed_choices, current_claim, note_for
 from app.services.routing import choices_for
@@ -54,7 +55,7 @@ async def note_detail(db: AsyncSession, actor: Actor, note_id: str) -> dict[str,
         "note": await _header(db, note, provider),
         "failure": await _latest_failure(db, note.id) if note.status == "failed" else None,
         "texts": await _texts(db, note.id),
-        "analysis": _analysis(analysis),
+        "analysis": _analysis(analysis, changed=payer_changed(actor.practice, note, analysis)),
         "findings": [_finding(finding, choices[finding.key], marks) for finding in findings],
         "claim": [code.label() for code in claim],
         "estimate": await note_estimate(db, note, claim) if analysis else None,
@@ -144,7 +145,7 @@ async def _texts(db: AsyncSession, note_id: str) -> list[dict[str, Any]]:
     ]
 
 
-def _analysis(analysis: Analysis | None) -> dict[str, Any] | None:
+def _analysis(analysis: Analysis | None, *, changed: bool) -> dict[str, Any] | None:
     if analysis is None:
         return None
     report = analysis.report or {}
@@ -171,6 +172,7 @@ def _analysis(analysis: Analysis | None) -> dict[str, Any] | None:
             )
         },
         "mips_scope": (report.get("mips") or {}).get("scope"),
+        "payer_changed": changed,
     }
 
 

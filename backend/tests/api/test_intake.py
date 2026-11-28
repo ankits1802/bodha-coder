@@ -11,6 +11,7 @@ from app.core.db import SessionFactory
 from app.models import AccessLog, Batch, CodeSet, Note
 from app.services.intake import arrival_name, poll_intake, sort_inbox
 from app.services.intake_settings import IntakeConfig
+from tests.api.payer_helpers import add_payer, set_usual_payer
 from tests.builders import Practice, practice_with_provider
 from tests.fakes import FakeListingStore, text_pdf
 
@@ -254,3 +255,37 @@ def test_the_inbox_is_sorted_into_visit_days_and_rejects():
         (f"{inbox}loose.pdf", "files go in <provider folder>/<YYYY-MM-DD>/<file>.pdf"),
         (f"{inbox}varga/20-11-2026/d.pdf", "20-11-2026 is not a date (YYYY-MM-DD)"),
     )
+
+
+async def _payers_by_checksum(practice: Practice) -> dict[str, str | None]:
+    async with SessionFactory() as db:
+        notes = (await db.scalars(select(Note).where(Note.practice_id == practice.id))).all()
+    return {note.file_sha256: note.payer for note in notes}
+
+
+async def test_intake_takes_a_payer_page_one_names_clearly_else_the_providers_usual_payer(harness):
+    practice = await practice_with_provider(harness)
+    medicare = await add_payer(harness, practice, "Medicare Part B", "medicare")
+    aetna = await add_payer(harness, practice, "Aetna", "commercial")
+    await set_usual_payer(harness, practice, medicare)
+    assert (await _turn_on(harness, practice)).status_code == 200
+    folder = f"practices/{practice.id}/inbox/varga/2026-11-20/"
+    named, mentioned = text_pdf("Insurance: Aetna. Follow-up visit."), text_pdf("Follow-up visit. Aetna card on file.")
+    store = FakeListingStore()
+    store.objects.update({f"{folder}named.pdf": named, f"{folder}mentioned.pdf": mentioned})
+
+    assert await _poll(store) == 2
+
+    assert await _payers_by_checksum(practice) == {_checksum(named): aetna, _checksum(mentioned): medicare}
+
+
+async def test_intake_without_a_usual_payer_or_a_clear_page_one_leaves_the_payer_unknown(harness):
+    practice = await practice_with_provider(harness)
+    await add_payer(harness, practice, "Aetna", "commercial")
+    assert (await _turn_on(harness, practice)).status_code == 200
+    store = FakeListingStore()
+    store.objects[f"practices/{practice.id}/inbox/varga/2026-11-20/{NOTE_NAME}"] = DROPPED_PDF
+
+    assert await _poll(store) == 1
+
+    assert await _payers_by_checksum(practice) == {_checksum(DROPPED_PDF): None}

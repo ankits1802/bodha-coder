@@ -20,7 +20,7 @@ async def test_a_full_valid_bundle_yields_a_report_from_one_call() -> None:
 
     assert len(client.calls) == 1
     assert client.calls[0].requested_parts() == EVERY_PART
-    assert outcome.prompt_version == "2026.11.7"
+    assert outcome.prompt_version == "2026.11.8"
     assert outcome.failed_sections == frozenset()
     assert [reply.model for reply in outcome.replies] == ["fake-gemini"]
     report = outcome.report

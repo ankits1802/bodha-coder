@@ -19,7 +19,9 @@ import { PayerSelect } from "./PayerSelect";
 interface NoteToolsProps {
   note: NoteHeader;
   permissions: ReviewPermissions;
+  readAgainPending: boolean;
   onVisitType: (visitType: string) => void;
+  onReadAgain: () => void;
   onChanged: () => void;
 }
 
@@ -32,7 +34,7 @@ const VOID_TEXT = {
   invalid: words.voidTooShort,
 };
 
-export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToolsProps) {
+export function NoteTools({ note, permissions, readAgainPending, onVisitType, onReadAgain, onChanged }: NoteToolsProps) {
   const router = useRouter();
   const [voiding, setVoiding] = useState(false);
   const visitTypes: readonly string[] = VISIT_TYPES.includes(note.visit_type as (typeof VISIT_TYPES)[number])
@@ -52,6 +54,11 @@ export function NoteTools({ note, permissions, onVisitType, onChanged }: NoteToo
         />
       ) : null}
       {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
+      {permissions.readAgain ? (
+        <Button size="sm" onClick={onReadAgain} pending={readAgainPending}>
+          {words.readAgain}
+        </Button>
+      ) : null}
       <DefensePacketButton noteId={note.id} size="sm" />
       {permissions.auditPackage ? <AuditPackageButton noteId={note.id} /> : null}
       {permissions.voidNote ? (

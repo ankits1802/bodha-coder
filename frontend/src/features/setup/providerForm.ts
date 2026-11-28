@@ -10,6 +10,7 @@ export interface ProviderDraft {
   specialty: string;
   npi: string;
   place_code: string;
+  payer: string;
   email: string;
   phone: string;
   channel: Channel;
@@ -27,6 +28,7 @@ export function draftFrom(provider: Provider | null, canSendTexts: boolean): Pro
     specialty: provider?.specialty ?? "",
     npi: provider?.npi ?? "",
     place_code: provider?.place_code ?? "",
+    payer: provider?.payer ?? "",
     email: provider?.email ?? "",
     phone: provider?.phone ?? "",
     channel: usableChannel(provider?.channel ?? "email", canSendTexts),
@@ -58,6 +60,7 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
     specialty: optional(draft.specialty),
     npi: optional(draft.npi),
     place_code: optional(draft.place_code),
+    payer: optional(draft.payer),
     email: optional(draft.email),
     phone: optional(draft.phone),
     channel: draft.channel,
@@ -66,7 +69,7 @@ export function inputFrom(draft: ProviderDraft): ProviderInput {
   };
 }
 
-const MAIN_FIELDS: readonly string[] = ["name", "credential", "npi", "place_code", "email"];
+const MAIN_FIELDS: readonly string[] = ["name", "credential", "npi", "place_code", "payer", "email"];
 
 export function hidesError(errors: ProviderErrors): boolean {
   return Object.keys(errors).some((field) => !MAIN_FIELDS.includes(field));

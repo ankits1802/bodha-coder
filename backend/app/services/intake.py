@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
 from collections import Counter
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from pathlib import PurePosixPath
 
@@ -20,6 +21,8 @@ from app.core.errors import AppError
 from app.models import Practice
 from app.services.audit_log import record_activity
 from app.services.intake_settings import PROCESSED, REJECTED, IntakeConfig, inbox_prefix, intake_config
+from app.services.payer_matching import PayerRef, confident_payer, payer_in, payer_refs
+from app.services.upload_preview import first_page_text
 from app.services.uploads import UploadFile, UploadPlan, create_intake_upload, file_problem
 
 __all__ = ["ALREADY_UPLOADED", "InboxGroup", "InboxSort", "accepts_intake", "arrival_name", "poll_intake", "sort_inbox"]
@@ -62,6 +65,7 @@ class IntakeRun:
     practice: Practice
     config: IntakeConfig
     stamp: Stamp
+    payers: Sequence[PayerRef]
 
 
 async def poll_intake(db: AsyncSession, store: ListingStore, now: datetime) -> int:
@@ -168,7 +172,7 @@ async def _poll_practice(db: AsyncSession, store: ListingStore, practice: Practi
     counts: Counter[str] = Counter(rejected=len(found.rejects))
     for key, reason in found.rejects:
         await _reject(store, stamp, key, await store.get(key), reason)
-    run = IntakeRun(practice, config, stamp)
+    run = IntakeRun(practice, config, stamp, payer_refs(practice))
     for group in found.groups:
         counts += await _ingest(db, store, run, group)
     detail = f"{counts['created']} notes, {counts['rejected']} files rejected"
@@ -200,7 +204,7 @@ async def _ingest(db: AsyncSession, store: ListingStore, run: IntakeRun, group: 
         file = UploadFile(PurePosixPath(key).name, await store.get(key), None, None)
         problem = file_problem(file)
         if problem is None:
-            ready.append((key, file))
+            ready.append((key, await _with_document_payer(file, run.payers)))
             continue
         await _reject(store, run.stamp, key, file.data, problem)
         counts["rejected"] += 1
@@ -226,6 +230,11 @@ async def _upload_group(
         else:
             await _keep(store, run.stamp, key, file.data)
     return Counter(created=len(result.accepted), rejected=len(duplicates))
+
+
+async def _with_document_payer(file: UploadFile, payers: Sequence[PayerRef]) -> UploadFile:
+    text = await asyncio.to_thread(first_page_text, file.data)
+    return replace(file, payer=confident_payer(payer_in(text, payers)))
 
 
 def _content_type(key: str) -> str:
