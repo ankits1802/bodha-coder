@@ -32,7 +32,8 @@ does with focus.
   both hosts, sign-up, join, practice completion, forgot and set password, verify with and without a
   code, domain verification, the provider's link before and after the code, a missing page); the main
   dialogs; a phone width (390 by 844) for key screens; reduced motion.
-- **What each visit checks.** The page settles (its heading, no spinner, skeleton or `aria-busy`), stays
+- **What each visit checks.** The page settles (its heading, no spinner, skeleton or `aria-busy`, and
+  its entrance animations ended, for at most eight seconds, since a fade-in is not a contrast defect), stays
   on the route asked for, is not the "role can't open this page" state, and no request failed on the
   server. Then axe with the WCAG 2.0 to 2.2 A and AA tags, failing on serious or critical violations
   (`support/accessibility.ts`); `target-size` covers 24 by 24 pixel targets. Then Tab from the top of the
@@ -47,6 +48,14 @@ does with focus.
   dialog opened and gives focus back when the dialog closes or its parent removes it, if focus would
   otherwise be lost. Many dialogs are mounted only while open, and removing an open `<dialog>` drops focus
   to the body, which the browser does not repair.
+- **A pending button keeps focus.** `Button` marks a pending action `aria-disabled` and `aria-busy` and
+  refuses clicks, Enter and form submission while it waits, instead of setting `disabled`: a disabled
+  button drops focus to the body, so approving without a signature lost focus behind the signature dialog
+  and could not get it back. `disabled` stays for actions that are not allowed.
+- **A table that scrolls sideways is a keyboard stop.** `Table` measures its scroller; when the table is
+  wider than its column, the scroller becomes a region named like the table with `tabIndex=0`, so it can be
+  scrolled from the keyboard, and it stays out of the tab order when the table fits. The scroller is
+  positioned, so visually hidden header text cannot widen the page past it.
 
 ## Alternatives
 
@@ -59,4 +68,7 @@ does with focus.
 
 ## Follows
 
-- `README.md` (Checks) and `docs/ARCHITECTURE.md` (Browser journeys) describe the sweep.
+- `README.md` (Checks) and `docs/ARCHITECTURE.md` (Browser journeys) describe the sweep; `docs/DESIGN.md`
+  (Feedback and flow) says how pending buttons and dialogs treat focus.
+- The `frontend-practices` skill no longer says to disable submission while a request is pending: it says
+  to refuse a second submission without moving focus off the control, for the reason above.

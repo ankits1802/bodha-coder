@@ -89,7 +89,8 @@ accessible; one that is not multiplies the problem.
 ## Forms
 
 - Validate with a schema shared with the API types and show each error beside its field.
-- Disable submission while a request is pending, and show the outcome.
+- Refuse a second submission while a request is pending, without moving focus off the control, and
+  show the outcome.
 - Client-side validation helps the user; the server validates again.
 
 ## Text, numbers and language

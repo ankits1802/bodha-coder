@@ -85,7 +85,8 @@ for eight seconds; a confirmation dialog is kept for destructive actions only (v
 block). Loads that fill a screen show a skeleton of its layout; small panels keep the spinner. In
 note review the finding that `y` and `n` act on carries a dark bar at its left edge, and focus moves
 to the next finding after each decision, then to Approve. Form fields are checked when they lose
-focus, not only on submit.
+focus, not only on submit. A button whose action is pending shows its spinner, looks disabled and ignores
+presses, but keeps focus; a dialog gives focus back to what opened it when it closes.
 
 ## Figures
 
