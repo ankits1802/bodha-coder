@@ -43,7 +43,8 @@ catalog (kept an hour in `.next/cache`); nothing is fetched at build.
 
 Neither image contains a secret or an `.env` file; both `.dockerignore` files keep them out of the
 build context. Tag images with the git commit SHA, push to ECR with immutable tags and scan on
-push. CI builds both images on every push (`images` job) without pushing, and the `e2e` job runs the
+push (OpenTofu's repositories are `bodha-staging-api` and `bodha-staging-web`, keeping the last 20
+images). CI builds both images on every push (`images` job) without pushing, and the `e2e` job runs the
 browser journeys against a production build of the web app with the API and worker beside it
 ([0050](decisions/0050-browser-journeys-and-production-canary.md)). Every Python dependency
 has arm64 wheels, so `docker buildx build --platform linux/arm64` produces Graviton images when
@@ -126,20 +127,65 @@ The compose stack is for test data only. LocalStack is not covered by any busine
 agreement, so real patient documents never go into it. For a shared staging host, put a TLS proxy
 in front of `127.0.0.1:3000` and set `APP_URL` to its `https://` address.
 
+## Continuous integration
+
+Every test, type check and build runs on GitHub Actions, never on a development machine. The public
+repository runs the checks; the private origin releases.
+
+| Workflow | Repository | When | Does |
+|---|---|---|---|
+| `ci.yml` | `ankits1802/bodha-coder` | push to `main`, pull requests | the six jobs below |
+| `codeql.yml` | `ankits1802/bodha-coder` | push to `main`, Mondays 04:17 UTC, by hand | CodeQL `security-extended` for Python, JavaScript and TypeScript, and the workflows |
+| `deploy.yml` | `CHARTMATE-APP/bodha-coder` | push to `main`, by hand | [Releases](#releases-migrations-first) |
+| `canary.yml` | `CHARTMATE-APP/bodha-coder` | 08:17 UTC nightly once `CANARY_ENABLED` is `true`, by hand | the read-only production walk ([OPERATIONS.md](OPERATIONS.md#production-canary)) |
+
+```mermaid
+flowchart LR
+    push["Push or pull request, ankits1802/bodha-coder"] --> hygiene["hygiene: ruff on tools and infra, tools/hygiene_check.py"]
+    push --> backend["backend on Postgres 17: requirements.lock matches pyproject.toml, ruff, openapi.json unchanged, alembic up and down, pytest"]
+    push --> frontend["frontend: schema.ts unchanged, lint, typecheck, unit tests, next build"]
+    push --> e2e["e2e: Postgres, moto, the API and worker on the demo model, next build and next start"]
+    push --> images["images: both images build, imports, user ids, web smoke on a placeholder BACKEND_URL, compose config, k6 inspect"]
+    push --> infra["infra: tofu fmt and validate for both stacks, bash -n release.sh"]
+    e2e --> journeys["chromium: frontend/e2e/journeys, one day per role, axe on every page"]
+    e2e --> world["sweep-setup: seeds the shared sweep world"]
+    world --> light["sweep: light, default text"]
+    world --> dark["sweep-dark: the browser's dark scheme"]
+    world --> larger["sweep-larger: Larger text"]
+```
+
+The journeys, the sweep and the canary rehearsal are described in
+[ARCHITECTURE.md](ARCHITECTURE.md#browser-journeys-and-the-production-canary); a failed `e2e` run keeps
+traces, screenshots and the server logs for seven days.
+
 ## AWS reference deployment
 
 Production is provisioned from `infra/tofu` with OpenTofu and released by `deploy.yml` from the
-CHARTMATE-APP repository ([0025](decisions/0025-staging-on-aws.md), runbook in `infra/tofu/README.md`).
+CHARTMATE-APP repository ([0025](decisions/0025-staging-on-aws.md), runbook in
+[infra/tofu/README.md](../infra/tofu/README.md)). The running system and its connections are drawn in
+[ARCHITECTURE.md](ARCHITECTURE.md#system-context). The sections after the next one describe the
+reference design that deployment grows into.
 
-```
-Internet ── ALB (HTTPS) ──┬── /api/*  ──> ECS service api    (uvicorn, port 8000)
-                          └── default ──> ECS service web    (Next.js, port 3000) ──> api:8000
-                                          ECS service worker (python -m app.worker)
-api, worker ──> RDS for PostgreSQL 17 (Multi-AZ) · S3 (SSE-KMS) · SES · SNS
-worker ──> Vertex AI (Gemini) through the NAT gateway
-api, worker ──> each practice's own clearinghouse over SFTP through the NAT gateway
-api, worker ──> each practice's EHR (FHIR over HTTPS, public addresses only)
-```
+### What OpenTofu builds today
+
+One stack, `infra/tofu/envs/production`, is production (`APP_ENVIRONMENT=production`). AWS names keep the
+`bodha-staging` prefix and secrets stay under `bodha/staging/`, because renaming would rebuild the
+database, load balancer, repositories and secrets ([0025](decisions/0025-staging-on-aws.md)).
+
+| Part | Built today | Reference, below |
+|---|---|---|
+| Front door | CloudFront for `www.bodhaai.co` and `admin.bodhaai.co` (one ACM certificate, TLS 1.2 or later, HTTP/2 and 3), reaching an internal load balancer on port 80 through a VPC origin; `/_next/static/*` cached, every other path uncached with all viewer headers forwarded; `/api/*` to `api`, the rest to `web` | public load balancer with HTTPS and AWS WAF |
+| Network | two zones; tasks in public subnets with public IPs, inbound only from the load balancer; load balancer and database in private subnets; an S3 gateway endpoint; no NAT gateway, so outbound addresses change with each task | three zones, tasks in private subnets behind a NAT gateway per zone, interface endpoints |
+| Compute | cluster `bodha-staging`, services `api`, `worker`, `web`, one task each on on-demand Fargate, 0.25 vCPU (`api` and `worker` 1 GB, `web` 512 MB); `web` reaches the API through the load balancer (`BACKEND_URL`); Container Insights off; no autoscaling | the sizes and autoscaling below, Service Connect |
+| Database | RDS PostgreSQL 17 `db.t4g.micro`, single zone, gp3 20 GB growing to 200 GB, backups kept 35 days, TLS forced, query values kept out of the logs, deletion protection | Multi-AZ `db.m7g.large` |
+| Database roles | `bodha_app` is the master user, owns the schema and migrates; `api` and `worker` connect as `bodha_runtime` once `runtime_database = true` ([infra/tofu/README.md](../infra/tofu/README.md#runtime-database-role)), and as `bodha_app` until then | a separate master user; `bodha_runtime` always |
+| Task roles | `api` and `worker` share one role: the documents bucket, the inbound mail objects, the data key, the signing key, SES sending and, once texts are on, `sns:Publish`; `migrate`, `bootstrap` and `web` run with a role that may do nothing | one role per service, below |
+| Model | the Gemini Developer API (`GEMINI_BACKEND=developer`, secret `gemini-api-key`); the `gemini_backend` variable accepts only `developer` until Vertex AI credentials are wired | Vertex AI (Agreements, below) |
+| Records | documents bucket `bodha-staging-documents-<account>` with versioning and Object Lock (governance, 2557 days); monthly database snapshots in the `bodha-staging-records` vault, locked to 2557 days; a CloudTrail trail with S3 data events into its own Object Lock bucket; log groups kept 2557 days | the same, plus a copy in a separate backup account |
+| Email | SES domain identity `bodhaai.co` (Easy DKIM, MAIL FROM `mail.bodhaai.co`), sender `no-reply@bodhaai.co`; email intake on `intake.bodhaai.co` ([infra/tofu/README.md](../infra/tofu/README.md#email-intake)) | the same |
+| Texts | off (`SMS_TRANSPORT=outbox`) until `sms_origination_number` is set | SNS with a registered number |
+| Watching | a Route 53 HTTPS health check of `/api/health/ready` from three regions; alarms to one SNS topic that emails `alert_email`: API 5xx above 10 in five minutes, unhealthy targets per target group, worker metrics missing, queue stuck (queued with nothing running), database CPU above 80% and free storage under 4 GiB, site down; a CloudWatch dashboard; a monthly budget with alerts at 80% and 100% | the alarm table below |
+| Releases | `deploy.yml` on every push to `main` of CHARTMATE-APP, through the `bodha-staging-deploy` role (GitHub OIDC, the `production` environment) | Releases, below |
 
 ### Agreements
 
@@ -377,7 +423,7 @@ sets plans by hand as before.
 | `BILLING_GRACE_DAYS` | `7` | days of access after a failed payment (0 to 60) |
 
 The worker needs the same billing settings as the API: it keeps each subscription's quantity equal to
-the practice's active providers.
+the active providers of the practice, or of the organization's combined practices.
 
 ### Set up Stripe and PayPal
 
@@ -393,7 +439,8 @@ Stripe (Dashboard):
    yearly. Copy the four `price_…` ids into `STRIPE_PRICE_*`.
 2. Settings, Billing, Customer portal: turn on update payment method, view invoice history, cancel
    subscriptions (at the end of the billing period) and switch plans between the four prices above
-   (quantity changes off: Bodha sets the quantity). Set the default return link to `{APP_URL}/plan`.
+   (quantity changes off: Bodha sets the quantity). Set the default return link to `{APP_URL}/settings/plan`
+   (Bodha also passes it with each portal session).
 3. Settings, Billing, Subscriptions and emails: turn on Smart Retries and choose to mark the
    subscription unpaid or cancel it after the last retry; send failed-payment emails.
 4. Developers, Webhooks: add the endpoint `{APP_URL}/api/billing-webhooks/stripe` (for example
@@ -509,22 +556,26 @@ admin's email, the practice id, the plan and the provider count.
 
 ### Secrets: Secrets Manager
 
-| Secret | Read by |
-|---|---|
-| `bodha/<env>/database-url` (`bodha_runtime`) | api, worker |
-| `bodha/<env>/migration-database-url` (`bodha_app`) | migrate |
-| `bodha/<env>/runtime-database-password` | migrate |
-| `bodha/<env>/secret-key` | api, worker, migrate |
-| `bodha/<env>/mfa-encryption-key` | api |
-| `bodha/<env>/clearinghouse-encryption-key` | api, worker |
-| `bodha/<env>/ehr-key-encryption-key` (generated by OpenTofu) | api, worker, as `EHR_KEY_ENCRYPTION_KEY` |
-| `bodha/<env>/google-client-secret` | api |
-| `bodha/<env>/google-credentials` (Vertex AI service account) | worker, as `GOOGLE_CREDENTIALS_JSON` |
-| `bodha/<env>/stripe` (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) | api, worker |
-| `bodha/<env>/paypal-client-secret` | api, worker |
-| `bodha/<env>/sentry-dsn` (only when `sentry_dsn` is set) | api, worker, as `SENTRY_DSN` |
-| `bodha/<env>/web-sentry-dsn` (only when `web_sentry_dsn` is set) | web, as `WEB_SENTRY_DSN` |
-| `bodha/<env>/bootstrap-hq` | the one-off bootstrap task, deleted afterwards |
+The secrets OpenTofu creates, all under `bodha/staging/` (`infra/tofu/modules/data/secrets.tf`; the
+generated ones are written once during apply and never appear in a plan or the state):
+
+| Secret | Holds | Read by |
+|---|---|---|
+| `database-url` | `bodha_app`, the schema owner (generated) | migrate as `DATABASE_URL` and `MIGRATION_DATABASE_URL`; api, worker and bootstrap until `runtime_database = true` |
+| `runtime-database-url` | `bodha_runtime` (generated) | api, worker and bootstrap as `DATABASE_URL` once `runtime_database = true` |
+| `runtime-database-password` | the `bodha_runtime` password (generated) | migrate, as `RUNTIME_DATABASE_PASSWORD` |
+| `secret-key` | `SECRET_KEY` (generated) | api, worker, migrate, bootstrap |
+| `mfa-encryption-key` | `MFA_ENCRYPTION_KEY` (generated) | api |
+| `clearinghouse-encryption-key` | `CLEARINGHOUSE_ENCRYPTION_KEY` (generated) | api, worker |
+| `ehr-key-encryption-key` | `EHR_KEY_ENCRYPTION_KEY` (generated) | api, worker |
+| `google-client-secret`, `microsoft-client-secret`, `yahoo-client-secret` | each sign-in service's client secret (put by hand) | api, once that service's client id is set |
+| `gemini-api-key` | `GEMINI_API_KEY` (put by hand) | api, worker, migrate, bootstrap |
+| `stripe-secret-key`, `stripe-webhook-secret`, `paypal-client-secret` | the processors' secrets (put by hand, [infra/tofu/README.md](../infra/tofu/README.md#billing)) | api, worker, migrate, bootstrap, once billing names their prices |
+| `sentry-dsn`, `web-sentry-dsn` | only while `sentry_dsn` or `web_sentry_dsn` is set | api, worker and bootstrap as `SENTRY_DSN`; web as `WEB_SENTRY_DSN` |
+| `bootstrap-hq` | the first HQ account's email and generated password | the bootstrap task |
+
+The reference design adds `google-credentials` (the Vertex AI service account, read by the worker as
+`GOOGLE_CREDENTIALS_JSON`), which OpenTofu does not create yet.
 
 Encrypt every secret with a customer managed key and inject them through the task definition's
 `secrets` (`valueFrom` the secret ARN), never as plain environment values. Tasks read secrets at
@@ -540,8 +591,9 @@ Fargate tasks do not have, so it needs a credential supplier the adapter does no
 
 ### Logs, metrics and alarms: CloudWatch
 
-- Log groups `/bodha/<env>/api`, `/worker`, `/web`, `/migrate` and the intake function's
-  `/aws/lambda/bodha-<env>-ses-intake`, encrypted with KMS, kept seven years (2557 days). The PHI access log lives in Postgres (`access_log`), kept for each practice's retention
+- Log groups `/bodha-staging/api`, `/worker`, `/web`, `/migrate`, `/bootstrap` and the intake function's
+  `/aws/lambda/bodha-staging-ses-intake`, kept seven years (2557 days); the reference also encrypts them
+  with KMS. The PHI access log lives in Postgres (`access_log`), kept for each practice's retention
   period (7 to 10 years) and hash-chained.
 - CloudTrail records management events for the account, and data events for the documents bucket, to a
   separate locked log bucket kept seven years.
@@ -581,7 +633,8 @@ it and the browser never receives it.
 
 ### Worker autoscaling
 
-Scale the `worker` service with target tracking on queued analyses per running task:
+OpenTofu runs one worker task without autoscaling today. In the reference, scale the `worker` service
+with target tracking on queued analyses per running task (it needs Container Insights on):
 
 ```json
 {
@@ -592,7 +645,7 @@ Scale the `worker` service with target tracking on queued analyses per running t
        "MetricStat": {"Stat": "Maximum", "Metric": {"Namespace": "BodhaCoder", "MetricName": "QueuedAnalyses"}}},
       {"Id": "tasks", "ReturnData": false,
        "MetricStat": {"Stat": "Average", "Metric": {"Namespace": "ECS/ContainerInsights", "MetricName": "RunningTaskCount",
-         "Dimensions": [{"Name": "ClusterName", "Value": "bodha-prod"}, {"Name": "ServiceName", "Value": "worker"}]}}},
+         "Dimensions": [{"Name": "ClusterName", "Value": "bodha-staging"}, {"Name": "ServiceName", "Value": "worker"}]}}},
       {"Id": "backlog", "Expression": "queued / tasks", "Label": "Queued analyses per worker task"}
     ]
   },
@@ -610,17 +663,42 @@ back to the queue at once, without spending an attempt, so deploys do not delay 
 
 ### Releases: migrations first
 
-1. CI is green on the commit.
-2. Build both images, tag them with the commit SHA, push to ECR.
-3. Register task definition revisions for `api`, `worker`, `web` and `migrate` with that tag.
-3a. Set `APP_VERSION` on the `api` and `worker` task definitions to the same tag.
-4. Run the migration as a one-off task in the private subnets with the worker's security group
-   (it connects with `MIGRATION_DATABASE_URL`):
-   `aws ecs run-task --cluster bodha-prod --launch-type FARGATE --task-definition bodha-migrate:<rev> --network-configuration …`,
-   then `aws ecs wait tasks-stopped` and check the container's `exitCode` is `0` with
-   `aws ecs describe-tasks`. A non-zero exit stops the release.
-5. Update `api`, `worker` and `web` to the new revisions and wait for `aws ecs wait services-stable`.
-6. `curl -fsS https://www.bodhaai.co/api/health/ready`.
+A commit reaches production only after CI passed on the public repository and the same commit was
+pushed to the private origin:
+
+```mermaid
+flowchart TD
+    commit["Commit on main"] -->|"git push public"| ci["ankits1802/bodha-coder: ci.yml"]
+    ci -->|"green: push the same commit"| origin["CHARTMATE-APP/bodha-coder"]
+    origin -->|"push to main"| deploy["deploy.yml, production environment"]
+    deploy -->|"GitHub OIDC"| role["bodha-staging-deploy role"]
+    role --> built{"Images for this commit already in ECR?"}
+    built -->|no| build["Build and push the api and web images, tagged with the commit SHA"]
+    built -->|yes| release["infra/deploy/release.sh"]
+    build --> release
+    release --> register["Register api, worker, migrate, bootstrap and web task definitions with the new image and APP_VERSION"]
+    register --> migrate["Run the migrate task: alembic upgrade head"]
+    migrate -->|"exit code 0"| services["Update api, worker and web, wait until stable"]
+    migrate -->|"any other exit code"| stop["Release stops, services unchanged"]
+    services --> watched["Route 53 health check on /api/health/ready and the alarms keep watching"]
+```
+
+1. CI is green on the commit in `ankits1802/bodha-coder` (Continuous integration, above); then the same
+   commit is pushed to `main` of `CHARTMATE-APP/bodha-coder`.
+2. `deploy.yml` runs there only, and only once the `AWS_DEPLOY_ROLE_ARN` repository variable exists (the
+   `deploy` output of OpenTofu sets it with the cluster, repositories, task family prefix, subnets and
+   security group). It assumes the deploy role through GitHub OIDC, with no stored AWS keys.
+3. It builds and pushes both images tagged with the commit SHA, unless ECR already holds them, so a
+   re-run only releases. The web build takes `SITE_URL` from the repository variable.
+4. `infra/deploy/release.sh` copies each current task definition (OpenTofu owns the configuration, the
+   release owns the image), sets the image and `APP_VERSION` to the tag, and registers new revisions of
+   `api`, `worker`, `migrate`, `bootstrap` and `web`.
+5. It runs `migrate` as a one-off Fargate task in the task subnets with the worker's security group, waits
+   for it to stop and reads its exit code. Anything but `0` stops the release before a service changes.
+6. It updates `api`, `worker` and `web` to the new revisions and waits for `aws ecs wait services-stable`;
+   the deployment circuit breaker rolls back a revision whose tasks cannot start.
+7. `curl -fsS https://www.bodhaai.co/api/health/ready` confirms readiness; the Route 53 health check
+   alarms on its own when it fails.
 
 Old tasks keep serving while new ones start, so every migration must work with the code one
 release back: add columns and tables first, remove them a release later. Roll back by redeploying

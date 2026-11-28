@@ -37,7 +37,7 @@ It never logs addresses, names, subjects or file names.
 
 | Variable | Value |
 |---|---|
-| `INTAKE_BUCKET` | the documents bucket |
+| `INTAKE_BUCKET` | the inbound mail bucket, `bodha-staging-mail-inbound-<account>` |
 
 ## Permissions
 

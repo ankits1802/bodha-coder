@@ -2,9 +2,11 @@
 
 `coder_day.js` is a [k6](https://grafana.com/docs/k6/) 2.4.0 script that drives the API the way a
 practice does over a working day: coders sign in, list the queue, open notes, and upload the day's
-PDFs. It runs against **staging or a local compose stack only**. `setup()` refuses any host that is
-not `localhost`, `127.0.0.1` or a name containing `staging` or `stg`, and there is no switch to turn
-that off. Never point it at production: every upload creates notes and queues real Gemini reads.
+PDFs. It runs against **a local compose stack, or a host whose name contains `staging` or `stg`,
+only**. `setup()` refuses any host that is not `localhost`, `127.0.0.1` or such a name, and there is no
+switch to turn that off. Production at `www.bodhaai.co` is the only AWS environment, so today that means
+the compose stack ([docs/DEPLOY.md](../../docs/DEPLOY.md#local-and-staging-with-docker-compose)). Never point
+it at production: every upload creates notes and queues real Gemini reads.
 
 ## What it sends
 
@@ -26,20 +28,20 @@ exceeds 1.5 s for sign-in, 0.8 s for the queue and a note, or 8 s for an upload.
 
 ## Before a run
 
-1. In staging HQ, create a practice used only for load tests, with two-step verification not
+1. In the HQ of the stack under test, create a practice used only for load tests, with two-step verification not
    required for the coder role.
 2. Invite a coder (or admin) to it and set the password. This account must be able to sign in
    without two-step verification.
 3. Add one provider and note its id (`GET /api/providers` while signed in as that user).
-4. Check the staging Gemini budget and quota: at the defaults a 15-minute run uploads about 95
+4. Check the stack's Gemini budget and quota (none with `GEMINI_BACKEND=demo`): at the defaults a 15-minute run uploads about 95
    notes, and each one is read by the model.
-5. Tell the team in the staging channel; alarms on queued analyses may fire.
+5. On a shared stack, tell its owners first; alarms on queued analyses may fire.
 
 ## Settings
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `BASE_URL` | required | the staging web address, for example `https://coder.staging.example.com` |
+| `BASE_URL` | required | the web address of the stack under test, for example `http://localhost:3000` or `https://coder.staging.example.com` |
 | `LOAD_EMAIL`, `LOAD_PASSWORD` | required | the load-test account |
 | `LOAD_PROVIDER_ID` | required | the provider the uploads are filed under |
 | `LOAD_PLACE_CODE` | `11` | place of service for the uploads |
@@ -79,5 +81,6 @@ over plain HTTP each virtual user signs in again instead of refreshing.
   zero within a few minutes of each upload. A queue that only grows means the worker is the limit.
 - Read the k6 summary: `http_req_duration` per `name`, `http_req_failed`, and the checks.
 - Search the API log group for `"status":5` during the run window.
-- Delete the load-test practice in HQ when finished (see the purge runbook in
-  [docs/OPERATIONS.md](../../docs/OPERATIONS.md)).
+- Close the load-test practice in HQ when finished; its records stay until the purge date
+  ([docs/OPERATIONS.md](../../docs/OPERATIONS.md#close-and-purge-a-practice)), so on a compose stack it is
+  simpler to drop the database volume.

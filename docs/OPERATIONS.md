@@ -9,12 +9,14 @@ session in the incident record.
 
 | What | Where |
 |---|---|
-| API requests | log group `/bodha/<env>/api`, logger `bodha.access` |
-| Worker | log group `/bodha/<env>/worker` |
+| API requests | log group `/bodha-staging/api`, logger `bodha.access` (AWS names keep the `bodha-staging` prefix: [DEPLOY.md](DEPLOY.md#what-opentofu-builds-today)) |
+| Worker | log group `/bodha-staging/worker` |
+| Web, migrations, bootstrap | log groups `/bodha-staging/web`, `/bodha-staging/migrate`, `/bodha-staging/bootstrap` |
+| Alarms | the `bodha-staging-alerts` topic emails `alert_email`; the `bodha-staging` CloudWatch dashboard |
 | Queue | metrics `BodhaCoder/QueuedAnalyses` and `BodhaCoder/RunningAnalyses` (statistic Maximum) |
 | Load balancer | ALB metrics per target group: `HTTPCode_Target_5XX_Count`, `TargetResponseTime`, `UnHealthyHostCount` |
 | Readiness | `curl -fsS https://www.bodhaai.co/api/health/ready` |
-| Email intake function | log group `/aws/lambda/bodha-<env>-ses-intake`, one `ses intake` line per message (message id and recipient count) |
+| Email intake function | log group `/aws/lambda/bodha-staging-ses-intake`, one `ses intake` line per message (message id and recipient count) |
 | Email intake outcomes | each practice's Settings, Setup, Automatic intake, Received; `intake_messages` for SQL |
 | Error tracking | the Sentry projects, when `SENTRY_DSN` and `WEB_SENTRY_DSN` are set ([DEPLOY.md](DEPLOY.md#error-tracking-sentry)); events carry the release (`APP_VERSION`) and exception types and frames only |
 
@@ -38,10 +40,11 @@ filter level = "ERROR"
 | sort @timestamp desc
 ```
 
-For SQL, start a break-glass task from `postgres:17.12-trixie` in the private subnets with the
+For SQL, start a break-glass task from `postgres:17.12-trixie` in the task subnets with the
 worker's security group and ECS Exec on, run `psql` with the `bodha_runtime` credentials from the
-`database-url` secret, and stop the task when done. Use the schema owner (`migration-database-url`)
-only for the maintenance runbook below.
+`bodha/staging/runtime-database-url` secret, and stop the task when done. The
+`bodha/staging/database-url` secret holds the schema owner `bodha_app`: use it only for the maintenance
+runbook below.
 
 ## Production canary
 
@@ -102,7 +105,9 @@ points at production or the canary accounts rather than the script.
   again.
 
 Each run writes only what a sign-in writes: rate-limit rows, a `signed_in` event per account with its
-access-log or activity mirror, a session, and the last-active and last-code stamps.
+access-log or activity mirror, a session, and the last-active and last-code stamps. The canary never
+signs out, so each run's sessions stay refreshable for 7 days unused like any other
+([0063](decisions/0063-longer-sign-in.md)); they show under the canary accounts' signed-in devices.
 
 ## Gemini is out of credits or over quota
 
@@ -111,8 +116,10 @@ or "Gemini … failed after retries (…)" (quota or outage: tried `AI_MAX_ATTEM
 and 2 minutes apart, then failed); worker `ERROR` lines; `QueuedAnalyses` climbing while `RunningAnalyses`
 stays at `AI_WORKERS` per task.
 
-1. In the Google Cloud console for the production project, check billing (credits, budget, payment
-   method) and Vertex AI quotas for the model in `GEMINI_MODEL` (requests and tokens per minute).
+1. In the Google Cloud console for the project that holds the key in `bodha/staging/gemini-api-key`
+   (production runs the Developer API today) or, on Vertex AI, the production project, check billing
+   (credits, budget, payment method) and the quotas for the model in `GEMINI_MODEL` (requests and tokens
+   per minute).
 2. Restore credits, or raise the quota. Until then, lower `AI_WORKERS` or the worker maximum so
    retries do not burn the remaining quota.
 3. When calls succeed again, notes that were still queued are read on their own. Failed notes are
@@ -146,8 +153,8 @@ queued for more than a few minutes.
    from analyses where status in ('queued', 'running') group by status;
    ```
 
-4. Restart the worker with `aws ecs update-service --cluster bodha-prod --service worker --force-new-deployment`.
-   Raise the worker maximum if the backlog is real demand and the Vertex AI quota allows it.
+4. Restart the worker with `aws ecs update-service --cluster bodha-staging --service worker --force-new-deployment`.
+   If the backlog is real demand and the model quota allows it, raise `AI_WORKERS` or run more worker tasks.
 
 ## Notes stuck reading
 
@@ -176,7 +183,7 @@ decrypt. Each secret is re-encrypted with the first key after the person's next 
 rotates without an outage.
 
 1. Generate a key: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
-2. Store `<new key>,<old key>` as a new version of `bodha/<env>/mfa-encryption-key` and redeploy `api`.
+2. Store `<new key>,<old key>` as a new version of `bodha/staging/mfa-encryption-key` and redeploy `api`.
 3. Wait until everyone with two-step has signed in once (the access log shows sign-ins); anyone who has
    not can have two-step reset by their admin.
 4. Store `<new key>` alone and redeploy. If the old key may have been exposed, skip the wait: store the
@@ -189,7 +196,7 @@ decrypting. A clearinghouse password or key is sealed again only when an admin s
 with it, so the old key stays listed until every SFTP connection has been saved again.
 
 1. Generate a key as above and store `<new key>,<old key>` as a new version of
-   `bodha/<env>/clearinghouse-encryption-key`; redeploy `api` and `worker`.
+   `bodha/staging/clearinghouse-encryption-key`; redeploy `api` and `worker`.
 2. Ask each practice that sends over SFTP to enter its password or key again in Settings, Setup,
    Clearinghouse and save (the access log shows `saved clearinghouse connection`).
 3. Store `<new key>` alone and redeploy both. If the old key may have been exposed, store the new key
@@ -317,9 +324,9 @@ Database to a point in time:
 
 1. RDS console, the instance, "Restore to point in time", a time just before the damage, as a new
    instance with the same parameter group, subnet group, security group and KMS key.
-2. Scale `worker` to zero and put the app in maintenance (ALB fixed response on the HTTPS
-   listener) so nothing writes to the old instance.
-3. Update `bodha/<env>/database-url` and `bodha/<env>/migration-database-url` to the new endpoint (the
+2. Scale `worker` to zero and put the app in maintenance (a fixed-response rule on the load balancer's
+   listener, which CloudFront reaches on port 80) so nothing writes to the old instance.
+3. Update `bodha/staging/database-url` and `bodha/staging/runtime-database-url` to the new endpoint (the
    restored instance keeps both roles), run the `migrate` task (it should be a
    no-op), then redeploy `api` and `worker` and remove the maintenance rule.
 4. Check readiness, then rename the instances so the restored one carries the production name;
@@ -342,8 +349,8 @@ Records are kept at least seven years from creation and seven years after a prac
 ([0038](decisions/0038-seven-year-retention-and-tamper-evidence.md)). A practice that leaves is closed,
 not deleted; its records are purged only once that period has passed.
 
-1. Export what the practice is owed first (approved codes, and the access log from Security, which is
-   itself logged) and record the handover.
+1. Export what the practice is owed first (approved codes, and the access log from Insights, Access log,
+   which is itself logged) and record the handover.
 2. In HQ, end or block the practice, cancel any live subscription, then Close it and type its name. Every
    user is signed out, open provider requests are cancelled, queued reads stop, and HQ activity records
    `practice closed`. Nothing is deleted; HQ shows the date after which it may be purged

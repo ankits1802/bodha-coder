@@ -55,7 +55,7 @@ nowhere else, in both themes.
 
 ## Appearance
 
-Account (practice) and Security (HQ) end with an Appearance panel: Theme (System, Light, Dark), Text size
+Account (practice, before the daily email) and Security (HQ, last) carry an Appearance panel: Theme (System, Light, Dark), Text size
 (Default, Large, Larger) and Reduce motion (System, On, Off), each a segmented control on its own row with
 its name, no helper copy. A choice applies at once, without a reload, is kept on the device and saved for
 the person, so it follows them to every device. Public pages and sign-in use the system settings and
@@ -85,9 +85,9 @@ Pages that belong together are tabs of one entry, not entries of their own.
 
 | Rule | How |
 |---|---|
-| Entries | Admin: Today, Inbox, Upload notes, Review queue, Compliance, Billing, Insights, Settings. Compliance: Today, Inbox, Review queue, Compliance, Insights. Coder: Today, Inbox, Upload notes, Review queue. CDI: Today, Inbox, Review queue. Biller: Today, Inbox, Billing. Viewer: Today, Insights. The practice switcher, search and Help are not entries |
-| Area tabs | Billing (Ready to bill, Remittances), Insights (Overview, Quality, Access log) and Settings (Setup, Team, Plan, Security) show a tab row above the page, drawn like a segmented control (`components/ui/Tabs`). Each tab is its own address; arrow keys, Home and End move focus and Enter or Space opens a tab, so arrowing never loads a page. A role sees only the tabs it may open, the entry opens the first of them, and an area with one tab shows no row |
-| Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, appearance, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, Take the tour and Sign out. A billing-only session offers Sign out only |
+| Entries | Admin: Today, Inbox, Upload notes, Review queue, Compliance, Billing, Insights, Settings. Compliance: Today, Inbox, Upload notes, Review queue, Compliance, Insights. Coder and CDI: Today, Inbox, Upload notes, Review queue. Biller: Today, Inbox, Upload notes, Billing. Viewer: Today, Upload notes, Insights. Every practice role uploads ([0064](decisions/0064-everyone-uploads.md)). HQ: Overview, Practices, Organizations, Spend, Usage, Activity log, Demo requests, Team, Security. The practice switcher, search and Help are not entries (`components/shared/sidebar/navItems.ts`) |
+| Area tabs | Billing (Ready to bill, Remittances), Insights (Overview, Quality, Access log, Usage) and Settings (Setup, Team, Plan, Security) show a tab row above the page, drawn like a segmented control (`components/ui/Tabs`). Each tab is its own address; arrow keys, Home and End move focus and Enter or Space opens a tab, so arrowing never loads a page. A role sees only the tabs it may open, the entry opens the first of them, and an area with one tab shows no row |
+| Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, appearance, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, each organization the person administers, Take the tour and Sign out. A billing-only session offers each organization's Plan and Sign out |
 | Today | The one primary button follows the role: Start reviewing (a coder's own next note, else an unassigned one, else My work), Send questions (the Questions to send view), Review compliance, Start billing; an admin gets Start reviewing once the practice has notes. Open blind coding assigned to the person is listed under Assigned to you, with a link to Training |
 | First steps | Until every step is done, an admin's Today starts with Get set up: providers (Import CSV, Add provider), payers (Add payer), the checks as switches with Save checks, Invite people (one form with a row per person), Use recommended (two-step for every role, sign-out after 7 days without use, the access log kept 7 years) and Choose a plan. Each step's name links to its place in Settings and carries the setup marker; the next open step holds the primary button while the practice has no notes. Hide appears once providers are in |
 | Single sign-on | One panel, the same for a practice (Settings → Security, admins) and an organization (its Single sign-on tab): Bodha's Entity ID and Reply URL as selectable code with Download metadata; the identity provider from a metadata file or URL with its certificates, each with its expiry and Remove; the verified domains, the break-glass admins and the switches as switch rows; Save, Turn off (confirmed) and Test sign-in, whose result lists what arrived. On the sign-in page an email whose domain requires single sign-on hides the password field and turns Continue into Continue with single sign-on, with Use a password below for break-glass admins; an optional domain adds a second Continue with single sign-on button |
@@ -99,6 +99,7 @@ Files chosen or dropped anywhere land on the upload screen ([0059](decisions/005
 
 | Rule | How |
 |---|---|
+| Drop area | Every practice role uploads. The screen opens on a large dashed drop area with an upload mark, "Drop PDF notes here" and Choose files as the primary; on touch screens the drop line is hidden and the button stays. Once files are added, a compact drop strip with Add files sits below the table. An empty queue offers Upload notes ([0064](decisions/0064-everyone-uploads.md)) |
 | All files | One panel: Provider for all, Date of service for all, Place of service for all, Payer for all with its Recommended marker (read after a pause, like optional), and Visit type. A field whose files differ shows Several |
 | Payer | Shown only while the practice lists active payers. Each file row has a Payer list after Place: None, then the payers; a payer page 1 names without enough confidence sits first under Suggested, the rest under All payers. A payer page 1 names clearly, else the provider's usual payer, fills the row as the usual place does. A missing payer never blocks Start reading and never marks a row to check |
 | Read again | In note review, a ready note whose payer changed in a way that alters the read shows Read again with this payer (secondary) beside the payer list; it never reads again by itself |
@@ -146,7 +147,10 @@ rings, never for text. Key hints on grey fills use the soft label colour. Every 
 24 px in both directions or spaced so (WCAG 2.5.8), and a control's accessible name contains its
 visible words: avatar initials are drawn from `data-initials` by CSS, so they are not part of the text
 a speech user reads out. The browser journeys run axe on every page they open and fail on serious or
-critical violations ([0050](decisions/0050-browser-journeys-and-production-canary.md)).
+critical violations ([0050](decisions/0050-browser-journeys-and-production-canary.md)); the accessibility
+sweep visits every screen for every role that can open it, in light, dark and Larger text, and checks
+keyboard reach, the focus indicator and dialog focus as well ([0062](decisions/0062-accessibility-sweep-of-every-screen.md);
+how it runs: [ARCHITECTURE.md](ARCHITECTURE.md#browser-journeys-and-the-production-canary)).
 
 ## Claims to the clearinghouse
 
@@ -169,7 +173,7 @@ one, Ready to bill looks as before.
 | Type | The one place another face appears: the typed name is drawn in the system script font (`--font-signature`), because it stands for handwriting. Every label around it stays in the system font |
 | Keyboard | The segmented control is the first stop; arrows reach Type, so a person can sign with the keyboard alone |
 | First approval | Approving without an adopted signature opens Add your signature in a dialog; adopting it finishes the approval with no other click. Later approvals look exactly as before |
-| Security page | A Signature panel shows the adopted signature with Replace (secondary), which opens the same dialog |
+| Account page | A Signature panel shows the adopted signature with Replace (secondary), which opens the same dialog |
 | Secure link | The provider's signature sits in the addendum or level panel above the confirmation box, with Remember my signature for this practice; Sign and add to note or Send stays the only primary |
 | Verify page | `/verify`: the large title, a code field with Verify (primary), then a panel with Seal verified or Seal does not match as a dot and a word, what no longer matches, the facts as a list, and Check a PDF (secondary), answered with a dot and a word |
 
@@ -226,7 +230,7 @@ The public page at `/` (`features/landing`) follows the rules above with these a
 |---|---|
 | Plan cards | `PlanCard` is shared by `/settings/plan` and `/pricing`: name, price in whole dollars with its unit (per provider / month or / year, Free for the trial length, Custom), and the limits as a list. The Monthly / Annual segmented control names the months a year saves inside the Annual segment |
 | Choosing | On `/settings/plan` the two plans bought online are native radios drawn as cards (the whole card is the label; checked and focus rings from `OPTION_CARD`); one primary "Choose plan" acts on the choice and opens "Pay with" (Card via Stripe, PayPal) only when both are set up. A subscriber sees "Manage billing" instead (primary for Stripe; secondary beside a danger "Cancel at period end" for PayPal, which confirms first). Enterprise is a secondary "Contact sales" |
-| Status | The plan's standing is a dot and a word (Trial, Active, Payment due, Ending, Canceled); usage reads `3 of 5` |
-| Banner | Admins see one inline alert at the top of the content for a trial's last days or a failed payment, with a link to `/plan` and "Hide until tomorrow"; it is not shown on `/plan` |
+| Status | The plan's standing is a dot and a word (Trial, Active, Payment due, Ending, Canceled, Ended; a plan HQ manages reads Active); usage reads `3 of 5`. What moves the standing: [ARCHITECTURE.md](ARCHITECTURE.md#plans-and-billing) |
+| Banner | Admins see one inline alert at the top of the content for a trial's last days or a failed payment, with a link to `/settings/plan` and "Hide until tomorrow"; it is not shown on `/settings/plan` |
 | Pricing page | `/pricing` uses the landing nav (section links point back to `/`) and the landing type scale; "Start free trial" is primary on the trial card only, secondary on the paid cards, and Enterprise opens the demo request. Plan names and monthly prices arrive in the server's HTML with Product and Offer structured data for the two paid plans; when the server cannot reach the API, the cards load in the browser as before |
 

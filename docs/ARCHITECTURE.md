@@ -1,5 +1,67 @@
 # Architecture
 
+## System context
+
+Production as OpenTofu builds it (`infra/tofu/envs/production`, us-east-1). How it is provisioned and
+released: [DEPLOY.md](DEPLOY.md); where it differs from the reference design: [What OpenTofu builds
+today](DEPLOY.md#what-opentofu-builds-today).
+
+```mermaid
+flowchart LR
+    people["Browser: practice staff, HQ, providers on the secure link"]
+    mailers["Practice scanners and mailboxes"]
+    subgraph aws["AWS account, us-east-1"]
+        cdn["CloudFront: www and admin hosts"]
+        alb["Internal load balancer"]
+        web["web: Next.js on ECS Fargate"]
+        api["api: FastAPI on ECS Fargate"]
+        worker["worker: python -m app.worker on ECS Fargate"]
+        rds[("RDS PostgreSQL 17")]
+        docs[("S3 documents bucket, Object Lock")]
+        inbound[("S3 inbound mail bucket")]
+        ses["SES: sending and receiving"]
+        lambda["Lambda: email intake function"]
+        kms["KMS: data key and signing key"]
+        secrets["Secrets Manager"]
+    end
+    gemini["Gemini"]
+    payments["Stripe and PayPal"]
+    sftp["Practice clearinghouse: SFTP"]
+    ehr["Practice EHR: FHIR"]
+
+    people -->|HTTPS| cdn
+    cdn -->|VPC origin| alb
+    alb -->|"/api/*"| api
+    alb -->|every other path| web
+    web -->|"/api proxy, plan catalog"| alb
+    api -->|SQL| rds
+    worker -->|"SQL, job queue"| rds
+    api -->|"PDFs, exports, 837P files"| docs
+    worker -->|"raw replies, intake, sweeps"| docs
+    mailers -->|SMTP over TLS| ses
+    ses -->|raw message| inbound
+    ses -->|invokes| lambda
+    lambda -->|envelope JSON| inbound
+    worker -->|"reads, keeps, deletes"| inbound
+    api -->|email| ses
+    worker -->|"reminders, digests"| ses
+    api -->|seals signed records| kms
+    secrets -->|read at task start| api
+    secrets -->|read at task start| worker
+    worker -->|review of each note| gemini
+    api -->|signature check| gemini
+    api -->|"checkout and portal, webhooks back"| payments
+    worker -->|provider count sync| payments
+    api -->|"host key, test, send"| sftp
+    worker -->|response files| sftp
+    api -->|"save, test"| ehr
+    worker -->|pulls signed notes| ehr
+```
+
+Texts go through SNS once a toll-free number is registered ([DEPLOY.md](DEPLOY.md#text-messages-sns)).
+Tasks reach the internet from public subnets; SFTP and FHIR requests go only to public addresses
+([0051](decisions/0051-clearinghouse-837p.md), [0060](decisions/0060-ehr-connection-over-fhir.md)).
+
 ## Processes
 
 | Process | Command | Does |
@@ -48,6 +110,34 @@ difference. Decision: [0022](decisions/0022-typed-responses.md).
 Nothing a person or the model produced is overwritten or deleted while it must be kept: seven years
 (2557 days) from creation, and seven years after a practice closes. Postgres enforces it with
 triggers, database timestamps, hash chains and a least-privilege runtime role (Records, below).
+
+The main tables of a note's life, by foreign key (accounts and organizations are in
+[Organizations and email domains](#organizations-and-email-domains)):
+
+```mermaid
+erDiagram
+    practices ||--o{ providers : employs
+    practices ||--o{ batches : receives
+    providers ||--o{ batches : "files under"
+    batches ||--o{ notes : holds
+    providers ||--o{ notes : "wrote"
+    notes ||--o{ note_texts : "document and addendum revisions"
+    notes ||--o{ analyses : "model runs"
+    analyses ||--o{ suggestions : proposes
+    notes ||--o{ decisions : "choices on suggestions"
+    notes ||--o{ code_sets : "billed and final revisions"
+    notes ||--o{ note_changes : "in-place changes"
+    notes ||--o{ note_returns : "returns by compliance"
+    notes ||--o{ addendum_requests : "questions to the provider"
+    addendum_requests ||--o| note_texts : "signed addendum"
+    notes ||--o{ approved_claims : "claim frozen at each approval"
+    claim_exports ||--|{ claim_export_items : contains
+    approved_claims ||--o{ claim_export_items : "exported as"
+    claim_submissions ||--|{ claim_submission_items : contains
+    approved_claims ||--o{ claim_submission_items : "sent as"
+    claim_submissions ||--o{ claim_acks : "answered by"
+    practices ||--o{ access_log : "every PHI read, change and export"
+```
 
 | Table | Holds | Revisions |
 |---|---|---|
@@ -153,6 +243,45 @@ retention, so no stored object version can be removed before then without a sepa
 
 ## How a note flows
 
+`notes.status` with the four lanes of a `ready` note (Lanes, below) and the claim states of an exported
+note (Clearinghouse claims, below):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Queued: upload, watched folder, email or EHR pull
+    Queued --> Reading: worker claims the analysis
+    Reading --> Reading: timeout or model outage, analysis queued again in 30 s, 2 or 10 min
+    Reading --> Failed: permanent error or attempts used up
+    Failed --> Queued: Retry
+    Reading --> Ready: review stored and placed
+    state Ready {
+        state "Ready to approve" as ApproveLane
+        state "Needs a coder" as CoderLane
+        state "Questions to send, Waiting on provider" as ProviderLane
+        state "Compliance" as ComplianceLane
+        [*] --> ComplianceLane: flagged, critical audit risk, two levels too high
+        [*] --> ProviderLane: open questions or a sent request
+        [*] --> CoderLane: code changes, or returned
+        [*] --> ApproveLane: matches the note
+        CoderLane --> ProviderLane: Ask provider
+        ApproveLane --> ComplianceLane: Flag
+        CoderLane --> ComplianceLane: Flag
+        ComplianceLane --> CoderLane: Return to coder
+    }
+    Ready --> Queued: signed addendum, replaced PDF or new payer, read again
+    Ready --> Approved: Approve, Confirm or Keep, or Bodha auto
+    Approved --> Ready: Reopen, before export
+    Approved --> Exported: Export claim lines
+    Approved --> Sent: Send claims or Download 837P
+    Sent --> Accepted: 999 and 277CA accept
+    Sent --> Approved: rejected, back to Ready to bill
+    Queued --> Voided: Void
+    Failed --> Voided: Void
+    Ready --> Voided: Void, admins
+    note right of Voided: An admin can also void an approved or exported note. Restore puts the earlier status back.
+    note right of Sent: Sent and Accepted are claim states of an exported note, claim_status.state_of
+```
+
 1. `POST /api/uploads/preview` reads page 1 of each PDF and proposes provider, date of service, place,
    patient and payer with a confidence (Upload matching, below). `POST /api/uploads` takes each file's provider,
    date, place and payer (the form's fields are defaults), validates every file first (placement, PDF signature,
@@ -183,12 +312,86 @@ retention, so no stored object version can be removed before then without a sepa
    URL fragment. The provider confirms a one-time code sent to the contact on file, answers, and
    signs; the answers become a new note text revision and a new analysis is queued.
 
+The review of one note (steps 2 to 4), and the claim checks a person reads beside it:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant W as Worker
+    participant DB as Postgres
+    participant S3 as Documents bucket
+    participant G as Gemini
+    actor C as Person in note review
+    participant API
+    W->>DB: claim the oldest due analysis, FOR UPDATE SKIP LOCKED, note to reading
+    W->>DB: note texts from the latest document revision, latest billed code set
+    W->>S3: the PDF, attached so the model sees the layout
+    W->>DB: enabled checks, MIPS scope with the practice's own measures, the note's payer
+    Note over W: The prompt context holds the sections, setting and place, visit type, billed codes with modifiers and units, the payer plan type and family or none, and practice measures quoted as data
+    W->>G: one bundled structured call for E/M, diagnoses, code review, CDI, audit, MIPS and HCC
+    G-->>W: JSON report
+    opt a required section is missing or invalid
+        W->>G: top-up call for those sections only
+        G-->>W: JSON
+    end
+    W->>S3: raw replies and the exact request, prompt SHA-256 on the analysis
+    W->>DB: analysis succeeded with tokens and cost, earlier runs superseded
+    W->>W: build_findings checks the ICD-10-CM release for the date of service, CMS code list, modifiers, prolonged time, CMS-HCC V28
+    W->>DB: suggestions with reasoning and evidence
+    W->>W: routing.place chooses the lane, estimates.impact_cents
+    W->>DB: lane, reason, headline, impact, status ready
+    opt provider has earned autonomy and the note matches
+        W->>DB: final code set and approved access entry by Bodha (auto)
+    end
+    C->>API: open the note, GET claim-checks
+    API->>DB: current claim from the billed codes and the latest decisions
+    API->>API: NCCI PTP, add-on and MUE edits for the date of service, payer_flags for the note's payer
+    API-->>C: advisory edits and flags, no lane change
+```
+
 ## Records: replaced PDFs, retention, voids and closing a practice
+
+How records are kept for at least seven years and how tampering would show:
+
+```mermaid
+flowchart TB
+    subgraph database["Postgres"]
+        write["api or worker writes a row"]
+        stamp["bodha_stamp: created_at from the database clock"]
+        guards{"UPDATE, DELETE or TRUNCATE on a retained row?"}
+        refused["Refused by bodha_append_only, bodha_write_once, bodha_no_delete, bodha_no_truncate"]
+        chain["bodha_chain: access_log per practice and activity, row_hash = sha256 of prev_hash and content"]
+        verify["Verify audit log on HQ Activity: bodha_verify_audit_log"]
+        write --> stamp --> guards
+        guards -->|"yes, unless the schema owner set bodha.maintenance"| refused
+        write --> chain --> verify
+    end
+    subgraph storage["S3 and backups"]
+        objects["PDFs, raw replies, prompts, exports, 837P files, kept raw mail"]
+        lock["Versioning and Object Lock in governance mode, 2557 days"]
+        instance[("The RDS instance")]
+        pitr["Automated backups: point in time, 35 days"]
+        monthly["AWS Backup: monthly snapshot in the locked records vault, 2557 days"]
+        objects --> lock
+        instance --> pitr
+        instance --> monthly
+    end
+    subgraph purge["Purge floor"]
+        daily["Worker, daily: bodha_purge_access_log and bodha_purge_auth_events"]
+        closed["HQ closes a practice: closed_at stamped, final"]
+        wait["RETENTION_DAYS after closed_at, never under 2557"]
+        purged["HQ purge: access log archived as CSV, bodha_purge_practice, objects removed"]
+        floor["Each purge function refuses a cutoff younger than 2557 days"]
+        closed --> wait --> purged
+        daily --> floor
+        purged --> floor
+    end
+```
 
 | Piece | Flow |
 |---|---|
-| Replace a PDF | `POST /api/notes/{id}/document` (uploaders; `services.records.replace_document`). Refused for an exported or voided note, a note being read, an open provider request, a file that is not a PDF or is too large, the same file, or a file another note already holds. The new PDF is stored under `document-r{n}.pdf` and becomes `notes.file_key`; the old object stays. A `document` text revision `n` holds the extracted text, or an empty string for a scan. Queued analyses of the note become `superseded`, a new one is queued with reason `document`, the note returns to `queued` (an approval is cleared) and the access log records `replaced PDF`. The note view shows the texts from the latest document onward |
-| Void a note | `POST /api/notes/void` `{note_ids, reason}` (uploaders; `services.note_voids.void_notes`): status `voided`, the earlier status in `status_before_void`, `voided_at`, `voided_by`, `void_reason`; queued analyses become `superseded`; one `note_changes` row and `voided note` in the access log per note; every row and file stays. A coder voids only a note never read (`queued` or `failed`, no current analysis); an admin any note but one being read; a note with an open provider request is refused. Voided notes leave every work list, count and batch total; search still finds them. `POST /api/notes/{id}/restore` `{reason}` (admins) puts the earlier status back (queued means a new read), refused while another note holds the same PDF; `uq_notes_practice_file` lets a voided PDF be uploaded again |
+| Replace a PDF | `POST /api/notes/{id}/document` (admins and coders; `services.records.replace_document`). Refused for an exported or voided note, a note being read, an open provider request, a file that is not a PDF or is too large, the same file, or a file another note already holds. The new PDF is stored under `document-r{n}.pdf` and becomes `notes.file_key`; the old object stays. A `document` text revision `n` holds the extracted text, or an empty string for a scan. Queued analyses of the note become `superseded`, a new one is queued with reason `document`, the note returns to `queued` (an approval is cleared) and the access log records `replaced PDF`. The note view shows the texts from the latest document onward |
+| Void a note | `POST /api/notes/void` `{note_ids, reason}` (admins and coders; `services.note_voids.void_notes`): status `voided`, the earlier status in `status_before_void`, `voided_at`, `voided_by`, `void_reason`; queued analyses become `superseded`; one `note_changes` row and `voided note` in the access log per note; every row and file stays. A coder voids only a note never read (`queued` or `failed`, no current analysis); an admin any note but one being read; a note with an open provider request is refused. Voided notes leave every work list, count and batch total; search still finds them. `POST /api/notes/{id}/restore` `{reason}` (admins) puts the earlier status back (queued means a new read), refused while another note holds the same PDF; `uq_notes_practice_file` lets a voided PDF be uploaded again |
 | Access-log retention | `practices.access_log_years`, 7 (default) to 10, set by an admin on Settings, Security (`PUT /api/practice/security`). `services.retention.purge_access_logs(db, now)` asks `bodha_purge_access_log(practice, cutoff)` per practice, the cutoff being the earlier of the start of the practice-local day that many years before `now` and the database time minus `RETENTION_DAYS`; the function refuses a cutoff later than 2557 days before its clock, removes a prefix of the practice's chain and writes an `audit_chain_anchors` row. `bodha_purge_auth_events` removes the practice's `auth_events` before the same cutoff, and those of no practice 2557 days back, under the same floor. The worker calls them once a day |
 | Close a practice | HQ only, after the practice is `ended` or `blocked` and has no live subscription: `POST /api/hq/practices/{id}/close` `{confirm_name}`. `services.retention.close_practice` ends every member's sessions in the practice and their memberships (`ended_at`), cancels open provider requests, supersedes queued analyses, sets status `closed` and `closed_at` (Postgres stamps it; trigger `bodha_closure` keeps it final) and writes `practice closed`. Every row and file stays; sign-in and intake stop because the practice is not open |
 | Purge a practice | HQ only: `POST /api/hq/practices/{id}/purge` `{confirm_name}`, refused until `RETENTION_DAYS` (at least 2557) after `closed_at` by the database clock. `services.retention.purge_practice` writes the access log with its chain columns to `archives/practices/{id}/access-log.csv`, calls `bodha_purge_practice` (`SECURITY DEFINER`; deletes the practice's rows in foreign-key order: signing events, signature adoptions and signatures, with those of the people leaving with it (migration 0017), review records, returns to the coder (migration 0018), note children, addendum requests, approved claims, analyses and code sets, notes, batches, providers, MIPS list, access log, subscription, its inbox items and saved queue views and those of the people leaving with it (migration 0016), its domain join requests and domain claims (migration 0019), the sessions and auth events in it, its memberships, and the accounts, tokens, recovery codes and identities of people who belong to no other practice and administer no organization (their tours go by cascade); it marks the practice `purged`, the row staying), writes `practice purged` with the rows removed and the archive's entry count and SHA-256, and then removes every object under `practices/{id}/` and the stored signatures (`people/{user}/`) of the people it removed. HQ activity is never deleted |
@@ -197,8 +400,8 @@ retention, so no stored object version can be removed before then without a sepa
 | Hash chains | `bodha_chain` links each `access_log` row to the previous one of its practice and each `activity` row to the previous one: `row_hash = sha256(prev_hash || content)`, the content a fixed `jsonb` array of the row's columns with the time in UTC, under an advisory lock per chain. `bodha_verify_audit_log()` reports, per chain, the entries checked, the head sequence and hash, and the first missing sequence, broken link or changed row. `POST /api/hq/audit-log/verify` (HQ) returns that with practice names and writes `audit log verified` |
 | Access log for auditors | `GET /api/access-log` (admins, compliance) with `start`, `end` (practice days, default today), `user_id`, `action`, `note_id`, `patient` (name contains), `birth_date` (through the notes' patient fields), `offset`; answers the actions seen in the range. `POST /api/access-log/export` with the same filters returns CSV with the chain columns, at most 100,000 rows. Each view and export writes `viewed access log` or `exported access log` naming the range and the filters used, never their values |
 | HQ team | `/hq/team` (HQ only): `GET /api/hq/team` lists the HQ accounts (name, email, status, two-step, last active); `POST /api/hq/team` `{name, email}` creates an `invited` HQ user and sends the set-password invite on `ADMIN_URL` (409 when the email is taken in the HQ account space); `POST /api/hq/team/{id}/resend-invite` resends a pending one; `PATCH /api/hq/team/{id}` `{blocked}` deactivates (ending every session) or reactivates. Deactivating yourself is refused (403), and so is deactivating the last active HQ account (409, under a lock on the HQ rows). Each writes `activity`. `python -m app.scripts.invite_hq "Full Name <email>" ...` does the same from a one-off task: it invites new people, resends pending invites, renames an existing HQ account whose name differs and leaves active ones alone, printing one line per person (name, outcome, user id) |
-| HQ administration | `/api/hq/practices` rows carry the first admin (`admin_name`, `admin_email`, `admin_status`; a blocked admin only when no other). `POST /api/hq/practices/{id}/admin-link` resends an invited admin's invite or sends an active admin a password reset; `POST /api/hq/practices/{id}/renew` sets `renews_on` one year after the later of today and the current date. Both write `activity`. `POST /api/hq/practices/{id}/admins` `{name, email, reason}` (`services.hq_admins`) gives an existing practice account an admin membership (or makes an existing member admin, unblocking them), or invites a new email as admin; the practice's other active admins are emailed that HQ added an admin; HQ activity and the practice's access log record `admin appointed by HQ` with the person and the reason. Creating a practice for an email that already has a practice account makes that account its admin instead of refusing |
-| HQ organizations | `/hq/organizations` and `/hq/organizations/{id}` (HQ only): `GET /api/hq/organizations` (rows with practices, combined practices, admins, providers billed, plan, renewal, billing, closing and purge dates), `GET /api/hq/organizations/{id}` (the row, its practices, admins and combined plan), `POST` (name, plan), `PATCH` (name, plan), `POST .../renew` (refused while its subscription is live), `POST`/`DELETE .../practices` (attach, detach), `PUT .../practices/{pid}/billing`, `POST`/`DELETE .../admins` (existing practice accounts, with a reason), `POST .../close` and `.../purge` (`services.organization_retention`); the Spend tab reads `GET /api/hq/expenditure?organization_id=` ([0044](decisions/0044-organizations-and-domain-join.md)) |
+| HQ administration | `/api/hq/practices` rows carry the first admin (`admin_name`, `admin_email`, `admin_status`; a blocked admin only when no other). `POST /api/hq/practices/{id}/admin-link` resends an invited admin's invite or sends an active admin a password reset; `POST /api/hq/practices/{id}/renew` `{until, plan}` sets `renews_on` (a day after today in the practice's time zone, or none for no end date) and, when `plan` is given, the plan in the same transaction; the status follows the plan (`services.hq.status_for_plan`: a `trial` or `active` practice becomes `trial` on the trial plan and `active` on any other; HQ's Edit applies the same rule unless it names a status), refused for a combined practice or while a subscription is live ([0056](decisions/0056-hq-plan-on-renewal-and-status-follows-plan.md)). Both write `activity`. `POST /api/hq/practices/{id}/admins` `{name, email, reason}` (`services.hq_admins`) gives an existing practice account an admin membership (or makes an existing member admin, unblocking them), or invites a new email as admin; the practice's other active admins are emailed that HQ added an admin; HQ activity and the practice's access log record `admin appointed by HQ` with the person and the reason. Creating a practice for an email that already has a practice account makes that account its admin instead of refusing |
+| HQ organizations | `/hq/organizations` and `/hq/organizations/{id}` (HQ only): `GET /api/hq/organizations` (rows with practices, combined practices, admins, providers billed, plan, renewal, billing, closing and purge dates), `GET /api/hq/organizations/{id}` (the row, its practices, admins and combined plan), `POST` (name, plan), `PATCH` (name, plan), `POST .../renew` `{until, plan}` (refused while its subscription is live; every combined practice follows), `POST`/`DELETE .../practices` (attach, detach), `PUT .../practices/{pid}/billing`, `POST`/`DELETE .../admins` (existing practice accounts, with a reason), `POST .../close` and `.../purge` (`services.organization_retention`); the Spend tab reads `GET /api/hq/expenditure?organization_id=` ([0044](decisions/0044-organizations-and-domain-join.md)) |
 | HQ practice page and search | `/hq/practices/{id}` (HQ only): `GET /api/hq/practices/{id}` answers the practices-list row and the places the practice uses (code, name, active, providers whose usual place it is, notes); `GET /api/hq/practices/{id}/people` its live memberships (name, email, role, status, two-step, last active); the Spend tab reads `GET /api/hq/expenditure?practice_id=`, Activity `GET /api/hq/activity?practice_id=`; Renew and Add admin reuse their routes. The practices table, the overview's needs-attention items and the busiest list link to it. `GET /api/hq/search?q=` (2 to 100 characters, wildcards escaped) matches organization and practice names and the emails and names of practice accounts, each person with their practices and roles; Ctrl+K, `/` and the sidebar Search open it on the HQ host |
 | Paging | `/api/batches` (50), `/api/billing` (100, the export still takes up to 500), `/api/hq/activity` (100, filtered by `practice_id` and `action` on the server, with the list of actions) and `/api/access-log` (200) take `offset` and answer `items`, `total`, `offset`, `page_size` |
 
@@ -276,10 +479,10 @@ Decision: [0035](decisions/0035-model-spend-per-provider.md).
 | Remembered filters | the queue lane, assignee and provider filters and the compliance segment are kept per user in local storage (ids and lane names, never the search text) and restored when the screen opens without filters |
 | Tour | `AppShell` (practice and HQ) mounts `TourHost`; `TOUR_VERSION` is 2 since the navigation of [0041](decisions/0041-streamlined-navigation-and-first-day.md). `GET /api/account/tours` (any signed-in user; the rows of their own realm's tour, cached for an hour and emptied at sign-out) decides whether this `TOUR_VERSION` is due, and then the tour opens; Skip or Done sends `PUT /api/account/tours/{tour}` `{version, outcome}` once (403 for the other realm's tour). Steps follow `navFor`, `canSearch` and `canDo`, so a role tours only what it can open (the access log step follows Insights when its tab is there); each area's page opens behind its step and the last step lights the account menu. A billing-only session gets no tour ([0039](decisions/0039-first-sign-in-tour.md)) |
 | Appearance | the root layout reads the `bodha_appearance` cookie and renders `<html>` with `data-theme`, `data-text-size` and `data-motion` (none for System), so the first paint already has the person's theme, text size and motion; public pages use only that cookie and the system settings. Once signed in, `AppearanceSync` reads `GET /api/auth/appearance` (any session, also billing-only) and applies it; the Appearance panel on Account (practice) and Security (HQ) applies a choice at once, writes the cookie, and saves with `PUT /api/auth/appearance`, one request at a time with the latest choice ([0065](decisions/0065-appearance.md)) |
-| Homes | billers start on Ready to bill and compliance on Compliance; other practice roles on Today |
-| Navigation | `components/shared/sidebar/navItems.ts` is the one list of sidebar entries: each has an area, may have `tabs` (each with its own area) and may be hidden for roles that can still open its pages (billers keep the review queue for notes they bill). `navFor(user)` keeps the entries and tabs `canReach` allows and points a tabbed entry at its first tab; `AreaTabs` draws the tab row in the `billing`, `insights` and `settings` layouts. Settings lives under `/settings/{setup,team,plan,security}`, remittances at `/billing/remittances`, quality and blind audits under `/insights/quality`, the access log at `/insights/access-log` (admins and compliance) and the personal account at `/account`. An organization admin opens `/organizations/{id}` (Practices, Insights, Plan, Domains) from the account menu; a billing-only session may open the organization's Plan (`lib/roles.canOpenPath`). `lib/routeRedirects.ts`, read by `next.config.ts`, sends the old addresses there with their query; `/security` sends admins to Settings, Security, compliance to the access log and everyone else to `/account` |
+| Homes | `lib/roles.homeFor`: billers start on Ready to bill, compliance on Compliance, HQ on `/hq`, every other practice role on Today; a billing-only session on `/settings/plan`, or the organization's Plan for an organization admin who is not an admin of the practice |
+| Navigation | `components/shared/sidebar/navItems.ts` is the one list of sidebar entries: each has an area, may have `tabs` (each with its own area) and may be hidden for roles that can still open its pages (billers keep the review queue for notes they bill). `navFor(user)` keeps the entries and tabs `canReach` allows and points a tabbed entry at its first tab; `AreaTabs` draws the tab row in the `billing`, `insights` and `settings` layouts. Settings lives under `/settings/{setup,team,plan,security}`, remittances at `/billing/remittances`, quality and blind audits under `/insights/quality`, the access log at `/insights/access-log` (admins and compliance), usage timing at `/insights/usage` (admins) and the personal account at `/account`. The entries each role sees are in [DESIGN.md](DESIGN.md#navigation). An organization admin opens `/organizations/{id}` (Practices, Insights, Plan, Domains, Single sign-on) from the account menu; a billing-only session may open the organization's Plan (`lib/roles.canOpenPath`). `lib/routeRedirects.ts`, read by `next.config.ts`, sends the old addresses there with their query; `/security` sends admins to Settings, Security, compliance to the access log and everyone else to `/account` |
 | Inbox count | the sidebar asks `GET /api/inbox/count` on each navigation and every two minutes while the page is visible (`components/shared/sidebar/inboxCount.ts`); the inbox screen reports its reads so the count follows at once |
-| Drop anywhere | `AppShell` mounts a drop overlay for roles that can upload (`components/shared/upload-drop`): files dropped on any practice page are handed to `/upload`, which previews and matches the PDFs |
+| Drop anywhere | `AppShell` mounts a drop overlay for every practice role that can reach Upload notes, which is all of them outside a billing-only session ([0064](decisions/0064-everyone-uploads.md); `components/shared/upload-drop`): files dropped on any practice page are handed to `/upload`, which previews and matches the PDFs |
 | Usage timing | `UsageCapture` (practice layout only) counts key, pointer, wheel, scroll and touch inputs in memory and sends batches of at most 50 timing events to `POST /api/usage/events` every 30 seconds and with `keepalive` when the page is hidden; `useUsageTask` times note review, queue, upload and billing export, and `data-usage-step` areas name where a stall happened. Nothing is recorded for HQ or a billing-only session ([0045](decisions/0045-practice-measures-and-usage-timing.md)) |
 
 ## Calendar days
@@ -299,6 +502,26 @@ on provider (`waiting_on_provider`): `GET /api/notes?lane=provider&reason=…` a
 due soon per reason) on the queue page and Today. A note opened from a view carries `lane` and `reason` in its
 address, so next and previous stay inside that view.
 
+How `services.routing.place` sends a note to Compliance and what a compliance decision does
+([0043](decisions/0043-one-findings-list-and-returns.md)):
+
+```mermaid
+flowchart TD
+    placed["Each placement: after a read, a decision, a flag or a return"] --> flagged{"Flagged by a person?"}
+    flagged -->|yes| compliance["Compliance lane, reason flagged"]
+    flagged -->|no| automatic{"Critical audit risk, or the visit billed two or more levels too high?"}
+    automatic -->|"yes, and compliance has not cleared it"| compliance2["Compliance lane, reason audit_risk or levels_too_high"]
+    automatic -->|"no, or already cleared"| rest["Provider, returned, coder or approve lane"]
+    compliance --> decide{"Decision by an admin or compliance, never the person who flagged it"}
+    compliance2 --> decide
+    decide -->|"Confirm, or Keep the billed level with a reason, signed"| approved["Approved: claim snapshot and seal"]
+    decide -->|"Return to coder with one of six reasons"| returned["Coder lane, reason returned: findings to decide again, inbox item to the flagger, else the assignee, else the last decider"]
+    returned --> again{"Every returned finding decided after returned_at?"}
+    again -->|no| refused["Approve answers 409, and bulk approve refuses a returned note"]
+    again -->|yes| cleared["Approve clears returned_at"]
+    returned -->|"Flag again"| compliance
+```
+
 | Piece | Flow |
 |---|---|
 | Return to coder | `POST /api/notes/{id}/compliance` `{decision: "return", return_reason: {reason, note}}` (compliance; 422 without a structured reason). `services.note_returns.return_to_coder` writes a `note_returns` row with the finding keys that need a fresh decision (every change-kind finding with two or more choices, risk adjustment aside), a `note_changes` flag row whose reason reads "Level not supported: …", clears the flag, sets `compliance_cleared_by` and `returned_at` (the row's database time), places the note (coder lane, reason `returned`, headline Returned, never Ready to approve), writes `returned to coder` and tells one person through `inbox.notify` (`compliance_returned`, payload `{reason}` only): whoever flagged it, else the assignee, else the last person who decided a finding on it, never the returner |
@@ -315,6 +538,34 @@ address, so next and previous stay inside that view.
 | Search | `GET /api/search?q=` (note readers, 2 to 100 characters) matches the practice's notes in every status by patient, file or provider name (`ILIKE`, wildcards escaped) or by a code on the latest billed or final code set (`code_forms` normalises `e119` to `E11.9`); 50 results, newest date of service first. The access log records `searched` with the count only |
 
 ## Provider requests
+
+Asking the provider, from the questions to the signed addendum and the next read
+([0005](decisions/0005-provider-addenda.md), [0040](decisions/0040-e-signatures-and-sealed-records.md)):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Coder, CDI or admin
+    participant API
+    participant DB as Postgres
+    participant Msg as Email or text
+    actor P as Provider
+    participant W as Worker
+    A->>API: Ask provider with the chosen questions, non-leading, each with Other
+    API->>DB: addendum request sent, note placed in Waiting on provider
+    API->>Msg: secure link, the token in the URL fragment, no patient details
+    Msg-->>P: link
+    P->>API: open the link on /respond and ask for a code
+    API->>Msg: one-time code to the email or phone on file
+    P->>API: code
+    API-->>P: provider token for this one request
+    P->>API: answers and signature
+    API->>DB: addendum built only from the answers, as a new note text revision
+    API->>DB: provider statement with the wording shown, signing event sealed with KMS
+    API->>DB: note queued with a new analysis, reason addendum, inbox item for the sender
+    W->>DB: read again with the addendum and placed in a lane
+    Note over API,W: Reminders at 12 and 36 hours with a fresh link, admins emailed after 48 hours, an expired link returns the note to its lane
+```
 
 A provider token is bound to one request. After verifying, `GET /api/respond/others` lists the same
 provider's other requests in the same practice that are `sent` and not expired (patient, date of
@@ -337,8 +588,33 @@ set or a two-step reset bumps the version and revokes refresh sessions, and ever
 membership, so a block or removal in one practice ends access there at once and a role change answers
 401 until the client refreshes. Refresh tokens rotate on every use,
 are stored hashed, and expire after 7 days unused (`SESSION_IDLE_MINUTES`) or 30 days in all (`REFRESH_TOKEN_DAYS`); the browser signs out after the practice's chosen inactivity, 15 minutes to 7 days (7 days by default and for HQ; [0063](decisions/0063-longer-sign-in.md)). Two-step verification (TOTP) is required for HQ and
-for the roles each practice chooses (admins by default). Every route states the roles it accepts; every practice query
+for the roles each practice chooses (admins and compliance by default, `practices.mfa_roles`). Every route states the roles it accepts; every practice query
 filters by the caller's practice. Provider sessions are a separate token type valid for one request.
+
+```mermaid
+flowchart TD
+    host{"Which host?"} -->|"admin.bodhaai.co: the hq realm"| hq["HQ accounts only"]
+    host -->|"www.bodhaai.co: the practice realm"| practice["Practice accounts only"]
+    hq --> email["Email on the sign-in page"]
+    practice --> email
+    email --> sso{"POST /api/auth/sso: does the email's domain use single sign-on?"}
+    sso -->|required| saml["SAML: start, identity provider, ACS checks the pinned certificates and the assertion"]
+    sso -->|"optional or none"| methods["Password, or Google, Microsoft or Yahoo over OpenID Connect with PKCE"]
+    sso -->|"required, break-glass admin"| methods
+    saml --> policy["services.auth.sign_in_user"]
+    methods --> policy
+    policy --> landing{"Landing practice open? ensure_practice_open"}
+    landing -->|"practice not trial or active"| refused["Refused"]
+    landing -->|"plan ended, not an admin of the practice or of its organization"| refused
+    landing -->|"open, or plan ended for an admin"| twostep{"Two-step needed? HQ, a break-glass sign-in, the person's own choice, or the role is in the practice's mfa_roles"}
+    twostep -->|"yes, unless the identity provider asserted two-step"| code["Six-digit code, or a recovery code"]
+    twostep -->|no| session["Session: 15-minute access token in memory, refresh cookie rotated on each use"]
+    code --> session
+    session --> limits["Refresh refused after 7 days unused or 30 days in all. The browser signs out after the practice's inactivity choice, 15 minutes to 7 days, 7 days for HQ"]
+    session --> billing{"Plan ended?"}
+    billing -->|yes| billingonly["Billing-only session: /api/auth/me, devices, recovery codes and the plan routes. Organization admins land on the organization's plan"]
+    billing -->|no| work["Every route its role allows, in the session's practice"]
+```
 
 | Piece | How it works |
 |---|---|
@@ -361,6 +637,28 @@ filters by the caller's practice. Provider sessions are a separate token type va
 
 Decision: [0028](decisions/0028-subscription-billing.md).
 
+The plan screen's `standing` (`services.subscriptions.standing_of`) and what moves it. Only verified
+webhooks change a subscription; HQ changes plans and renewals of practices without one:
+
+```mermaid
+stateDiagram-v2
+    [*] --> trial: self sign-up, or HQ adds a trial practice
+    trial --> active: checkout, verified webhook
+    trial --> managed: HQ sets a paid plan, the status follows the plan
+    trial --> ended: trial end date passes
+    managed --> active: checkout
+    managed --> ended: HQ renewal date passes
+    active --> past_due: payment failed, access until BILLING_GRACE_DAYS later
+    past_due --> active: payment recovered
+    past_due --> canceled: retries exhausted
+    active --> canceling: Cancel at period end
+    canceling --> canceled: period ends
+    canceled --> active: new checkout
+    ended --> active: checkout from the billing-only session
+    note right of ended: Once renews_on is before today, whatever the standing, only practice admins and admins of the paying organization sign in, as a billing-only session
+    note left of managed: A combined practice answers its organization's standing and is never checked out on its own
+```
+
 | Piece | How it works |
 |---|---|
 | Catalog | `services/plans.py`: `CATALOG` (trial, essentials, professional, enterprise; prices in cents per active provider, user and provider limits), `price_id(settings, provider, plan, interval)` from `STRIPE_PRICE_*` and `PAYPAL_PLAN_*`, `plan_for_price` (the reverse), `prices_complete`. `GET /api/plans` (public) lists the plans and the processors that are fully configured |
@@ -372,7 +670,7 @@ Decision: [0028](decisions/0028-subscription-billing.md).
 | Quantity | `services/quantity_sync.py`: after provider changes (a background task) and every 15 minutes (worker), each live subscription whose quantity differs from `max(1, active providers)` is updated (Stripe item quantity with prorations, PayPal revise); a failure waits for the next sweep. Writes `subscription quantity changed` |
 | HQ | practices rows carry `billing_provider`, `billing_status`, `billing_interval`, `organization_id`, `organization_name`, `combined_billing`; while a subscription is live HQ cannot change plan or renewal (409), and the practice cannot be closed; a combined practice's plan and renewal follow its organization (409) and it cannot be closed while combined |
 | Combined billing | `services/organization_billing.py` and `organization_plan.py` ([0044](decisions/0044-organizations-and-domain-join.md)): a combined practice carries its organization's plan and renewal (`follow_organization`, again on every change); `plan_limits.governing_subscription(db, practice)` is the organization's subscription for a combined practice; `GET /api/organizations/{id}/plan` (standing, renewal, active providers, each combined practice's usage against its limits), `POST .../plan/checkout` (quantity `max(1, active providers of the combined practices)`; Stripe metadata `organization_id`, PayPal `custom_id` `organization:<id>`), `/portal`, `/cancel`, all accepting a billing-only session; webhooks naming an organization update its row and every combined practice; `GET /api/plan` of a combined practice answers the organization's standing and `organization`, and its checkout is refused (409) |
-| Web | `/settings/plan` (Settings, Plan, admins), the trial and past-due banner at the top of every admin screen (hidden for the day when dismissed, a local-storage date), and the public `/pricing` page, rendered per request on the server from `GET /api/plans` (fetched at `BACKEND_URL`, kept an hour in the Next.js data cache) with Product and Offer JSON-LD, falling back to the browser fetch when the API cannot be reached ([0031](decisions/0031-pricing-rendered-on-the-server.md)); the landing page's pricing teaser reads the catalog the same way ([0034](decisions/0034-sample-review-and-pricing-teaser.md)). While `user.billing_only` is true, `SessionGate` sends every practice page to `/settings/plan` (`lib/roles.ts`: `homeFor`, `canOpenPath`, `canReach`, `canSearch`), the sidebar shows only Settings with its Plan tab and an account menu holding sign out, search is off, and the plan page says the plan has ended; after `?checkout=done` the screen renews the session every four seconds, up to five times, until it is full again |
+| Web | `/settings/plan` (Settings, Plan, admins), the trial and past-due banner at the top of every admin screen (hidden for the day when dismissed, a local-storage date), and the public `/pricing` page, rendered per request on the server from `GET /api/plans` (fetched at `BACKEND_URL`, kept an hour in the Next.js data cache) with Product and Offer JSON-LD, falling back to the browser fetch when the API cannot be reached ([0031](decisions/0031-pricing-rendered-on-the-server.md)); the landing page's pricing teaser reads the catalog the same way ([0034](decisions/0034-sample-review-and-pricing-teaser.md)). While `user.billing_only` is true (the plan ended; the standing does not decide it), `SessionGate` sends every practice page to `/settings/plan`, or an organization admin who is not an admin of the practice to `/organizations/{id}/plan` ([0057](decisions/0057-organization-admins-keep-billing-access.md)) (`lib/roles.ts`: `homeFor`, `canOpenPath`, `canReach`, `canSearch`), the sidebar shows only Settings with its Plan tab and an account menu holding sign out, search is off, and the plan page says the plan has ended; after `?checkout=done` the screen renews the session every four seconds, up to five times, until it is full again |
 
 ## Defensibility
 
@@ -431,7 +729,7 @@ written to `access_log`.
 | NCCI edits | `codes/ncci.py` loads the vendored CMS Medicare NCCI practitioner tables (`ncci_practitioner.meta.json`, checksummed): PTP edits (column 1, column 2, effective and deletion dates, modifier indicator), add-on code edits, and one MUE table per quarter, serving dates of service 2025-10-01 to 2026-12-31. An edit applies from its effective date through its deletion date (the CMS deletion date is the last day in effect); indicator 9 rows never applied and are not kept. `claim_edits(codes, service_date)` returns each PTP pair billed together with whether a modifier may bypass it and which one does (a pair with an E/M code: only 24, 25 or 57 on the E/M line, so 20610-RT with a visit lacking 25 stays an edit; a pair of procedures: 59, XE, XP, XS, XU, 27, 58, 78, 79, 91 on either line, or anatomic modifiers on both lines naming different sites; [0052](decisions/0052-ncci-bypass-by-relationship.md)), each type 1 add-on billed without any of its primaries, and each code whose units exceed the MUE of the quarter of the date of service (MAI 1 per line, MAI 2 and 3 summed over the lines). Dates outside the loaded quarters raise `NcciUnavailable`. The PTP table stays one sorted text block searched by bisection (about 42 MB, loaded on first use) |
 | Payer rules | `codes/payer_rules.py`: `payer_flags(claim, payer_type, place_code, service_date)` applies the rules of the payer's plan type (`medicare`, `medicare_advantage`, `medicaid`, `commercial`) and family (`cigna`, read from the payer name) and returns advisory flags with a severity (`denial`, `risk`, `reminder`); `prolonged_medicare` flags 99417 on a Medicare (denial) or Medicare Advantage (risk) claim. `prolonged_without_visit(codes)` flags 99417 or G2212 without 99205 or 99215 on the claim (denial). `repeated_initial_visit(codes, place_code, service_date, history, specialty=)` flags an initial nursing-facility visit (99304-99306 at POS 31 or 32) when the history holds an earlier one at POS 31 or 32 by the same specialty with no discharge (99315, 99316) from that day to this one: `initial_visit_repeated`, `denial`, with `earlier` |
 | Claim checks | `GET /api/notes/{id}/claim-checks` (note readers): the current claim (`review_actions.current_claim`), its NCCI edits (empty, with `ncci.covers` false, outside the loaded quarters) and the payer flags for `notes.payer` (an id from the practice payer list); without a payer there are no plan flags. `prolonged_without_visit` and `initial_visit_repeated` are added with or without a payer: `claim_checks.stay_history` reads the practice's other notes up to the date of service for the same patient (`remittance_matching.same_person` on the names, and the same date of birth when both notes have one) with each note's visit code (`visit_levels.visit_codes`) and its provider's specialty. Writes `checked claim edits` |
-| Payer after the read | `PUT /api/notes/{id}/payer` (admins, coders, billers) changes `notes.payer` with a `note_changes` row, as before, and never reads the note again. The note view's `analysis.payer_changed` (`payers.payer_changed`) is true when the payer guidance the read used (Medicare, Medicare Advantage or any other plan, with the family, or none; the analysis context's `payer`) differs from the note's payer now. Then a ready note offers Read again with this payer: `POST /api/notes/{id}/retry` (uploaders) queues an analysis with reason `payer` and writes `read again with payer`; for a ready note whose guidance did not change it answers 409 ([0059](decisions/0059-payer-known-when-the-note-is-read.md)) |
+| Payer after the read | `PUT /api/notes/{id}/payer` (admins, coders, billers) changes `notes.payer` with a `note_changes` row, as before, and never reads the note again. The note view's `analysis.payer_changed` (`payers.payer_changed`) is true when the payer guidance the read used (Medicare, Medicare Advantage or any other plan, with the family, or none; the analysis context's `payer`) differs from the note's payer now. Then a ready note offers Read again with this payer: `POST /api/notes/{id}/retry` (admins and coders) queues an analysis with reason `payer` and writes `read again with payer`; for a ready note whose guidance did not change it answers 409 ([0059](decisions/0059-payer-known-when-the-note-is-read.md)) |
 | Claim lines | `POST /api/billing/claim-lines` `{note_ids?, format: json or csv}` (billers): 837P-ready lines for approved notes not yet exported, from the latest approved claim snapshot: date and place of service, rendering NPI and taxonomy, billing NPI (the provider's own NPI when billing as an individual, otherwise the group NPI from provider details), diagnoses A to L without the period (more than 12 is refused), and per procedure line the code, up to four modifiers, units and its diagnosis pointers as letters (below). CSV cells go through `billing.safe_cell`. The notes are marked exported and the download is recorded as a claim export with its stored file (Review audit trail). Writes `built claim lines`. This is the billing screen's one export action, CSV by default or JSON, unchanged by the 837P path (with a clearinghouse set it sits beside Send claims and Download 837P as a secondary button; Clearinghouse claims, below); the claims CSV route (`POST /api/billing/export`) stays for API clients and the screen no longer offers it |
 | Diagnosis pointers | `GET /api/notes/{id}/pointers` (note readers; writes `opened diagnosis pointers`) lists the claim's diagnoses with their letters A to L and each procedure line with its pointers and whether the coder chose them (`stored`): the current claim, or the final code set once approved. `PUT /api/notes/{id}/pointers` `{lines: [{code, pointers}]}` (deciders, ready notes; writes `linked diagnoses`) takes up to four distinct ICD-10-CM codes on the claim per procedure code on the claim, in order; an empty list returns the line to the default. Each line becomes a `decisions` row (`pointers:<code>:<diagnoses>`, choice `accept`); `review_actions.current_claim` puts the latest on its line and drops a diagnosis that has left the claim, and approval writes them into the final code set. Default for a line without one: an add-on (NCCI add-on table for the date of service, `claim_lines.add_on_primaries`) carries its primary's pointers, every other line points to the first four diagnoses (`claim_lines.line_pointers`). In note review each procedure chip in the claim bar shows its letters and opens the pointer editor |
 | Refresh | `python tools/fetch_ncci.py --quarter <YYYYQn> --ptp-version <vNNNr0> --serves-from <date>` downloads the CMS zips (or reads them from `--sources`), checks every row, and writes the artefacts and the manifest with the SHA-256 of each zip, source file and artefact |
@@ -478,6 +776,47 @@ files, beside the claim lines CSV, which is unchanged ([0051](decisions/0051-cle
 
 Decision: [0044](decisions/0044-organizations-and-domain-join.md).
 
+```mermaid
+erDiagram
+    organizations |o--o{ practices : "groups locations"
+    organizations ||--o{ organization_memberships : "has admins"
+    users ||--o{ organization_memberships : administers
+    users ||--o{ practice_memberships : "holds a role in"
+    practices ||--o{ practice_memberships : "has members"
+    users ||--o{ user_identities : "sign-in service subjects"
+    practices ||--o{ domain_claims : "people join this practice"
+    organizations |o--o{ domain_claims : "claimed for the organization"
+    domain_claims ||--o{ domain_join_requests : "requests and automatic joins"
+    practices |o--o| subscriptions : "own subscription"
+    organizations |o--o| subscriptions : "combined subscription"
+    practices |o--o{ sso_connections : "single sign-on"
+    organizations |o--o{ sso_connections : "single sign-on"
+    sso_connections ||--|{ sso_versions : "saved configurations"
+    organizations {
+        string status "active, closed, purged"
+        string plan "copied to combined practices"
+    }
+    practices {
+        string status "trial, active, ended, blocked, closed, purged"
+        boolean combined_billing "the organization pays"
+    }
+    practice_memberships {
+        string role "admin, coder, cdi, compliance, biller, viewer"
+        string status "invited, active, blocked"
+    }
+    organization_memberships {
+        string role "admin"
+    }
+    domain_claims {
+        string verified_via "dns, email"
+        string join_mode "off, request, auto"
+        string join_role "never admin when auto"
+    }
+    users {
+        string realm "hq or practice"
+    }
+```
+
 | Piece | How it works |
 |---|---|
 | Organization admins | `organization_memberships` rows, added and removed by HQ for existing practice accounts. `user.organizations` lists the organizations a practice account administers; every `/api/organizations/{id}` route checks the membership again through `services.organizations.organization_admin` (404 otherwise, HQ included). The person still signs in through a practice membership |
@@ -501,14 +840,35 @@ Decision: [0042](decisions/0042-inbox-upload-matching-queue-views-hq-page.md).
 
 | Piece | How it works |
 |---|---|
-| Preview | `POST /api/uploads/preview` (uploaders, multipart `files`, at most 100): each file passes `check_pdf`, page 1 is read with `adapters.pdf_text.read_first_page_text` (an unreadable or scanned page reads as empty) and `services.upload_matching.match_file` proposes provider, date of service, place and patient, each with a confidence; `overall` is the weakest of provider, date and place and `check` is true below 0.8. `services.payer_matching.payer_in` adds `payer_id`, `payer_confidence` and `payer_confident` (at or above 0.8 the screen applies it, below it only suggests it); the payer never enters `overall` or `check`. Files whose SHA-256 a note of the practice holds come back `duplicate`. No model call; writes `previewed uploads` |
+| Preview | `POST /api/uploads/preview` (every practice role, [0064](decisions/0064-everyone-uploads.md); multipart `files`, at most 100): each file passes `check_pdf`, page 1 is read with `adapters.pdf_text.read_first_page_text` (an unreadable or scanned page reads as empty) and `services.upload_matching.match_file` proposes provider, date of service, place and patient, each with a confidence; `overall` is the weakest of provider, date and place and `check` is true below 0.8. `services.payer_matching.payer_in` adds `payer_id`, `payer_confidence` and `payer_confident` (at or above 0.8 the screen applies it, below it only suggests it); the payer never enters `overall` or `check`. Files whose SHA-256 a note of the practice holds come back `duplicate`. No model call; writes `previewed uploads` |
 | Rules | provider: a valid NPI of an active provider 0.99, first and last name 0.9, a surname no other provider has 0.6. Date: labelled (date of service, DOS, service date, visit date, date of visit, encounter date) 0.95, 0.99 when the file name's date agrees and 0.6 when it does not, else the file name's 0.85, else the first page date not after a birth-date label and not in the future 0.5. Place: labelled by code or name 0.95, else the provider's usual place 0.8. Patient: labelled 0.9, else the file name's 0.85. Payer, among the practice's active payers: a listed name after an insurance label 0.9; a labelled Medicare beneficiary identifier or Medicaid member id with exactly one payer of that plan type 0.85; plan words after a label with exactly one payer of that plan type 0.7; a listed name elsewhere on the page 0.6. A member id is matched, never returned, stored or logged |
 | Submit | `details` carries each file's `provider_id`, `service_date`, `place_code` and `payer` over the form's defaults of the same names; `uploads.grouped_files` makes one batch per provider, date and place in the order first seen, and every file is checked before anything is stored. A file's `payer` key, even `null`, is its choice; without it the form's `payer` applies, then the provider's usual payer. A chosen payer must be active (`{file}: choose an active payer`). The answer lists `batch_ids` (`batch_id` is the first) |
 
 ## Intake
 
 A practice can drop PDFs into its own prefix, email them, or have Bodha pull them from its EHR,
-instead of uploading them.
+instead of uploading them. Every path ends in the same checks and batches as an upload
+(`services.uploads`):
+
+```mermaid
+flowchart LR
+    dropped["Files dropped on any practice page"] --> screen["Upload notes"]
+    chosen["Files chosen on Upload notes"] --> screen
+    screen -->|"POST /api/uploads/preview"| preview["Page-one matching: provider, date, place, patient and payer, each with a confidence"]
+    preview -->|"rows under 0.8 checked by the person, then POST /api/uploads"| store
+    folder["Watched folder: inbox, provider folder, day folder"] -->|"worker, every minute"| renamed["Renamed to the SHA-256 name, provider from the folder, date from the day"]
+    renamed --> store
+    mail["Email to the practice's intake address"] -->|"SES and the intake function, worker every minute"| gate["Known address, spam and virus PASS, DMARC PASS, allowed sender"]
+    gate --> pageone["Page-one matching: provider and date at 0.8 or more"]
+    pageone --> store
+    ehr["Practice EHR over FHIR"] -->|"worker, every 15 minutes per practice"| fhir["Current, final DocumentReference: date from the Encounter, provider by NPI"]
+    fhir --> store
+    store["Upload checks on every file, PDFs stored, one batch per provider, date and place, billed code set revision 1"] --> queued[("A queued analysis per note")]
+```
+
+Each path takes the payer page one names at 0.8 or more (or the one the person chose at upload), else
+the provider's usual payer, else none ([0059](decisions/0059-payer-known-when-the-note-is-read.md)); an
+EHR pull reads no FHIR Coverage yet and takes the provider's usual payer.
 
 ### Watched folder
 
@@ -572,6 +932,24 @@ Decision: [0017](decisions/0017-remittance-intake-query-governance.md).
 Bodha's accuracy is measured by people who cannot see what Bodha suggested, and autonomy is earned from
 those measurements.
 
+The evaluation harness, from the synthetic gold set to the report (runbook in
+[OPERATIONS.md](OPERATIONS.md#load-the-synthetic-gold-set-and-report-its-accuracy)):
+
+```mermaid
+flowchart LR
+    cases["tools/gold_set/cases.json: 48 synthetic notes with expected claims"] --> checks["gold_checks.py: code sets, NCCI, Medicare rules, levels rebuilt from MDM and time"]
+    cases --> render["render_notes.py: one PDF per case"]
+    checks --> loader["load_gold_set.py over the public API"]
+    render --> loader
+    loader -->|"upload with its payer, wait for the read, record the expected claim, approve"| practice["Evaluation practice"]
+    practice -->|"POST /api/quality/eval-cases"| evalcases[("eval_cases: the expected claim")]
+    evalrun["Run evaluation: POST /api/quality/evaluations"] --> worker["Worker: run_next_evaluation reads each case twice, from the claim as uploaded and the payer at approval"]
+    evalcases --> worker
+    worker --> results[("eval_runs: agreement per element and between the reads, raw replies in S3")]
+    results --> report["report_gold_set.py: methods, results by element and group, every disagreement"]
+    results --> screen["Insights, Quality, Evaluation: latest run, trend, dropped"]
+```
+
 | Piece | How it works |
 |---|---|
 | Blind audit | `POST /api/quality/samples` (admin, compliance): `services.audit_samples.draw_sample` draws N approved or exported notes for the practice, a provider or a specialty with a date of service in the period (default 40, 150 for a specialty), shuffled with a seed recorded in the activity entry, and assigns them round-robin to the chosen reviewers, never to the person who approved the note. The draw is one `audit_runs` row (purpose, scope, provider, specialty, period, requested, `created_by`, status) and each note one `audit_samples` row with its `run_id` (`purpose` `audit`) and `result.position`. At drawing time `result.reference` freezes Bodha's suggested claim and the final claim. Bodha's claim is rebuilt from the billed claim as uploaded (`code_sets.original_codes`) and the current analysis's report (`findings.suggested_claim`, every suggestion at its default choice; the analysis id is `analysis_id`), so a coder's billed-code edit never reaches it ([0053](decisions/0053-blind-audits-read-the-claim-as-uploaded.md)). The run id is the sample id of every route. Writes `started blind audit` with the note count and seed |
@@ -603,7 +981,7 @@ Decision: [0045](decisions/0045-practice-measures-and-usage-timing.md).
 |---|---|
 | Stack | the `e2e` CI job runs Postgres, moto (S3), the API and the worker with `GEMINI_BACKEND=demo` and `APP_ENVIRONMENT=staging`, messages written to `MAIL_OUTBOX_DIR`, and `next build` then `next start` with `SITE_URL=http://localhost:3000` and `ADMIN_URL=http://admin.localhost:3000` |
 | Seed | `python -m tests.e2e_seed <scenario> --tour-version N` (`backend/tests/e2e_seed`) prints one JSON line: the synthetic people (password, two-step secret), practices, providers, notes and file paths a journey needs. It calls the API on `E2E_API_URL` with the `Host` of the practice or the HQ site and access tokens from `services.auth.access_token_for`; invitations are accepted from the outbox; the seeding HQ account and two-step secrets are written to the database. Notes are `tests.fakes.text_pdf` pages whose demo outcome is chosen by their text, read by the running worker. It refuses production and any model backend but the demo |
-| Journeys | `frontend/e2e/journeys`, one Playwright file per role's day; `support/` signs in (TOTP computed from the seeded secret), reads the outbox, drops files on the page and runs axe (serious or critical violations fail) |
+| Journeys | `frontend/e2e/journeys` (the `chromium` project), one Playwright file per day of work: self sign-up, the admin's first day, upload and the queue, a coder's review by keyboard, asking the provider, a compliance return, the claim lines export, switching practices and the organization area, appearance, the HQ console, the public verify page and the canary rehearsal. Each test seeds its own synthetic practice; `support/` signs in (TOTP computed from the seeded secret), reads the outbox, drops files on the page and runs axe (serious or critical violations fail). A failed test keeps a trace and a screenshot |
 | Sweep | `frontend/e2e/sweep`: `world.setup.ts` seeds `sweep-day` once; every visit reads that world with a session each worker opens per person (`python -m tests.e2e_seed.sessions`, `services.auth.start_session`). Each screen, role, dialog, phone width and reduced motion is checked with axe, Tab reach and focus indicator of the primary action, and dialog focus trap and return. Three projects run the same files: `sweep` (light, default text), `sweep-dark` (the browser's dark scheme, so System turns dark) and `sweep-larger` (Larger text kept on the device, the person's saved appearance answered with the same); a few screens also run with Reduce motion on and off ([0065](decisions/0065-appearance.md)) |
 | Canary | `frontend/e2e/canary` with its own config, run nightly by `.github/workflows/canary.yml` in `CHARTMATE-APP` against production: readiness on both hosts, then the pages whose reads write nothing, with every API request other than reads and sign-in aborted and reported. The walk (`canary/walks.ts`) is rehearsed in every CI run by `journeys/canary-rehearsal.spec.ts` with seeded canary accounts |
 
