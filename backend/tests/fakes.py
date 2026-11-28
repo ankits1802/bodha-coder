@@ -206,6 +206,16 @@ class FakeTxtResolver:
         return list(self.records.get(domain, []))
 
 
+@dataclass
+class FakeMetadataSource:
+    documents: dict[str, bytes] = field(default_factory=dict)
+    fetched: list[str] = field(default_factory=list)
+
+    async def fetch(self, url: str) -> bytes:
+        self.fetched.append(url)
+        return self.documents[url]
+
+
 FAKE_HOST_KEY = "SHA256:" + "Q" * 43
 
 

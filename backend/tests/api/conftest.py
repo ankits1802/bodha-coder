@@ -23,6 +23,7 @@ from tests.fakes import (
     FakeFileLink,
     FakeImageModel,
     FakeMessenger,
+    FakeMetadataSource,
     FakeProvider,
     FakeStore,
     FakeTxtResolver,
@@ -68,7 +69,7 @@ async def harness(icd_catalog) -> AsyncIterator[Harness]:
     app.state.identity_providers = providers
     billing = {name: FakeBillingProvider(name) for name in BILLING_NAMES}
     app.state.billing_providers = billing
-    dns, link = FakeTxtResolver(), FakeFileLink()
-    app.state.txt_resolver, app.state.file_link = dns, link
+    dns, link, metadata = FakeTxtResolver(), FakeFileLink(), FakeMetadataSource()
+    app.state.txt_resolver, app.state.file_link, app.state.metadata_source = dns, link, metadata
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://app.test") as client:
-        yield Harness(client, store, messenger, providers, billing, image_model, dns, link)
+        yield Harness(client, store, messenger, providers, billing, image_model, dns, link, metadata)

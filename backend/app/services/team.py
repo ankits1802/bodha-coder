@@ -29,6 +29,7 @@ from app.services.memberships import (
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import ensure_user_room
 from app.services.recovery_codes import clear_recovery_codes
+from app.services.sso_policy import signs_in_with_sso
 from app.services.two_step import forget_two_step
 from app.services.user_sessions import end_all_sessions, end_practice_sessions
 
@@ -53,6 +54,7 @@ __all__ = [
 EMAIL_TAKEN = "someone already uses that email"
 ALREADY_MEMBER = "this person is already on the team"
 OWN_ACCESS = "you can't change your own access"
+SIGNS_IN_WITH_SSO = "this person signs in with single sign-on"
 OTHER_PRACTICES = "this person also works in another practice; they reset two-step with a recovery code"
 MEMBER_INVITED = "member invited"
 MEMBER_ADDED = "member added"
@@ -126,12 +128,26 @@ async def bring_in(
 
 
 async def send_invite(db: AsyncSession, messenger: Messenger, user: User, *, team_name: str) -> None:
+    if await signs_in_with_sso(db, user):
+        await _send_sso_invite(messenger, user, team_name=team_name)
+        return
     token = await issue_user_token(db, user, "invite")
     link = f"{realm_url(user.realm)}/set-password#{token}"
     await messenger.email(
         user.email,
         subject=f"Join {team_name} on Bodha Assure",
         body=f"{user.name}, you have been invited to Bodha Assure. Set your password: {link}",
+    )
+
+
+async def _send_sso_invite(messenger: Messenger, user: User, *, team_name: str) -> None:
+    await messenger.email(
+        user.email,
+        subject=f"Join {team_name} on Bodha Assure",
+        body=(
+            f"{user.name}, you have been invited to Bodha Assure. Sign in with your organization's single sign-on: "
+            f"{realm_url(user.realm)}/sign-in"
+        ),
     )
 
 
@@ -232,6 +248,8 @@ async def send_password_reset(db: AsyncSession, messenger: Messenger, actor: Act
     found = await member(db, actor, user_id)
     if found.membership.status == BLOCKED:
         raise Conflict("unblock this member before resetting their password")
+    if await signs_in_with_sso(db, found.person):
+        raise Conflict(SIGNS_IN_WITH_SSO)
     await send_reset_email(db, messenger, found.person)
     record_activity(db, actor, "password reset sent", practice_id=actor.practice_id, detail=found.person.name)
     await db.commit()

@@ -156,13 +156,7 @@ class Session(IdMixin, Base):
     revoked_at: Mapped[datetime | None] = timestamp()
     user_agent: Mapped[str | None] = mapped_column(String(300))
     ip: Mapped[str | None] = mapped_column(String(64))
-
-
-class RecoveryCode(IdMixin, Base):
-    __tablename__ = "recovery_codes"
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    code_hash: Mapped[str] = mapped_column(String(64))
-    used_at: Mapped[datetime | None] = timestamp()
+    idp_two_step: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
 
 
 class RateEvent(IdMixin, Base):

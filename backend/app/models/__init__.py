@@ -5,6 +5,7 @@ from app.models.accounts import (
     PRACTICE_MEMBER_ROLES,
     AuthEvent,
     PracticeMembership,
+    RecoveryCode,
 )
 from app.models.audit import (
     ACCESS_DETAIL_LENGTH,
@@ -107,6 +108,17 @@ from app.models.signatures import (
     SignatureAdoption,
     SigningEvent,
 )
+from app.models.single_sign_on import (
+    ASSERTION_KEY_LENGTH,
+    SSO_ATTRIBUTE_LENGTH,
+    SSO_AUTHOR_LENGTH,
+    SSO_ENTITY_ID_LENGTH,
+    SSO_NEW_PERSON_ROLES,
+    SSO_URL_LENGTH,
+    SsoAssertion,
+    SsoConnection,
+    SsoVersion,
+)
 from app.models.tables import (
     ACCESS_LOG_MAX_YEARS,
     ACCESS_LOG_MIN_YEARS,
@@ -137,7 +149,6 @@ from app.models.tables import (
     Practice,
     Provider,
     RateEvent,
-    RecoveryCode,
     Session,
     Suggestion,
     User,
@@ -161,6 +172,7 @@ __all__ = [
     "USAGES",
     "ACCESS_DETAIL_LENGTH",
     "ACCESS_LOG_MAX_YEARS",
+    "ASSERTION_KEY_LENGTH",
     "ACCESS_LOG_MIN_YEARS",
     "ANALYSIS_STATUSES",
     "ATTESTATION_ANSWERS",
@@ -215,6 +227,11 @@ __all__ = [
     "SIGNER_NAME_LENGTH",
     "SIGNING_EVENTS",
     "SNAPSHOT_SCHEMA_VERSION",
+    "SSO_ATTRIBUTE_LENGTH",
+    "SSO_AUTHOR_LENGTH",
+    "SSO_ENTITY_ID_LENGTH",
+    "SSO_NEW_PERSON_ROLES",
+    "SSO_URL_LENGTH",
     "SUBSCRIPTION_STATUSES",
     "SUGGESTION_KINDS",
     "VERIFICATION_METHODS",
@@ -287,6 +304,9 @@ __all__ = [
     "Signature",
     "SignatureAdoption",
     "SigningEvent",
+    "SsoAssertion",
+    "SsoConnection",
+    "SsoVersion",
     "Subscription",
     "Suggestion",
     "UsageEvent",

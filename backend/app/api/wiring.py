@@ -10,6 +10,7 @@ from app.adapters.dns_txt import TxtResolver
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
+from app.adapters.saml_fetch import MetadataSource
 from app.adapters.seal_keys import RecordSigner
 from app.adapters.sftp import FileLink
 from app.codes.icd import IcdCatalog
@@ -29,6 +30,8 @@ OIDC_COOKIE = "bodha_oidc"
 OIDC_PATH = "/api/auth/{provider}"
 SIGNUP_COOKIE = "bodha_signup"
 SIGNUP_PATH = "/api/signup"
+SAML_COOKIE = "bodha_saml"
+SAML_PATH = "/api/auth/saml/{connection_id}"
 
 
 def store(request: Request) -> ObjectStore:
@@ -62,6 +65,10 @@ def txt_resolver(request: Request) -> TxtResolver:
     return request.app.state.txt_resolver
 
 
+def metadata_source(request: Request) -> MetadataSource:
+    return request.app.state.metadata_source
+
+
 def file_link(request: Request) -> FileLink:
     return request.app.state.file_link
 
@@ -87,10 +94,12 @@ BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_provide
 Sealer = Annotated[RecordSigner, Depends(record_signer)]
 Link = Annotated[FileLink, Depends(file_link)]
 Resolver = Annotated[TxtResolver, Depends(txt_resolver)]
+Metadata = Annotated[MetadataSource, Depends(metadata_source)]
 SigningTools = Annotated[SignatureTools, Depends(signature_tools)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
 OidcCookie = Annotated[str | None, Cookie(alias=OIDC_COOKIE)]
 SignupCookie = Annotated[str | None, Cookie(alias=SIGNUP_COOKIE)]
+SamlCookie = Annotated[str | None, Cookie(alias=SAML_COOKIE)]
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
@@ -124,6 +133,18 @@ def set_signup_cookie(response: Response, value: str, *, minutes: int) -> None:
 
 def clear_signup_cookie(response: Response) -> None:
     _clear_lax_cookie(response, SIGNUP_COOKIE, path=SIGNUP_PATH)
+
+
+def set_saml_cookie(response: Response, connection_id: str, value: str, *, minutes: int) -> None:
+    path = SAML_PATH.format(connection_id=connection_id)
+    response.set_cookie(
+        SAML_COOKIE, value, max_age=minutes * 60, httponly=True, secure=True, samesite="none", path=path
+    )
+
+
+def clear_saml_cookie(response: Response, connection_id: str) -> None:
+    path = SAML_PATH.format(connection_id=connection_id)
+    response.delete_cookie(SAML_COOKIE, path=path, httponly=True, secure=True, samesite="none")
 
 
 def _set_lax_cookie(response: Response, name: str, value: str, *, path: str, minutes: int) -> None:
