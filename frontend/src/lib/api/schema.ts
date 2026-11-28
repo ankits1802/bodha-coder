@@ -6406,7 +6406,7 @@ export interface components {
         };
         SecuritySettings: {
             access_log_years: 7 | 8 | 9 | 10;
-            idle_minutes: 5 | 10 | 15 | 30;
+            idle_minutes: 15 | 30 | 60 | 240 | 480 | 1440 | 10080;
             mfa_roles: ("admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer")[];
         };
         SenderBody: {

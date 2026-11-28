@@ -47,7 +47,7 @@ describe("first-day checklist", () => {
     expect(STEP_LINKS.plan).toBe("/settings/plan");
     expect(RECOMMENDED_SECURITY).toEqual({
       mfa_roles: ["admin", "coder", "cdi", "compliance", "biller", "viewer"],
-      idle_minutes: 15,
+      idle_minutes: 10_080,
       access_log_years: 7,
     });
   });

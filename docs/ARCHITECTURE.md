@@ -334,7 +334,7 @@ Access tokens live in memory and carry a version, the active practice and the ro
 set or a two-step reset bumps the version and revokes refresh sessions, and every request re-reads the
 membership, so a block or removal in one practice ends access there at once and a role change answers
 401 until the client refreshes. Refresh tokens rotate on every use,
-are stored hashed, and expire after inactivity. Two-step verification (TOTP) is required for HQ and
+are stored hashed, and expire after 7 days unused (`SESSION_IDLE_MINUTES`) or 30 days in all (`REFRESH_TOKEN_DAYS`); the browser signs out after the practice's chosen inactivity, 15 minutes to 7 days (7 days by default and for HQ; [0063](decisions/0063-longer-sign-in.md)). Two-step verification (TOTP) is required for HQ and
 for the roles each practice chooses (admins by default). Every route states the roles it accepts; every practice query
 filters by the caller's practice. Provider sessions are a separate token type valid for one request.
 

@@ -348,7 +348,7 @@ under the same email and the same Google, Microsoft or Yahoo account, and signs 
   practice accounts sign in and `/hq` goes to `ADMIN_URL`. Self sign-up exists only on the main host.
 - Session cookies carry no `Domain`, so the two hosts never share a session. HQ users sign in again once
   when `ADMIN_URL` is first set, because their session cookie belongs to the main host.
-- Every HQ account needs two-step verification and is signed out after 15 minutes idle, as before.
+- Every HQ account needs two-step verification and is signed out after 7 days without use ([0063](decisions/0063-longer-sign-in.md)).
 - Invite, resend and deactivate HQ accounts on `/hq/team`, or from a one-off task with the API image:
   `python -m app.scripts.invite_hq "Full Name <email>" ["Full Name <email>" ...]`. It reads its settings
   from the environment (the `api` task's settings, with `ADMIN_URL`), invites new people, resends pending

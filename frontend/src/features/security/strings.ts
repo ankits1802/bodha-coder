@@ -9,7 +9,11 @@ export const SECURITY_TEXT = {
   rolesLabel: "Roles that need two-step verification",
   noRoles: "No one",
   idle: "Sign out after inactivity",
-  minutes: (value: number) => `${value} minutes`,
+  minutes: (value: number) => {
+    if (value % 1440 === 0) return value === 1440 ? "1 day" : `${value / 1440} days`;
+    if (value % 60 === 0) return value === 60 ? "1 hour" : `${value / 60} hours`;
+    return `${value} minutes`;
+  },
   keepLog: "Keep the access log for",
   years: (value: number) => `${value} years`,
   save: "Save",

@@ -12,7 +12,7 @@ import { PRACTICE_ROLES } from "@/lib/roles";
 import { RolesPicker } from "./RolesPicker";
 import { SECURITY_TEXT } from "./strings";
 
-const IDLE_CHOICES: readonly IdleMinutes[] = [5, 10, 15, 30];
+const IDLE_CHOICES: readonly IdleMinutes[] = [15, 30, 60, 240, 480, 1440, 10_080];
 const YEAR_CHOICES: readonly AccessLogYears[] = [7, 8, 9, 10];
 const ROW = "flex min-h-13 items-center justify-between gap-4 border-t border-hairline px-4.5 text-body";
 

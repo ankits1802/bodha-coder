@@ -13,7 +13,7 @@ export const STEP_ORDER: readonly StepKey[] = ["providers", "payers", "checks", 
 
 const PLAN_CHOSEN: readonly PlanStanding[] = ["active", "canceling", "past_due", "managed"];
 
-export const RECOMMENDED_SECURITY: SecuritySettings = { mfa_roles: [...PRACTICE_ROLES], idle_minutes: 15, access_log_years: 7 };
+export const RECOMMENDED_SECURITY: SecuritySettings = { mfa_roles: [...PRACTICE_ROLES], idle_minutes: 10_080, access_log_years: 7 };
 
 export const STEP_LINKS: Readonly<Record<StepKey, string>> = {
   providers: setupSectionPath("providers"),

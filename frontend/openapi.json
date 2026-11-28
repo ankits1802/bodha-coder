@@ -17658,10 +17658,13 @@
           },
           "idle_minutes": {
             "enum": [
-              5,
-              10,
               15,
-              30
+              30,
+              60,
+              240,
+              480,
+              1440,
+              10080
             ],
             "title": "Idle Minutes",
             "type": "integer"

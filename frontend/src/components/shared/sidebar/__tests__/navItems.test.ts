@@ -93,7 +93,7 @@ describe("role-based navigation", () => {
   it("uses the practice inactivity limit, and fifteen minutes for HQ", () => {
     expect(idleMinutesFor("admin", 5)).toBe(5);
     expect(idleMinutesFor("coder", 30)).toBe(30);
-    expect(idleMinutesFor("hq", null)).toBe(15);
-    expect(idleMinutesFor("hq", 30)).toBe(15);
+    expect(idleMinutesFor("hq", null)).toBe(10_080);
+    expect(idleMinutesFor("hq", 30)).toBe(10_080);
   });
 });

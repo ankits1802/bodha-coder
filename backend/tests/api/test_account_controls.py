@@ -71,8 +71,8 @@ async def test_a_practice_can_still_work_on_its_renewal_day(harness):
 async def test_security_settings_have_no_private_messages_switch(harness):
     practice = await practice_with_provider(harness)
     setup = (await harness.client.get("/api/practice/setup", headers=practice.admin)).json()
-    assert setup["security"] == {"mfa_roles": ["admin", "compliance"], "idle_minutes": 15, "access_log_years": 7}
-    old = {"mfa_roles": ["admin"], "idle_minutes": 10, "private_messages": False}
+    assert setup["security"] == {"mfa_roles": ["admin", "compliance"], "idle_minutes": 10_080, "access_log_years": 7}
+    old = {"mfa_roles": ["admin"], "idle_minutes": 30, "private_messages": False}
     assert (await harness.client.put("/api/practice/security", headers=practice.admin, json=old)).status_code == 422
-    new = {"mfa_roles": ["admin"], "idle_minutes": 10}
+    new = {"mfa_roles": ["admin"], "idle_minutes": 30}
     assert (await harness.client.put("/api/practice/security", headers=practice.admin, json=new)).status_code == 204

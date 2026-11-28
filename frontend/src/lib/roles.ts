@@ -137,7 +137,7 @@ export function homeFor(user: SessionUser): string {
   return HOMES[user.role] ?? "/today";
 }
 
-export const HQ_IDLE_MINUTES = 15;
+export const HQ_IDLE_MINUTES = 10_080;
 
 export function idleMinutesFor(role: Role, practiceIdleMinutes: number | null | undefined): number {
   if (role === "hq" || practiceIdleMinutes == null) return HQ_IDLE_MINUTES;

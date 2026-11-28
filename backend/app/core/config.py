@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
 
     access_token_minutes: int = 15
-    refresh_token_days: int = 7
-    session_idle_minutes: int = 30
+    refresh_token_days: int = 30
+    session_idle_minutes: int = 10_080
     mfa_issuer: str = "Bodha Assure"
     mfa_encryption_key: str | None = None
     clearinghouse_encryption_key: str | None = None

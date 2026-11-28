@@ -47,7 +47,7 @@ SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
 }
 PROVIDER_FIELDS = ("name", "credential", "specialty", "npi", "place_code", "email", "phone", "channel")
 CREDENTIALS = ("MD", "DO", "NP", "PA", "CNS", "CNM")
-IDLE_MINUTES_CHOICES = (5, 10, 15, 30)
+IDLE_MINUTES_CHOICES = (15, 30, 60, 240, 480, 1440, 10_080)
 ACCESS_LOG_YEARS = range(ACCESS_LOG_MIN_YEARS, ACCESS_LOG_MAX_YEARS + 1)
 NO_CONTACT = "questions need an email or phone to be sent to"
 OPTIONAL_FIELDS = {PRACTICE_DETAILS: OPTIONAL_DETAIL_FIELDS}

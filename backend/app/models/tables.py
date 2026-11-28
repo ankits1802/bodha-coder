@@ -83,7 +83,7 @@ class Practice(IdMixin, Base):
     setup: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     checks: Mapped[dict[str, bool]] = mapped_column(JSONB, default=lambda: dict(DEFAULT_CHECKS))
     mfa_roles: Mapped[list[str]] = mapped_column(JSONB, default=lambda: ["admin", "compliance"])
-    idle_minutes: Mapped[int] = mapped_column(Integer, default=15)
+    idle_minutes: Mapped[int] = mapped_column(Integer, default=10_080)
     private_messages: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str] = mapped_column(String(64), default=DEFAULT_TIME_ZONE)
     access_log_years: Mapped[int] = mapped_column(Integer, default=ACCESS_LOG_MIN_YEARS)
