@@ -34,7 +34,7 @@ export const PRIVACY_USE = [
     "cookies",
     PRIVACY_HEADINGS,
     paragraph(
-      "We use only cookies and browser storage that are strictly necessary for the Service to work and stay secure. Our website and the Service contain no advertising cookies, analytics or tracking scripts, social media pixels or third-party cookies, and their content security policy blocks scripts from other sites.",
+      "We use only cookies and browser storage that are strictly necessary for the Service to work and stay secure. Our website and the Service contain no advertising cookies, third-party analytics or tracking scripts, social media pixels or third-party cookies, and their content security policy blocks scripts from other sites.",
     ),
     table({
       caption: "Cookies and browser storage we use",

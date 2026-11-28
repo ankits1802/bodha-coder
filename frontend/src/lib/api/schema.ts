@@ -1151,6 +1151,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hq/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hq_figures_api_hq_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inbox": {
         parameters: {
             query?: never;
@@ -1247,6 +1263,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/insights/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["practice_figures_api_insights_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/mips": {
         parameters: {
             query?: never;
@@ -1257,6 +1289,54 @@ export interface paths {
         get: operations["mips_api_mips_get"];
         put: operations["save_mips_api_mips_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mips/practice-measures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add_measure_api_mips_practice_measures_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mips/practice-measures/{measure_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["change_measure_api_mips_practice_measures__measure_key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mips/practice-measures/{measure_key}/retire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["retire_measure_api_mips_practice_measures__measure_key__retire_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3087,6 +3167,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/usage/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["record_events_api_usage_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/verify/{code}": {
         parameters: {
             query?: never;
@@ -4110,6 +4206,12 @@ export interface components {
             name: string;
             status: "invited" | "active" | "blocked";
         };
+        HqUsageFigures: {
+            days: number;
+            practices: number;
+            stalls: components["schemas"]["UsageStallFigures"][];
+            tasks: components["schemas"]["UsageTaskFigures"][];
+        };
         IcdComparison: {
             compared: number;
             extra: string[];
@@ -4348,6 +4450,7 @@ export interface components {
         MipsOverview: {
             addable: components["schemas"]["MipsMeasure"][];
             measure_ids: string[];
+            practice: components["schemas"]["PracticeMeasureView"][];
             standard: components["schemas"]["MipsMeasure"][];
             uses_standard: boolean;
         };
@@ -4752,6 +4855,40 @@ export interface components {
             name: string;
             notes: number;
             outcomes: components["schemas"]["Outcomes"];
+        };
+        PracticeMeasureBody: {
+            identifier?: string | null;
+            in_scope: string;
+            met_codes?: string[];
+            name: string;
+            not_met_codes?: string[];
+            out_of_scope?: string | null;
+            to_meet: string;
+        };
+        PracticeMeasureChangeBody: {
+            expected_version: number;
+            identifier?: string | null;
+            in_scope: string;
+            met_codes?: string[];
+            name: string;
+            not_met_codes?: string[];
+            out_of_scope?: string | null;
+            to_meet: string;
+        };
+        PracticeMeasureRetireBody: {
+            expected_version: number;
+        };
+        PracticeMeasureView: {
+            changed_at: string;
+            identifier: string | null;
+            in_scope: string;
+            key: string;
+            met_codes: string[];
+            name: string;
+            not_met_codes: string[];
+            out_of_scope: string | null;
+            to_meet: string;
+            version: number;
         };
         PracticePurged: {
             access_log_entries: number;
@@ -5467,6 +5604,58 @@ export interface components {
             service_date: string;
             uploaded_by: string;
             visit_type: string;
+        };
+        UsageBatchBody: {
+            events: (components["schemas"]["UsageTaskBody"] | components["schemas"]["UsageStallBody"])[];
+        };
+        UsageFigures: {
+            days: number;
+            stalls: components["schemas"]["UsageStallFigures"][];
+            tasks: components["schemas"]["UsageTaskFigures"][];
+        };
+        UsageSpread: {
+            median: number;
+            p25: number;
+            p75: number;
+        };
+        UsageStallBody: {
+            duration_ms: number;
+            event_id: string;
+            kind: "stall";
+            step: "summary" | "note" | "findings" | "claim" | "dialog" | "history" | "navigation" | "queue" | "upload" | "billing";
+            task: "note_review" | "queue" | "upload" | "billing_export";
+        };
+        UsageStallFigures: {
+            duration: components["schemas"]["UsageSpread"] | null;
+            people: number;
+            role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
+            stalls: number;
+            step: "summary" | "note" | "findings" | "claim" | "dialog" | "history" | "navigation" | "queue" | "upload" | "billing";
+            task: "note_review" | "queue" | "upload" | "billing_export";
+        };
+        UsageTaskBody: {
+            duration_ms: number;
+            event_id: string;
+            first_decision_ms?: number | null;
+            key_decisions?: number;
+            key_inputs?: number;
+            kind: "task";
+            outcome: "completed" | "left";
+            pointer_decisions?: number;
+            pointer_inputs?: number;
+            task: "note_review" | "queue" | "upload" | "billing_export";
+        };
+        UsageTaskFigures: {
+            completed: number;
+            decided: number;
+            duration: components["schemas"]["UsageSpread"] | null;
+            first_decision: components["schemas"]["UsageSpread"] | null;
+            inputs_per_decision: components["schemas"]["UsageSpread"] | null;
+            keyboard_share: number | null;
+            people: number;
+            role: "admin" | "coder" | "cdi" | "compliance" | "biller" | "viewer";
+            task: "note_review" | "queue" | "upload" | "billing_export";
+            tasks: number;
         };
         User: {
             billing_only: boolean;
@@ -9381,6 +9570,61 @@ export interface operations {
             };
         };
     };
+    hq_figures_api_hq_usage_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HqUsageFigures"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     items_api_inbox_get: {
         parameters: {
             query?: {
@@ -9703,6 +9947,61 @@ export interface operations {
             };
         };
     };
+    practice_figures_api_insights_usage_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageFigures"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     mips_api_mips_get: {
         parameters: {
             query?: never;
@@ -9770,6 +10069,179 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MipsChoice"];
                 };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_measure_api_mips_practice_measures_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeMeasureBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeMeasureView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    change_measure_api_mips_practice_measures__measure_key__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                measure_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeMeasureChangeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeMeasureView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    retire_measure_api_mips_practice_measures__measure_key__retire_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                measure_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeMeasureRetireBody"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: {
                 headers: {
@@ -16577,6 +17049,61 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FilePreview"][];
                 };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_events_api_usage_events_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsageBatchBody"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: {
                 headers: {

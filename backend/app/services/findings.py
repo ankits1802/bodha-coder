@@ -32,6 +32,7 @@ MIPS_DETAIL_KEYS = (
     "reportingCodesWithheld",
     "exceptionExclusion",
     "addedByOrganization",
+    "practiceMeasure",
 )
 
 

@@ -1,5 +1,5 @@
 import type { Role } from "@/lib/api/types";
-import { ACCESS_LOG_PATH, SECURITY_SETTINGS_PATH, SETUP_PATH, TEAM_PATH } from "@/lib/paths";
+import { ACCESS_LOG_PATH, SECURITY_SETTINGS_PATH, SETUP_PATH, TEAM_PATH, USAGE_PATH } from "@/lib/paths";
 import { PLAN_PATH, canReach, type Area, type SessionUser } from "@/lib/roles";
 import { SHARED_TEXT } from "../strings";
 import type { NavIconName } from "./NavIcon";
@@ -38,6 +38,7 @@ const INSIGHT_TABS: readonly NavTab[] = [
   { key: "overview", area: "insights", href: "/insights", label: tabs.overview },
   { key: "quality", area: "compliance", href: "/insights/quality", label: tabs.quality },
   { key: "accessLog", area: "accessLog", href: ACCESS_LOG_PATH, label: tabs.accessLog },
+  { key: "usage", area: "usage", href: USAGE_PATH, label: tabs.usage },
 ];
 
 const SETTINGS_TABS: readonly NavTab[] = [
@@ -60,6 +61,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "hqPractices", area: "hq", href: "/hq/practices", label: words.hqPractices, icon: "house", group: "platform" },
   { key: "hqOrganizations", area: "hq", href: "/hq/organizations", label: words.hqOrganizations, icon: "building", group: "platform" },
   { key: "hqSpend", area: "hq", href: "/hq/spend", label: words.hqSpend, icon: "bars", group: "platform" },
+  { key: "hqUsage", area: "hq", href: "/hq/usage", label: words.hqUsage, icon: "timer", group: "platform" },
   { key: "hqActivity", area: "hq", href: "/hq/activity", label: words.hqActivity, icon: "clock", group: "platform" },
   { key: "hqDemos", area: "hq", href: "/hq/demos", label: words.hqDemos, icon: "inbox", group: "platform" },
   { key: "hqTeam", area: "hq", href: "/hq/team", label: words.hqTeam, icon: "people", group: "platform" },

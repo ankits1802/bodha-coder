@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from types import MappingProxyType
 
+from app.ai.prompts.mips_practice import practice_scope_line, render_practice_measures
 from app.ai.prompts.mips_titles import measure_heading, with_measure_headings
 from app.codes.mips_catalog import SPECIFIED_ADDED_MEASURE_IDS, VERIFIED_MIPS_MEASURES, addable_measure
 from app.codes.mips_scope import MipsScope
@@ -227,6 +228,7 @@ def render_scope_addendum(scope: MipsScope) -> str:
     ]
     added = [measure_id for measure_id in scope.measure_ids if addable_measure(measure_id) is not None]
     listed = built_in + [_added_scope_line(measure_id) for measure_id in added]
+    listed += [practice_scope_line(definition) for definition in scope.practice_measures]
     rendered = _SCOPE_ADDENDUM.replace("{{measures}}", "\n".join(listed) or "- none")
     described = [measure_id for measure_id in added if measure_id not in SPECIFIED_ADDED_MEASURE_IDS]
     specified = [measure_id for measure_id in added if measure_id in SPECIFIED_ADDED_MEASURE_IDS]
@@ -236,7 +238,7 @@ def render_scope_addendum(scope: MipsScope) -> str:
     if specified:
         blocks = "".join(_SPECIFIED_BLOCKS[measure_id] for measure_id in specified)
         rendered += _SPECIFIED_MEASURES_ADDENDUM.replace("{{specified}}", blocks)
-    return with_measure_headings(rendered)
+    return with_measure_headings(rendered) + render_practice_measures(scope.practice_measures)
 
 
 def _added_scope_line(measure_id: str) -> str:

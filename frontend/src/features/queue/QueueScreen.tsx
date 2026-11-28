@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
 import { useRememberedParams } from "@/hooks/useRememberedParams";
+import { useUsageTask } from "@/hooks/useUsageTask";
 import type { User } from "@/lib/api/types";
 import { getQueue } from "@/lib/api/work";
 import { formatCount } from "@/lib/format";
@@ -33,6 +34,7 @@ const REMEMBERED = ["lane", "reason", "assigned", "provider_id", "sort"] as cons
 function QueueContent({ user }: { user: User }) {
   const filters = useQueueFilters();
   useRememberedParams("queue", REMEMBERED);
+  useUsageTask("queue");
   const queue = useRemote(`queue:${filters.key}`, () => getQueue(filters.query));
   const selection = useQueueSelection(filters.key);
   const [dialog, setDialog] = useState<BulkDialog>(null);

@@ -1,0 +1,48 @@
+import type { UsageStep, UsageTask } from "@/lib/api/types";
+
+export const USAGE_TEXT = {
+  tasksTitle: "Time per task",
+  tasksLabel: "Time per task by role",
+  stallsTitle: "Stalls",
+  stallsLabel: "Stalls by step and role",
+  noTasks: "No timed tasks in this period",
+  noStalls: "No stalls in this period",
+  tasks: {
+    note_review: "Note review",
+    queue: "Queue",
+    upload: "Upload",
+    billing_export: "Billing export",
+  } satisfies Record<UsageTask, string>,
+  steps: {
+    summary: "Note summary",
+    note: "Note text",
+    findings: "Findings",
+    claim: "Claim bar",
+    dialog: "Dialog",
+    history: "History",
+    navigation: "Top bar",
+    queue: "Queue",
+    upload: "Upload",
+    billing: "Billing",
+  } satisfies Record<UsageStep, string>,
+  taskColumns: {
+    task: "Task",
+    role: "Role",
+    done: "Finished",
+    people: "People",
+    time: "Median time",
+    firstDecision: "To first decision",
+    inputs: "Inputs per decision",
+    keyboard: "By keyboard",
+  },
+  stallColumns: {
+    task: "Task",
+    step: "Where",
+    role: "Role",
+    stalls: "Stalls",
+    people: "People",
+    length: "Median length",
+  },
+  finished: (done: string, total: string) => `${done} of ${total}`,
+  spread: (low: string, high: string) => `${low} – ${high}`,
+} as const;

@@ -61,4 +61,9 @@ export const INSIGHTS_TEXT = {
   loading: "Loading insights",
   empty: "No notes read in this period",
   retry: "Try again",
+  usage: {
+    title: "Usage",
+    loading: "Loading usage",
+    empty: "No usage recorded in this period",
+  },
 } as const;

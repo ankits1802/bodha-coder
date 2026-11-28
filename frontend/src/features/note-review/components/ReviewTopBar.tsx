@@ -43,7 +43,10 @@ function StepButton({ target, label, direction, onGo }: { target: string | null;
 export function ReviewTopBar({ backHref, title, neighbours, onGo, onOpenPdf, pdfPending, replacePdf = null }: ReviewTopBarProps) {
   const mac = useIsMac();
   return (
-    <div className="sticky top-0 z-10 flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-separator bg-surface/95 px-4 py-2">
+    <div
+      data-usage-step="navigation"
+      className="sticky top-0 z-10 flex min-h-14 flex-wrap items-center justify-between gap-3 border-b border-separator bg-surface/95 px-4 py-2"
+    >
       <Link href={backHref} className={buttonClasses("plain", "md", "px-3")}>
         <Chevron direction="left" className="flex-none" />
         {REVIEW_TEXT.backToQueue}

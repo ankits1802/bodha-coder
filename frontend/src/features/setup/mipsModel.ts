@@ -18,6 +18,7 @@ export function initialChoice(overview: MipsOverview): Set<string> {
 
 export function chosenIds(overview: MipsOverview, chosen: Set<string>): string[] {
   const order = [...overview.standard, ...overview.addable].map((measure) => measure.id);
+  order.push(...overview.practice.map((measure) => measure.key));
   return order.filter((id, index) => chosen.has(id) && order.indexOf(id) === index);
 }
 

@@ -39,7 +39,7 @@ describe("role-based navigation", () => {
     expect(keysFor("compliance")).toEqual(["today", "inbox", "queue", "compliance", "insights"]);
     expect(keysFor("biller")).toEqual(["today", "inbox", "billing"]);
     expect(keysFor("viewer")).toEqual(["today", "insights"]);
-    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqOrganizations", "hqSpend", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
+    expect(keysFor("hq")).toEqual(["hqOverview", "hqPractices", "hqOrganizations", "hqSpend", "hqUsage", "hqActivity", "hqDemos", "hqTeam", "hqSecurity"]);
   });
 
   it("keeps the review queue open to billers although their sidebar leaves it out", () => {
@@ -50,7 +50,7 @@ describe("role-based navigation", () => {
   it("gives each area only the tabs the role can open, and points the entry at the first", () => {
     const tabsOf = (role: Role, key: string) => navItemFor({ role, billing_only: false }, key)?.tabs?.map((tab) => tab.key);
     expect(tabsOf("admin", "settings")).toEqual(["setup", "team", "plan", "security"]);
-    expect(tabsOf("admin", "insights")).toEqual(["overview", "quality", "accessLog"]);
+    expect(tabsOf("admin", "insights")).toEqual(["overview", "quality", "accessLog", "usage"]);
     expect(tabsOf("compliance", "insights")).toEqual(["overview", "quality", "accessLog"]);
     expect(tabsOf("viewer", "insights")).toEqual(["overview"]);
     expect(tabsOf("biller", "billing")).toEqual(["readyToBill", "remittances"]);

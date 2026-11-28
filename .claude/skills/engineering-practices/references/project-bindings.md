@@ -23,7 +23,8 @@ backend/app/models/     SQLAlchemy models: the declarative base and the tables
 backend/app/codes/      code sets and their pure logic: ICD-10-CM releases (CDC data with
                         checksummed manifests), E/M families, CPT and HCPCS code list (CMS PFS,
                         codes only), places of service, NPI check digit, CMS MIPS 2026 catalog,
-                        reporting codes and the practice MIPS scope (vendored from ChartMate)
+                        reporting codes and the practice MIPS scope (vendored from ChartMate), and the
+                        rules for measures a practice defines itself
 backend/app/ai/         the model contract (contracts.py), prompts, report models and the
                         bundled review call (review.py); talks to a ModelClient, never to a SDK
 backend/app/adapters/   one adapter per external service: Gemini, S3/R2 object store,
@@ -31,7 +32,7 @@ backend/app/adapters/   one adapter per external service: Gemini, S3/R2 object s
 backend/app/services/   domain services: findings and routing (pure), analysis pipeline,
                         uploads, review actions, addenda, auth, team, practice setup, worklists,
                         billing (claims export), plans and subscriptions, insights, note view, HQ,
-                        audit logs
+                        audit logs, practice measures, usage timing
 backend/app/api/        entry points: request bodies, wiring, routes/<area>.py (thin handlers),
                         responses/<area>.py (the response model of every JSON route)
 backend/app/worker.py   the analysis worker process (python -m app.worker)

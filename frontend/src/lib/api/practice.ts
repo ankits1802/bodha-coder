@@ -8,6 +8,8 @@ import type {
   MipsChoice,
   MipsOverview,
   PayerInput,
+  PracticeMeasure,
+  PracticeMeasureInput,
   PracticeSetup,
   ProviderInput,
   ReviewSettings,
@@ -60,6 +62,28 @@ export function saveMips(measureIds: string[], expectedMeasureIds: string[]): Pr
     method: "PUT",
     body: { measure_ids: measureIds, expected_measure_ids: expectedMeasureIds },
   });
+}
+
+const measurePath = (key: string, suffix = ""): string =>
+  `/api/mips/practice-measures/${encodeURIComponent(key)}${suffix}`;
+
+export function addPracticeMeasure(measure: PracticeMeasureInput): Promise<PracticeMeasure> {
+  return request<PracticeMeasure>("/api/mips/practice-measures", { body: measure });
+}
+
+export function changePracticeMeasure(
+  key: string,
+  measure: PracticeMeasureInput,
+  expectedVersion: number,
+): Promise<PracticeMeasure> {
+  return request<PracticeMeasure>(measurePath(key), {
+    method: "PUT",
+    body: { ...measure, expected_version: expectedVersion },
+  });
+}
+
+export function retirePracticeMeasure(key: string, expectedVersion: number): Promise<void> {
+  return requestNothing(measurePath(key, "/retire"), { body: { expected_version: expectedVersion } });
 }
 
 export function getAccessLog(filters: AccessLogFilters, offset: number): Promise<AccessLogPage> {

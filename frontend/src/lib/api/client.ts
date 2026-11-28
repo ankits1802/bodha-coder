@@ -13,6 +13,7 @@ export interface RequestOptions {
   form?: FormData;
   query?: Record<string, QueryValue>;
   auth?: Auth;
+  keepalive?: boolean;
 }
 
 export interface DownloadedFile {
@@ -66,7 +67,8 @@ function send(path: string, options: RequestOptions, auth: Auth): Promise<Respon
     body = JSON.stringify(options.body);
   }
   const method = options.method ?? (body === undefined ? "GET" : "POST");
-  return fetch(urlFor(path, options.query), { method, headers, body, credentials: "same-origin", cache: "no-store" });
+  const init: RequestInit = { method, headers, body, credentials: "same-origin", cache: "no-store" };
+  return fetch(urlFor(path, options.query), options.keepalive ? { ...init, keepalive: true } : init);
 }
 
 async function performRefresh(): Promise<boolean> {

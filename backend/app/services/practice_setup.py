@@ -7,17 +7,14 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.codes.mips_catalog import ADDABLE_MEASURE_IDS, VERIFIED_MIPS_MEASURES, addable_measure
-from app.codes.mips_scope import validate_measure_ids
 from app.codes.npi import is_valid_npi
 from app.core.deps import Actor
-from app.core.errors import Conflict, Invalid, NotFound
+from app.core.errors import Invalid, NotFound
 from app.core.roles import PRACTICE_ROLES
 from app.models import (
     ACCESS_LOG_MAX_YEARS,
     ACCESS_LOG_MIN_YEARS,
     DEFAULT_CHECKS,
-    MipsList,
     PlaceOfService,
     Practice,
     Provider,
@@ -214,37 +211,3 @@ async def import_providers(db: AsyncSession, actor: Actor, csv_text: str) -> int
     record_activity(db, actor, "providers imported", practice_id=actor.practice_id, detail=f"{len(cleaned)} providers")
     await db.commit()
     return len(cleaned)
-
-
-async def mips_overview(db: AsyncSession, practice_id: str) -> dict[str, Any]:
-    stored = await db.scalar(select(MipsList.measure_ids).where(MipsList.practice_id == practice_id))
-    addable = [
-        {"id": mid, "title": (addable_measure(mid) or {}).get("title", "")} for mid in sorted(ADDABLE_MEASURE_IDS)
-    ]
-    return {
-        "standard": [{"id": mid, "title": title} for mid, (title, _spec) in VERIFIED_MIPS_MEASURES.items()],
-        "addable": addable,
-        "measure_ids": stored or [],
-        "uses_standard": not stored,
-    }
-
-
-async def save_mips(db: AsyncSession, actor: Actor, *, measure_ids: list[str], expected: list[str]) -> list[str]:
-    row = await db.scalar(select(MipsList).where(MipsList.practice_id == actor.practice_id).with_for_update())
-    if (row.measure_ids if row else []) != expected:
-        raise Conflict("someone else changed this list; reload and try again")
-    try:
-        chosen = validate_measure_ids(measure_ids)
-    except ValueError as error:
-        raise Invalid(str(error)) from error
-    if not chosen and row is not None:
-        await db.delete(row)
-    elif row is None and chosen:
-        db.add(MipsList(practice_id=actor.practice_id, measure_ids=chosen, updated_by=actor.user.id))
-    elif row is not None:
-        row.measure_ids, row.updated_by = chosen, actor.user.id
-    record_activity(
-        db, actor, "MIPS list changed", practice_id=actor.practice_id, detail=", ".join(chosen) or "standard list"
-    )
-    await db.commit()
-    return chosen

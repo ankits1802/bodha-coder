@@ -32,6 +32,7 @@ export const PRIVACY_SHARE = [
         ["Sign-in credentials", "Recovery codes and sign-in, invitation and password reset links stop working once used, replaced or expired, and two-step verification secrets once replaced. They are not among the records kept for the periods on this page."],
         ["Service logs", `${SERVICE_FACTS.logYears} years.`],
         ["Security signals", "Removed once the longest rate-limit window, one hour, has passed."],
+        ["Usage timing", "As account information: kept with the practice it was recorded in and removed when its records are purged."],
         ["Email domains and join requests", "As account information: kept with the practice or organization they belong to and removed when its records are purged."],
         ["Demo requests and correspondence", "As long as needed to respond and follow up, and no longer than two years after our last contact."],
         ["Billing records", "As long as tax and accounting law requires, usually seven years."],

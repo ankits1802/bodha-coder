@@ -16,7 +16,11 @@ export interface Decisions {
 
 export const ALL_KEYS = "*";
 
-export function useDecisions(detail: NoteDetail, onReplace: (detail: NoteDetail) => void): Decisions {
+export function useDecisions(
+  detail: NoteDetail,
+  onReplace: (detail: NoteDetail) => void,
+  onDecided: (count: number) => void = () => undefined,
+): Decisions {
   const shown = useRef(detail);
   const confirmed = useRef(detail);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -56,12 +60,16 @@ export function useDecisions(detail: NoteDetail, onReplace: (detail: NoteDetail)
 
   function choose(finding: Finding, choice: Choice, override?: OverrideChoice): void {
     if (finding.choice === choice && !override && !finding.decide_again) return;
+    onDecided(1);
     save(finding.key, { [finding.key]: choice }, override ? { [finding.key]: override } : {});
   }
 
   function acceptAll(findings: Finding[]): void {
     const choices = Object.fromEntries(findings.flatMap((finding) => (finding.allowed[0] ? [[finding.key, finding.allowed[0]]] : [])));
-    if (Object.keys(choices).length > 0) save(ALL_KEYS, choices, {});
+    const count = Object.keys(choices).length;
+    if (count === 0) return;
+    onDecided(count);
+    save(ALL_KEYS, choices, {});
   }
 
   return { choose, acceptAll, idle: () => queue.current, savingKey, error };

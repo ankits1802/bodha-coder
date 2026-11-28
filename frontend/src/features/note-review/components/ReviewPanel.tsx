@@ -86,7 +86,7 @@ export function ReviewPanel({ detail, permissions, actions, decisions, prompt, o
   );
 
   return (
-    <Panel aria-label={REVIEW_TEXT.reviewLabel} className="min-w-0 flex-[1_1_34rem]">
+    <Panel aria-label={REVIEW_TEXT.reviewLabel} className="min-w-0 flex-[1_1_34rem]" data-usage-step="findings">
       <ReviewFilterBar
         filter={view.filter}
         counts={filterCounts(groups)}
@@ -115,7 +115,9 @@ export function ReviewPanel({ detail, permissions, actions, decisions, prompt, o
         onEditing={setEditingCodes}
         onSaved={onReplace}
       />
-      <HistoryDrawer open={view.history} detail={detail} onClose={() => query.update(historyChanges(view, false))} />
+      <div data-usage-step="history" className="contents">
+        <HistoryDrawer open={view.history} detail={detail} onClose={() => query.update(historyChanges(view, false))} />
+      </div>
     </Panel>
   );
 }

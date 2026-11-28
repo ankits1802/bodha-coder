@@ -1,15 +1,9 @@
 import type { InsightDays, Insights, Outcomes } from "@/lib/api/types";
 import { addDays, isWeekend } from "@/lib/dates";
 
-export const INSIGHT_DAYS: readonly InsightDays[] = [7, 14, 30, 90];
 export const DEFAULT_DAYS: InsightDays = 14;
 const AXIS_SEGMENTS = 3;
 const NICE_STEPS = [1, 2, 5, 10];
-
-export function parseDays(value: string | null): InsightDays {
-  const days = Number(value);
-  return INSIGHT_DAYS.find((choice) => choice === days) ?? DEFAULT_DAYS;
-}
 
 export function rangeStart(today: string, days: InsightDays): string {
   return addDays(today, -(days - 1)) ?? today;

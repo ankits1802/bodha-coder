@@ -28,6 +28,7 @@ export const TOUR_TEXT = {
     hqPractices: "Add, renew, block or remove practices.",
     hqOrganizations: "Groups of practices, their admins and combined billing.",
     hqSpend: "AI cost per practice and provider.",
+    hqUsage: "Time spent and stalls across practices.",
     hqActivity: "Every HQ action, by person and day.",
     hqDemos: "Demo requests from the website.",
     hqTeam: "Invite and manage HQ accounts.",

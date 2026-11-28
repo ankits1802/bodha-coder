@@ -10,6 +10,7 @@ import { usePracticeToday } from "@/hooks/usePracticeToday";
 import { getInsights } from "@/lib/api/billing";
 import type { InsightDays, Insights } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
+import { INSIGHT_DAYS, parseDays } from "@/lib/insightPeriods";
 import { useSession } from "@/lib/session/useSession";
 import { DailyBars } from "./components/DailyBars";
 import { EstimateTable } from "./components/EstimateTable";
@@ -17,7 +18,7 @@ import { InsightStats } from "./components/InsightStats";
 import { OutcomeBar } from "./components/OutcomeBar";
 import { PeopleTable } from "./components/PeopleTable";
 import { ProviderTable } from "./components/ProviderTable";
-import { DEFAULT_DAYS, INSIGHT_DAYS, dailyBars, isQuiet, parseDays, rangeStart } from "./insightMath";
+import { DEFAULT_DAYS, dailyBars, isQuiet, rangeStart } from "./insightMath";
 import { INSIGHTS_TEXT } from "./strings";
 import { EmMixPanel } from "@/components/shared/em-mix/EmMixPanel";
 import { QueryMetricsPanel } from "@/components/shared/query-governance/QueryMetricsPanel";
@@ -49,7 +50,7 @@ function InsightsBody({ insights, days, start, today }: InsightsBodyProps) {
 
 function InsightsContent() {
   const params = useQueryParams();
-  const days: InsightDays = parseDays(params.get("days"));
+  const days: InsightDays = parseDays(params.get("days"), DEFAULT_DAYS);
   const today = usePracticeToday();
   const start = rangeStart(today, days);
   const insights = useRemote(`insights:${days}`, () => getInsights(days));

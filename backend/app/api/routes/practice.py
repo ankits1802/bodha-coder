@@ -37,7 +37,7 @@ from app.core.db import SessionFactory
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, COMPLIANCE, PRACTICE_ROLES
 from app.models import PlaceOfService, Provider, utcnow
-from app.services import access_log_reports, first_run, payers, practice_setup, quantity_sync
+from app.services import access_log_reports, first_run, mips_lists, payers, practice_setup, quantity_sync
 from app.services.access_log_reports import AccessLogFilter
 from app.services.provider_details import details_view
 
@@ -182,12 +182,12 @@ async def places(db: Db, actor: Annotated[Actor, Depends(require(*PRACTICE_ROLES
 
 @router.get("/mips", response_model=MipsOverview)
 async def mips(db: Db, actor: Admin) -> dict[str, Any]:
-    return await practice_setup.mips_overview(db, actor.practice_id)
+    return await mips_lists.mips_overview(db, actor.practice_id)
 
 
 @router.put("/mips", response_model=MipsChoice)
 async def save_mips(body: MipsBody, db: Db, actor: Admin) -> dict[str, list[str]]:
-    chosen = await practice_setup.save_mips(db, actor, measure_ids=body.measure_ids, expected=body.expected_measure_ids)
+    chosen = await mips_lists.save_mips(db, actor, measure_ids=body.measure_ids, expected=body.expected_measure_ids)
     return {"measure_ids": chosen}
 
 

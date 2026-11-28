@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
+import { useUsageTask } from "@/hooks/useUsageTask";
 import type { Place, Provider } from "@/lib/api/types";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { setupSectionPath } from "@/lib/paths";
@@ -31,6 +32,7 @@ function UploadContent() {
   const { user } = useSession();
   const references = useRemote("upload:references", loadReferences);
   const [uploads, setUploads] = useState(0);
+  const usage = useUsageTask("upload");
   const setupLink = canUse(user?.role, "setup") ? (
     <ButtonLink href={setupSectionPath("providers")} size="sm">
       {UPLOAD_TEXT.openSetup}
@@ -49,7 +51,10 @@ function UploadContent() {
           <UploadWorkspace
             providers={data.providers}
             places={data.places}
-            onUploaded={() => setUploads((count) => count + 1)}
+            onUploaded={() => {
+              usage.complete();
+              setUploads((count) => count + 1);
+            }}
           />
         )}
       </RemoteView>
