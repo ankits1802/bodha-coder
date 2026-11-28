@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { SHARED_TEXT } from "@/components/shared/strings";
+import { encodeSettings, REPORT_ATTRIBUTE, reportSettingsFrom } from "@/lib/errorReports/settings";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -19,8 +20,9 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
+  const reports = { [REPORT_ATTRIBUTE]: encodeSettings(reportSettingsFrom(process.env)) };
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} {...reports}>
       <body>{children}</body>
     </html>
   );

@@ -10,7 +10,7 @@ export const SUBPROCESSORS: LegalDocumentData = {
   slug: "subprocessors",
   title: LEGAL_TITLES.subprocessors,
   summary: `The companies that process customer data to provide ${product}.`,
-  version: "1.1",
+  version: "1.2",
   updated: "2026-11-28",
   numbered: false,
   sections: [
@@ -28,7 +28,7 @@ export const SUBPROCESSORS: LegalDocumentData = {
         caption: "Subprocessors that may process Customer Data, including PHI",
         columns: COLUMNS,
         rows: [
-          ["Amazon Web Services, Inc.", "Hosting and operations: application containers (ECS on Fargate), database (RDS for PostgreSQL), document storage (S3, encrypted with KMS), encryption keys (KMS), secrets (Secrets Manager), backups (AWS Backup), monitoring and logs (CloudWatch) and account activity logging (CloudTrail)", "All Customer Data, including visit notes and other PHI, account data, and service logs that exclude PHI", `United States (${SERVICE_FACTS.region})`],
+          ["Amazon Web Services, Inc.", "Hosting and operations: application containers (ECS on Fargate), database (RDS for PostgreSQL), document storage (S3, encrypted with KMS), encryption keys (KMS), secrets (Secrets Manager), backups (AWS Backup), monitoring and logs (CloudWatch), account activity logging (CloudTrail), and visit notes that practices email to Bodha (SES email receiving and Lambda)", "All Customer Data, including visit notes and other PHI, account data, and service logs that exclude PHI", `United States (${SERVICE_FACTS.region})`],
           ["Amazon Web Services, Inc.", "Email (SES) and text messages (SNS)", "Recipient email addresses and phone numbers, and messages with sign-in links, codes and secure links but no patient details", `United States (${SERVICE_FACTS.region})`],
           ["Google LLC (Google Cloud)", "Gemini models on Vertex AI that read visit notes and propose reviews", "Note text and PDFs, billed codes and the related PHI sent for each review, and signature images to check before they are kept", `United States (${vertexRegion})`],
         ],
@@ -43,7 +43,6 @@ export const SUBPROCESSORS: LegalDocumentData = {
         rows: [
           ["Stripe, Inc.", "Payment processing", "Billing contact details, organization name and payment details", "United States; may also process in other countries under its own terms"],
           ["PayPal, Inc.", "Payment processing", "Billing contact details, organization name and payment details", "United States; may also process in other countries under its own terms"],
-          ["Vercel Inc.", "Web hosting for test and preview versions of the website", "Website requests to those versions, such as IP addresses and pages visited; synthetic test data only", "United States, with a global edge network"],
           ["Google LLC (Gemini Developer API)", "AI model access for testing", "Synthetic test notes only", "Google’s global infrastructure"],
           ["GitHub, Inc.", "Source code hosting and automated testing", "Source code and synthetic test data; no Customer Data", "United States"],
         ],

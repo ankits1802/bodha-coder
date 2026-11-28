@@ -1,3 +1,4 @@
+import { EmailIntake } from "@/components/shared/intake/EmailIntake";
 import { IntakeSettings } from "@/components/shared/intake/IntakeSettings";
 import type { PracticeSetup } from "@/lib/api/types";
 import type { SetupOpen } from "@/lib/paths";
@@ -31,7 +32,14 @@ function PayersSection({ setup, open, onOpened, onSaved, onSectionSaved }: Omit<
 export function SectionContent(props: SectionContentProps) {
   const { navKey, setup, open, onOpened, onSaved, onSectionSaved } = props;
   if (navKey === "mips") return <MipsSection />;
-  if (navKey === "intake") return <IntakeSettings />;
+  if (navKey === "intake") {
+    return (
+      <>
+        <EmailIntake />
+        <IntakeSettings />
+      </>
+    );
+  }
   if (navKey === "checks") {
     return (
       <>

@@ -95,12 +95,19 @@ class FakeStore:
         return len(doomed)
 
 
+class FakeListingStore(FakeStore):
+    async def list_keys(self, prefix: str) -> list[str]:
+        return sorted(key for key in self.objects if key.startswith(prefix))
+
+
 @dataclass
 class FakeMessenger:
     sent: list[tuple[str, str]] = field(default_factory=list)
+    subjects: list[str] = field(default_factory=list)
 
     async def email(self, to: str, *, subject: str, body: str) -> None:
         self.sent.append((to, body))
+        self.subjects.append(subject)
 
     async def sms(self, to: str, *, body: str) -> None:
         self.sent.append((to, body))

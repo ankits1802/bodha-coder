@@ -181,6 +181,15 @@ export type AccessLogPage = Schemas["AccessLogPage"];
 export type AccessLogPerson = Schemas["AccessLogPerson"];
 export type AccessLogFilters = Schemas["AccessLogExportBody"];
 export type IntakeView = Schemas["IntakeView"];
+export type EmailIntake = Schemas["EmailIntakeView"];
+export type IntakeSender = Schemas["IntakeSenderView"];
+export type PreviousIntakeAddress = Schemas["PreviousIntakeAddress"];
+export type IntakeTest = Schemas["IntakeTestView"];
+export type IntakeMessagePage = Schemas["IntakeMessagePage"];
+export type IntakeMessage = Schemas["IntakeMessageRow"];
+export type IntakeMessageOutcome = IntakeMessage["outcome"];
+export type IntakeRefusal = NonNullable<IntakeMessage["reason"]>;
+export type IntakeFile = Schemas["IntakeMessageFile"];
 
 export type TeamMember = Schemas["TeamMember"];
 export type MemberStatus = TeamMember["status"];

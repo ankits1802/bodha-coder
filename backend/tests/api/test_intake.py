@@ -12,16 +12,11 @@ from app.models import AccessLog, Batch, CodeSet, Note
 from app.services.intake import arrival_name, poll_intake, sort_inbox
 from app.services.intake_settings import IntakeConfig
 from tests.builders import Practice, practice_with_provider
-from tests.fakes import FakeStore, text_pdf
+from tests.fakes import FakeListingStore, text_pdf
 
 NOW = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
 NOTE_NAME = "2026-11-20 - REYES MARISOL - 99214 - Progress.pdf"
 DROPPED_PDF = text_pdf("Follow-up visit for diabetes.")
-
-
-class FakeListingStore(FakeStore):
-    async def list_keys(self, prefix: str) -> list[str]:
-        return sorted(key for key in self.objects if key.startswith(prefix))
 
 
 class UnreadableArrivals(FakeListingStore):

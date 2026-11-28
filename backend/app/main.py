@@ -41,6 +41,7 @@ from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
 from app.api.routes.defensibility import router as defensibility_router
 from app.api.routes.domains import router as domains_router
+from app.api.routes.email_intake import router as email_intake_router
 from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.hq_organizations import router as hq_organizations_router
 from app.api.routes.intake import router as intake_router
@@ -53,6 +54,7 @@ from app.api.routes.review_records import router as review_records_router
 from app.api.routes.usage import router as usage_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
+from app.core.error_reports import start_error_reports
 from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError, Invalid
 from app.core.logging import RequestLog, configure_logging
 
@@ -63,6 +65,7 @@ configure_logging()
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     settings.refuse_unready_signup()
+    start_error_reports(settings, process="api")
     app.state.signer = build_record_signer(settings)
     app.state.store = S3ObjectStore(settings)
     app.state.messenger = build_messenger(settings)
@@ -106,6 +109,7 @@ app.include_router(quality_router, prefix="/api")
 app.include_router(blind_review_router, prefix="/api")
 app.include_router(remittances_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
+app.include_router(email_intake_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
 app.include_router(expenditure_router, prefix="/api")

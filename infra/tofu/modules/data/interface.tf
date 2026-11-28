@@ -53,6 +53,14 @@ variable "mail_domain" {
   type = string
 }
 
+variable "sentry_dsn" {
+  type = string
+}
+
+variable "web_sentry_dsn" {
+  type = string
+}
+
 variable "runtime_password_version" {
   type    = number
   default = 1
@@ -89,7 +97,10 @@ output "database_identifier" {
 }
 
 output "secret_arns" {
-  value = { for name, secret in aws_secretsmanager_secret.this : name => secret.arn }
+  value = merge(
+    { for name, secret in aws_secretsmanager_secret.this : name => secret.arn },
+    { for name, secret in aws_secretsmanager_secret.error_reports : name => secret.arn },
+  )
 }
 
 output "ses_identity_arns" {

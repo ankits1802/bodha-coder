@@ -50,6 +50,18 @@ describe("contentSecurityPolicy", () => {
   });
 });
 
+describe("contentSecurityPolicy with error reports", () => {
+  it("lets the page reach the Sentry ingest host and nothing else new", () => {
+    const policy = contentSecurityPolicy({ nonce: NONCE, development: false, reportOrigin: "https://o1.ingest.us.sentry.io" });
+    expect(directive(policy, "connect-src")).toBe("connect-src 'self' https://o1.ingest.us.sentry.io");
+    expect(directive(policy, "script-src")).toBe("script-src 'self' 'nonce-q1w2e3r4t5y6u7i8o9p0Aa==' 'strict-dynamic'");
+  });
+
+  it.each(["http://o1.ingest.us.sentry.io", "https://o1.ingest.us.sentry.io; script-src *", "*"])("refuses the report origin %j", (reportOrigin) => {
+    expect(() => contentSecurityPolicy({ nonce: NONCE, development: false, reportOrigin })).toThrow("is not an https origin");
+  });
+});
+
 describe("createNonce", () => {
   it("encodes sixteen random bytes as base64", () => {
     expect(createNonce()).toMatch(/^[A-Za-z0-9+/]{22}==$/);

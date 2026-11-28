@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest, type ProxyConfig } from "next/server";
 import { contentSecurityPolicy, createNonce } from "@/lib/contentSecurityPolicy";
+import { ingestOrigin, reportSettingsFrom } from "@/lib/errorReports/settings";
 import { adminUrl, siteUrl } from "@/lib/site";
 
 const POLICY_HEADER = "Content-Security-Policy";
@@ -30,7 +31,12 @@ function otherHost(request: NextRequest): URL | null {
 export function proxy(request: NextRequest): NextResponse {
   const destination = otherHost(request);
   if (destination) return NextResponse.redirect(destination);
-  const policy = contentSecurityPolicy({ nonce: createNonce(), development: process.env.NODE_ENV === "development" });
+  const reports = reportSettingsFrom(process.env);
+  const policy = contentSecurityPolicy({
+    nonce: createNonce(),
+    development: process.env.NODE_ENV === "development",
+    reportOrigin: reports ? ingestOrigin(reports.dsn) : null,
+  });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(POLICY_HEADER, policy);
   const response = NextResponse.next({ request: { headers: requestHeaders } });

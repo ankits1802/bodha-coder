@@ -37,6 +37,7 @@ x-backend: &backend
     AWS_ENDPOINT_URL: *aws-endpoint
     AWS_ACCESS_KEY_ID: test
     AWS_SECRET_ACCESS_KEY: test
+    SENTRY_DSN: ${SENTRY_DSN:-}
   depends_on: &backend-dependencies
     postgres:
       condition: service_healthy
@@ -132,6 +133,7 @@ services:
       BACKEND_URL: http://api:8000
       SITE_URL: ${APP_URL:-http://localhost:3000}
       ADMIN_URL: ${ADMIN_URL:-}
+      WEB_SENTRY_DSN: ${WEB_SENTRY_DSN:-}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

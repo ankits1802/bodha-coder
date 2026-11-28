@@ -14,7 +14,9 @@ provider, or compliance. Approved codes are exported for billing.
 ## How a note moves
 
 1. A coder uploads the day's PDFs for one provider and date of service. Date, patient and billed
-   code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`.
+   code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`. A practice
+   can also drop PDFs in a watched folder, or email them to its own intake address from an allowed
+   sender, in which case provider and date of service are read from page 1.
 2. The worker reads the PDF (text layer, or the PDF itself for scans), runs the review and stores
    the result as a new analysis revision with every suggestion, its reasoning and its evidence.
 3. The note lands in a lane. A coder accepts or keeps each suggestion, asks the provider, flags

@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/random"
       version = "3.9.1"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "2.8.1"
+    }
   }
 
   backend "s3" {
@@ -41,6 +45,7 @@ locals {
   admin_host  = var.domain_name == "" || var.admin_subdomain == "" ? "" : "${var.admin_subdomain}.${var.domain_name}"
   public_url  = var.domain_live ? "https://${local.site_host}" : var.public_url
   sender      = var.domain_mail_live ? "no-reply@${var.domain_name}" : var.mail_from_address
+  intake_host = var.domain_name == "" || var.email_intake_subdomain == "" ? "" : "${var.email_intake_subdomain}.${var.domain_name}"
 }
 
 module "network" {
@@ -63,6 +68,8 @@ module "data" {
   hq_email                   = var.hq_email
   mail_from_address          = var.mail_from_address
   mail_domain                = var.domain_name
+  sentry_dsn                 = var.sentry_dsn
+  web_sentry_dsn             = var.web_sentry_dsn
 }
 
 module "app" {
@@ -98,6 +105,22 @@ module "app" {
   google_client_id       = var.google_client_id
   microsoft_client_id    = var.microsoft_client_id
   yahoo_client_id        = var.yahoo_client_id
+  email_intake_domain    = var.email_intake_live ? local.intake_host : ""
+}
+
+module "intake" {
+  source         = "../../modules/intake"
+  count          = local.intake_host == "" ? 0 : 1
+  name           = local.name
+  account_id     = var.account_id
+  region         = var.region
+  domain         = local.intake_host
+  live           = var.email_intake_live
+  bucket_name    = module.data.bucket_name
+  bucket_arn     = module.data.bucket_arn
+  kms_key_arn    = module.data.kms_key_arn
+  source_file    = "${path.module}/../../../ses_intake/handler.py"
+  retention_days = 2557
 }
 
 module "watch" {
