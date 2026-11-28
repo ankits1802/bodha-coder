@@ -44,19 +44,28 @@ function StatLabel({ label, tone }: { label: string; tone?: StatusTone }) {
   return <span className="text-footnote text-secondary">{label}</span>;
 }
 
+function Pause() {
+  return <span className="sr-only">{PAUSE}</span>;
+}
+
 export function StatCell(props: StatCellProps) {
   const sized = SIZES[useContext(StatSizeContext)];
   const body = (
     <>
       <StatLabel label={props.label} tone={props.tone} />
+      <Pause />
       <span className={`${sized.value} font-semibold tracking-title tabular-nums`}>{props.value}</span>
-      {props.note ? <span className={`${sized.note} text-secondary`}>{props.note}</span> : null}
+      {props.note ? (
+        <>
+          <Pause />
+          <span className={`${sized.note} text-secondary`}>{props.note}</span>
+        </>
+      ) : null}
     </>
   );
   if (props.href == null) return <div className={`${CELL} ${sized.gap}`}>{body}</div>;
-  const name = [props.label, props.value, props.note].filter(Boolean).join(PAUSE);
   return (
-    <Link href={props.href} aria-label={name} className={`${CELL} ${sized.gap} ${LINKED}`}>
+    <Link href={props.href} className={`${CELL} ${sized.gap} ${LINKED}`}>
       {body}
     </Link>
   );

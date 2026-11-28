@@ -12,7 +12,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/hq/practices",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
-vi.mock("@/lib/api/hq", () => ({ getHqPractices: vi.fn(), getHqPlaces: vi.fn() }));
+vi.mock("@/lib/api/hq", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/hq")>()),
+  getHqPractices: vi.fn(),
+  getHqPlaces: vi.fn(),
+}));
 
 const TRIAL: HqPractice = { ...LAKESIDE, id: "p2", name: "Harbor Pediatrics", status: "trial" };
 const BLOCKED: HqPractice = { ...LAKESIDE, id: "p3", name: "Bay Family Medicine", status: "blocked" };
