@@ -97,6 +97,19 @@ Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar.
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
 rings, never for text.
 
+## Claims to the clearinghouse
+
+Shown only once the practice has a clearinghouse ([0049](decisions/0049-clearinghouse-837p.md)); without
+one, Ready to bill looks as before.
+
+| Rule | How |
+|---|---|
+| Actions | SFTP: Send N claims is the one primary, Download 837P and Export claim lines are secondary. Portal upload: Download 837P is the primary. Both act on the page's rows that are ready, or rejected or not delivered with nothing missing |
+| Claim column | A dot and a word: Missing information (warn), Ready, Sending, Sent, Accepted (ok), Rejected and Not delivered (bad), with the first reason or up to three missing items as one secondary line ("Charge for 99214, Payer ID and 2 more"). Details (plain) opens the claim details |
+| Claim details | A dialog: the name as read on the note as its subtitle, patient fields, relationship (Self, Spouse, Child, Other) with the subscriber's name only when not Self, member ID and group number, a payer select only while the payer is missing, what is still missing above the form, Save (primary) |
+| Claim files | A panel under the table: each file's name, claims, total, delivery and acknowledgment counts with Download (secondary), and Upload response (secondary) |
+| Setup | Clearinghouse: identity fields, Test or Production as a segmented control, Portal upload or SFTP; for SFTP the host, user name, password or private key (empty after saving, "Saved" as its placeholder) and folders, Read host key (secondary) showing the fingerprint to accept, Save (primary), Test connection (secondary), Remove (danger, confirmed). Payments: a charges table with Add charge and Import CSV |
+
 ## Signatures
 
 | Rule | How |
