@@ -88,6 +88,7 @@ export const QUEUE_TEXT = {
   pager: "Pages",
   loading: "Loading notes",
   empty: "No notes here",
+  upload: "Upload notes",
   retry: "Try again",
   dueIn: "Due in",
 } as const;

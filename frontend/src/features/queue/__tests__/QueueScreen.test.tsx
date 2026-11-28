@@ -59,6 +59,7 @@ describe("QueueScreen", () => {
     vi.mocked(getQueue).mockResolvedValue(page([]));
     render(<QueueScreen />);
     expect(await screen.findByText("No notes here")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Upload notes" })).toHaveAttribute("href", "/upload");
   });
 
   it("shows the server message and retries on request", async () => {

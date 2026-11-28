@@ -40,7 +40,7 @@ from app.api.responses.note_actions import (
 from app.api.responses.notes import NoteDetail
 from app.api.wiring import Icd, Mail, Sealer, Store
 from app.core.deps import Actor, Db, require
-from app.core.roles import ADMINS, APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, PAYER_SETTERS, UPLOADERS
+from app.core.roles import ADMINS, APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, NOTE_KEEPERS, PAYER_SETTERS
 from app.services import (
     addenda,
     approval,
@@ -80,7 +80,7 @@ async def replace_pdf(
     file: Annotated[UploadFile, File()],
     db: Db,
     store: Store,
-    actor: Annotated[Actor, Depends(require(*UPLOADERS))],
+    actor: Annotated[Actor, Depends(require(*NOTE_KEEPERS))],
 ) -> dict[str, str]:
     document = NewDocument(file.filename or "document.pdf", await file.read())
     note = await replace_document(db, store, actor, note_id, document)
@@ -159,7 +159,7 @@ async def compliance(
 
 @router.post("/void", response_model=VoidedNotes)
 async def void_notes(
-    body: VoidNotesBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+    body: VoidNotesBody, db: Db, actor: Annotated[Actor, Depends(require(*NOTE_KEEPERS))]
 ) -> dict[str, list[str]]:
     return {"voided": await note_voids.void_notes(db, actor, body.note_ids, body.reason)}
 
@@ -174,7 +174,7 @@ async def restore(
 
 @router.put("/{note_id}/visit-type", response_model=NoteState)
 async def change_visit_type(
-    note_id: str, body: VisitTypeBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+    note_id: str, body: VisitTypeBody, db: Db, actor: Annotated[Actor, Depends(require(*NOTE_KEEPERS))]
 ) -> dict[str, str]:
     note = await note_changes.change_visit_type(db, actor, note_id, body.visit_type)
     return {"status": note.status}
@@ -207,13 +207,13 @@ async def reopen_many(body: BulkReopenBody, db: Db, actor: Approver) -> dict[str
 
 @router.post("/retry", response_model=QueuedNotes)
 async def retry_failed(
-    body: RetryBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+    body: RetryBody, db: Db, actor: Annotated[Actor, Depends(require(*NOTE_KEEPERS))]
 ) -> dict[str, list[str]]:
     return {"queued": await review_actions.retry_failed(db, actor, body.note_ids)}
 
 
 @router.post("/{note_id}/retry", response_model=NoteState)
-async def retry(note_id: str, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]) -> dict[str, str]:
+async def retry(note_id: str, db: Db, actor: Annotated[Actor, Depends(require(*NOTE_KEEPERS))]) -> dict[str, str]:
     note = await review_actions.retry(db, actor, note_id)
     return {"status": note.status}
 

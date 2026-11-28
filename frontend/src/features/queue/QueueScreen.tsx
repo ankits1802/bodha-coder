@@ -14,7 +14,7 @@ import { useUsageTask } from "@/hooks/useUsageTask";
 import type { User } from "@/lib/api/types";
 import { getQueue } from "@/lib/api/work";
 import { formatCount } from "@/lib/format";
-import { canDo } from "@/lib/roles";
+import { canDo, canReach } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { BulkActions, type BulkDialog } from "./components/BulkActions";
 import { Pager } from "./components/Pager";
@@ -100,7 +100,19 @@ function QueueContent({ user }: { user: User }) {
       ) : null}
       {actions.notice ? <InlineAlert tone="ok">{actions.notice}</InlineAlert> : null}
       {actions.error ? <InlineAlert tone="bad">{actions.error}</InlineAlert> : null}
-      <RemoteView state={queue.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0} onRetry={queue.reload}>
+      <RemoteView
+        state={queue.state}
+        text={REMOTE_TEXT}
+        isEmpty={(data) => data.items.length === 0}
+        emptyAction={
+          canReach(user, "upload") ? (
+            <ButtonLink href="/upload" variant="primary">
+              {QUEUE_TEXT.upload}
+            </ButtonLink>
+          ) : undefined
+        }
+        onRetry={queue.reload}
+      >
         {(data) => (
           <>
             <QueueTable

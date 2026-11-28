@@ -2,14 +2,12 @@ import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Th } from "@/components/ui/Table";
 import { UPLOAD_TEXT } from "../strings";
 import { countByStatus, type References, type UploadEntry } from "../uploadEntries";
-import { FilePicker } from "./FilePicker";
 import { FileRow, type FileRowActions } from "./FileRow";
 
 interface FileTableProps extends FileRowActions {
   entries: UploadEntry[];
   references: References;
   previewing: boolean;
-  onFiles: (files: File[]) => void;
 }
 
 function Summary({ entries, previewing }: { entries: UploadEntry[]; previewing: boolean }) {
@@ -28,13 +26,12 @@ function Summary({ entries, previewing }: { entries: UploadEntry[]; previewing: 
   );
 }
 
-export function FileTable({ entries, references, previewing, onFiles, ...actions }: FileTableProps) {
+export function FileTable({ entries, references, previewing, ...actions }: FileTableProps) {
   const words = UPLOAD_TEXT.table;
   return (
     <section aria-label={UPLOAD_TEXT.files.label} className="overflow-hidden rounded-panel bg-surface shadow-panel">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-separator px-4 py-3.5">
         <Summary entries={entries} previewing={previewing} />
-        <FilePicker onFiles={onFiles} label={UPLOAD_TEXT.files.add} />
       </div>
       <Table label={UPLOAD_TEXT.files.label} minWidth="xl">
         <thead>

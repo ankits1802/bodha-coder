@@ -41,12 +41,13 @@ describe("tourStepsFor", () => {
   });
 
   it("gives every other practice role exactly the areas its sidebar shows", () => {
-    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "queue", "decide", "evidence", "ask", "help", "replay"]);
+    expect(keysFor("cdi")).toEqual(["welcome", "search", "today", "inbox", "upload", "queue", "decide", "evidence", "ask", "help", "replay"]);
     expect(keysFor("compliance")).toEqual([
       "welcome",
       "search",
       "today",
       "inbox",
+      "upload",
       "queue",
       "decide",
       "evidence",
@@ -56,8 +57,8 @@ describe("tourStepsFor", () => {
       "help",
       "replay",
     ]);
-    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "billing", "help", "replay"]);
-    expect(keysFor("viewer")).toEqual(["welcome", "today", "insights", "help", "replay"]);
+    expect(keysFor("biller")).toEqual(["welcome", "search", "today", "inbox", "upload", "billing", "help", "replay"]);
+    expect(keysFor("viewer")).toEqual(["welcome", "today", "upload", "insights", "help", "replay"]);
   });
 
   it("gives HQ a short tour of the console", () => {

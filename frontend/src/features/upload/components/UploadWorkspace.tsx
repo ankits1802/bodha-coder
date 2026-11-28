@@ -10,7 +10,7 @@ import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
 import { canStartUpload, includedEntries, makeUploadForm, type References } from "../uploadEntries";
 import { useUploadEntries } from "../useUploadEntries";
-import { EmptyDrop } from "./FilePicker";
+import { DropZone } from "./FilePicker";
 import { FileTable } from "./FileTable";
 import { PlanPanel } from "./PlanPanel";
 import { UploadBar } from "./UploadBar";
@@ -54,7 +54,7 @@ export function UploadWorkspace({ references, onUploaded }: UploadWorkspaceProps
     return (
       <>
         {files.skipped.length > 0 ? <InlineAlert tone="warn">{UPLOAD_TEXT.files.onlyPdf(files.skipped.join(", "))}</InlineAlert> : null}
-        <EmptyDrop onFiles={addFiles} />
+        <DropZone onFiles={addFiles} />
       </>
     );
   }
@@ -75,13 +75,13 @@ export function UploadWorkspace({ references, onUploaded }: UploadWorkspaceProps
         entries={files.entries}
         references={references}
         previewing={files.previewing}
-        onFiles={addFiles}
         onUpdate={files.update}
         onPlace={files.place}
         onPayer={files.choosePayer}
         onConfirm={files.confirm}
         onRemove={files.remove}
       />
+      <DropZone onFiles={addFiles} compact />
       <UploadBar
         count={included.length}
         canStart={canStartUpload(files.entries) && !files.previewing}

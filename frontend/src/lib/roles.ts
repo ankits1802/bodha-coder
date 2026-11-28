@@ -8,7 +8,7 @@ export const PLAN_PATH = "/settings/plan";
 export const PRACTICE_ROLES: readonly PracticeRole[] = ["admin", "coder", "cdi", "compliance", "biller", "viewer"];
 const HQ: readonly Role[] = ["hq"];
 const ADMINS: readonly Role[] = ["admin"];
-const UPLOADERS: readonly Role[] = ["admin", "coder"];
+const NOTE_KEEPERS: readonly Role[] = ["admin", "coder"];
 const NOTE_READERS: readonly Role[] = ["admin", "coder", "cdi", "compliance", "biller"];
 const DECIDERS: readonly Role[] = ["admin", "coder", "cdi", "compliance"];
 const APPROVERS: readonly Role[] = ["admin", "coder", "compliance"];
@@ -57,7 +57,7 @@ export type Action =
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
   inbox: NOTE_READERS,
-  upload: UPLOADERS,
+  upload: PRACTICE_ROLES,
   queue: NOTE_READERS,
   compliance: COMPLIANCE,
   billing: BILLERS,
@@ -79,9 +79,9 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   approve: APPROVERS,
   ask: ASKERS,
   complianceDecision: COMPLIANCE,
-  retry: UPLOADERS,
+  retry: NOTE_KEEPERS,
   flag: DECIDERS,
-  manageNotes: UPLOADERS,
+  manageNotes: NOTE_KEEPERS,
   voidAnyNote: ADMINS,
   restoreNote: ADMINS,
   readAccessLog: COMPLIANCE,

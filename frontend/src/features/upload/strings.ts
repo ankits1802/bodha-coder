@@ -30,6 +30,8 @@ export const UPLOAD_TEXT = {
     reading: "Reading files",
     add: "Add files",
     drop: "Drop PDF notes here",
+    dropMore: "Drop more PDF notes here",
+    addMore: "Add more files",
     choose: "Choose files",
     onlyPdf: (names: string) => `Only PDF files can be added. Skipped: ${names}`,
     previewFailed: "The files could not be read. Choose the provider, date and place for each.",
