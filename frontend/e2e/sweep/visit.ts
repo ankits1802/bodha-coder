@@ -13,9 +13,9 @@ export interface Screen {
   ready?: (page: Page) => Locator;
 }
 
-export async function settle(page: Page, ready?: Locator): Promise<void> {
+export async function settle(page: Page, ready?: Locator, within: Page | Locator = page): Promise<void> {
   await expect(ready ?? page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-  await expect(page.locator(BUSY)).toHaveCount(0);
+  await expect(within.locator(BUSY)).toHaveCount(0);
   await page.evaluate(() =>
     Promise.all(
       document

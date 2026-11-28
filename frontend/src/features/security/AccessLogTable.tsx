@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyValue } from "@/components/ui/EmptyValue";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { AccessLogEntry } from "@/lib/api/types";
 import { FORMAT_WORDS, formatDateTime } from "@/lib/format";
@@ -40,7 +41,7 @@ export function AccessLogTable({ entries }: { entries: AccessLogEntry[] }) {
                   {words.openNote}
                 </Link>
               ) : (
-                <span className="text-quaternary">{FORMAT_WORDS.empty}</span>
+                <EmptyValue />
               )}
             </Td>
             <Td className="text-secondary">{deviceOf(entry)}</Td>

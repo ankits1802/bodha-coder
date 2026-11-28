@@ -13,7 +13,7 @@ interface Look {
   note?: NoteKey;
 }
 
-const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+const PHONE = { viewport: { width: 390, height: 844 }, hasTouch: true };
 
 const PHONE_LOOKS: readonly Look[] = [
   { name: "landing", who: null, path: "/" },

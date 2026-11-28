@@ -37,7 +37,7 @@ export async function checkDialog(page: Page, shown: DialogCase): Promise<void> 
   const trigger = shown.trigger(page, world);
   const dialog = shown.dialog(page, world);
   await openByKeyboard(page, trigger, dialog);
-  await settle(page, dialog);
+  await settle(page, dialog, dialog);
   await expectAccessible(page);
   await expectFocusTrapped(page, dialog);
   await shown.inside?.(page, dialog);

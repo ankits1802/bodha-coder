@@ -1,9 +1,10 @@
 import { CodeChip } from "@/components/ui/CodeChip";
+import { EmptyValue } from "@/components/ui/EmptyValue";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { AgreementSide, ElementComparison, SampleItemRow } from "@/lib/api/types";
-import { FORMAT_WORDS, formatCalendarDay } from "@/lib/format";
+import { formatCalendarDay } from "@/lib/format";
 import { QUALITY_TEXT } from "../strings";
 
 interface NoteAgreementTableProps {
@@ -16,7 +17,7 @@ function Verdict({ match }: { match: boolean }) {
 }
 
 function Code({ code }: { code: string | null }) {
-  return code ? <CodeChip code={code} /> : <span className="text-quaternary">{FORMAT_WORDS.empty}</span>;
+  return code ? <CodeChip code={code} /> : <EmptyValue />;
 }
 
 function ComparedCells({ comparison }: { comparison: ElementComparison }) {
