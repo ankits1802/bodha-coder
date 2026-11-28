@@ -5820,9 +5820,11 @@ export interface components {
             ids: string[];
         };
         RenewBody: {
+            plan?: string | null;
             until: string | null;
         };
         Renewal: {
+            plan: string;
             renews_on: string | null;
         };
         ReopenedNotes: {

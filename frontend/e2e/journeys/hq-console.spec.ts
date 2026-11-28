@@ -36,7 +36,7 @@ test("HQ signs in with two-step on its own host, finds a practice, opens it and 
   await expectAccessible(page);
   await dialog.getByRole("button", { name: renewal.action, exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole("status").filter({ hasText: renewal.renewed(day.practice.name, "") })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: day.practice.name })).toBeVisible();
 
   await page.getByRole("button", { name: SHARED_TEXT.nav.search, exact: true }).click();
   const search = page.getByRole("dialog", { name: HQ_TEXT.search.title });

@@ -152,6 +152,7 @@ export const HQ_TEXT = {
     },
     renewal: {
       title: (name: string) => `Renew ${name}`,
+      plan: "Plan",
       length: "Length",
       presets: { days14: "14 days", month1: "1 month", month3: "3 months", month6: "6 months", year1: "1 year", noEnd: "No end date" },
       until: "Renews until",
@@ -159,8 +160,8 @@ export const HQ_TEXT = {
       noEnd: "No end date",
       cancel: "Cancel",
       action: "Renew",
-      renewed: (name: string, day: string) => `${name} renews ${day}`,
-      renewedNoEnd: (name: string) => `${name} has no end date`,
+      renewed: (name: string, plan: string, day: string) => `${name} is on ${plan} until ${day}`,
+      renewedNoEnd: (name: string, plan: string) => `${name} is on ${plan} with no end date`,
     },
     form: {
       addTitle: "Add practice",

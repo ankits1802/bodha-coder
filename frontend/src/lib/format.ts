@@ -77,6 +77,13 @@ const NUMERIC_DAY = /^(\d{1,2})[./\-\s](\d{1,2})[./\-\s](\d{4})$/;
 const NAMED_DAY = /^(?:[a-z]+,?\s+)?(\d{1,2})\s+([a-z]+)\.?,?\s+(\d{4})$/i;
 const MIN_MONTH_PREFIX = 3;
 
+const HQ_WORD = /(?<![\w@./-])hq(?![\w@./-])/gi;
+
+export function sentenceCase(text: string): string {
+  const named = text.replace(HQ_WORD, "HQ");
+  return named.charAt(0).toUpperCase() + named.slice(1);
+}
+
 export function formatCount(value: number): string {
   return numberFormat.format(value);
 }

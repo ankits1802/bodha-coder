@@ -15814,6 +15814,19 @@
       "RenewBody": {
         "additionalProperties": false,
         "properties": {
+          "plan": {
+            "anyOf": [
+              {
+                "maxLength": 16,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
           "until": {
             "anyOf": [
               {
@@ -15836,6 +15849,10 @@
       "Renewal": {
         "additionalProperties": false,
         "properties": {
+          "plan": {
+            "title": "Plan",
+            "type": "string"
+          },
           "renews_on": {
             "anyOf": [
               {
@@ -15849,7 +15866,8 @@
           }
         },
         "required": [
-          "renews_on"
+          "renews_on",
+          "plan"
         ],
         "title": "Renewal",
         "type": "object"

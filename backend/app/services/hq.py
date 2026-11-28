@@ -60,6 +60,8 @@ TRACKED_FIELDS = ("name", "time_zone", "status", "plan", "seats", "renews_on")
 CLOSED_PRACTICE = "a closed practice cannot be changed"
 RENEWAL_IN_PAST = "choose a renewal date after today"
 NO_END_DATE = "no end date"
+UNKNOWN_PLAN = "choose a plan"
+PLAN_FOLLOWING_STATUSES = ("trial", "active")
 PRACTICE_CLOSED = "practice closed by HQ"
 
 
@@ -258,7 +260,7 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
         practice.name = changes["name"].strip()
     if status and status != practice.status and status in ("ended", "blocked"):
         await _close_sessions(db, actor, practice.id)
-    practice.status = status or practice.status
+    practice.status = status or status_for_plan(practice.status, plan or practice.plan)
     practice.plan = plan or practice.plan
     practice.seats = seats if seats is not None else practice.seats
     if "renews_on" in changes:
@@ -276,6 +278,12 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
     )
     await db.commit()
     return practice
+
+
+def status_for_plan(status: str, plan: str) -> str:
+    if status not in PLAN_FOLLOWING_STATUSES:
+        return status
+    return "trial" if plan == "trial" else "active"
 
 
 def _tracked(practice: Practice) -> dict[str, Any]:
@@ -338,18 +346,26 @@ async def send_admin_link(db: AsyncSession, messenger: Messenger, actor: Actor, 
     raise Conflict("the practice admin is blocked")
 
 
-async def renew_practice(db: AsyncSession, actor: Actor, practice_id: str, until: date | None) -> date | None:
+async def renew_practice(
+    db: AsyncSession, actor: Actor, practice_id: str, until: date | None, *, plan: str | None = None
+) -> Practice:
     practice = await _practice(db, practice_id)
     refuse_combined_change(practice)
     refuse_manual_change(await subscription_for(db, practice.id))
     if until is not None and until <= today_in(zone_named(practice.time_zone)):
         raise Invalid(RENEWAL_IN_PAST)
-    previous, practice.renews_on = practice.renews_on, until
-    detail = f"renews {until.isoformat()}" if until else NO_END_DATE
+    if plan is not None and plan not in PLAN_KEYS:
+        raise Invalid(UNKNOWN_PLAN)
+    previous, previous_plan = practice.renews_on, practice.plan
+    practice.renews_on, practice.plan = until, plan or practice.plan
+    practice.status = status_for_plan(practice.status, practice.plan)
+    detail = f"{practice.plan}, renews {until.isoformat()}" if until else f"{practice.plan}, {NO_END_DATE}"
     changed = [{"field": "renews_on", "before": _day(previous), "after": _day(until)}]
+    if practice.plan != previous_plan:
+        changed.append({"field": "plan", "before": previous_plan, "after": practice.plan})
     record_activity(db, actor, "practice renewed", practice_id=practice.id, detail=detail, changes=changed)
     await db.commit()
-    return until
+    return practice
 
 
 async def _practice(db: AsyncSession, practice_id: str) -> Practice:

@@ -93,6 +93,7 @@ class AdminLinkSent(View):
 
 class Renewal(View):
     renews_on: str | None
+    plan: str
 
 
 class HqPlace(View):

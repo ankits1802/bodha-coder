@@ -1,3 +1,4 @@
+import { sentenceCase } from "@/lib/format";
 import { API_MESSAGES } from "./messages";
 import type { ErrorBody } from "./types";
 
@@ -37,7 +38,7 @@ export async function errorFromResponse(response: Response): Promise<ApiError> {
 }
 
 export function sentence(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return sentenceCase(text);
 }
 
 export function messageOf(error: unknown): string {

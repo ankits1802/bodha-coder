@@ -1,4 +1,5 @@
 import type { PracticeSetup, SetupSectionKey } from "@/lib/api/types";
+import { sentenceCase } from "@/lib/format";
 import { isNpiShaped } from "@/lib/validation";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
 
@@ -42,8 +43,7 @@ export function markerFor(key: SetupNavKey, setup: PracticeSetup): SectionMarker
 export function fieldLabel(field: string): string {
   const known = SETUP_TEXT.fields[field];
   if (known) return known;
-  const words = field.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return sentenceCase(field.replaceAll("_", " "));
 }
 
 export function valuesFor(fields: string[], stored: Record<string, string>): Record<string, string> {

@@ -164,7 +164,7 @@ async def test_hq_renews_an_organization_by_hand_and_its_combined_practices_foll
         f"/api/hq/practices/{group.riverbend.id}/close", headers=group.hq, json={"confirm_name": "Riverbend"}
     )
 
-    assert (renewed.status_code, renewed.json()) == (200, {"renews_on": until.isoformat()})
+    assert (renewed.status_code, renewed.json()["renews_on"]) == (200, until.isoformat())
     assert (await stored_practice(group.riverbend.id)).renews_on == until
     assert (practice_change.status_code, ended.status_code) == (409, 204)
     assert (closing.status_code, closing.json()["message"]) == (

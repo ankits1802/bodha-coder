@@ -1,6 +1,6 @@
 import type { StatusTone } from "@/components/ui/StatusDot";
 import type { ActivityChange, AuditChain, HqActivityEntry } from "@/lib/api/types";
-import { formatCount } from "@/lib/format";
+import { formatCount, sentenceCase } from "@/lib/format";
 import { toCsv } from "@/lib/download";
 import { HQ_TEXT } from "../strings";
 
@@ -15,7 +15,7 @@ export function actionTone(action: string): StatusTone {
 }
 
 export function actionLabel(action: string): string {
-  return action.charAt(0).toUpperCase() + action.slice(1);
+  return sentenceCase(action);
 }
 
 export function practiceLabel(practiceId: string | null, names: Map<string, string>): string {

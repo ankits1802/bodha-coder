@@ -120,8 +120,8 @@ async def appoint_admin(practice_id: str, body: HqAdminBody, db: Db, mail: Mail,
 
 @router.post("/hq/practices/{practice_id}/renew", response_model=Renewal)
 async def renew(practice_id: str, body: RenewBody, db: Db, actor: HqActor) -> dict[str, str | None]:
-    until = await hq.renew_practice(db, actor, practice_id, body.until)
-    return {"renews_on": until.isoformat() if until else None}
+    practice = await hq.renew_practice(db, actor, practice_id, body.until, plan=body.plan)
+    return {"renews_on": practice.renews_on.isoformat() if practice.renews_on else None, "plan": practice.plan}
 
 
 @router.get("/hq/places", response_model=list[HqPlace])
