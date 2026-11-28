@@ -55,7 +55,8 @@ beyond the load balancer's health probe.
   whose reads write nothing: Today in a practice with no notes, Insights, the four Settings tabs,
   Account and Help; and the HQ overview, practices, organizations, activity, spend, team and demo
   requests. It never opens the queue, inbox, billing, compliance, the access log or a note, because
-  those reads write access-log rows.
+  those reads write access-log rows, and because usage timing ([0045](0045-practice-measures-and-usage-timing.md))
+  records only the timed tasks of those screens (review, queue, upload, export).
 - A route guard aborts every API request other than GET and HEAD and the three sign-in posts (login,
   two-step verify, refresh) and fails the run listing them; any API answer of 400 or more fails it
   too. It does not sign out, because sign-out writes an event; the session lapses after 30 idle
