@@ -15,7 +15,7 @@ export function Table({ label, minWidth = "md", children }: TableProps) {
   const [scroller, overflowing] = useOverflowing<HTMLDivElement>();
   const scrolling = overflowing ? { role: "region", "aria-label": label, tabIndex: 0 } : {};
   return (
-    <div ref={scroller} className="overflow-x-auto" {...scrolling}>
+    <div ref={scroller} className="relative overflow-x-auto" {...scrolling}>
       <table aria-label={label} className={`w-full border-collapse ${MIN_WIDTHS[minWidth]}`}>
         {children}
       </table>

@@ -6,6 +6,7 @@ import { expectReachedByTab } from "../support/keyboard";
 const BUSY = "[aria-busy='true'], .animate-spin, .animate-pulse";
 const PRIMARY = "button.bg-primary:not([disabled]), a.bg-primary";
 const FIRST_SERVER_ERROR = 500;
+const ENTRANCE_MS = 8_000;
 
 export interface Screen {
   path: string;
@@ -16,14 +17,19 @@ export interface Screen {
 export async function settle(page: Page, ready?: Locator, within: Page | Locator = page): Promise<void> {
   await expect(ready ?? page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   await expect(within.locator(BUSY)).toHaveCount(0);
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((animation) => animation.playState === "running" && animation.timeline === document.timeline)
-        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
-        .map((animation) => animation.finished.catch(() => undefined)),
-    ),
+  await page.evaluate(
+    (longest) =>
+      Promise.race([
+        Promise.all(
+          document
+            .getAnimations()
+            .filter((animation) => animation.playState === "running" && animation.timeline === document.timeline)
+            .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+            .map((animation) => animation.finished.catch(() => undefined)),
+        ),
+        new Promise((resolve) => setTimeout(resolve, longest)),
+      ]),
+    ENTRANCE_MS,
   );
 }
 
