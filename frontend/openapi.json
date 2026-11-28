@@ -7563,6 +7563,13 @@
             "title": "Failed Last 24H",
             "type": "integer"
           },
+          "month": {
+            "$ref": "#/components/schemas/SpendToDate"
+          },
+          "organizations": {
+            "title": "Organizations",
+            "type": "integer"
+          },
           "people": {
             "title": "People",
             "type": "integer"
@@ -7593,6 +7600,7 @@
           }
         },
         "required": [
+          "organizations",
           "practices",
           "people",
           "read_last_24h",
@@ -7601,7 +7609,8 @@
           "unpriced_last_24h",
           "failed_last_24h",
           "waiting",
-          "running"
+          "running",
+          "month"
         ],
         "title": "HqOverview",
         "type": "object"
@@ -17444,6 +17453,35 @@
         "title": "SpendFigures",
         "type": "object"
       },
+      "SpendToDate": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "from": {
+            "title": "From",
+            "type": "string"
+          },
+          "to": {
+            "title": "To",
+            "type": "string"
+          },
+          "unpriced_analyses": {
+            "title": "Unpriced Analyses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "cost_usd",
+          "unpriced_analyses"
+        ],
+        "title": "SpendToDate",
+        "type": "object"
+      },
       "SwitchBody": {
         "additionalProperties": false,
         "properties": {
@@ -20657,6 +20695,7 @@
               "enum": [
                 "ready",
                 "exported",
+                "today",
                 "all"
               ],
               "title": "Show",

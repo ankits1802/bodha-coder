@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import io
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -17,10 +19,13 @@ from app.services.worklists import count_of
 
 __all__ = [
     "AUTO_APPROVER",
+    "BILLING_SHOWS",
     "EXPORT_COLUMNS",
     "PAGE_SIZE",
     "ROW_LIMIT",
+    "BillingFilter",
     "billing_csv",
+    "billing_filter",
     "billing_rows",
     "billing_summary",
     "billing_total",
@@ -28,6 +33,8 @@ __all__ = [
 ]
 
 ROW_LIMIT = 500
+BILLING_SHOWS = ("ready", "exported", "today", "all")
+READY, EXPORTED, TODAY, ALL = BILLING_SHOWS
 AUTO_APPROVER = "Bodha (auto)"
 PAGE_SIZE = 100
 FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
@@ -45,20 +52,32 @@ EXPORT_COLUMNS = (
 )
 
 
+@dataclass(frozen=True)
+class BillingFilter:
+    exported: bool | None = None
+    exported_within: tuple[datetime, datetime] | None = None
+
+
+def billing_filter(show: str, zone: ZoneInfo) -> BillingFilter:
+    if show == TODAY:
+        return BillingFilter(exported=True, exported_within=day_bounds(today_in(zone), zone))
+    return BillingFilter(exported={READY: False, EXPORTED: True, ALL: None}[show])
+
+
 async def billing_rows(
-    db: AsyncSession, practice_id: str, *, exported: bool | None, offset: int = 0, limit: int = ROW_LIMIT
+    db: AsyncSession, practice_id: str, wanted: BillingFilter, *, offset: int = 0, limit: int = ROW_LIMIT
 ) -> list[dict[str, Any]]:
-    query = _billing_query(practice_id, exported=exported)
+    query = _billing_query(practice_id, wanted)
     rows = (await db.execute(query.offset(offset).limit(limit))).all()
     held = await held_for_confirmation(db, [note.id for note, _, _ in rows])
     return [_row(note, provider, snapshot, held=note.id in held) for note, provider, snapshot in rows]
 
 
-async def billing_total(db: AsyncSession, practice_id: str, *, exported: bool | None) -> int:
-    return await count_of(db, _billing_query(practice_id, exported=exported).with_only_columns(Note.id))
+async def billing_total(db: AsyncSession, practice_id: str, wanted: BillingFilter) -> int:
+    return await count_of(db, _billing_query(practice_id, wanted).with_only_columns(Note.id))
 
 
-def _billing_query(practice_id: str, *, exported: bool | None) -> Select[Any]:
+def _billing_query(practice_id: str, wanted: BillingFilter) -> Select[Any]:
     latest = (
         select(ApprovedClaim.note_id, func.max(ApprovedClaim.revision).label("revision"))
         .group_by(ApprovedClaim.note_id)
@@ -72,24 +91,23 @@ def _billing_query(practice_id: str, *, exported: bool | None) -> Select[Any]:
         .where(Note.practice_id == practice_id, Note.status.in_(("approved", "exported")))
         .order_by(Note.service_date.desc(), Note.approved_at.desc())
     )
-    if exported is not None:
-        query = query.where(Note.exported_at.is_not(None) if exported else Note.exported_at.is_(None))
+    if wanted.exported is not None:
+        query = query.where(Note.exported_at.is_not(None) if wanted.exported else Note.exported_at.is_(None))
+    if wanted.exported_within is not None:
+        start, end = wanted.exported_within
+        query = query.where(Note.exported_at >= start, Note.exported_at < end)
     return query
 
 
 async def billing_summary(db: AsyncSession, practice_id: str, zone: ZoneInfo) -> dict[str, int]:
-    start, end = day_bounds(today_in(zone), zone)
-    mine = Note.practice_id == practice_id
-    ready = select(func.count()).select_from(Note).where(mine, Note.status == "approved", Note.exported_at.is_(None))
-    exported = select(func.count()).select_from(Note).where(mine, Note.exported_at >= start, Note.exported_at < end)
     held = select(func.count(func.distinct(AddendumRequest.note_id))).where(
         AddendumRequest.practice_id == practice_id,
         AddendumRequest.status == "sent",
         AddendumRequest.hold_claim.is_(True),
     )
     return {
-        "ready": await db.scalar(ready) or 0,
-        "exported_today": await db.scalar(exported) or 0,
+        "ready": await billing_total(db, practice_id, billing_filter(READY, zone)),
+        "exported_today": await billing_total(db, practice_id, billing_filter(TODAY, zone)),
         "held_for_provider": await db.scalar(held) or 0,
     }
 

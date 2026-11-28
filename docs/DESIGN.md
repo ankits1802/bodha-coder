@@ -76,6 +76,16 @@ note review the finding that `y` and `n` act on carries a dark bar at its left e
 to the next finding after each decision, then to Approve. Form fields are checked when they lose
 focus, not only on submit.
 
+## Figures
+
+A figure on a dashboard opens the records it counts ([0058](decisions/0058-figures-open-their-records.md)).
+
+| Rule | How |
+|---|---|
+| Link | `StatCell` with an `href`: the whole cell is the link, named by every word it shows with pauses ("Organizations, 3"; "Waiting, 12, 3 reading now"); the row-hover background on hover and an inset focus ring. The figure keeps the label colour: no purple, underline or chevron. Today's lanes are the same cells, larger, with the lane's dot |
+| Destination | A list that already exists, with its filter in the address, counted by the same query: HQ Organizations to `/hq/organizations`, Practices to `/hq/practices?status=live` (Live is active or trial), Model cost this month to `/hq/spend` for the month so far; each Today lane to its queue lane (Compliance to `/compliance` for those who can open it); Ready to bill to `/billing`, Exported today to `/billing?show=today` |
+| Plain | Rates, medians, money estimates, figures over a rolling window, an Insights period or a whole organization, totals of the table right below, and any figure whose list the viewer's role cannot open stay text; so does every figure in a billing-only session |
+
 ## Note review
 
 One findings list replaces the review tabs ([0043](decisions/0043-one-findings-list-and-returns.md)).

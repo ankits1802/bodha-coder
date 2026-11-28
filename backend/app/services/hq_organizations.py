@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import Select, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.calendar import today_in
@@ -32,6 +32,7 @@ from app.services.organizations import LIVE_ADMIN, organization_admins, practice
 from app.services.plan_limits import combined_provider_count, organization_subscription
 from app.services.plans import PLAN_KEYS, TRIAL
 from app.services.retention import purge_after
+from app.services.worklists import count_of
 
 __all__ = [
     "CLOSED_ORGANIZATION",
@@ -39,6 +40,7 @@ __all__ = [
     "create_organization",
     "detach_practice",
     "hq_organization",
+    "organization_count",
     "organization_page",
     "organization_rows",
     "release_organization_claims",
@@ -54,8 +56,16 @@ CLOSED_PRACTICE = "a closed practice cannot join an organization"
 RENEWAL_IN_PAST = "choose a renewal date after today"
 
 
+def _listed() -> Select[Any]:
+    return select(Organization).order_by(Organization.name, Organization.id)
+
+
+async def organization_count(db: AsyncSession) -> int:
+    return await count_of(db, _listed())
+
+
 async def organization_rows(db: AsyncSession, *, organization_id: str | None = None) -> list[dict[str, Any]]:
-    query = select(Organization).order_by(Organization.name, Organization.id)
+    query = _listed()
     found = await db.scalars(query if organization_id is None else query.where(Organization.id == organization_id))
     practices = await _counted(db, Practice.organization_id)
     combined = await _counted(db, Practice.organization_id, Practice.combined_billing.is_(True))

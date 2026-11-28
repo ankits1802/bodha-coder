@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { usePlaceNames } from "@/hooks/usePlaceNames";
 import { useRemote } from "@/hooks/useRemote";
-import type { Role, TodaySummary, User } from "@/lib/api/types";
+import type { TodaySummary, User } from "@/lib/api/types";
 import { getToday } from "@/lib/api/work";
 import { formatDay } from "@/lib/format";
 import { canUse } from "@/lib/roles";
@@ -26,11 +26,12 @@ import { startFor } from "./todayStart";
 
 const REMOTE_TEXT = { loading: TODAY_TEXT.loading, empty: TODAY_TEXT.empty, retry: TODAY_TEXT.retry };
 
-function TodayBody({ data, role }: { data: TodaySummary; role: Role }) {
+function TodayBody({ data, user }: { data: TodaySummary; user: User }) {
   const placeNames = usePlaceNames();
+  const role = user.role;
   return (
     <>
-      <LaneCells counts={data.lanes} reasons={data.provider_reasons} role={role} />
+      <LaneCells counts={data.lanes} reasons={data.provider_reasons} user={user} />
       <div className="flex flex-wrap items-start gap-6">
         {canUse(role, "queue") ? <UpNext rows={data.next_up} placeNames={placeNames} /> : null}
         <BeingRead
@@ -68,7 +69,7 @@ function TodayContent({ user }: { user: User }) {
       <FirstRunChecklist firstRun={firstRun} lead={checklistLeads} />
       <AssignedTrainingCard enabled={canUse(user.role, "queue")} />
       <RemoteView state={today.state} text={REMOTE_TEXT} onRetry={today.reload}>
-        {(data) => <TodayBody data={data} role={user.role} />}
+        {(data) => <TodayBody data={data} user={user} />}
       </RemoteView>
     </>
   );

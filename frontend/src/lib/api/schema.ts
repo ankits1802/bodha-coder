@@ -4604,6 +4604,8 @@ export interface components {
         HqOverview: {
             cost_last_24h_usd: number;
             failed_last_24h: number;
+            month: components["schemas"]["SpendToDate"];
+            organizations: number;
             people: number;
             practices: number;
             read_last_24h: number;
@@ -6067,6 +6069,12 @@ export interface components {
             output_tokens: number;
             unpriced_analyses: number;
         };
+        SpendToDate: {
+            cost_usd: number;
+            from: string;
+            to: string;
+            unpriced_analyses: number;
+        };
         SwitchBody: {
             request_id: string;
         };
@@ -7409,7 +7417,7 @@ export interface operations {
     billing_list_api_billing_get: {
         parameters: {
             query?: {
-                show?: "ready" | "exported" | "all";
+                show?: "ready" | "exported" | "today" | "all";
                 offset?: number;
             };
             header?: {

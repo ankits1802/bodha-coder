@@ -22,7 +22,8 @@ test("HQ signs in with two-step on its own host, finds a practice, opens it and 
   expect(new URL(page.url()).host).toBe(new URL(ADMIN_ORIGIN).host);
   await expectAccessible(page);
 
-  await page.goto("/hq/practices");
+  await page.getByRole("link", { name: new RegExp(`^${HQ_TEXT.overview.practices}, `) }).click();
+  await expect(page).toHaveURL(/\/hq\/practices\?status=live$/);
   await expect(heading(page, HQ_TEXT.practices.title)).toBeVisible();
   await expectAccessible(page);
   await page.getByRole("link", { name: day.practice.name, exact: true }).click();

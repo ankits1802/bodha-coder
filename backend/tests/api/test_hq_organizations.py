@@ -188,3 +188,25 @@ async def test_spend_can_be_read_for_the_practices_of_one_organization(harness):
     assert spend.status_code == 200, spend.text
     assert sorted(row["name"] for row in spend.json()["practices"]) == ["Lakeside", "Riverbend"]
     assert missing.status_code == 404
+
+
+async def test_the_overview_counts_every_organization_the_list_shows_and_spend_since_the_first_of_the_month(harness):
+    group = await organization_of_two(harness)
+    bay = await harness.client.post(
+        "/api/hq/organizations", headers=group.hq, json={"name": "Bay Group", "plan": "essentials"}
+    )
+    bay_path = f"/api/hq/organizations/{bay.json()['id']}"
+    closed = await harness.client.post(f"{bay_path}/close", headers=group.hq, json={"confirm_name": "Bay Group"})
+
+    listed = (await harness.client.get("/api/hq/organizations", headers=group.hq)).json()
+    overview = (await harness.client.get("/api/hq/overview", headers=group.hq)).json()
+
+    assert closed.status_code == 204
+    assert [row["name"] for row in listed] == [GROUP_NAME, "Bay Group"]
+    assert (overview["organizations"], overview["practices"]) == (2, 2)
+    assert overview["month"] == {
+        "from": TODAY_UTC.replace(day=1).isoformat(),
+        "to": TODAY_UTC.isoformat(),
+        "cost_usd": 0.0,
+        "unpriced_analyses": 0,
+    }

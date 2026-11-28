@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
 from app.core.calendar import today_in, zone_named
-from app.core.deps import Actor
+from app.core.deps import ACTIVE_PRACTICE_STATUSES, Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.core.roles import ADMIN_ROLE
 from app.models import (
@@ -29,7 +29,8 @@ from app.models import (
 )
 from app.services.account_lookup import account_by_email, email_in_use
 from app.services.audit_log import record_activity
-from app.services.expenditure import spend_since
+from app.services.expenditure import SPEND_TIME_ZONE, month_to_date, spend_since
+from app.services.hq_organizations import organization_count
 from app.services.memberships import ACTIVE_MEMBER, BLOCKED, LIVE, SEAT_HOLDING
 from app.services.password_reset import send_reset_email
 from app.services.plan_limits import subscription_for
@@ -76,7 +77,7 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
         select(func.count()).select_from(Analysis).where(Analysis.finished_at >= since, Analysis.status == "failed")
     )
     practices = await db.scalar(
-        select(func.count()).select_from(Practice).where(Practice.status.in_(("trial", "active")))
+        select(func.count()).select_from(Practice).where(Practice.status.in_(ACTIVE_PRACTICE_STATUSES))
     )
     people = await db.scalar(
         select(func.count(func.distinct(PracticeMembership.user_id)))
@@ -84,6 +85,7 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
         .where(*ACTIVE_MEMBER, User.status == "active")
     )
     return {
+        "organizations": await organization_count(db),
         "practices": practices or 0,
         "people": people or 0,
         "read_last_24h": read or 0,
@@ -93,6 +95,7 @@ async def overview(db: AsyncSession) -> dict[str, Any]:
         "failed_last_24h": failed or 0,
         "waiting": by_status.get("queued", 0),
         "running": by_status.get("running", 0),
+        "month": await month_to_date(db, today_in(zone_named(SPEND_TIME_ZONE))),
     }
 
 

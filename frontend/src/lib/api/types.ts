@@ -462,7 +462,7 @@ export interface UploadPlan extends FilePlacement {
   visit_type: string;
 }
 
-export type BillingShow = "ready" | "exported" | "all";
+export type BillingShow = "ready" | "exported" | "today" | "all";
 export type InsightDays = 7 | 14 | 30 | 90;
 export type RemittanceFilter = "all" | "downcoded" | "denied" | "unmatched";
 

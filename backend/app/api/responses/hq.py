@@ -1,5 +1,7 @@
 from typing import Literal
 
+from pydantic import Field
+
 from app.api.responses.base import PracticeRole, View
 from app.api.responses.organizations import HqOrganizationHit
 from app.api.responses.team import MemberStatus
@@ -30,10 +32,19 @@ __all__ = [
     "HqTeamMember",
     "PracticePurged",
     "Renewal",
+    "SpendToDate",
 ]
 
 
+class SpendToDate(View):
+    start: str = Field(alias="from")
+    end: str = Field(alias="to")
+    cost_usd: float
+    unpriced_analyses: int
+
+
 class HqOverview(View):
+    organizations: int
     practices: int
     people: int
     read_last_24h: int
@@ -43,6 +54,7 @@ class HqOverview(View):
     failed_last_24h: int
     waiting: int
     running: int
+    month: SpendToDate
 
 
 class HqPractice(View):

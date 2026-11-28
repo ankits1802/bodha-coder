@@ -107,6 +107,10 @@ export function canReach(user: SessionUser | null | undefined, area: Area): bool
   return !user.billing_only || BILLING_ONLY_AREAS.includes(area);
 }
 
+export function reachableHref(user: SessionUser | null | undefined, area: Area, href: string): string | null {
+  return canReach(user, area) ? href : null;
+}
+
 export function canSearch(user: SessionUser | null | undefined): boolean {
   return user != null && !user.billing_only && canDo(user.role, "search");
 }
