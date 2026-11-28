@@ -389,6 +389,7 @@ backend\.venv\Scripts\python.exe tools\gold_set\report_gold_set.py
 ```
 
 It writes `tools/gold_set/out/reports/evaluation-<run id>.md` (`--output` to choose the file, `--run-id`
-for an older run) with the methods, agreement by element with 95% intervals, results by group and every
-disagreement. The numbers are provisional until a certified coder has reviewed the expected answers.
+for an older run) with the methods, agreement by element with 95% intervals (procedure lines, add-on codes,
+units and place of service included, as n/a for runs from before they were scored), results by group and
+every disagreement, the claim line ones in their own table. The numbers are provisional until a certified coder has reviewed the expected answers.
 `tools\gold_set\render_notes.py` writes the PDFs to `tools/gold_set/out/pdf/` for a look without loading.

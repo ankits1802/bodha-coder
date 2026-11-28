@@ -9,11 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, evaluation_response_key
 from app.adapters.pdf_text import DocumentUnreadable
-from app.ai.contracts import BilledCode, ReviewInputs, ReviewOutcome, ReviewReport
+from app.ai.contracts import BilledCode, ReviewInputs, ReviewOutcome
 from app.ai.errors import ModelError
 from app.ai.prompts.context import labelled_addendum
 from app.codes.billing_codes import Code
-from app.codes.icd import IcdRelease, IcdReleaseUnavailable
+from app.codes.icd import IcdReleaseUnavailable
 from app.codes.mips_scope import MipsScope, practice_scope
 from app.codes.places import setting_for
 from app.models import Analysis, EvalCase, EvalRun, Note, NoteText, utcnow
@@ -21,10 +21,10 @@ from app.services.agreement import compare_elements, elements_from_json, element
 from app.services.analysis import AnalysisDeps
 from app.services.code_sets import original_codes
 from app.services.evaluation_scores import evaluation_summary
-from app.services.findings import build_findings
+from app.services.findings import suggested_claim
+from app.services.line_agreement import compare_lines, lines_from_expected, lines_of
 from app.services.note_texts import current_texts, note_texts
 from app.services.practice_measures import definitions_by_version
-from app.services.routing import choices_for, claim
 
 __all__ = [
     "RUNS_PER_CASE",
@@ -118,8 +118,11 @@ async def _evaluate_case(db: AsyncSession, run: EvalRun, case: EvalCase, deps: A
     except (CaseUnavailable, *CASE_FAILURES) as error:
         return {**base, "error": (str(error) or type(error).__name__)[:ERROR_LENGTH]}
     await _store_replies(deps.store, run, case, outcomes)
-    suggested = [elements_of(_suggested_claim(outcome.report, billed, release)) for outcome in outcomes]
+    claims = [suggested_claim(outcome.report, billed, release) for outcome in outcomes]
+    suggested = [elements_of(codes) for codes in claims]
     replies = [reply for outcome in outcomes for reply in outcome.replies]
+    reference = lines_from_expected(case.expected, note.place_code)
+    lines = {"lines": compare_lines(reference, lines_of(claims[0], inputs.place_of_service))} if reference else {}
     return {
         **base,
         "model": replies[-1].model if replies else None,
@@ -129,6 +132,7 @@ async def _evaluate_case(db: AsyncSession, run: EvalRun, case: EvalCase, deps: A
         "runs": [elements.as_json() for elements in suggested],
         "agreement": compare_elements(elements_from_json(case.expected), suggested[0]),
         "repeat": compare_elements(suggested[0], suggested[1]),
+        **lines,
     }
 
 
@@ -164,11 +168,6 @@ def _note_text(texts: list[NoteText]) -> str | None:
     return "\n\n".join(
         text.text if text.source == "document" else labelled_addendum(text.revision, text.text) for text in texts
     )
-
-
-def _suggested_claim(report: ReviewReport, billed: tuple[Code, ...], release: IcdRelease) -> tuple[Code, ...]:
-    findings = build_findings(report, billed, release)
-    return claim(billed, findings, choices_for(findings, {}))
 
 
 async def _store_replies(store: ObjectStore, run: EvalRun, case: EvalCase, outcomes: list[ReviewOutcome]) -> None:

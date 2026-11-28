@@ -8,6 +8,7 @@ __all__ = [
     "EvalCandidate",
     "EvalCandidateList",
     "EvalCaseAdded",
+    "EvalCaseCounts",
     "EvalCaseList",
     "EvalCaseResult",
     "EvalCaseRow",
@@ -19,6 +20,10 @@ __all__ = [
     "EvalRuns",
     "EvalSummary",
     "ExpectedClaim",
+    "LineComparison",
+    "LineSetComparison",
+    "PlaceComparison",
+    "UnitsComparison",
 ]
 
 EvalMetric = Literal["em", "icd_f1", "modifiers"]
@@ -29,6 +34,16 @@ class EvalConsistency(View):
     icd: Rate
     modifiers: Rate
     all: Rate
+
+
+class EvalCaseCounts(View):
+    em: int
+    icd: int
+    modifiers: int
+    procedures: int
+    add_ons: int
+    units: int
+    place_of_service: int
 
 
 class EvalSummary(View):
@@ -42,6 +57,11 @@ class EvalSummary(View):
     icd_recall: Omittable[Rate] = None
     icd_f1: Omittable[float | None] = None
     modifiers: Omittable[Rate] = None
+    procedures: Omittable[Rate] = None
+    add_ons: Omittable[Rate] = None
+    units: Omittable[Rate] = None
+    place_of_service: Omittable[Rate] = None
+    case_counts: Omittable[EvalCaseCounts] = None
     consistency: Omittable[EvalConsistency] = None
     error: Omittable[str] = None
 
@@ -80,7 +100,37 @@ class ExpectedClaim(View):
     modifiers: list[str]
     level: str | None
     claim: list[CodeJson]
+    place_of_service: Omittable[str] = None
     analysis_id: str
+
+
+class LineSetComparison(View):
+    reference: list[str]
+    compared: list[str]
+    match: bool
+    scored: bool
+
+
+class UnitsComparison(View):
+    reference: dict[str, int]
+    compared: dict[str, int]
+    differing: list[str]
+    match: bool
+    scored: bool
+
+
+class PlaceComparison(View):
+    reference: str | None
+    compared: str | None
+    match: bool
+    scored: bool
+
+
+class LineComparison(View):
+    procedures: LineSetComparison
+    add_ons: LineSetComparison
+    units: UnitsComparison
+    place_of_service: PlaceComparison
 
 
 class EvalCaseResult(View):
@@ -95,6 +145,7 @@ class EvalCaseResult(View):
     runs: Omittable[list[ClaimElements]] = None
     agreement: Omittable[ElementComparison] = None
     repeat: Omittable[ElementComparison] = None
+    lines: Omittable[LineComparison] = None
     service_date: Omittable[str] = None
     provider_name: Omittable[str] = None
 

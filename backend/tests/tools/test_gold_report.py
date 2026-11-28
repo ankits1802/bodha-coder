@@ -35,17 +35,46 @@ def agreement(em: tuple, icd: tuple, modifiers: tuple) -> dict:
     }
 
 
+def lines(procedures: tuple, add_ons: tuple, units: tuple) -> dict:
+    shared_reference, shared_compared = units
+    differing = [code for code in shared_reference if shared_reference[code] != shared_compared[code]]
+    return {
+        "procedures": {
+            "reference": procedures[0],
+            "compared": procedures[1],
+            "match": procedures[0] == procedures[1],
+            "scored": bool(procedures[0] or procedures[1]),
+        },
+        "add_ons": {
+            "reference": add_ons[0],
+            "compared": add_ons[1],
+            "match": add_ons[0] == add_ons[1],
+            "scored": bool(add_ons[0] or add_ons[1]),
+        },
+        "units": {
+            "reference": shared_reference,
+            "compared": shared_compared,
+            "differing": differing,
+            "match": not differing,
+            "scored": bool(shared_reference),
+        },
+        "place_of_service": {"reference": "11", "compared": "11", "match": True, "scored": True},
+    }
+
+
 def results() -> list[dict]:
     return [
         {
             "note_id": "n26",
             "agreement": agreement(("", "99213", "absent"), (1, 1, []), (["LT"], ["25", "LT"])),
             "repeat": SAME,
+            "lines": lines((["20610"], ["20610"]), ([], []), ({"20610": 1}, {"20610": 1})),
         },
         {
             "note_id": "n2",
             "agreement": agreement(("99203", "99204", "higher"), (1, 2, ["J06.9"]), ([], [])),
             "repeat": SAME,
+            "lines": lines(([], []), ([], ["G2211"]), ({}, {})),
         },
         {"note_id": "n1", "agreement": agreement(("99202", "99202", "match"), (1, 1, []), ([], [])), "repeat": SAME},
         {"note_id": "n3", "error": "model down"},
@@ -80,6 +109,10 @@ def test_the_report_is_provisional_and_states_rates_with_wilson_intervals():
     assert "| ICD-10-CM exact set | 66.7% | 20.8% to 93.9% | 2 / 3 |" in text
     assert "| Modifiers exact | 66.7% | 20.8% to 93.9% | 2 / 3 |" in text
     assert "| Gold set cases in the run | 4 of 48; 3 scored, 1 failed |" in text
+    assert "| Procedure lines exact | 100.0% | 20.7% to 100.0% | 1 / 1 |" in text
+    assert "| Add-on codes exact (G2211, G2212, 99417) | 0.0% | 0.0% to 79.3% | 0 / 1 |" in text
+    assert "| Units on shared lines | 100.0% | 20.7% to 100.0% | 1 / 1 |" in text
+    assert "| Place of service | 100.0% | 34.2% to 100.0% | 2 / 2 |" in text
     assert "Visit codes as billed: 21 billed correctly, 16 one level too high, 8 one level too low" in text
 
 
@@ -89,3 +122,19 @@ def test_the_report_lists_each_disagreement_and_each_unscored_case():
     assert "| GS-26 | none | 99213 (absent) |  |  | LT | 25, LT |" in text
     assert "- GS-03: model down" in text
     assert "GS-01 |" not in text.split("## Disagreements")[1]
+
+
+def test_the_report_lists_claim_line_disagreements_and_leaves_out_cases_without_claim_lines():
+    text = report_markdown(RUN, rows(), load_gold_set())
+    section = text.split("## Claim line disagreements")[1].split("##")[0]
+    assert "| GS-02 | none | none | none | G2211 |  |  |" in section
+    assert "GS-26" not in section and "GS-01" not in section
+
+
+def test_a_run_before_claim_line_scoring_shows_those_metrics_with_no_trials():
+    older = [{key: value for key, value in row.result.items() if key != "lines"} for row in rows()]
+    gold = load_gold_set()
+    notes = {"n1": "GS-01", "n2": "GS-02", "n3": "GS-03", "n26": "GS-26"}
+    text = report_markdown(RUN, case_results(older, {note: gold.case(case) for note, case in notes.items()}), gold)
+    assert "| Procedure lines exact | n/a |  | 0 / 0 |" in text
+    assert "## Claim line disagreements" not in text

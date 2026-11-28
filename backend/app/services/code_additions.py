@@ -5,13 +5,26 @@ from collections.abc import Iterable
 from app.ai.contracts import AddOnSuggestion, EmReview, ModifierSuggestion
 from app.codes.billing_codes import MAX_UNITS, MIN_UNITS, MODIFIER_PATTERN, Code, is_known_cpt
 from app.codes.modifiers import modifier_meaning
+from app.codes.prolonged import PROLONGED_CODES, VisitTime, prolonged_problem, prolonged_units_due
 from app.services.finding import Finding
 
-__all__ = ["ADD_ON_PREFIX", "MODIFIER_PREFIX", "add_on_findings", "modifier_findings", "visit_code"]
+__all__ = [
+    "ADD_ON_PREFIX",
+    "BILLED_PREFIX",
+    "MODIFIER_PREFIX",
+    "add_on_findings",
+    "modifier_findings",
+    "prolonged_finding",
+    "visit_code",
+    "visit_time",
+]
 
 ADD_ON_PREFIX = "addon:"
+BILLED_PREFIX = "cpt:"
 MODIFIER_PREFIX = "modifier:"
 LEVEL_CHANGES = ("lower", "raise", "replace", "add")
+TIME_BASIS = "Time"
+PROLONGED_TITLE = "Prolonged service"
 
 
 def visit_code(visit: Finding | None) -> str | None:
@@ -22,14 +35,31 @@ def visit_code(visit: Finding | None) -> str | None:
     return visit.code_before
 
 
+def visit_time(em: EmReview, visit: Finding | None) -> VisitTime:
+    return VisitTime(visit_code(visit), em.basis == TIME_BASIS, em.time_minutes)
+
+
 def add_on_findings(em: EmReview, billed: tuple[Code, ...], visit: Finding | None) -> list[Finding]:
     taken = {code.code for code in billed if code.type == "CPT"} | {visit_code(visit)}
+    timing = visit_time(em, visit)
     found: dict[str, Finding] = {}
     for item in em.add_on_codes:
         code = item.code.strip().upper()
         if code and code not in taken and f"{ADD_ON_PREFIX}{code}" not in found:
-            found[f"{ADD_ON_PREFIX}{code}"] = _add_on_finding(code, item)
+            found[f"{ADD_ON_PREFIX}{code}"] = _add_on_finding(code, item, timing)
     return list(found.values())
+
+
+def prolonged_finding(code: Code, visit: VisitTime, evidence: tuple[str, ...]) -> Finding | None:
+    problem = prolonged_problem(code.code, code.units, visit) if code.code in PROLONGED_CODES else None
+    if problem is None:
+        return None
+    key = f"{BILLED_PREFIX}{code.code}"
+    due = prolonged_units_due(code.code, visit)
+    if due == 0:
+        return Finding("code_review", key, "remove", PROLONGED_TITLE, problem, code.code, None, evidence)
+    units = {"units": due}
+    return Finding("code_review", key, "replace", PROLONGED_TITLE, problem, code.code, code.code, evidence, None, units)
 
 
 def modifier_findings(
@@ -61,11 +91,14 @@ def _target(named: str, on_visit: str | None, billed_em: str | None) -> str | No
     return code
 
 
-def _add_on_finding(code: str, item: AddOnSuggestion) -> Finding:
+def _add_on_finding(code: str, item: AddOnSuggestion, visit: VisitTime) -> Finding:
     if not is_known_cpt(code):
         return _unconfirmed_add_on(code, item, f"{code} is not a 2026 physician fee schedule code.")
     if not MIN_UNITS <= item.units <= MAX_UNITS:
         return _unconfirmed_add_on(code, item, f"{item.units} units of {code} is outside {MIN_UNITS} to {MAX_UNITS}.")
+    problem = prolonged_problem(code, item.units, visit) if code in PROLONGED_CODES else None
+    if problem is not None:
+        return _unconfirmed_add_on(code, item, problem)
     title = item.name.strip() or "Add-on code"
     evidence = tuple(item.evidence)
     detail = {"add_on": True, "units": item.units}

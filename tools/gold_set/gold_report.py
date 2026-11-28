@@ -12,6 +12,7 @@ from gold_levels import billed_pattern
 from app.core.statistics import BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED
 from app.services.agreement import summarize
 from app.services.evaluation_scores import evaluation_summary
+from app.services.line_agreement import LINE_METRICS
 
 __all__ = ["GROUPS", "CaseResult", "case_results", "group_summaries", "report_markdown"]
 
@@ -19,6 +20,12 @@ PROVISIONAL = (
     "**Provisional.** The expected answers were written by construction under the 2021 and later AMA E/M "
     "guidelines and the 2023 nursing facility rules; no certified coder has checked them yet. Every number "
     "below is provisional until that review is recorded."
+)
+LINE_LABELS = (
+    ("procedures", "Procedure lines exact"),
+    ("add_ons", "Add-on codes exact (G2211, G2212, 99417)"),
+    ("units", "Units on shared lines"),
+    ("place_of_service", "Place of service"),
 )
 BILLING_LABELS = (
     ("correct", "billed correctly"),
@@ -87,6 +94,7 @@ def report_markdown(run: Mapping[str, Any], rows: Sequence[CaseResult], gold: Go
         _results_table(harness, overall),
         _groups_table(group_summaries(rows)),
         _disagreements(rows),
+        _line_disagreements(rows),
         _failures(rows),
     ]
     return "\n\n".join(section for section in sections if section) + "\n"
@@ -126,8 +134,11 @@ def _methods(gold: GoldSet) -> str:
             "- An evaluation run reads every case twice with the current model and prompt. The first read is compared "
             "with the expected claim; the two reads are compared with each other for run-to-run consistency.",
             "- Scored elements: the E/M code (exact), the set of ICD-10-CM codes (precision, recall, F1 and exact set) "
-            "and the set of modifiers on the claim's CPT and HCPCS lines (exact). Procedure codes, add-on codes "
-            "(G2211, G2212), units and place of service are not scored.",
+            "and the set of modifiers on the claim's CPT and HCPCS lines (exact), on every scored case. Then, each on "
+            "the cases it applies to: procedure lines (the set of CPT and HCPCS codes other than the E/M and the "
+            "add-ons, when either claim has one), add-on codes (the set of G2211, G2212 and 99417, when either claim "
+            "has one), units (the lines both claims carry) and place of service (Bodha does not change it, so it "
+            "checks the claim keeps the expected place). Runs before this scoring show these as n/a with 0 trials.",
             "- Intervals: Wilson score 95% intervals for per-note rates; for ICD-10-CM precision and recall a per-note "
             f"percentile bootstrap ({BOOTSTRAP_RESAMPLES} resamples, seed {BOOTSTRAP_SEED}), the note being the unit "
             "of independence. F1 has no interval.",
@@ -148,6 +159,7 @@ def _results_table(harness: Mapping[str, Any], overall: Mapping[str, Any]) -> st
         ("ICD-10-CM F1", (_ratio(overall["icd_f1"]), "", "")),
         ("ICD-10-CM exact set", _rate(overall["icd_exact"])),
         ("Modifiers exact", _rate(overall["modifiers"])),
+        *((label, _rate(harness[metric])) for metric, label in LINE_LABELS),
         ("Two reads agree on every element", _rate(consistency)),
     ]
     rows = "\n".join(f"| {name} | {value} | {interval} | {count} |" for name, (value, interval, count) in lines)
@@ -184,6 +196,36 @@ def _disagreement(row: CaseResult) -> str:
         ", ".join(modifiers["compared"]) or "none",
     )
     return "| " + " | ".join(cells) + " |"
+
+
+def _line_disagreements(rows: Sequence[CaseResult]) -> str:
+    differing = [row for row in rows if row.scored and _line_misses(row.result.get("lines"))]
+    if not differing:
+        return ""
+    header = "| Case | Procedures expected | Procedures Bodha | Add-ons expected | Add-ons Bodha | Units | Place |\n"
+    lines = [_line_disagreement(row.case.id, row.result["lines"]) for row in differing]
+    return "## Claim line disagreements\n\n" + header + "|---|---|---|---|---|---|---|\n" + "\n".join(lines)
+
+
+def _line_disagreement(case_id: str, lines: Mapping[str, Any]) -> str:
+    procedures, add_ons, units, place = (lines[metric] for metric in LINE_METRICS)
+    differing = [f"{code} {units['reference'][code]} vs {units['compared'][code]}" for code in units["differing"]]
+    cells = (
+        case_id,
+        ", ".join(procedures["reference"]) or "none",
+        ", ".join(procedures["compared"]) or "none",
+        ", ".join(add_ons["reference"]) or "none",
+        ", ".join(add_ons["compared"]) or "none",
+        "; ".join(differing),
+        "" if place["match"] else f"{place['reference']} vs {place['compared']}",
+    )
+    return "| " + " | ".join(cells) + " |"
+
+
+def _line_misses(lines: Mapping[str, Any] | None) -> bool:
+    if not lines:
+        return False
+    return any(lines[metric]["scored"] and not lines[metric]["match"] for metric in LINE_METRICS)
 
 
 def _failures(rows: Sequence[CaseResult]) -> str:

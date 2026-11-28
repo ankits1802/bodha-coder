@@ -5,6 +5,7 @@ from typing import Any
 
 from app.core.statistics import wilson
 from app.services.agreement import summarize
+from app.services.line_agreement import LINE_METRICS, summarize_lines
 
 __all__ = ["DROP_ALERT", "TRACKED_METRICS", "evaluation_summary", "metric_values", "run_change"]
 
@@ -17,6 +18,7 @@ ELEMENTS = ("em", "icd", "modifiers")
 def evaluation_summary(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     scored = [result for result in results if "agreement" in result]
     measured = summarize([result["agreement"] for result in scored])
+    lines = summarize_lines([result["lines"] for result in scored if "lines" in result])
     repeats = [result["repeat"] for result in scored]
     return {
         "cases": len(results),
@@ -24,6 +26,11 @@ def evaluation_summary(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "failed": len(results) - len(scored),
         **{key: measured[key] for key in ("em", "em_higher", "em_lower", "icd_precision", "icd_recall", "icd_f1")},
         "modifiers": measured["modifiers"],
+        **lines,
+        "case_counts": {
+            **{element: len(scored) for element in ELEMENTS},
+            **{metric: lines[metric]["trials"] for metric in LINE_METRICS},
+        },
         "consistency": {
             **{
                 element: wilson(sum(repeat[element]["match"] for repeat in repeats), len(repeats)).as_json()

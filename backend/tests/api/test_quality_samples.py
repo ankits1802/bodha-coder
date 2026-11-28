@@ -3,10 +3,11 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
+from app.codes.billing_codes import Code
 from app.core.db import SessionFactory
 from app.models import AuditRun, AuditSample
 from tests.api.quality_helpers import CODER_EMAIL, SERVICE_DAY, approved_note, note_of_item, read_note, user_id
-from tests.builders import invite_member, practice_with_provider, sign_in
+from tests.builders import DOCUMENTED, invite_member, practice_with_provider, sign_in
 
 PERIOD = {"start": SERVICE_DAY, "end": SERVICE_DAY}
 ANSWERS = {
@@ -35,6 +36,10 @@ async def audit_setup(harness, icd_catalog, *, purpose: str = "audit"):
         started = await harness.client.post("/api/training/sets", headers=practice.admin, json=body)
     assert started.status_code == 200, started.text
     return practice, coder, started.json()["id"], {first: "first", second: "second"}
+
+
+def reference_labels(item: AuditSample, side: str) -> list[str]:
+    return sorted(Code.from_json(code).label() for code in item.result["reference"][side])
 
 
 async def stored_run(run_id: str) -> tuple[AuditRun, list[str | None]]:
@@ -97,6 +102,27 @@ async def test_a_blind_audit_scores_visits_with_wilson_and_diagnoses_with_a_note
     assert (results["sample"]["status"], results["sample"]["requested"], results["sample"]["notes"]) == ("done", 40, 2)
     assert [(row["provider_name"], row["bodha"]["notes"]) for row in results["providers"]] == [("Elena Varga", 2)]
     assert sorted(row["agreement"]["bodha"]["em"]["direction"] for row in results["items"]) == ["lower", "match"]
+
+
+async def test_a_blind_audit_freezes_bodha_from_the_claim_as_uploaded_not_the_coders_edit(harness, icd_catalog):
+    practice = await practice_with_provider(harness)
+    note_id = await read_note(harness, practice, icd_catalog, 1)
+    edited = await harness.client.put(
+        f"/api/notes/{note_id}/billed-codes",
+        headers=practice.admin,
+        json={"codes": "99214-25, 20610-RT, E11.65, I12.9, N18.30, R20.2", "reason": DOCUMENTED},
+    )
+    assert edited.status_code == 200, edited.text
+    assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
+    coder_id = await invite_member(harness, practice, name="Coder One", email=CODER_EMAIL, role="coder")
+    body = {"scope": "practice", **PERIOD, "reviewer_ids": [coder_id]}
+    started = await harness.client.post("/api/quality/samples", headers=practice.admin, json=body)
+    assert started.status_code == 200, started.text
+
+    async with SessionFactory() as db:
+        [item] = (await db.scalars(select(AuditSample).where(AuditSample.run_id == started.json()["id"]))).all()
+    assert reference_labels(item, "bodha") == ["99214", "E11.65", "I12.9", "N18.30", "R20.2"]
+    assert reference_labels(item, "claim") == ["20610-RT", "99214-25", "E11.65", "I12.9", "N18.30", "R20.2"]
 
 
 async def test_the_blind_form_shows_only_the_note_and_takes_one_valid_answer(harness, icd_catalog):

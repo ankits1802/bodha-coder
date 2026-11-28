@@ -35,7 +35,7 @@ def findings(icd) -> list[Finding]:
         ],
         [
             AddOnSuggestion(code="96127", name="Depression screening", reason="PHQ-9 scored.", evidence=["PHQ-9"]),
-            AddOnSuggestion(code="99417", name="Prolonged service", reason="80 minutes."),
+            AddOnSuggestion(code="99199", name="Unlisted service", reason="Not a fee schedule code."),
             AddOnSuggestion(code="20610"),
             AddOnSuggestion(code="99214"),
         ],
@@ -64,8 +64,9 @@ def test_a_known_add_on_is_suggested_and_an_unknown_one_is_for_review(findings):
     added = items["addon:96127"]
     assert (added.kind, added.action, added.code_before, added.code_after) == ("code_review", "add", None, "96127")
     assert (added.title, added.reasoning, added.default_choice) == ("Depression screening", "PHQ-9 scored.", "accept")
-    unknown = items["addon:99417"]
+    unknown = items["addon:99199"]
     assert (unknown.action, unknown.code_after, unknown.default_choice) == ("review", None, "keep")
+    assert unknown.reasoning.startswith("99199 is not a 2026 physician fee schedule code.")
     assert "addon:20610" not in items
     assert "addon:99214" not in items
 

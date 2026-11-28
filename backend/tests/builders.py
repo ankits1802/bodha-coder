@@ -263,10 +263,10 @@ async def read_next_note(harness: Harness, icd_catalog, report: ReviewReport | N
     return reviewer
 
 
-async def reviewed_note(harness: Harness, icd_catalog) -> tuple[Practice, str]:
+async def reviewed_note(harness: Harness, icd_catalog, report: ReviewReport | None = None) -> tuple[Practice, str]:
     practice = await practice_with_provider(harness)
     upload = await upload_note(harness, practice)
     assert upload.status_code == 200, upload.text
-    await read_next_note(harness, icd_catalog)
+    await read_next_note(harness, icd_catalog, report)
     listing = await harness.client.get("/api/notes", headers=practice.admin)
     return practice, listing.json()["items"][0]["id"]

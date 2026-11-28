@@ -9,6 +9,7 @@ from typing import Any, Literal
 from app.codes.catalog_pfs import CODES as PFS_CODES
 from app.codes.em import is_em_code
 from app.codes.icd import format_icd, is_icd_shaped
+from app.codes.prolonged import OUTSIDE_FEE_SCHEDULE
 
 CodeType = Literal["CPT", "ICD-10"]
 CPT_PATTERN = re.compile(r"^(\d{4}[0-9A-Z]|[A-Z]\d{4})$")
@@ -18,7 +19,7 @@ MAX_POINTERS = 4
 MIN_UNITS = 1
 MAX_UNITS = 99
 UNITS_SIGN = "×"
-KNOWN_CPT_CODES: frozenset[str] = frozenset(PFS_CODES.split())
+KNOWN_CPT_CODES: frozenset[str] = frozenset(PFS_CODES.split()) | OUTSIDE_FEE_SCHEDULE
 _UNITS_SUFFIX = re.compile(r"^(?P<body>.+?)\s*[X×]\s*(?P<units>\d+)$")
 _PARTS = re.compile(r"[-\s]+")
 _FILENAME_PART_SEPARATOR = re.compile(r"\s+-\s+")

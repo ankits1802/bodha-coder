@@ -100,6 +100,28 @@ def test_different_anatomic_modifiers_bypass_and_the_same_side_does_not(tables):
     assert _edits(tables, "20611-RT, 20610-RT", WINTER)[0]["bypassed_by"] is None
 
 
+def test_an_anatomic_modifier_on_one_procedure_alone_shows_no_second_site(tables):
+    assert _edits(tables, "20611-RT, 20610", WINTER)[0]["bypassed_by"] is None
+    assert _edits(tables, "20611, 20610-LT", WINTER)[0]["bypassed_by"] is None
+
+
+@pytest.mark.parametrize("procedure", ["20610-RT", "20610-LT", "20610-59", "20610-XS", "20610-RT-59"])
+def test_a_same_day_visit_without_25_stays_bundled_into_20610_whatever_the_procedure_carries(tables, procedure):
+    assert _edits(tables, f"99214, {procedure}, M17.11", WINTER) == [
+        {"kind": "ptp", "column1": "20610", "column2": "99214", "modifier_allowed": True, "bypassed_by": None}
+    ]
+
+
+@pytest.mark.parametrize("procedure", ["20610", "20610-RT", "20610-LT"])
+def test_modifier_25_on_the_visit_unbundles_it_from_20610_on_either_side(tables, procedure):
+    [edit] = _edits(tables, f"99214-25, {procedure}, M17.11", WINTER)
+    assert (edit["column1"], edit["column2"], edit["bypassed_by"]) == ("20610", "99214", "25")
+
+
+def test_an_anatomic_modifier_on_the_visit_does_not_unbundle_it(tables):
+    assert _edits(tables, "99214-RT, 20610-LT", WINTER)[0]["bypassed_by"] is None
+
+
 def test_indicator_0_cannot_be_bypassed_by_any_modifier(tables):
     assert _edits(tables, "36415, 36591-59", WINTER) == [
         {"kind": "ptp", "column1": "36415", "column2": "36591", "modifier_allowed": False, "bypassed_by": None}
@@ -201,6 +223,16 @@ def test_cms_practitioner_edits_and_limits(cms):
     assert cms.add_on_primaries("99292", day).primaries == {"99291"}
     assert "99349" in cms.add_on_primaries("G2211", date(2026, 1, 1)).primaries
     assert "99349" not in cms.add_on_primaries("G2211", date(2025, 12, 31)).primaries
+
+
+def test_the_cms_20610_edit_with_a_visit_needs_25_and_ignores_rt_or_lt(cms):
+    day = date(2026, 2, 24)
+    pair = {"kind": "ptp", "column1": "20610", "column2": "99214", "modifier_allowed": True}
+    without = [edit.as_json() for edit in cms.claim_edits(parse_code_list("99214, 20610-RT, M17.11").codes, day)]
+    separate = [edit.as_json() for edit in cms.claim_edits(parse_code_list("99214-25, 20610-RT, M17.11").codes, day)]
+    assert {**pair, "bypassed_by": None} in without
+    assert {**pair, "bypassed_by": "25"} in separate
+    assert all(edit.get("bypassed_by") != "RT" for edit in without + separate)
 
 
 def test_the_vendored_manifest_lists_every_source_with_its_checksum():
