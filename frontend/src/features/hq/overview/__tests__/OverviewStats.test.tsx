@@ -25,7 +25,7 @@ describe("HQ overview figures", () => {
   it("opens the organizations, the live practices and this month's spend", () => {
     render(<OverviewStats overview={OVERVIEW} linked />);
     const links = within(stats()).getAllByRole("link");
-    expect(links.map((link) => [link.getAttribute("aria-label"), link.getAttribute("href")])).toEqual([
+    expect(links.map((link) => [(link.textContent ?? "").replace(/\s+/g, " ").trim(), link.getAttribute("href")])).toEqual([
       ["Organizations, 3", "/hq/organizations"],
       ["Practices, 8", "/hq/practices?status=live"],
       ["Model cost this month, $42.00, 2 without a price", "/hq/spend?from=2026-11-01&to=2026-11-28"],

@@ -316,7 +316,7 @@ async def test_purging_a_practice_removes_its_keys_connections_runs_and_document
     path = f"/api/hq/practices/{practice.id}"
     await harness.client.patch(path, headers=hq, json={"status": "ended"})
     closed = await harness.client.post(f"{path}/close", headers=hq, json={"confirm_name": "Lakeside"})
-    assert closed.status_code == 200, closed.text
+    assert closed.status_code == 204, closed.text
     await backdate_closure(practice.id, 2558)
 
     purged = await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})

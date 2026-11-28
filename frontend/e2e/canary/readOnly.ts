@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-const SIGN_IN_WRITES = new Set(["/api/auth/login", "/api/auth/mfa/verify", "/api/auth/refresh"]);
+const SIGN_IN_WRITES = new Set(["/api/auth/sso", "/api/auth/login", "/api/auth/mfa/verify", "/api/auth/refresh"]);
 const READS = new Set(["GET", "HEAD"]);
 const REFRESH = "/api/auth/refresh";
 const UNAUTHORIZED = 401;
