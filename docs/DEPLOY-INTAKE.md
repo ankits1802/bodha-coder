@@ -1,14 +1,19 @@
 # Automatic intake: how a practice drops files
 
-Bodha reads PDFs that a practice places in its own inbox prefix, about once a minute. How the
-inbox is read is in [ARCHITECTURE.md](ARCHITECTURE.md#intake); the decision is
-[0017](decisions/0017-remittance-intake-query-governance.md).
+Besides uploading on Upload notes, a practice can have Bodha read PDFs it places in its own inbox
+prefix (options 1 and 2, about once a minute), emailed to its own address (option 3) or pulled from its
+EHR (option 4). Every path ends in the same checks and batches as an upload; the diagram and the rules
+are in [ARCHITECTURE.md](ARCHITECTURE.md#intake), and the decisions are
+[0017](decisions/0017-remittance-intake-query-governance.md), [0046](decisions/0046-email-intake.md) and
+[0060](decisions/0060-ehr-connection-over-fhir.md).
 
 ## The inbox
 
 ```
 s3://<bucket>/practices/<practice id>/inbox/<provider folder>/<YYYY-MM-DD>/<file>.pdf
 ```
+
+`<bucket>` is the documents bucket (`bodha-staging-documents-<account>` in production).
 
 | Part | Rule |
 |---|---|

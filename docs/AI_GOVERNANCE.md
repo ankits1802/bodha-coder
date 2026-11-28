@@ -13,7 +13,9 @@ audit checklist, quality measures and, when switched on, risk-adjustment conditi
 
 The model proposes; people decide. A claim leaves Bodha only after a person approves it, unless an admin
 has switched on earned autonomy for that provider after a passing blind audit (see below); even then one
-in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
+in ten notes is held for a person. Bodha sends approved claims only to the practice's own clearinghouse,
+when the practice sets one up and a biller sends them; nothing goes to a payer directly. The review of one note, step
+by step, and where each note goes after it: [ARCHITECTURE.md](ARCHITECTURE.md#how-a-note-flows).
 
 ## Controls around the model
 
@@ -41,7 +43,7 @@ in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 | Item | Value |
 |---|---|
 | Model | Google Gemini, `GEMINI_MODEL` (default `gemini-3.8-flash`) |
-| Platform for patient data | Vertex AI under the customer's Google Cloud business associate agreement (`GEMINI_BACKEND=vertex`); the Gemini Developer API is for synthetic data only |
+| Platform for patient data | Vertex AI under the customer's Google Cloud business associate agreement (`GEMINI_BACKEND=vertex`); the Gemini Developer API is for synthetic data only. The production deployment runs the Developer API today (`GEMINI_BACKEND=developer`, [DEPLOY.md](DEPLOY.md#what-opentofu-builds-today)) |
 | Prompt version | `PROMPT_VERSION` in `backend/app/ai/review.py`, stored on every analysis; 2026.11.8 added the payer to the encounter context and the payer rules ([0059](decisions/0059-payer-known-when-the-note-is-read.md)) |
 | Change process | Prompt and model changes are code changes reviewed through pull requests, recorded in `docs/decisions/`, tested on GitHub Actions, and visible per note in the analysis history |
 

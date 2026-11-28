@@ -12,28 +12,42 @@ practice's own clearinghouse as X12 837P files.
 | AI | Gemini (Vertex AI for PHI, or the Developer API), one bundled structured call per note (E/M with modifiers and add-on codes, ICD-10-CM, CDI queries, audit risk, MIPS, risk adjustment) |
 | Files | S3 or Cloudflare R2 (any S3-compatible store) |
 
+Production runs on AWS at `https://www.bodhaai.co` (practices) and `https://admin.bodhaai.co` (Bodha HQ).
+
+## Documentation
+
+| Document | For |
+|---|---|
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | what each role sees and does, screen by screen |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | system context, data model, how a note flows, sign-in, billing, intake, records |
+| [docs/CORE_API.md](docs/CORE_API.md) | the catalogue of shared backend components |
+| [docs/DESIGN.md](docs/DESIGN.md) | the design system every screen follows |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | images, continuous integration, the AWS deployment and releases |
+| [docs/DEPLOY-INTAKE.md](docs/DEPLOY-INTAKE.md) | how a practice drops files, emails notes or connects its EHR |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | runbooks |
+| [docs/AI_GOVERNANCE.md](docs/AI_GOVERNANCE.md) | how the model is used, controlled and measured |
+| [docs/TECH_DEBT.md](docs/TECH_DEBT.md) | known shortfalls and what clears them |
+| [docs/decisions/](docs/decisions/README.md) | the decision log, with an index of which records still hold |
+| [infra/tofu/README.md](infra/tofu/README.md), [infra/ses_intake/README.md](infra/ses_intake/README.md), [tools/load/README.md](tools/load/README.md) | the OpenTofu stacks, the email intake function, the load test |
+
 ## How a note moves
 
-1. A coder uploads the day's PDFs for one provider and date of service. Date, patient and billed
-   code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`. A practice
-   can also drop PDFs in a watched folder, or email them to its own intake address from an allowed
-   sender, in which case provider and date of service are read from page 1. Or Bodha pulls signed
-   notes from the practice's EHR over FHIR, taking the provider from the NPI and the date of service
-   from the encounter.
+1. Anyone in the practice uploads PDFs on Upload notes, or drops them on any page. Page 1 of each file
+   is read to propose the provider, date of service, place, patient and payer; the file name can carry
+   them too (`2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`). A practice can also drop PDFs in a
+   watched folder, email them to its own intake address, or let Bodha pull signed notes from its EHR
+   over FHIR.
 2. The worker reads the PDF (text layer, or the PDF itself for scans), runs the review and stores
    the result as a new analysis revision with every suggestion, its reasoning and its evidence.
-3. The note lands in a lane. A coder accepts or keeps each suggestion, asks the provider, flags
-   it for compliance, or approves it.
+3. The note lands in a lane: ready to approve, needs a coder, ask the provider, or compliance. A coder
+   accepts or keeps each suggestion, asks the provider, flags it for compliance, or approves it.
 4. A provider opens a secure link, confirms a one-time code, answers, and signs an addendum; the
    note is read again with the addendum.
-5. Approved notes appear in Ready to bill. A biller exports their claim lines as CSV or JSON, or,
-   once the practice has set up its clearinghouse, sends them as an 837P file over SFTP or downloads
-   the file to upload to the clearinghouse's portal. Each claim shows what it still needs (billing
-   details, a charge, the payer's id, the patient and subscriber details a biller confirms), then
-   sent, accepted or rejected with the reason from the clearinghouse's 999 and 277CA responses; a
-   rejected claim returns to Ready to bill to be fixed and sent again.
+5. Approved notes appear in Ready to bill. A biller exports their claim lines as CSV or JSON, or sends
+   them to the practice's clearinghouse as an 837P file over SFTP or downloads the file for its portal,
+   and follows each claim to accepted or rejected from the clearinghouse's 999 and 277CA responses.
 
-Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The diagrams of each step are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#how-a-note-flows).
 
 ## Run it
 
@@ -115,14 +129,10 @@ Every email is sent as plain text with an HTML version; no message contains pati
 
 ### Clearinghouse claims
 
-Before a practice's first 837P file: an admin fills in Settings, Setup, Practice details (legal name,
-EIN, group NPI, street, city, state, ZIP+4, phone, billing contact; taxonomy optional), gives each
-payer its payer id (and a claim filing code when its plan type is Other), adds a charge for every code
-it bills under Payments, gives each provider an NPI (and a group NPI or billing as an individual), and
-sets up the clearinghouse under Clearinghouse: the submitter and receiver ids the clearinghouse
-assigned, test or production, and either Portal upload or SFTP with the host, user name, password or
-private key, folders and the host key read and confirmed there ([0051](docs/decisions/0051-clearinghouse-837p.md)).
-A biller then confirms each claim's patient and subscriber details on Billing.
+What a practice fills in before its first 837P file (practice details, payer ids, charges, provider
+NPIs and the clearinghouse connection) is in the [user guide](docs/USER_GUIDE.md#settings-setup); what each claim
+still needs is listed by `services.claim_readiness` ([ARCHITECTURE.md](docs/ARCHITECTURE.md#clearinghouse-claims-837p),
+[0051](docs/decisions/0051-clearinghouse-837p.md)).
 
 | Setting | Values |
 |---|---|
@@ -133,7 +143,6 @@ A biller then confirms each claim's patient and subscriber details on Billing.
 
 | Setting | Values |
 |---|---|
-| `EHR_KEY_ENCRYPTION_KEY` | Fernet keys (comma-separated to rotate) that encrypt each practice's EHR private key at rest; empty keeps the EHR connection unavailable. Generate one the same way as `MFA_ENCRYPTION_KEY`, never the same key |
 | `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
 | `ADMIN_URL` | the HQ console's own host, for example `https://admin.bodhaai.co`; empty keeps HQ on `APP_URL`. With it set, HQ accounts sign in only there and practice accounts only on `APP_URL`, so one email can hold both; locally use `http://admin.localhost:3000`, and give the web server the same `ADMIN_URL` and `SITE_URL`. More HQ owners are invited on `/hq/team` or with `python -m app.scripts.invite_hq "Full Name <email>"` ([0033](docs/decisions/0033-hq-on-its-own-host.md)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
@@ -149,55 +158,39 @@ Register `{APP_URL}/api/auth/{provider}/callback` (for example
 the API through the web server's `/api` proxy. The addresses for every environment are in
 [docs/DEPLOY.md](docs/DEPLOY.md#self-sign-up-and-sign-in-services).
 
-A practice can start a free trial at `/sign-up`, with its work email or with Google, Microsoft or
-Yahoo. The email path sends a set-password link (an email that already has an account gets an email
-asking to sign in and add the practice from `/practices/new` instead, and the page answers the same
-way); the other path asks for the practice name and time zone and goes straight to two-step setup,
-making an existing account with that email the new practice's admin. A trial practice has
-`TRIAL_SEATS` seats until `TRIAL_DAYS` after sign-up, and HQ sees it marked "Self sign-up". A sign-in
-service signs in an existing account with the same verified email and binds that service's account
-to it; two-step verification still applies. With `SELF_SIGNUP_ENABLED=false` only existing accounts
-sign in and HQ adds every practice.
+Sign-in, sign-up, password reset, two-step codes, service returns, provider codes and demo requests are
+rate limited per address and account, so uvicorn must see the visitor's address (`--proxy-headers` and
+`--forwarded-allow-ips`, above). A session lasts up to 7 days without use and 30 days in all; a practice
+may choose a shorter inactivity sign-out, down to 15 minutes ([0063](docs/decisions/0063-longer-sign-in.md)). How each feature behind these settings works is in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#security):
 
-One account can belong to several practices, with a role in each: inviting an email that already has
-an account adds that practice to it, and the person switches practices from the top of the sidebar and
-sees their practices, and can leave one, in the account menu on their name and on the Account page. Blocks, plan limits, the plan-ended rule
-and two-step requirements apply per practice
-([0037](docs/decisions/0037-multi-practice-membership.md)). Sign-in, sign-up, password reset, two-step codes, service returns,
-provider codes and demo requests are rate limited per address and account, so uvicorn must see the
-visitor's address (`--proxy-headers` and `--forwarded-allow-ips`, above).
+| Feature | Where it is described |
+|---|---|
+| Self sign-up at `/sign-up`, with a work email or a sign-in service | [Self sign-up](docs/ARCHITECTURE.md#security), [0026](docs/decisions/0026-self-serve-sign-up.md) |
+| One person in several practices, with a role in each | [Memberships](docs/ARCHITECTURE.md#security), [0037](docs/decisions/0037-multi-practice-membership.md) |
+| Organizations, combined billing and joining by email domain | [Organizations and email domains](docs/ARCHITECTURE.md#organizations-and-email-domains), [0044](docs/decisions/0044-organizations-and-domain-join.md) |
+| SAML 2.0 single sign-on for verified domains | [Single sign-on](docs/ARCHITECTURE.md#security), [OPERATIONS.md](docs/OPERATIONS.md#single-sign-on-set-up-and-recover), [0061](docs/decisions/0061-saml-single-sign-on.md) |
+| Practice-defined quality measures and usage timing | [Quality measures and usage timing](docs/ARCHITECTURE.md#quality-measures-and-usage-timing), [0045](docs/decisions/0045-practice-measures-and-usage-timing.md) |
 
-A group with several locations can be one organization: HQ groups the practices and names its admins,
-who see every practice, its plan and combined insights, add locations and people, and can pay for the
-practices together with one subscription billed per active provider across them. Being an organization
-admin opens no practice's records; an audited, emailed self-grant does. A practice or organization that
-verifies its email domain (a DNS TXT record or a link to an admin mailbox) can let colleagues who sign up
-with that domain ask to join or join automatically
-([0044](docs/decisions/0044-organizations-and-domain-join.md)).
+### EHR connection
 
-A practice or organization admin can also turn on SAML 2.0 single sign-on for its verified domains, from
-Settings → Security or the organization's Single sign-on tab: the identity provider's metadata from a file
-or an https URL, the service provider details to give their IT admin, new people created on first sign-in
-if wanted (never as admins), and, once Test sign-in passes, single sign-on required for those domains with
-break-glass admins who keep a password and two-step. The sign-in page sends such emails to the identity
-provider. Signatures are checked with signxml against the pinned certificates only
-([0061](docs/decisions/0061-saml-single-sign-on.md)).
+| Setting | Values |
+|---|---|
+| `EHR_KEY_ENCRYPTION_KEY` | Fernet keys (comma-separated to rotate) that encrypt each practice's EHR private key at rest, on the API and the worker; empty keeps the EHR connection unavailable. Generate one the same way as `MFA_ENCRYPTION_KEY`, never the same key |
 
-Besides the CMS quality measures, a practice admin can add measures of the practice's own (an internal
-measure, a payer programme or a registry measure) that the review checks like any other and shows apart
-from CMS ones. Bodha also times the work without patient data (how long a note stays open in review, the
-inputs per decision and where people pause); practice admins see medians by role and step under
-Insights, Usage, and HQ sees them across practices
-([0045](docs/decisions/0045-practice-measures-and-usage-timing.md)).
-
-A practice admin can connect the practice's EHR under Settings, Setup, EHR connection: Bodha makes a key
-pair for the practice and publishes its public half at a JWKS URL the practice registers with its EHR
-vendor as a SMART on FHIR backend services client, then pulls current, final progress, consult, history
-and physical and nursing facility notes every 15 minutes into the same checks and batches as an upload.
-Every pull and every document fetched is recorded with its outcome, never with patient details. Set
-`EHR_KEY_ENCRYPTION_KEY` (a Fernet key list, like `MFA_ENCRYPTION_KEY`) on the API and the worker to turn it
-on; how a practice and its vendor connect is in [docs/DEPLOY-INTAKE.md](docs/DEPLOY-INTAKE.md#option-4-pull-signed-notes-from-the-practices-ehr-over-fhir)
+How Bodha pulls signed notes over FHIR: [ARCHITECTURE.md](docs/ARCHITECTURE.md#ehr-over-fhir); how a
+practice and its EHR vendor connect: [DEPLOY-INTAKE.md](docs/DEPLOY-INTAKE.md#option-4-pull-signed-notes-from-the-practices-ehr-over-fhir)
 ([0060](docs/decisions/0060-ehr-connection-over-fhir.md)).
+
+### Email intake
+
+| Setting | Values |
+|---|---|
+| `EMAIL_INTAKE_DOMAIN` | the intake host, for example `intake.bodhaai.co`, on the API and the worker; empty keeps email intake unavailable |
+| `EMAIL_INTAKE_BUCKET` | the bucket SES writes raw mail into; empty reads `ses-inbound/` in `S3_BUCKET` |
+
+How it works: [ARCHITECTURE.md](docs/ARCHITECTURE.md#email), [infra/ses_intake](infra/ses_intake/README.md),
+[0046](docs/decisions/0046-email-intake.md).
 
 ### Plans and billing
 
@@ -243,34 +236,26 @@ copy .env.compose.example .env.compose
 docker compose --env-file .env.compose up --build
 ```
 
-The AWS reference deployment (ECS on Fargate, RDS, S3, SES, SNS, Secrets Manager, CloudWatch) is in
-[docs/DEPLOY.md](docs/DEPLOY.md), the runbooks in [docs/OPERATIONS.md](docs/OPERATIONS.md), and the
-staging load test in [tools/load/README.md](tools/load/README.md). The synthetic gold set for measured
-accuracy (`tools/gold_set/`) is loaded and reported as the operations runbook describes.
+Production is provisioned with OpenTofu (`infra/tofu`): CloudFront in front of an internal load
+balancer, ECS on Fargate for the API, the worker and the web server, RDS, S3 with Object Lock, SES,
+KMS, Secrets Manager and CloudWatch ([docs/DEPLOY.md](docs/DEPLOY.md#what-opentofu-builds-today)). A
+commit is released by `deploy.yml` from the private origin once CI passed on the public repository
+([docs/DEPLOY.md](docs/DEPLOY.md#releases-migrations-first)). Runbooks are in
+[docs/OPERATIONS.md](docs/OPERATIONS.md), the load test in [tools/load/README.md](tools/load/README.md),
+and the synthetic gold set for measured accuracy (`tools/gold_set/`) is loaded and reported as
+[the operations runbook](docs/OPERATIONS.md#load-the-synthetic-gold-set-and-report-its-accuracy) describes.
 
 ## Checks
 
-Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
-check, the Python lock against `pyproject.toml`, ruff, the OpenAPI document and the generated
-frontend types against the code, the migrations up and down against Postgres, pytest, the
-frontend lint, type check, tests and build, and the browser journeys.
-
-The `e2e` job builds the web app (`next build`, `next start`) and runs it with the API and the worker
-on the demo model, Postgres, moto as the S3 store and mail written to an outbox, with HQ on
-`http://admin.localhost:3000`. Playwright (`frontend/e2e/journeys`) then drives each role's day in
-Chromium: self sign-up, the admin's first day, upload and the queue, a coder's review by keyboard,
-asking the provider, a compliance return, the claim-lines export, switching practices and the
-organization area, HQ, the public verify page, and a rehearsal of the nightly production canary, with
-axe on every page. Each test seeds its own synthetic practice through
-`python -m tests.e2e_seed <scenario>` (`backend/tests/e2e_seed`); failed tests keep a trace and a
-screenshot. A WCAG 2.2 AA sweep (`frontend/e2e/sweep`) seeds one shared world and visits every screen for
-every role that can open it, HQ on its host, the public pages, the main dialogs, a phone width and
-reduced motion, with axe, keyboard reach of each primary action, its focus indicator, and focus kept in
-and returned by dialogs, in light, in dark and at Larger text
-([0062](docs/decisions/0062-accessibility-sweep-of-every-screen.md), [0065](docs/decisions/0065-appearance.md)). A nightly workflow (`.github/workflows/canary.yml`) signs in to
-production read-only as two canary accounts
-([docs/OPERATIONS.md](docs/OPERATIONS.md#production-canary),
-[0050](docs/decisions/0050-browser-journeys-and-production-canary.md)).
+Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`), never locally: the
+hygiene check, the Python lock against `pyproject.toml`, ruff, the OpenAPI document and the generated
+frontend types against the code, the migrations up and down against Postgres, pytest, the frontend lint,
+type check, tests and build, the images, the OpenTofu stacks, the browser journeys of each role and the
+WCAG 2.2 AA sweep of every screen in light, dark and Larger text. A nightly workflow signs in to
+production read-only as two canary accounts. The jobs: [docs/DEPLOY.md](docs/DEPLOY.md#continuous-integration);
+the journeys, the sweep and the canary: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#browser-journeys-and-the-production-canary)
+([0050](docs/decisions/0050-browser-journeys-and-production-canary.md),
+[0062](docs/decisions/0062-accessibility-sweep-of-every-screen.md)).
 
 ## Data sources
 

@@ -8,6 +8,20 @@ gitignored `*.auto.tfvars`, and the state bucket from a gitignored `backend.hcl`
 | `bootstrap` | the state bucket and the operator's `bodha-staging-edge` policy | `bootstrap/terraform.tfstate` in the state bucket |
 | `envs/production` | network, data, app, email intake, alarms, uptime check and the GitHub deploy role | `production/terraform.tfstate` |
 
+`envs/production` is production, although AWS names keep the `bodha-staging` prefix
+([0025](../../docs/decisions/0025-staging-on-aws.md)). What it builds, against the reference design:
+[docs/DEPLOY.md](../../docs/DEPLOY.md#what-opentofu-builds-today); the system it runs:
+[docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md#system-context).
+
+| Module | Builds |
+|---|---|
+| `modules/network` | the VPC across two zones, public and private subnets, the S3 gateway endpoint, the security groups |
+| `modules/data` | the data and signing KMS keys, the documents bucket with Object Lock, RDS, the secrets, the SES identities, the backup vault and plan, CloudTrail |
+| `modules/app` | ECR, the task roles, task definitions, the ECS cluster and services, the internal load balancer, CloudFront and its certificates |
+| `modules/intake` | the inbound mail bucket, the email intake function and the SES receipt rule set |
+| `modules/watch` | the alerts topic, alarms, dashboard, budget and the Route 53 health check |
+| `modules/deploy` | the GitHub OIDC provider and the deploy role |
+
 ## First run
 
 1. `bootstrap/bootstrap.auto.tfvars`: `account_id`, `operator_user`. With a temporary
