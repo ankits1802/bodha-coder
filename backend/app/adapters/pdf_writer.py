@@ -99,6 +99,7 @@ class PdfDocument:
     title: str
     footer: str
     blocks: tuple[PdfBlock, ...]
+    reproducible: bool = False
 
 
 STYLES = {
@@ -139,6 +140,7 @@ def render_pdf(document: PdfDocument) -> bytes:
         title=document.title,
         author="Bodha Assure",
         creator="Bodha Assure",
+        invariant=1 if document.reproducible else None,
     )
 
     def footer(canvas: Canvas, _: SimpleDocTemplate) -> None:

@@ -5,6 +5,7 @@ import type { SetupOpen } from "@/lib/paths";
 import { ChargesPanel } from "./ChargesPanel";
 import { ChecksPanel } from "./ChecksPanel";
 import { ClearinghouseSection } from "./ClearinghouseSection";
+import { EhrConnectionPanel } from "./ehr/EhrConnectionPanel";
 import { MipsSection } from "./MipsSection";
 import { PayersPanel } from "./PayersPanel";
 import { ProvidersSection } from "./ProvidersSection";
@@ -35,6 +36,7 @@ export function SectionContent(props: SectionContentProps) {
   const { navKey, setup, open, onOpened, onSaved, onSectionSaved } = props;
   if (navKey === "mips") return <MipsSection />;
   if (navKey === "clearinghouse") return <ClearinghouseSection />;
+  if (navKey === "ehr") return <EhrConnectionPanel />;
   if (navKey === "intake") {
     return (
       <>

@@ -17,6 +17,14 @@ class SecretBox:
     missing: str
     unreadable: str
 
+    @property
+    def ready(self) -> bool:
+        try:
+            self._fernets()
+        except Unavailable:
+            return False
+        return True
+
     def is_sealed(self, stored: str) -> bool:
         return stored.startswith(self.prefix)
 

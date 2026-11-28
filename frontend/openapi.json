@@ -5276,6 +5276,540 @@
         "title": "DomainLinkBody",
         "type": "object"
       },
+      "EhrCheckStepView": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "step": {
+            "enum": [
+              "configuration",
+              "token",
+              "capability"
+            ],
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "passed",
+          "detail"
+        ],
+        "title": "EhrCheckStepView",
+        "type": "object"
+      },
+      "EhrCheckView": {
+        "additionalProperties": false,
+        "properties": {
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/EhrCheckStepView"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "tested_at": {
+            "title": "Tested At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "passed",
+          "tested_at",
+          "steps"
+        ],
+        "title": "EhrCheckView",
+        "type": "object"
+      },
+      "EhrConnectionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "base_url": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "client_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Client Id",
+            "type": "string"
+          },
+          "note_types": {
+            "items": {
+              "enum": [
+                "progress",
+                "consult",
+                "history_physical",
+                "nursing_facility"
+              ],
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Note Types",
+            "type": "array"
+          },
+          "scopes": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Scopes",
+            "type": "array"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_url",
+          "client_id",
+          "scopes",
+          "note_types",
+          "start_date"
+        ],
+        "title": "EhrConnectionBody",
+        "type": "object"
+      },
+      "EhrConnectionSettingsView": {
+        "additionalProperties": false,
+        "properties": {
+          "base_url": {
+            "title": "Base Url",
+            "type": "string"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "note_types": {
+            "items": {
+              "enum": [
+                "progress",
+                "consult",
+                "history_physical",
+                "nursing_facility"
+              ],
+              "type": "string"
+            },
+            "title": "Note Types",
+            "type": "array"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "saved_at": {
+            "title": "Saved At",
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
+          },
+          "start_date": {
+            "title": "Start Date",
+            "type": "string"
+          },
+          "token_endpoint": {
+            "title": "Token Endpoint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_url",
+          "token_endpoint",
+          "client_id",
+          "scopes",
+          "note_types",
+          "start_date",
+          "paused",
+          "saved_at"
+        ],
+        "title": "EhrConnectionSettingsView",
+        "type": "object"
+      },
+      "EhrConnectionView": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "connection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EhrConnectionSettingsView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "default_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Scopes",
+            "type": "array"
+          },
+          "last_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EhrPullRunView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "registration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EhrRegistrationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "unavailable",
+              "off",
+              "incomplete",
+              "paused",
+              "pulling"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "available",
+          "status",
+          "registration",
+          "connection",
+          "default_scopes",
+          "last_run"
+        ],
+        "title": "EhrConnectionView",
+        "type": "object"
+      },
+      "EhrDocumentPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EhrDocumentView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "page_size"
+        ],
+        "title": "EhrDocumentPage",
+        "type": "object"
+      },
+      "EhrDocumentView": {
+        "additionalProperties": false,
+        "properties": {
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "fetched_at": {
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          },
+          "outcome": {
+            "enum": [
+              "accepted",
+              "duplicate",
+              "refused"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_final",
+                  "no_attachment",
+                  "unsupported_format",
+                  "too_large",
+                  "attachment_unavailable",
+                  "attachment_mismatch",
+                  "file_refused",
+                  "no_service_date",
+                  "future_service_date",
+                  "no_provider",
+                  "no_place",
+                  "foreign_reference",
+                  "upload_refused"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "id",
+          "fetched_at",
+          "document_id",
+          "outcome",
+          "reason",
+          "note_id"
+        ],
+        "title": "EhrDocumentView",
+        "type": "object"
+      },
+      "EhrKeyBody": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithm": {
+            "default": "RS384",
+            "enum": [
+              "RS384",
+              "ES384"
+            ],
+            "title": "Algorithm",
+            "type": "string"
+          }
+        },
+        "title": "EhrKeyBody",
+        "type": "object"
+      },
+      "EhrPullRunPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EhrPullRunView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "page_size"
+        ],
+        "title": "EhrPullRunPage",
+        "type": "object"
+      },
+      "EhrPullRunView": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "duplicates": {
+            "title": "Duplicates",
+            "type": "integer"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "succeeded",
+              "partial",
+              "failed",
+              "running",
+              "interrupted"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "pages": {
+            "title": "Pages",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_key",
+                  "unsafe_address",
+                  "unreachable",
+                  "timeout",
+                  "too_large",
+                  "rate_limited",
+                  "redirected",
+                  "no_configuration",
+                  "token_refused",
+                  "server_refused",
+                  "server_error",
+                  "bad_response",
+                  "foreign_link"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "refused": {
+            "title": "Refused",
+            "type": "integer"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "started_at",
+          "finished_at",
+          "outcome",
+          "reason",
+          "pages",
+          "accepted",
+          "duplicates",
+          "refused",
+          "skipped"
+        ],
+        "title": "EhrPullRunView",
+        "type": "object"
+      },
+      "EhrRegistrationView": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithm": {
+            "enum": [
+              "RS384",
+              "ES384"
+            ],
+            "title": "Algorithm",
+            "type": "string"
+          },
+          "auth_method": {
+            "const": "private_key_jwt",
+            "title": "Auth Method",
+            "type": "string"
+          },
+          "grant_type": {
+            "const": "client_credentials",
+            "title": "Grant Type",
+            "type": "string"
+          },
+          "jwks_url": {
+            "title": "Jwks Url",
+            "type": "string"
+          },
+          "key_created_at": {
+            "title": "Key Created At",
+            "type": "string"
+          },
+          "key_id": {
+            "title": "Key Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "jwks_url",
+          "key_id",
+          "algorithm",
+          "key_created_at",
+          "grant_type",
+          "auth_method"
+        ],
+        "title": "EhrRegistrationView",
+        "type": "object"
+      },
       "ElementComparison": {
         "additionalProperties": false,
         "properties": {
@@ -9250,6 +9784,23 @@
           "token"
         ],
         "title": "JoinTicketBody",
+        "type": "object"
+      },
+      "JwksView": {
+        "additionalProperties": false,
+        "properties": {
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/PublicJwk"
+            },
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "title": "JwksView",
         "type": "object"
       },
       "LaneCount": {
@@ -14562,6 +15113,73 @@
           "bypassed_by"
         ],
         "title": "PtpEdit",
+        "type": "object"
+      },
+      "PublicJwk": {
+        "additionalProperties": false,
+        "properties": {
+          "alg": {
+            "enum": [
+              "RS384",
+              "ES384"
+            ],
+            "title": "Alg",
+            "type": "string"
+          },
+          "crv": {
+            "title": "Crv",
+            "type": "string"
+          },
+          "e": {
+            "title": "E",
+            "type": "string"
+          },
+          "key_ops": {
+            "items": {
+              "const": "verify",
+              "type": "string"
+            },
+            "title": "Key Ops",
+            "type": "array"
+          },
+          "kid": {
+            "title": "Kid",
+            "type": "string"
+          },
+          "kty": {
+            "enum": [
+              "RSA",
+              "EC"
+            ],
+            "title": "Kty",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "string"
+          },
+          "use": {
+            "const": "sig",
+            "title": "Use",
+            "type": "string"
+          },
+          "x": {
+            "title": "X",
+            "type": "string"
+          },
+          "y": {
+            "title": "Y",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kty",
+          "kid",
+          "alg",
+          "use",
+          "key_ops"
+        ],
+        "title": "PublicJwk",
         "type": "object"
       },
       "QualityOptions": {
@@ -22456,6 +23074,58 @@
         "summary": "Verify Domain Link",
         "tags": [
           "domains"
+        ]
+      }
+    },
+    "/api/ehr/jwks/{key_set}": {
+      "get": {
+        "operationId": "jwks_api_ehr_jwks__key_set__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_set",
+            "required": true,
+            "schema": {
+              "title": "Key Set",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JwksView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Jwks",
+        "tags": [
+          "ehr connection"
         ]
       }
     },
@@ -33002,6 +33672,638 @@
         "summary": "Join For Practice",
         "tags": [
           "domains"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection": {
+      "get": {
+        "operationId": "ehr_connection_api_practice_ehr_connection_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrConnectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Ehr Connection",
+        "tags": [
+          "ehr connection"
+        ]
+      },
+      "put": {
+        "operationId": "save_api_practice_ehr_connection_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EhrConnectionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrConnectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Save",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/documents": {
+      "get": {
+        "operationId": "documents_api_practice_ehr_connection_documents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrDocumentPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Documents",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/key": {
+      "post": {
+        "operationId": "new_key_api_practice_ehr_connection_key_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EhrKeyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrConnectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "New Key",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/pause": {
+      "post": {
+        "operationId": "pause_api_practice_ehr_connection_pause_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrConnectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Pause",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/resume": {
+      "post": {
+        "operationId": "resume_api_practice_ehr_connection_resume_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrConnectionView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Resume",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/runs": {
+      "get": {
+        "operationId": "runs_api_practice_ehr_connection_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrPullRunPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Runs",
+        "tags": [
+          "ehr connection"
+        ]
+      }
+    },
+    "/api/practice/ehr-connection/tests": {
+      "post": {
+        "operationId": "run_check_api_practice_ehr_connection_tests_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EhrCheckView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Run Check",
+        "tags": [
+          "ehr connection"
         ]
       }
     },

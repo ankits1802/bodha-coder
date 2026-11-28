@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException
 
 from app.adapters.billing_providers import build_billing_providers
 from app.adapters.dns_txt import DnsTxtResolver
+from app.adapters.guarded_http import OutboundHttp
 from app.adapters.image_models import build_image_model
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
@@ -43,6 +44,7 @@ from app.api.routes.claims import router as claims_router
 from app.api.routes.clearinghouse import router as clearinghouse_router
 from app.api.routes.defensibility import router as defensibility_router
 from app.api.routes.domains import router as domains_router
+from app.api.routes.ehr_connection import router as ehr_connection_router
 from app.api.routes.email_intake import router as email_intake_router
 from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.hq_organizations import router as hq_organizations_router
@@ -77,6 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.image_model = build_image_model(settings)
     app.state.txt_resolver = DnsTxtResolver()
     app.state.file_link = ParamikoLink(timeout_seconds=settings.clearinghouse_timeout_seconds)
+    app.state.outbound = OutboundHttp()
     yield
     await app.state.image_model.aclose()
 
@@ -113,6 +116,7 @@ app.include_router(blind_review_router, prefix="/api")
 app.include_router(remittances_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
 app.include_router(email_intake_router, prefix="/api")
+app.include_router(ehr_connection_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
 app.include_router(clearinghouse_router, prefix="/api")

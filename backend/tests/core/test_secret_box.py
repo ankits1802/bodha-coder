@@ -42,3 +42,11 @@ def test_no_key_or_a_bad_key_refuses_and_plain_values_are_never_opened():
     with pytest.raises(KeyMissing, match="cannot read it"):
         _box(OLD).open("pw")
     assert _box(OLD).is_current("pw") is False
+
+
+def test_a_box_is_ready_only_with_a_key_list_that_reads():
+    assert _box(OLD).ready is True
+    assert _box(f"{NEW}, {OLD}").ready is True
+    assert _box(None).ready is False
+    assert _box(" , ").ready is False
+    assert _box("not-a-fernet-key").ready is False

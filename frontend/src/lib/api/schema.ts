@@ -719,6 +719,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ehr/jwks/{key_set}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["jwks_api_ehr_jwks__key_set__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -2409,6 +2425,118 @@ export interface paths {
         get?: never;
         put: operations["join_for_practice_api_practice_domains__claim_id__join_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ehr_connection_api_practice_ehr_connection_get"];
+        put: operations["save_api_practice_ehr_connection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["documents_api_practice_ehr_connection_documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["new_key_api_practice_ehr_connection_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pause_api_practice_ehr_connection_pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resume_api_practice_ehr_connection_resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["runs_api_practice_ehr_connection_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/ehr-connection/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["run_check_api_practice_ehr_connection_tests_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4243,6 +4371,84 @@ export interface components {
         DomainLinkBody: {
             token: string;
         };
+        EhrCheckStepView: {
+            detail: string;
+            passed: boolean;
+            step: "configuration" | "token" | "capability";
+        };
+        EhrCheckView: {
+            passed: boolean;
+            steps: components["schemas"]["EhrCheckStepView"][];
+            tested_at: string;
+        };
+        EhrConnectionBody: {
+            base_url: string;
+            client_id: string;
+            note_types: ("progress" | "consult" | "history_physical" | "nursing_facility")[];
+            scopes: string[];
+            start_date: string;
+        };
+        EhrConnectionSettingsView: {
+            base_url: string;
+            client_id: string;
+            note_types: ("progress" | "consult" | "history_physical" | "nursing_facility")[];
+            paused: boolean;
+            saved_at: string;
+            scopes: string[];
+            start_date: string;
+            token_endpoint: string;
+        };
+        EhrConnectionView: {
+            available: boolean;
+            connection: components["schemas"]["EhrConnectionSettingsView"] | null;
+            default_scopes: string[];
+            last_run: components["schemas"]["EhrPullRunView"] | null;
+            registration: components["schemas"]["EhrRegistrationView"] | null;
+            status: "unavailable" | "off" | "incomplete" | "paused" | "pulling";
+        };
+        EhrDocumentPage: {
+            items: components["schemas"]["EhrDocumentView"][];
+            offset: number;
+            page_size: number;
+            total: number;
+        };
+        EhrDocumentView: {
+            document_id: string;
+            fetched_at: string;
+            id: string;
+            note_id: string | null;
+            outcome: "accepted" | "duplicate" | "refused";
+            reason: ("not_final" | "no_attachment" | "unsupported_format" | "too_large" | "attachment_unavailable" | "attachment_mismatch" | "file_refused" | "no_service_date" | "future_service_date" | "no_provider" | "no_place" | "foreign_reference" | "upload_refused") | null;
+        };
+        EhrKeyBody: {
+            algorithm?: "RS384" | "ES384";
+        };
+        EhrPullRunPage: {
+            items: components["schemas"]["EhrPullRunView"][];
+            offset: number;
+            page_size: number;
+            total: number;
+        };
+        EhrPullRunView: {
+            accepted: number;
+            duplicates: number;
+            finished_at: string | null;
+            id: string;
+            outcome: "succeeded" | "partial" | "failed" | "running" | "interrupted";
+            pages: number;
+            reason: ("no_key" | "unsafe_address" | "unreachable" | "timeout" | "too_large" | "rate_limited" | "redirected" | "no_configuration" | "token_refused" | "server_refused" | "server_error" | "bad_response" | "foreign_link") | null;
+            refused: number;
+            skipped: number;
+            started_at: string;
+        };
+        EhrRegistrationView: {
+            algorithm: "RS384" | "ES384";
+            auth_method: "private_key_jwt";
+            grant_type: "client_credentials";
+            jwks_url: string;
+            key_created_at: string;
+            key_id: string;
+        };
         ElementComparison: {
             em: components["schemas"]["EmComparison"];
             icd: components["schemas"]["IcdComparison"];
@@ -4873,6 +5079,9 @@ export interface components {
         };
         JoinTicketBody: {
             token: string;
+        };
+        JwksView: {
+            keys: components["schemas"]["PublicJwk"][];
         };
         LaneCount: {
             due_soon: number;
@@ -5649,6 +5858,18 @@ export interface components {
             column2: string;
             kind: "ptp";
             modifier_allowed: boolean;
+        };
+        PublicJwk: {
+            alg: "RS384" | "ES384";
+            crv?: string;
+            e?: string;
+            key_ops: "verify"[];
+            kid: string;
+            kty: "RSA" | "EC";
+            n?: string;
+            use: "sig";
+            x?: string;
+            y?: string;
         };
         QualityOptions: {
             default_size: number;
@@ -8494,6 +8715,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VerifiedDomain"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    jwks_api_ehr_jwks__key_set__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_set: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JwksView"];
                 };
             };
             422: {
@@ -14924,6 +15182,410 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ehr_connection_api_practice_ehr_connection_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrConnectionView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_api_practice_ehr_connection_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EhrConnectionBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrConnectionView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    documents_api_practice_ehr_connection_documents_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrDocumentPage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    new_key_api_practice_ehr_connection_key_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EhrKeyBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrConnectionView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    pause_api_practice_ehr_connection_pause_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrConnectionView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resume_api_practice_ehr_connection_resume_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrConnectionView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    runs_api_practice_ehr_connection_runs_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrPullRunPage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    run_check_api_practice_ehr_connection_tests_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EhrCheckView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

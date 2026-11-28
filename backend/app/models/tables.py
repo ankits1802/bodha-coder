@@ -201,7 +201,7 @@ class Provider(IdMixin, Base):
 
 class Batch(LedgerMixin, Base):
     __tablename__ = "batches"
-    __table_args__ = (one_of("source", ("upload", "intake")),)
+    __table_args__ = (one_of("source", ("upload", "intake", "fhir")),)
     practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), index=True)
     provider_id: Mapped[str] = mapped_column(ForeignKey("providers.id"))
     service_date: Mapped[date] = mapped_column(Date)

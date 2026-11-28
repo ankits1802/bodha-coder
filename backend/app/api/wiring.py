@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.billing_contract import BillingProvider
 from app.adapters.dns_txt import TxtResolver
+from app.adapters.guarded_http import OutboundHttp
 from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
@@ -66,6 +67,10 @@ def file_link(request: Request) -> FileLink:
     return request.app.state.file_link
 
 
+def outbound(request: Request) -> OutboundHttp:
+    return request.app.state.outbound
+
+
 def record_signer(request: Request) -> RecordSigner:
     return request.app.state.signer
 
@@ -86,6 +91,7 @@ ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
 BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_providers)]
 Sealer = Annotated[RecordSigner, Depends(record_signer)]
 Link = Annotated[FileLink, Depends(file_link)]
+Outbound = Annotated[OutboundHttp, Depends(outbound)]
 Resolver = Annotated[TxtResolver, Depends(txt_resolver)]
 SigningTools = Annotated[SignatureTools, Depends(signature_tools)]
 RefreshCookie = Annotated[str | None, Cookie(alias=REFRESH_COOKIE)]
