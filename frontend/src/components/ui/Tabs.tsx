@@ -71,7 +71,7 @@ export function Tabs<V extends string>(props: TabsProps<V>) {
           })}
         </div>
       </div>
-      <div id={`${prefix}-panel`} role="tabpanel" aria-labelledby={`${prefix}-tab-${value}`} tabIndex={0} className={`outline-none ${panelClassName}`}>
+      <div id={`${prefix}-panel`} role="tabpanel" aria-labelledby={`${prefix}-tab-${value}`} tabIndex={0} className={panelClassName || undefined}>
         {children}
       </div>
     </>

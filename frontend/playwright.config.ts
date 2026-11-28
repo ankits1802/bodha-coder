@@ -2,7 +2,6 @@ import { defineConfig, devices } from "@playwright/test";
 import { SITE_ORIGIN } from "./e2e/support/app";
 
 export default defineConfig({
-  testDir: "./e2e/journeys",
   outputDir: "./test-results",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
@@ -21,5 +20,15 @@ export default defineConfig({
     timezoneId: "America/Chicago",
     locale: "en-US",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", testDir: "./e2e/journeys", use: { ...devices["Desktop Chrome"] } },
+    { name: "sweep-setup", testDir: "./e2e/sweep", testMatch: /\.setup\.ts$/ },
+    {
+      name: "sweep",
+      testDir: "./e2e/sweep",
+      testMatch: /\.spec\.ts$/,
+      dependencies: ["sweep-setup"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
 });

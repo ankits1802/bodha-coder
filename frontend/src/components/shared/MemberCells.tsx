@@ -1,4 +1,5 @@
 import { Avatar } from "@/components/ui/Avatar";
+import { EmptyValue } from "@/components/ui/EmptyValue";
 import { StatusDot } from "@/components/ui/StatusDot";
 import type { TeamMember } from "@/lib/api/types";
 import { FORMAT_WORDS, formatSince } from "@/lib/format";
@@ -25,7 +26,7 @@ export function MemberLastSeen({ member }: { member: MemberFacts }) {
 }
 
 export function MemberTwoStep({ member }: { member: MemberFacts }) {
-  if (member.status !== "active") return <span className="text-quaternary">{FORMAT_WORDS.empty}</span>;
+  if (member.status !== "active") return <EmptyValue />;
   return member.mfa_enabled ? (
     <StatusDot tone="ok">{SHARED_TEXT.member.twoStepOn}</StatusDot>
   ) : (

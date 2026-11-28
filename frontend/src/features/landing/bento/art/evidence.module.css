@@ -162,6 +162,7 @@
   .beam,
   .pulse,
   .card,
+  .codeSet,
   .check path {
     animation: none;
   }

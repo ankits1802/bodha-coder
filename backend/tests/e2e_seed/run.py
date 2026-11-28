@@ -56,9 +56,13 @@ class SeedRun:
         await skip_tour(self.api, await hq_caller(account), tour=HQ_TOUR, version=self.tour_version)
         return account
 
-    async def practice(self, name: str) -> Practice:
+    async def practice(self, name: str, *, admin_mailbox: str = "admin") -> Practice:
         created = await create_practice(
-            self.api, await self.hq(), name=self.named(name), admin_name=ADMIN_NAME, admin_email=self.email("admin")
+            self.api,
+            await self.hq(),
+            name=self.named(name),
+            admin_name=ADMIN_NAME,
+            admin_email=self.email(admin_mailbox),
         )
         admin = await enrol_two_step(created.admin)
         await self.toured(admin, created.id)

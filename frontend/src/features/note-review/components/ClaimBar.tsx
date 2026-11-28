@@ -72,7 +72,7 @@ export function ClaimBar(props: ClaimBarProps) {
   if (permissions.compliance) buttons = <ComplianceButtons {...props} />;
   else if (permissions.approve || permissions.ask) buttons = <CoderButtons {...props} />;
   return (
-    <div data-usage-step="claim" className="sticky bottom-0 z-10 -mx-4 border-t border-separator bg-surface/95 sm:-mx-8">
+    <div data-usage-step="claim" className="sticky bottom-0 z-10 border-t border-separator bg-surface/95">
       <div className="mx-auto flex max-w-review flex-wrap items-center justify-between gap-3.5 px-4 py-3 sm:px-8">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">

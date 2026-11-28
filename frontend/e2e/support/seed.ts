@@ -16,15 +16,37 @@ export interface Account {
   two_step_secret: string | null;
 }
 
-export async function seed<T>(scenario: string): Promise<T> {
+export interface SessionHolder {
+  id: string;
+  practice_id: string | null;
+}
+
+export interface OpenedSessions {
+  cookie: { name: string; path: string };
+  tokens: string[];
+}
+
+async function backendJson<T>(module: string, argumentsList: readonly string[], what: string): Promise<T> {
   const python = process.env.E2E_PYTHON ?? "python";
-  const argumentsList = ["-m", "tests.e2e_seed", scenario, "--tour-version", String(TOUR_VERSION)];
   try {
-    const { stdout } = await run(python, argumentsList, { cwd: BACKEND, timeout: SEED_TIMEOUT_MS, maxBuffer: 1 << 20 });
+    const { stdout } = await run(python, ["-m", module, ...argumentsList], {
+      cwd: BACKEND,
+      timeout: SEED_TIMEOUT_MS,
+      maxBuffer: 1 << 20,
+    });
     const lines = stdout.trim().split("\n");
     return JSON.parse(lines.at(-1) ?? "") as T;
   } catch (error) {
     const failure = error as { stderr?: string; message: string };
-    throw new Error(`seeding ${scenario} failed: ${failure.stderr || failure.message}`);
+    throw new Error(`${what} failed: ${failure.stderr || failure.message}`);
   }
+}
+
+export function seed<T>(scenario: string): Promise<T> {
+  return backendJson<T>("tests.e2e_seed", [scenario, "--tour-version", String(TOUR_VERSION)], `seeding ${scenario}`);
+}
+
+export function openSessions(holders: readonly SessionHolder[]): Promise<OpenedSessions> {
+  const people = holders.map((holder) => (holder.practice_id ? `${holder.id}:${holder.practice_id}` : holder.id));
+  return backendJson<OpenedSessions>("tests.e2e_seed.sessions", people, "opening sessions");
 }

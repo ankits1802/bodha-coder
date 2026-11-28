@@ -8,12 +8,12 @@ from typing import Any
 from tests.e2e_seed.accounts import practice_caller
 from tests.e2e_seed.notes import SyntheticNote, upload_notes, write_pdfs
 from tests.e2e_seed.organizations import create_organization
+from tests.e2e_seed.practices import VARGA_NPI
 from tests.e2e_seed.review import adopt_signature, approve, assign, verification_code
 from tests.e2e_seed.run import SeedRun
+from tests.e2e_seed.sweep import sweep_day
 
 __all__ = ["SCENARIOS"]
-
-VARGA_NPI = "1234567893"
 
 Scenario = Callable[[SeedRun], Awaitable[dict[str, Any]]]
 
@@ -147,4 +147,5 @@ SCENARIOS: dict[str, Scenario] = {
     "hq-day": hq_day,
     "verify-day": verify_day,
     "canary-day": canary_day,
+    "sweep-day": sweep_day,
 }

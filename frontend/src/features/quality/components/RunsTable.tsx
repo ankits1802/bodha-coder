@@ -1,4 +1,5 @@
 import { formatRate } from "@/components/shared/rates";
+import { EmptyValue } from "@/components/ui/EmptyValue";
 import { StatusDot } from "@/components/ui/StatusDot";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import type { EvalRunView, Rate } from "@/lib/api/types";
@@ -15,7 +16,7 @@ function share(value: number | null | undefined): string {
 }
 
 function ChangeCell({ run }: { run: EvalRunView }) {
-  if (run.change === null) return <span className="text-quaternary">{FORMAT_WORDS.empty}</span>;
+  if (run.change === null) return <EmptyValue />;
   return <StatusDot tone={changeTone(run.change)}>{QUALITY_TEXT.changes[run.change.status]}</StatusDot>;
 }
 

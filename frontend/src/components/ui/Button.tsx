@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 import { buttonClasses, type ButtonSize, type ButtonVariant } from "./buttonStyles";
 import { Spinner } from "./Spinner";
 
@@ -16,14 +16,25 @@ export function Button({
   type = "button",
   disabled,
   className = "",
+  onClick,
   children,
   ...rest
 }: ButtonProps) {
+  function press(event: MouseEvent<HTMLButtonElement>): void {
+    if (pending) {
+      event.preventDefault();
+      return;
+    }
+    onClick?.(event);
+  }
+
   return (
     <button
       type={type}
-      disabled={disabled || pending}
+      disabled={disabled}
+      aria-disabled={pending || undefined}
       aria-busy={pending || undefined}
+      onClick={press}
       className={buttonClasses(variant, size, className)}
       {...rest}
     >

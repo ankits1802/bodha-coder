@@ -19,7 +19,7 @@ interface CredentialsFormProps {
 
 const FIELD = "flex h-14 flex-col justify-center gap-px bg-surface px-4";
 const LABEL = "text-caption text-tertiary";
-const TEXT = "w-full border-0 bg-transparent text-input tracking-snug text-label outline-none";
+const TEXT = "h-6 w-full border-0 bg-transparent text-input tracking-snug text-label outline-none";
 const INPUT = `${TEXT} p-0`;
 const PASSWORD = `${TEXT} py-0 pl-0`;
 

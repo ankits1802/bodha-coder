@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
+from app.core.calendar import today_in, zone_named
+from app.core.db import SessionFactory
+from app.models import Practice as PracticeRow
 from tests.e2e_seed.accounts import Account, accept_invite, practice_caller
 from tests.e2e_seed.api import Api, Caller
 
@@ -10,12 +14,16 @@ __all__ = [
     "HQ_TOUR",
     "PLAN",
     "PRACTICE_TOUR",
+    "VARGA_NPI",
     "Practice",
     "Provider",
+    "add_payer",
     "add_practice_for",
     "add_provider",
     "create_practice",
+    "end_plan",
     "invite",
+    "send_invite",
     "skip_tour",
 ]
 
@@ -24,6 +32,7 @@ SEATS = 10
 TIME_ZONE = "America/Chicago"
 PRACTICE_TOUR = "practice"
 HQ_TOUR = "hq"
+VARGA_NPI = "1234567893"
 
 
 @dataclass(frozen=True)
@@ -57,9 +66,13 @@ async def add_practice_for(api: Api, hq: Caller, *, name: str, admin: Account) -
     return Practice(created["id"], name, admin)
 
 
-async def invite(api: Api, practice: Practice, *, name: str, email: str, role: str) -> Account:
+async def send_invite(api: Api, practice: Practice, *, name: str, email: str, role: str) -> None:
     admin = await practice_caller(practice.admin, practice.id)
     await api.send(admin, "POST", "/api/team", json={"name": name, "email": email, "role": role})
+
+
+async def invite(api: Api, practice: Practice, *, name: str, email: str, role: str) -> Account:
+    await send_invite(api, practice, name=name, email=email, role=role)
     return await accept_invite(api, name=name, email=email, role=role)
 
 
@@ -70,5 +83,19 @@ async def add_provider(api: Api, practice: Practice, *, name: str, npi: str, ema
     return Provider(created["id"], name, npi, email)
 
 
+async def add_payer(api: Api, practice: Practice, *, name: str, payer_id: str, plan_type: str) -> None:
+    admin = await practice_caller(practice.admin, practice.id)
+    await api.send(
+        admin, "POST", "/api/practice/payers", json={"name": name, "payer_id": payer_id, "plan_type": plan_type}
+    )
+
+
 async def skip_tour(api: Api, caller: Caller, *, tour: str, version: int) -> None:
     await api.send(caller, "PUT", f"/api/account/tours/{tour}", json={"version": version, "outcome": "skipped"})
+
+
+async def end_plan(practice: Practice) -> None:
+    async with SessionFactory() as db:
+        row = await db.get_one(PracticeRow, practice.id)
+        row.renews_on = today_in(zone_named(row.time_zone)) - timedelta(days=1)
+        await db.commit()

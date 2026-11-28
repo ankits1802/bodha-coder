@@ -1,5 +1,5 @@
 import { CodeChip } from "@/components/ui/CodeChip";
-import { FORMAT_WORDS } from "@/lib/format";
+import { EmptyValue } from "@/components/ui/EmptyValue";
 
 interface CodeListProps {
   codes: string[];
@@ -7,7 +7,7 @@ interface CodeListProps {
 }
 
 export function CodeList({ codes, max }: CodeListProps) {
-  if (codes.length === 0) return <span className="text-quaternary">{FORMAT_WORDS.empty}</span>;
+  if (codes.length === 0) return <EmptyValue />;
   const shown = max === undefined ? codes : codes.slice(0, max);
   const hidden = codes.length - shown.length;
   return (
