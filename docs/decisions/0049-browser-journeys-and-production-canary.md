@@ -1,4 +1,4 @@
-# 0046 Browser journeys in CI and a nightly production canary
+# 0049 Browser journeys in CI and a nightly production canary
 
 Date: 2026-11-28
 

@@ -45,7 +45,7 @@ Neither image contains a secret or an `.env` file; both `.dockerignore` files ke
 build context. Tag images with the git commit SHA, push to ECR with immutable tags and scan on
 push. CI builds both images on every push (`images` job) without pushing, and the `e2e` job runs the
 browser journeys against a production build of the web app with the API and worker beside it
-([0046](decisions/0046-browser-journeys-and-production-canary.md)). Every Python dependency
+([0049](decisions/0049-browser-journeys-and-production-canary.md)). Every Python dependency
 has arm64 wheels, so `docker buildx build --platform linux/arm64` produces Graviton images when
 wanted; CI builds amd64.
 

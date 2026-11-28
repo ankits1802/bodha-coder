@@ -99,7 +99,7 @@ rings, never for text. Key hints on grey fills use the soft label colour. Every 
 24 px in both directions or spaced so (WCAG 2.5.8), and a control's accessible name contains its
 visible words: avatar initials are drawn from `data-initials` by CSS, so they are not part of the text
 a speech user reads out. The browser journeys run axe on every page they open and fail on serious or
-critical violations ([0046](decisions/0046-browser-journeys-and-production-canary.md)).
+critical violations ([0049](decisions/0049-browser-journeys-and-production-canary.md)).
 
 ## Signatures
 

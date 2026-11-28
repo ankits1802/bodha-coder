@@ -47,7 +47,7 @@ workflow) in `CHARTMATE-APP/bodha-coder` only, in the `production` environment. 
 `/api/health/ready` on both hosts, signs in on `https://www.bodhaai.co` and `https://admin.bodhaai.co`
 as two canary accounts, and opens Today, Insights, the Settings tabs, Account and Help, then the HQ
 overview, practices, organizations, activity, spend, team and demo requests. It sends no request that
-changes anything beyond signing in, and fails if the app tries to ([0046](decisions/0046-browser-journeys-and-production-canary.md)).
+changes anything beyond signing in, and fails if the app tries to ([0049](decisions/0049-browser-journeys-and-production-canary.md)).
 A failed run fails the workflow, and GitHub emails it to whoever last changed the schedule; keep Actions
 failure emails on for that account. It keeps no trace or screenshot, so read the step that failed in
 the run log. CI rehearses the same walk against its own stack on every run, so a failure at night
