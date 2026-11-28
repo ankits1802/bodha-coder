@@ -95,7 +95,11 @@ One findings list replaces the review tabs ([0043](decisions/0043-one-findings-l
 
 Text meets WCAG 2.2 AA contrast (4.5:1) on every surface, including the sidebar. Apple's lighter
 tertiary grey (#86868B) reaches only 3.2:1 on the sidebar, so it is used for decoration such as focus
-rings, never for text.
+rings, never for text. Key hints on grey fills use the soft label colour. Every control is at least
+24 px in both directions or spaced so (WCAG 2.5.8), and a control's accessible name contains its
+visible words: avatar initials are drawn from `data-initials` by CSS, so they are not part of the text
+a speech user reads out. The browser journeys run axe on every page they open and fail on serious or
+critical violations ([0045](decisions/0045-browser-journeys-and-production-canary.md)).
 
 ## Signatures
 
