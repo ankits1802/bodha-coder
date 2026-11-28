@@ -13,7 +13,7 @@ interface PracticeSwitcherProps {
 }
 
 const EXPANDED =
-  "-ml-1 flex max-w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-nav px-1 py-0.5 text-left text-footnote text-secondary hover:bg-nav-hover hover:text-label disabled:cursor-wait";
+  "-ml-1 flex min-h-6 max-w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-nav px-1 py-0.5 text-left text-footnote text-secondary hover:bg-nav-hover hover:text-label disabled:cursor-wait";
 const COLLAPSED =
   "flex size-8 cursor-pointer items-center justify-center rounded-nav bg-avatar text-micro font-semibold text-label-soft hover:bg-nav-hover disabled:cursor-wait";
 
@@ -34,7 +34,7 @@ export function PracticeSwitcher({ user, collapsed }: PracticeSwitcherProps) {
     onSelect: () => void switching.choose(practice.id),
   }));
   const trigger = collapsed ? (
-    <span aria-hidden="true">{initialsOf(name)}</span>
+    <span aria-hidden="true" data-initials={initialsOf(name)} className="after:content-[attr(data-initials)]" />
   ) : (
     <>
       <span className="truncate">{name}</span>

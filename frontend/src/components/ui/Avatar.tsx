@@ -12,9 +12,8 @@ export function Avatar({ name, size = "sm", muted = false }: AvatarProps) {
   return (
     <span
       aria-hidden="true"
-      className={`flex flex-none items-center justify-center rounded-full bg-avatar font-semibold text-label-soft ${SIZES[size]} ${muted ? "opacity-50" : ""}`}
-    >
-      {initialsOf(name)}
-    </span>
+      data-initials={initialsOf(name)}
+      className={`flex flex-none items-center justify-center rounded-full bg-avatar font-semibold text-label-soft after:content-[attr(data-initials)] ${SIZES[size]} ${muted ? "opacity-50" : ""}`}
+    />
   );
 }

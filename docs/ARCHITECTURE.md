@@ -533,3 +533,14 @@ Decision: [0020](decisions/0020-measured-accuracy-and-earned-autonomy.md).
 | Usage timing | `POST /api/usage/events` (any practice role; billing-only sessions 403 `plan_ended`, HQ 403) takes at most 50 events, checks each step against its task, the 60-second stall floor and the decision fields, and stores them with the session's role. `GET /api/insights/usage?days=` (practice admins; Insights → Usage) and `GET /api/hq/usage?days=` (HQ Usage) give per task and role, and per task, step and role, counts, people and the 25th, 50th and 75th percentiles; no per-person figures |
 
 Decision: [0045](decisions/0045-practice-measures-and-usage-timing.md).
+
+## Browser journeys and the production canary
+
+| Piece | How it works |
+|---|---|
+| Stack | the `e2e` CI job runs Postgres, moto (S3), the API and the worker with `GEMINI_BACKEND=demo` and `APP_ENVIRONMENT=staging`, messages written to `MAIL_OUTBOX_DIR`, and `next build` then `next start` with `SITE_URL=http://localhost:3000` and `ADMIN_URL=http://admin.localhost:3000` |
+| Seed | `python -m tests.e2e_seed <scenario> --tour-version N` (`backend/tests/e2e_seed`) prints one JSON line: the synthetic people (password, two-step secret), practices, providers, notes and file paths a journey needs. It calls the API on `E2E_API_URL` with the `Host` of the practice or the HQ site and access tokens from `services.auth.access_token_for`; invitations are accepted from the outbox; the seeding HQ account and two-step secrets are written to the database. Notes are `tests.fakes.text_pdf` pages whose demo outcome is chosen by their text, read by the running worker. It refuses production and any model backend but the demo |
+| Journeys | `frontend/e2e/journeys`, one Playwright file per role's day; `support/` signs in (TOTP computed from the seeded secret), reads the outbox, drops files on the page and runs axe (serious or critical violations fail) |
+| Canary | `frontend/e2e/canary` with its own config, run nightly by `.github/workflows/canary.yml` in `CHARTMATE-APP` against production: readiness on both hosts, then the pages whose reads write nothing, with every API request other than reads and sign-in aborted and reported. The walk (`canary/walks.ts`) is rehearsed in every CI run by `journeys/canary-rehearsal.spec.ts` with seeded canary accounts |
+
+Decision: [0050](decisions/0050-browser-journeys-and-production-canary.md).

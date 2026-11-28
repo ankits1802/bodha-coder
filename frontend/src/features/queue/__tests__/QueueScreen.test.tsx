@@ -95,7 +95,8 @@ describe("QueueScreen", () => {
     vi.mocked(getQueue).mockResolvedValue(page([{ ...ROW, assigned_to: "user-2", assignee_name: "Omar Haddad" }]));
     render(<QueueScreen />);
     const chip = await screen.findByTitle("Omar Haddad");
-    expect(chip).toHaveTextContent("OH");
+    expect(chip.querySelector("[data-initials]")).toHaveAttribute("data-initials", "OH");
+    expect(chip).toHaveTextContent("Omar Haddad");
     expect(screen.getByRole("columnheader", { name: "Assigned" })).toBeInTheDocument();
   });
 });

@@ -43,7 +43,9 @@ catalog (kept an hour in `.next/cache`); nothing is fetched at build.
 
 Neither image contains a secret or an `.env` file; both `.dockerignore` files keep them out of the
 build context. Tag images with the git commit SHA, push to ECR with immutable tags and scan on
-push. CI builds both images on every push (`images` job) without pushing. Every Python dependency
+push. CI builds both images on every push (`images` job) without pushing, and the `e2e` job runs the
+browser journeys against a production build of the web app with the API and worker beside it
+([0050](decisions/0050-browser-journeys-and-production-canary.md)). Every Python dependency
 has arm64 wheels, so `docker buildx build --platform linux/arm64` produces Graviton images when
 wanted; CI builds amd64.
 
@@ -55,7 +57,10 @@ wanted; CI builds amd64.
 | `GET /api/health/ready` | readiness: `SELECT 1` on the database and `HeadBucket` on the object store, two seconds each; `200` with `{"status": "ready", "checks": {...}}`, or `503` naming the failed check as `unavailable` |
 
 Load balancer and container health checks use liveness. Readiness is for the release smoke check
-and synthetic monitoring; never let it restart tasks, or a storage outage restarts every task.
+and synthetic monitoring; never let it restart tasks, or a storage outage restarts every task. The
+nightly production canary (`.github/workflows/canary.yml`) checks readiness on both hosts and signs in
+read-only as two canary accounts; its accounts and secrets are in
+[OPERATIONS.md](OPERATIONS.md#production-canary).
 
 Every process writes one JSON object per line to standard output through
 `app/core/logging.py`: `time`, `level`, `logger`, `message`, `request_id` inside a request, and

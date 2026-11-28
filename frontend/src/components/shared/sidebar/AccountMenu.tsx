@@ -46,7 +46,7 @@ export function AccountMenu({ user, collapsed, onNavigate }: AccountMenuProps) {
     <>
       <Avatar name={user.name} />
       <span className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate text-subhead font-medium text-label">{user.name}</span>
+        <span className="truncate text-subhead font-medium text-label">{user.name}</span>{" "}
         <span className="text-caption text-secondary">{role}</span>
       </span>
     </>

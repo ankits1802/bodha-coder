@@ -9,3 +9,7 @@ next-env.d.ts
 npm-debug.log*
 Dockerfile
 .dockerignore
+e2e
+playwright.config.ts
+test-results
+playwright-report

@@ -40,7 +40,9 @@ backend/app/scripts/    entry points: bootstrap_hq, invite_hq
 backend/app/main.py     the ASGI app
 backend/alembic/        migrations; 0001 executes a frozen DDL file compiled from the models
 backend/tests/          tests; they run on GitHub Actions against Postgres
+backend/tests/e2e_seed/ the synthetic seed the browser journeys call (python -m tests.e2e_seed)
 frontend/               Next.js App Router web client
+frontend/e2e/           Playwright: journeys/ (CI), canary/ (nightly, production), support/
 tools/                  hygiene_check.py and its baseline, export_openapi.py (frontend/openapi.json)
 infra/ses_intake/       the email intake Lambda function (deployed on its own; standard library and boto3)
 docs/                   living documents and the decision log
@@ -101,6 +103,8 @@ A development machine runs the formatters, the linters and the hygiene check.
 | regenerate the API types after an API change | `backend\.venv\Scripts\python.exe tools\export_openapi.py`, then `cd frontend; npm run api:types` |
 | CI only: backend tests | `pytest -q` after `alembic upgrade head` against the Postgres service |
 | CI only: frontend | `npm run typecheck`, `npm test`, `npm run build` |
+| CI only: browser journeys | `npx playwright test` in `frontend` once the stack of the `e2e` job is up |
+| nightly, production only | `npx playwright test --config e2e/canary/playwright.config.ts` (`canary.yml`) |
 
 ## Version control
 
