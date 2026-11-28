@@ -66,6 +66,20 @@ def claim_export_key(practice_id: str, export_id: str, suffix: str) -> str:
     return f"{practice_prefix(practice_id)}exports/{export_id}.{suffix}"
 
 
+def claim_file_key(practice_id: str, submission_id: str) -> str:
+    return f"{practice_prefix(practice_id)}claim-files/{_object_id(submission_id)}.x12"
+
+
+def claim_ack_key(practice_id: str, file_id: str) -> str:
+    return f"{practice_prefix(practice_id)}claim-acks/{_object_id(file_id)}.x12"
+
+
+def _object_id(value: str) -> str:
+    if not value or "/" in value:
+        raise ValueError(f"not an object id: {value!r}")
+    return value
+
+
 def audit_package_key(practice_id: str, note_id: str, package_id: str) -> str:
     return f"{note_prefix(practice_id, note_id)}audit-packages/{package_id}.zip"
 

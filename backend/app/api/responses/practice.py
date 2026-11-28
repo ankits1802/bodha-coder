@@ -3,6 +3,7 @@ from typing import Literal
 from app.api.responses.auth import Checks
 from app.api.responses.base import Channel, PlanType, PracticeRole, View
 from app.api.responses.review_records import ReviewSettings
+from app.codes.x12_codes import CLAIM_FILING_CODES
 from app.services.practice_setup import ACCESS_LOG_YEARS, IDLE_MINUTES_CHOICES
 from app.services.provider_details import BILLS_UNDER
 
@@ -31,6 +32,7 @@ __all__ = [
 
 class SetupSection(View):
     fields: list[str]
+    optional: list[str]
     values: dict[str, str]
     complete: bool
 
@@ -61,6 +63,7 @@ class Payer(View):
     name: str
     payer_id: str | None
     plan_type: PlanType
+    claim_filing: Literal[CLAIM_FILING_CODES] | None = None
     active: bool
 
 

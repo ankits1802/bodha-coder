@@ -14,7 +14,7 @@ from app.api.wiring import Store
 from app.core.deps import Actor, Db, require
 from app.core.errors import Invalid
 from app.core.roles import BILLERS, INSIGHT_READERS
-from app.services import billing, claim_exports, insights
+from app.services import billing, claim_exports, claim_ready, insights
 from app.services.audit_log import record_access
 
 router = APIRouter(tags=["billing"], route_class=ExactRoute)
@@ -31,10 +31,12 @@ async def billing_list(
 ) -> dict[str, Any]:
     exported = {"ready": False, "exported": True, "all": None}[show]
     rows = await billing.billing_rows(db, actor.practice_id, exported=exported, offset=offset, limit=billing.PAGE_SIZE)
+    claims = await claim_ready.claim_columns(db, actor.own_practice, [row["id"] for row in rows])
     record_access(db, actor, "listed billing", detail=f"{len(rows)} rows from {offset}")
     await db.commit()
     return {
-        "items": rows,
+        "items": [{**row, "claim": claims.get(row["id"])} for row in rows],
+        "clearinghouse": await claim_ready.clearinghouse_summary(db, actor.practice_id),
         "summary": await billing.billing_summary(db, actor.practice_id, actor.zone),
         "total": await billing.billing_total(db, actor.practice_id, exported=exported),
         "offset": offset,

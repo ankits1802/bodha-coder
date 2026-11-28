@@ -8,12 +8,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import PurePosixPath
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_listing import ListingStore
 from app.codes.billing_codes import parse_note_filename
 from app.core.calendar import zone_named
+from app.core.db import exclusive_job
 from app.core.deps import ACTIVE_PRACTICE_STATUSES
 from app.core.errors import AppError
 from app.models import Practice
@@ -150,12 +151,8 @@ def accepts_intake(practice: Practice, now: datetime) -> bool:
 
 
 async def _locked_poll(db: AsyncSession, store: ListingStore, practice: Practice, now: datetime) -> int:
-    engine = db.bind
-    if not isinstance(engine, AsyncEngine):
-        raise RuntimeError("intake needs a session bound to an engine")
-    async with engine.connect() as guard:
-        lock = func.pg_try_advisory_xact_lock(func.hashtextextended(f"intake:{practice.id}", 0))
-        if not await guard.scalar(select(lock)):
+    async with exclusive_job(db, f"intake:{practice.id}") as held:
+        if not held:
             return 0
         return await _poll_practice(db, store, practice, now)
 

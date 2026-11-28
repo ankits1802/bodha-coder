@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from app.core.errors import Invalid
 
-__all__ = ["Segment", "Transaction", "X12Invalid", "read_transactions"]
+__all__ = ["Segment", "Transaction", "X12Invalid", "first_transaction_code", "read_segments", "read_transactions"]
 
 ISA_LENGTH = 106
 ISA_ELEMENTS = 16
@@ -65,6 +65,17 @@ def read_transactions(text: str, *, code: str) -> list[Transaction]:
     if not found:
         raise X12Invalid("the file holds no transaction")
     return found
+
+
+def read_segments(text: str) -> list[Segment]:
+    return _segments(text, _separators(text))
+
+
+def first_transaction_code(text: str) -> str:
+    opener = next((segment for segment in read_segments(text) if segment.id == "ST"), None)
+    if opener is None:
+        raise X12Invalid("the file holds no transaction")
+    return opener.required(1)
 
 
 def _separators(text: str) -> Separators:

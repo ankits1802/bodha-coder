@@ -40,7 +40,7 @@ from app.api.responses.note_actions import (
 from app.api.responses.notes import NoteDetail
 from app.api.wiring import Icd, Mail, Sealer, Store
 from app.core.deps import Actor, Db, require
-from app.core.roles import ADMINS, APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, UPLOADERS
+from app.core.roles import ADMINS, APPROVERS, ASKERS, ASSIGNERS, COMPLIANCE, DECIDERS, PAYER_SETTERS, UPLOADERS
 from app.services import (
     addenda,
     approval,
@@ -182,7 +182,7 @@ async def change_visit_type(
 
 @router.put("/{note_id}/payer", response_model=NotePayer)
 async def set_payer(
-    note_id: str, body: PayerChoiceBody, db: Db, actor: Annotated[Actor, Depends(require(*UPLOADERS))]
+    note_id: str, body: PayerChoiceBody, db: Db, actor: Annotated[Actor, Depends(require(*PAYER_SETTERS))]
 ) -> dict[str, str | None]:
     note = await note_changes.set_payer(db, actor, note_id, body.payer)
     return {"payer": note.payer}

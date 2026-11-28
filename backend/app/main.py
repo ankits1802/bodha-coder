@@ -16,6 +16,7 @@ from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.oidc import build_identity_providers
 from app.adapters.record_signers import build_record_signer
+from app.adapters.sftp import ParamikoLink
 from app.api.routes import (
     account,
     auth,
@@ -39,6 +40,7 @@ from app.api.routes import (
 )
 from app.api.routes.blind_review import router as blind_review_router
 from app.api.routes.claims import router as claims_router
+from app.api.routes.clearinghouse import router as clearinghouse_router
 from app.api.routes.defensibility import router as defensibility_router
 from app.api.routes.domains import router as domains_router
 from app.api.routes.email_intake import router as email_intake_router
@@ -74,6 +76,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.icd = await asyncio.to_thread(load_catalog)
     app.state.image_model = build_image_model(settings)
     app.state.txt_resolver = DnsTxtResolver()
+    app.state.file_link = ParamikoLink(timeout_seconds=settings.clearinghouse_timeout_seconds)
     yield
     await app.state.image_model.aclose()
 
@@ -112,6 +115,7 @@ app.include_router(intake_router, prefix="/api")
 app.include_router(email_intake_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
+app.include_router(clearinghouse_router, prefix="/api")
 app.include_router(expenditure_router, prefix="/api")
 app.include_router(review_records_router, prefix="/api")
 app.include_router(organizations_router, prefix="/api")

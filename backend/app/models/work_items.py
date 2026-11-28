@@ -17,6 +17,7 @@ INBOX_KINDS = (
     "plan_ending",
     "compliance_returned",
     "join_requested",
+    "claim_rejected",
 )
 INBOX_KIND_LENGTH = 24
 QUEUE_VIEW_NAME_LENGTH = 60
