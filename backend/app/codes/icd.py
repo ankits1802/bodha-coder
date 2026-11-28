@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import csv
 import gzip
-import hashlib
 import io
-import json
 import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+
+from app.codes.artefacts import read_manifest, verified_bytes
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 RELEASES = ("2026", "2027")
@@ -89,10 +89,9 @@ class IcdCatalog:
 
 
 def load_release(release: str, *, data_dir: Path = DATA_DIR) -> IcdRelease:
-    manifest = json.loads((data_dir / f"icd10cm_{release}.meta.json").read_text(encoding="utf-8"))
-    raw = (data_dir / manifest["artefact"]).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != manifest["artefactSha256"]:
-        raise IcdDataCorrupt(f"icd10cm_{release} does not match its manifest checksum")
+    manifest = read_manifest(data_dir / f"icd10cm_{release}.meta.json")
+    message = f"icd10cm_{release} does not match its manifest checksum"
+    raw = verified_bytes(data_dir / manifest["artefact"], manifest["artefactSha256"], IcdDataCorrupt, message)
     rows = csv.DictReader(io.StringIO(gzip.decompress(raw).decode("utf-8")), delimiter="\t")
     codes = {
         row["code"]: IcdCode(row["code"], row["billable"] == "1", row["long_desc"], row["parent_code"] or None)

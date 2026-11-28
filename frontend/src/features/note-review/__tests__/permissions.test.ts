@@ -9,6 +9,16 @@ function detail(status: NoteStatus, read = true): NoteDetail {
 }
 
 describe("reviewPermissions", () => {
+  it("lets admins, coders and billers set the payer until the note is exported", () => {
+    expect(reviewPermissions("biller", detail("approved")).setPayer).toBe(true);
+    expect(reviewPermissions("coder", detail("ready")).setPayer).toBe(true);
+    expect(reviewPermissions("admin", detail("queued")).setPayer).toBe(true);
+    expect(reviewPermissions("biller", detail("exported")).setPayer).toBe(false);
+    expect(reviewPermissions("biller", detail("voided")).setPayer).toBe(false);
+    expect(reviewPermissions("viewer", detail("ready")).setPayer).toBe(false);
+    expect(reviewPermissions("compliance", detail("ready")).setPayer).toBe(false);
+  });
+
   it("lets an approver reopen an approved note but not an exported one", () => {
     expect(reviewPermissions("coder", detail("approved")).reopen).toBe(true);
     expect(reviewPermissions("coder", detail("exported")).reopen).toBe(false);

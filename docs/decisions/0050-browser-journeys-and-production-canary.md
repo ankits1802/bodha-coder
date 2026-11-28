@@ -87,3 +87,8 @@ beyond the load balancer's health probe.
   setup, to be created after merge.
 - `README.md` (Checks), [DEPLOY.md](../DEPLOY.md) and [ARCHITECTURE.md](../ARCHITECTURE.md) describe
   the job and the canary.
+
+## Later
+
+- Canary sessions now stay refreshable for 7 days without use, not 30 minutes:
+  [0063](0063-longer-sign-in.md).

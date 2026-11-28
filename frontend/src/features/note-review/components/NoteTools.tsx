@@ -53,7 +53,7 @@ export function NoteTools({ note, permissions, readAgainPending, onVisitType, on
           onChange={onVisitType}
         />
       ) : null}
-      {permissions.editVisitType ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
+      {permissions.setPayer ? <PayerSelect noteId={note.id} payer={note.payer} onChanged={onChanged} /> : null}
       {permissions.readAgain ? (
         <Button size="sm" onClick={onReadAgain} pending={readAgainPending}>
           {words.readAgain}

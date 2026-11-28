@@ -97,3 +97,8 @@ practice's banner said 14.
 ## Follows
 
 - No migration: the first-run marks live in the existing `practices.setup` document.
+
+## Later
+
+- Use recommended now sets sign-out after 7 days without use, not 15 minutes:
+  [0063](0063-longer-sign-in.md).

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import csv
 import gzip
-import hashlib
 import io
-import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
@@ -14,6 +12,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Literal
 
+from app.codes.artefacts import read_manifest, verified_bytes
 from app.codes.billing_codes import Code
 
 __all__ = [
@@ -137,10 +136,9 @@ def _schedule(year: str) -> FeeSchedule:
 
 
 def load_fee_schedule(year: str, *, data_dir: Path = DATA_DIR) -> FeeSchedule:
-    manifest = json.loads((data_dir / f"pfs_rvu_{year}.meta.json").read_text(encoding="utf-8"))
-    raw = (data_dir / manifest["artefact"]).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != manifest["artefactSha256"]:
-        raise FeeDataCorrupt(f"pfs_rvu_{year} does not match its manifest checksum")
+    manifest = read_manifest(data_dir / f"pfs_rvu_{year}.meta.json")
+    message = f"pfs_rvu_{year} does not match its manifest checksum"
+    raw = verified_bytes(data_dir / manifest["artefact"], manifest["artefactSha256"], FeeDataCorrupt, message)
     rows = csv.DictReader(io.StringIO(gzip.decompress(raw).decode("utf-8")), delimiter="\t")
     values = {row["code"]: _relative_values(row) for row in rows}
     payable = sum(1 for item in values.values() if item.is_payable())

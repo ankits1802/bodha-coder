@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import gzip
-import hashlib
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -11,6 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
 
+from app.codes.artefacts import read_manifest, verified_bytes
 from app.codes.billing_codes import Code
 from app.codes.em import is_em_code
 
@@ -255,7 +254,7 @@ def ncci_tables() -> NcciTables:
 
 
 def load_ncci(*, data_dir: Path = DATA_DIR) -> NcciTables:
-    manifest = json.loads((data_dir / MANIFEST).read_text(encoding="utf-8"))
+    manifest = read_manifest(data_dir / MANIFEST)
     if manifest.get("schemaVersion") != SCHEMA_VERSION:
         raise NcciDataCorrupt(f"{MANIFEST} has schema version {manifest.get('schemaVersion')}, expected 1")
     rows = _verified_rows(data_dir, manifest["ptp"], PTP_HEADER)
@@ -267,9 +266,8 @@ def load_ncci(*, data_dir: Path = DATA_DIR) -> NcciTables:
 
 def _verified_rows(data_dir: Path, described: Mapping[str, Any], header: str) -> str:
     name = described["artefact"]
-    raw = (data_dir / name).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != described["artefactSha256"]:
-        raise NcciDataCorrupt(f"{name} does not match its manifest checksum")
+    message = f"{name} does not match its manifest checksum"
+    raw = verified_bytes(data_dir / name, described["artefactSha256"], NcciDataCorrupt, message)
     first, _, rows = gzip.decompress(raw).decode("ascii").partition("\n")
     if first != header:
         raise NcciDataCorrupt(f"{name} starts with {first!r}, expected {header!r}")

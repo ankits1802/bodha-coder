@@ -62,7 +62,6 @@ CLOSED_PRACTICE = "a closed practice cannot be changed"
 RENEWAL_IN_PAST = "choose a renewal date after today"
 NO_END_DATE = "no end date"
 UNKNOWN_PLAN = "choose a plan"
-PLAN_FOLLOWING_STATUSES = ("trial", "active")
 PRACTICE_CLOSED = "practice closed by HQ"
 
 
@@ -284,7 +283,7 @@ async def update_practice(db: AsyncSession, actor: Actor, practice_id: str, chan
 
 
 def status_for_plan(status: str, plan: str) -> str:
-    if status not in PLAN_FOLLOWING_STATUSES:
+    if status not in ACTIVE_PRACTICE_STATUSES:
         return status
     return "trial" if plan == "trial" else "active"
 

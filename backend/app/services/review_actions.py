@@ -6,7 +6,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import ReviewReport
-from app.codes.billing_codes import Code, InvalidPointers, parse_code_list, with_pointers
+from app.codes.billing_codes import Code, InvalidPointers, format_code_list, parse_code_list, with_pointers
 from app.codes.icd import IcdCatalog, format_icd
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
@@ -166,7 +166,7 @@ async def update_billed(
     if current is None or current.report is None:
         raise Conflict("Bodha has not finished reading this note")
     await _rederive(db, note, current, parsed.codes, icd)
-    labels = ", ".join(code.label() for code in parsed.codes)
+    labels = format_code_list(parsed.codes)
     record_access(db, actor, "edited billed codes", note_id=note.id, detail=override_detail(labels, None, reason))
     await db.commit()
     return note

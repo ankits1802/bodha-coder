@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.codes.billing_codes import format_code_list
 from app.core.errors import Conflict
 from app.core.security import digest
 from app.models import CodeSet, Note, Provider, utcnow
@@ -69,7 +70,7 @@ async def auto_approve(db: AsyncSession, note: Note) -> None:
     note.status, note.lane, note.lane_reason, note.headline = "approved", None, None, "Approved"
     note.approved_by, note.approved_at = None, utcnow()
     snapshot = await write_snapshot(db, note, final_set, AUTO_APPROVER, findings)
-    detail = f"{', '.join(code.label() for code in codes)} · snapshot {snapshot.revision}"
+    detail = f"{format_code_list(codes)} · snapshot {snapshot.revision}"
     record_system_access(db, AUTO_ACTOR, note.practice_id, "approved", note_id=note.id, detail=detail[:300])
 
 

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.calendar import zone_named
+from app.core.deps import ACTIVE_PRACTICE_STATUSES
 from app.models import InboxItem, Practice, Subscription
 from app.services.inbox import Notice, notify_admins
 from app.services.plan_limits import LIVE_STATUSES
@@ -15,7 +16,6 @@ __all__ = ["PAYMENT_FAILED_KIND", "PLAN_ENDING_DAYS", "PLAN_ENDING_KIND", "notif
 PLAN_ENDING_DAYS = 3
 PLAN_ENDING_KIND = "plan_ending"
 PAYMENT_FAILED_KIND = "payment_failed"
-OPEN_STATUSES = ("trial", "active")
 
 
 def plan_ending_soon(renews_on: date | None, today: date) -> bool:
@@ -32,7 +32,7 @@ async def notify_plans_ending(db: AsyncSession, now: datetime) -> int:
     paid_together = Practice.combined_billing.is_(True) & Practice.organization_id.in_(paying)
     practices = await db.scalars(
         select(Practice).where(
-            Practice.status.in_(OPEN_STATUSES),
+            Practice.status.in_(ACTIVE_PRACTICE_STATUSES),
             Practice.renews_on.is_not(None),
             Practice.id.not_in(live),
             ~paid_together,

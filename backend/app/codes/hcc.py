@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import csv
 import gzip
-import hashlib
 import io
-import json
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -12,6 +10,8 @@ from datetime import date
 from pathlib import Path
 from types import MappingProxyType
 from typing import Literal
+
+from app.codes.artefacts import read_manifest, verified_bytes
 
 __all__ = [
     "HCC_MODEL_NAME",
@@ -179,7 +179,7 @@ def hcc_model_for(payment_year: str | None, *, data_dir: Path = DATA_DIR) -> Hcc
 
 
 def load_hcc_model(payment_year: str, *, data_dir: Path = DATA_DIR) -> HccModel:
-    manifest = json.loads((data_dir / f"hcc_v28_{payment_year}.meta.json").read_text(encoding="utf-8"))
+    manifest = read_manifest(data_dir / f"hcc_v28_{payment_year}.meta.json")
     model_rows = _artefact_rows(data_dir, manifest["modelArtefact"], manifest["modelSha256"])
     categories = _categories(model_rows)
     counts = _counts(model_rows)
@@ -197,9 +197,7 @@ def load_hcc_model(payment_year: str, *, data_dir: Path = DATA_DIR) -> HccModel:
 
 
 def _artefact_rows(data_dir: Path, name: str, checksum: str) -> list[dict[str, str]]:
-    raw = (data_dir / name).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != checksum:
-        raise HccDataCorrupt(f"{name} does not match its manifest checksum")
+    raw = verified_bytes(data_dir / name, checksum, HccDataCorrupt, f"{name} does not match its manifest checksum")
     return list(csv.DictReader(io.StringIO(gzip.decompress(raw).decode("utf-8")), delimiter="\t"))
 
 

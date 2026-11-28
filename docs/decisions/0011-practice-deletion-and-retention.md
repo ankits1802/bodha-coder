@@ -90,3 +90,6 @@ or upload takes, so a file stored a moment before its row is committed is never 
 Deleting notes and practices, the six-year access log and the sweep of deleted practices' folders
 are replaced by voiding, closing, a purge allowed only 2557 days after closing, a seven-year minimum
 and a sweep that keeps every file a record holds: [0038](0038-seven-year-retention-and-tamper-evidence.md).
+
+Renewal adding one year is replaced by HQ choosing the plan and the end date in one step:
+[0056](0056-hq-plan-on-renewal-and-status-follows-plan.md).

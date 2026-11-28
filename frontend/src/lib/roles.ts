@@ -16,6 +16,7 @@ const ASKERS: readonly Role[] = ["admin", "coder", "cdi"];
 const ASSIGNERS: readonly Role[] = ["admin", "coder", "cdi"];
 const COMPLIANCE: readonly Role[] = ["admin", "compliance"];
 const BILLERS: readonly Role[] = ["admin", "biller"];
+const PAYER_SETTERS: readonly Role[] = ["admin", "coder", "biller"];
 const INSIGHT_READERS: readonly Role[] = ["admin", "compliance", "viewer"];
 
 export type Area =
@@ -52,7 +53,8 @@ export type Action =
   | "assign"
   | "assignAnyone"
   | "search"
-  | "sign";
+  | "sign"
+  | "setPayer";
 
 const AREA_ROLES: Record<Area, readonly Role[]> = {
   today: PRACTICE_ROLES,
@@ -90,6 +92,7 @@ const ACTION_ROLES: Record<Action, readonly Role[]> = {
   assignAnyone: ADMINS,
   search: NOTE_READERS,
   sign: DECIDERS,
+  setPayer: PAYER_SETTERS,
 };
 
 export function canUse(role: Role | null | undefined, area: Area): boolean {

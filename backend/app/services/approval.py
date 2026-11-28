@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.messenger import Messenger
 from app.adapters.seal_keys import RecordSigner
-from app.codes.billing_codes import Code
+from app.codes.billing_codes import Code, format_code_list
 from app.core.deps import Actor
 from app.core.errors import Conflict, Forbidden, Invalid
 from app.models import AddendumRequest, CodeSet, Decision, Note, utcnow
@@ -61,7 +61,7 @@ async def approve(
     snapshot = await write_snapshot(db, note, final_set, approver_of(actor), findings)
     signed_by = person_signer(actor, signature)
     await seal_snapshot(db, signer, signed_by, snapshot, event=event, statement=SIGNED_STATEMENTS[reason])
-    detail = f"{', '.join(code.label() for code in codes)} · snapshot {snapshot.revision}"
+    detail = f"{format_code_list(codes)} · snapshot {snapshot.revision}"
     record_access(db, actor, "approved", note_id=note.id, detail=detail[:300])
     await ask_level_confirmation(db, messenger, actor, note, snapshot=snapshot, findings=findings)
     await db.commit()

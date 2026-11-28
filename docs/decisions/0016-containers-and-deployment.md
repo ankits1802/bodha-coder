@@ -41,3 +41,8 @@ without PHI, health endpoints and a documented production layout on AWS.
 - The worker reports queue metrics through `log_queue_metrics`, and the worker service scales on
   them ([0013](0013-postgres-job-queue-no-sqs.md)).
 - Production sets `S3_SERVER_SIDE_ENCRYPTION` empty so the bucket's KMS key applies.
+
+## Later
+
+- The worker service does not autoscale yet: one task runs, and the queue metric is reported but not
+  acted on ([DEPLOY.md](../DEPLOY.md#what-opentofu-builds-today)).

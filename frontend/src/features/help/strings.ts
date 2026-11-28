@@ -7,16 +7,17 @@ export const HELP_TEXT = {
     upload: {
       title: "Upload notes",
       paragraphs: [
-        "Choose the provider, date of service, place of service and visit type, then add the visit-note PDFs.",
-        "Name each file date - patient - billed CPT, such as 2026-11-25 - REYES MARISOL - 99215.pdf, and the patient and code are filled in for you.",
-        "Check the billed codes for each file before you upload. Bodha reads every note and places it in a lane.",
+        "Drop visit-note PDFs anywhere in Bodha, or choose them on Upload notes. Bodha reads page one of each file and fills in the provider, date of service, place, patient and, when it can tell, the payer.",
+        "Check each file's details and billed codes, change anything that is wrong, choose a payer when you know it, then start reading. Bodha reads every note and places it in a list.",
+        "A file named date - patient - billed CPT, such as 2026-11-25 - REYES MARISOL - 99215.pdf, also fills in the patient and the billed code.",
+        "Notes can also arrive by email, from a watched folder or from your EHR once an admin sets these up in Practice setup.",
         "A note is due 48 hours after its day of service ends.",
       ],
     },
     review: {
       title: "Review notes",
       paragraphs: [
-        "The review queue lists open notes by due time in four lanes: Ready to approve, Needs a coder, Waiting on provider and Compliance.",
+        "The review queue lists open notes by due time in five lists: Ready to approve, Needs a coder, Questions to send, Waiting on provider and Compliance.",
         "Open a note to see each suggested code beside the evidence in the note. Accept or keep each suggestion and the claim updates as you decide.",
         "Approve when the claim is right. Notes whose codes already match the note can be approved together from the queue.",
         "Assign notes to yourself, or as an admin to anyone, and choose Mine to see only your notes. The daily summary email is turned on or off on your Account page, under your name in the sidebar.",
@@ -42,8 +43,9 @@ export const HELP_TEXT = {
     billing: {
       title: "Billing",
       paragraphs: [
-        "Billing, Ready to bill lists approved claims. Export them as a CSV file for your billing system. Every export is recorded.",
-        "An approved note can be reopened until it has been exported.",
+        "Billing, Ready to bill lists approved claims. Download them as a CSV file for your billing system, or, once your practice has connected a clearinghouse, send them as 837P claim files or download the 837P file. Every download and submission is recorded.",
+        "A claim the clearinghouse or payer rejects comes back to Ready to bill with the reason, so it can be fixed and sent again.",
+        "An approved note can be reopened until it has been exported or sent.",
       ],
     },
     security: {

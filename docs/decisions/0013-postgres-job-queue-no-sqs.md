@@ -15,3 +15,8 @@ for capacity the product does not need.
 Follows: the worker reports the number of queued and running analyses as a CloudWatch metric, and the
 worker service scales on it. Revisit if volume grows by orders of magnitude or other systems need to
 consume the same jobs.
+
+## Later
+
+- The worker service does not autoscale yet: one task runs, and the queue metric is reported but not
+  acted on ([DEPLOY.md](../DEPLOY.md#what-opentofu-builds-today)).

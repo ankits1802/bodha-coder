@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import csv
 import gzip
-import hashlib
 import io
-import json
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -12,6 +10,7 @@ from functools import cache
 from pathlib import Path
 from types import MappingProxyType
 
+from app.codes.artefacts import read_manifest, verified_bytes
 from app.codes.em import EM_FAMILIES, EmFamily
 
 __all__ = [
@@ -130,10 +129,9 @@ def cms_specialty_for(text: str | None, known: tuple[str, ...]) -> str | None:
 
 
 def load_em_benchmarks(year: str = BENCHMARK_YEAR, *, data_dir: Path = DATA_DIR) -> EmBenchmarks:
-    manifest = json.loads((data_dir / manifest_name(year)).read_text(encoding="utf-8"))
-    raw = (data_dir / manifest["artefact"]).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != manifest["artefactSha256"]:
-        raise EmBenchmarkCorrupt(f"{manifest_name(year)} does not match the checksum of {manifest['artefact']}")
+    manifest = read_manifest(data_dir / manifest_name(year))
+    message = f"{manifest_name(year)} does not match the checksum of {manifest['artefact']}"
+    raw = verified_bytes(data_dir / manifest["artefact"], manifest["artefactSha256"], EmBenchmarkCorrupt, message)
     rows = list(csv.DictReader(io.StringIO(gzip.decompress(raw).decode("utf-8")), delimiter="\t"))
     services = _services(rows, year)
     specialties = {specialty for specialty, _ in services}

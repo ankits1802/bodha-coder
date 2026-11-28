@@ -88,10 +88,6 @@ def mfa_step_for(secret: str, code: str, *, after: int | None) -> int | None:
     return None
 
 
-def is_sealed_mfa_secret(stored: str) -> bool:
-    return _mfa_box().is_sealed(stored)
-
-
 def seal_mfa_secret(secret: str) -> str:
     return _mfa_box().seal(secret)
 

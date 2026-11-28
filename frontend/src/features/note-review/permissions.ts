@@ -17,11 +17,13 @@ export interface ReviewPermissions {
   voidNote: boolean;
   restore: boolean;
   editVisitType: boolean;
+  setPayer: boolean;
   seeRemovedComments: boolean;
   auditPackage: boolean;
 }
 
 const EDITABLE: readonly string[] = ["queued", "ready", "failed"];
+const PAYER_FIXED: readonly string[] = ["exported", "voided"];
 
 export function reviewPermissions(role: Role | null | undefined, detail: NoteDetail): ReviewPermissions {
   const { status, lane } = detail.note;
@@ -41,6 +43,7 @@ export function reviewPermissions(role: Role | null | undefined, detail: NoteDet
     voidNote: canVoidNote(role, status, detail.analysis !== null),
     restore: status === "voided" && canDo(role, "restoreNote"),
     editVisitType: EDITABLE.includes(status) && canDo(role, "manageNotes"),
+    setPayer: !PAYER_FIXED.includes(status) && canDo(role, "setPayer"),
     seeRemovedComments: canDo(role, "complianceDecision"),
     auditPackage: canDo(role, "complianceDecision"),
   };
