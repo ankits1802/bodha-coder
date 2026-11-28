@@ -17,7 +17,7 @@ from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import ApprovedClaim, ClaimExport, ClaimExportItem, Note, Provider, new_id, utcnow
 from app.services.audit_log import record_access
-from app.services.billing import ROW_LIMIT, billing_csv, billing_rows
+from app.services.billing import ROW_LIMIT, BillingFilter, billing_csv, billing_rows
 from app.services.claim_holds import held_for_confirmation
 from app.services.claim_lines import Claim, add_on_primaries, build_claim, claim_party, claims_csv, claims_json
 from app.services.claim_snapshots import latest_snapshots, snapshot_codes
@@ -65,7 +65,8 @@ async def export_csv(
 ) -> ExportedFile:
     if again and not note_ids:
         raise Invalid("choose the visits to download again")
-    rows = [row for row in await billing_rows(db, actor.practice_id, exported=again) if _wanted(row["id"], note_ids)]
+    listed = await billing_rows(db, actor.practice_id, BillingFilter(exported=again))
+    rows = [row for row in listed if _wanted(row["id"], note_ids)]
     if not again:
         rows = _unheld(rows, {row["id"] for row in rows if row["held"]}, named=note_ids is not None)
     if not rows:

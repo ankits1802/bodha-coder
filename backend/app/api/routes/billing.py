@@ -26,11 +26,11 @@ Biller = Annotated[Actor, Depends(require(*BILLERS))]
 async def billing_list(
     db: Db,
     actor: Biller,
-    show: Literal["ready", "exported", "all"] = "ready",
+    show: Literal[billing.BILLING_SHOWS] = "ready",
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    exported = {"ready": False, "exported": True, "all": None}[show]
-    rows = await billing.billing_rows(db, actor.practice_id, exported=exported, offset=offset, limit=billing.PAGE_SIZE)
+    wanted = billing.billing_filter(show, actor.zone)
+    rows = await billing.billing_rows(db, actor.practice_id, wanted, offset=offset, limit=billing.PAGE_SIZE)
     claims = await claim_ready.claim_columns(db, actor.own_practice, [row["id"] for row in rows])
     record_access(db, actor, "listed billing", detail=f"{len(rows)} rows from {offset}")
     await db.commit()
@@ -38,7 +38,7 @@ async def billing_list(
         "items": [{**row, "claim": claims.get(row["id"])} for row in rows],
         "clearinghouse": await claim_ready.clearinghouse_summary(db, actor.practice_id),
         "summary": await billing.billing_summary(db, actor.practice_id, actor.zone),
-        "total": await billing.billing_total(db, actor.practice_id, exported=exported),
+        "total": await billing.billing_total(db, actor.practice_id, wanted),
         "offset": offset,
         "page_size": billing.PAGE_SIZE,
         "limit": billing.ROW_LIMIT,

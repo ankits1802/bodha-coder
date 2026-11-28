@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
+from app.core.db import SessionFactory
+from app.services.expenditure import month_to_date
 from tests.api.spend_helpers import UNLISTED, Run, figures, figures_of, hq_headers, record_runs, utc
 from tests.batches import NoteFile, add_provider, note_ids_by_file, upload_batch
 from tests.builders import FILE_NAME, Harness, practice_with_provider, upload_note
@@ -123,3 +125,12 @@ async def test_only_hq_reads_spend_and_the_range_must_be_whole(harness):
     assert (
         await harness.client.get(PATH, headers=hq, params={"from": "2026-11-31", "to": "2026-12-01"})
     ).status_code == 422
+
+
+async def test_the_month_so_far_is_the_spend_report_from_the_first_of_the_month_to_the_day(harness):
+    await november_spend(harness)
+    async with SessionFactory() as db:
+        whole = await month_to_date(db, date(2026, 11, 30))
+        early = await month_to_date(db, date(2026, 11, 11))
+    assert whole == {"from": "2026-11-01", "to": "2026-11-30", "cost_usd": 2.14, "unpriced_analyses": 1}
+    assert early == {"from": "2026-11-01", "to": "2026-11-11", "cost_usd": 1.8, "unpriced_analyses": 1}

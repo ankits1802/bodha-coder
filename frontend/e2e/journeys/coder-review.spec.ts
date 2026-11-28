@@ -3,6 +3,7 @@ import { SIGNATURE_TEXT } from "../../src/components/shared/signature/strings";
 import { REVIEW_TEXT } from "../../src/features/note-review/strings";
 import { QUEUE_TEXT } from "../../src/features/queue/strings";
 import { TODAY_TEXT } from "../../src/features/today/strings";
+import { LANE_LABELS } from "../../src/lib/labels";
 import { expectAccessible } from "../support/accessibility";
 import { heading } from "../support/app";
 import { seed, type Account } from "../support/seed";
@@ -21,7 +22,8 @@ test("a coder decides findings by keyboard, edits billed codes, approves and mov
   await signIn(page, day.coder);
   await expect(heading(page, TODAY_TEXT.title)).toBeVisible();
 
-  await page.goto("/queue?lane=coder");
+  await page.getByRole("link", { name: new RegExp(`^${LANE_LABELS.coder}, `) }).click();
+  await expect(page).toHaveURL(/\/queue\?lane=coder$/);
   await page.getByRole("link", { name: QUEUE_TEXT.reviewNext }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(new RegExp(day.notes.map((note) => note.patient).join("|")));
   const first = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";

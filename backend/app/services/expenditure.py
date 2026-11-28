@@ -20,6 +20,7 @@ __all__ = [
     "SpendRow",
     "SpendScope",
     "expenditure",
+    "month_to_date",
     "spend_figures",
     "spend_report",
     "spend_since",
@@ -86,6 +87,17 @@ async def _practices(db: AsyncSession, scope: SpendScope) -> list[PracticeRef]:
         query = query.where(Practice.organization_id == scope.organization_id)
     rows = await db.execute(query)
     return [PracticeRef(*row) for row in rows.tuples()]
+
+
+async def month_to_date(db: AsyncSession, today: date) -> dict[str, Any]:
+    report = await expenditure(db, start=today.replace(day=1), end=today, scope=SpendScope())
+    totals = report["totals"]
+    return {
+        "from": report["from"],
+        "to": report["to"],
+        "cost_usd": totals["cost_usd"],
+        "unpriced_analyses": totals["unpriced_analyses"],
+    }
 
 
 async def spend_since(db: AsyncSession, since: datetime) -> dict[str, Any]:
