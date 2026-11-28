@@ -61,8 +61,12 @@ not less) motion, and to have the choice follow them from one computer to anothe
   scheme, so the System path) and `sweep-larger` (Larger on the device, with the person's saved appearance
   answered with the same so the sync does not undo it). A few screens also run with Reduce motion On (no
   loop may run although the system asks for nothing) and the landing with Off (its loops run although the
-  system asks for less). A journey chooses Dark, Larger and On, clears the cookie, reloads, and finds the
-  saved choice back; the next page's HTML already carries the attributes.
+  system asks for less), and `sweep/appearance.spec.ts` checks that each project's pages really show its
+  background and body size. The provider's respond link is the one visit that sends something (a code to
+  the provider's outbox), so with three projects it sends, reads and enters its code under a lock the
+  workers share (`support/exclusive.ts`) and reads the code that arrived after its own send. A journey
+  chooses Dark, Larger and On, clears the cookie, reloads, and finds the saved choice back; the next
+  page's HTML already carries the attributes.
 
 ## Alternatives
 

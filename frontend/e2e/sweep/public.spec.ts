@@ -3,7 +3,8 @@ import { RESPOND_TEXT } from "../../src/features/respond/strings";
 import { VERIFY_TEXT } from "../../src/features/verify/strings";
 import { expectAccessible } from "../support/accessibility";
 import { ADMIN_ORIGIN, SITE_ORIGIN } from "../support/app";
-import { linkIn, nextMessage } from "../support/mailbox";
+import { exclusively } from "../support/exclusive";
+import { linkIn, messageCount, nextMessage, type Message } from "../support/mailbox";
 import { test } from "./fixtures";
 import { expectPrimaryByKeyboard, settle, sweep } from "./visit";
 import { sweepWorld } from "./world";
@@ -23,6 +24,10 @@ const PUBLIC_PATHS = [
   "/verify-domain",
 ];
 const CODE = new RegExp("\\b(\\d{6})\\b");
+
+function isCode(message: Message): boolean {
+  return message.subject === "Your verification code";
+}
 
 for (const path of PUBLIC_PATHS) {
   test(`public ${path}`, async ({ page }) => {
@@ -61,10 +66,13 @@ test("provider respond link, before and after the code", async ({ page }) => {
     path: `${link.pathname}${link.search}${link.hash}`,
     ready: (shown) => shown.getByRole("heading", { level: 1, name: RESPOND_TEXT.verifyTitle }),
   });
-  await page.getByRole("button", { name: RESPOND_TEXT.sendCode }).click();
-  const code = await nextMessage(world.provider.email, (message) => message.subject === "Your verification code");
-  await page.getByLabel(RESPOND_TEXT.digitLabel(1), { exact: true }).fill(code.body.match(CODE)?.[1] ?? "");
-  await settle(page, page.getByRole("heading", { level: 1, name: world.notes.asked.patient }));
+  await exclusively("provider-code", async () => {
+    const before = await messageCount(world.provider.email, isCode);
+    await page.getByRole("button", { name: RESPOND_TEXT.sendCode }).click();
+    const code = await nextMessage(world.provider.email, isCode, before);
+    await page.getByLabel(RESPOND_TEXT.digitLabel(1), { exact: true }).fill(code.body.match(CODE)?.[1] ?? "");
+    await settle(page, page.getByRole("heading", { level: 1, name: world.notes.asked.patient }));
+  });
   await expectAccessible(page);
   await expectPrimaryByKeyboard(page);
 });
