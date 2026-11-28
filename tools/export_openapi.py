@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+BACKEND = ROOT / "backend"
 TARGET = ROOT / "frontend" / "openapi.json"
 PLACEHOLDER_ENV = {"SECRET_KEY": "ci-only-secret-key-not-used-anywhere-else-000", "S3_BUCKET": "ci-bucket"}
 
@@ -14,6 +15,7 @@ PLACEHOLDER_ENV = {"SECRET_KEY": "ci-only-secret-key-not-used-anywhere-else-000"
 def openapi_document() -> dict[str, Any]:
     for name, value in PLACEHOLDER_ENV.items():
         os.environ.setdefault(name, value)
+    sys.path.insert(0, str(BACKEND))
     from app.main import app
 
     return app.openapi()
