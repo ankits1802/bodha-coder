@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     session_idle_minutes: int = 30
     mfa_issuer: str = "Bodha Assure"
     mfa_encryption_key: str | None = None
+    ehr_key_encryption_key: str | None = None
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
     microsoft_client_id: str | None = None

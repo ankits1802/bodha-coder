@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from cryptography.fernet import Fernet
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
@@ -17,6 +18,7 @@ from app.core.db import SessionFactory
 from app.main import app
 from app.models import Base
 from tests.builders import ADMIN_SITE, Harness, maintenance
+from tests.ehr_fakes import FakeEhr
 from tests.fakes import (
     FakeBillingProvider,
     FakeImageModel,
@@ -63,3 +65,17 @@ async def harness(icd_catalog) -> AsyncIterator[Harness]:
     app.state.txt_resolver = dns
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://app.test") as client:
         yield Harness(client, store, messenger, providers, billing, image_model, dns)
+
+
+@pytest.fixture
+def ehr_key(monkeypatch) -> str:
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(get_settings(), "ehr_key_encryption_key", key)
+    return key
+
+
+@pytest.fixture
+def ehr(harness: Harness, ehr_key: str) -> FakeEhr:
+    fake = FakeEhr()
+    app.state.outbound = fake.outbound()
+    return fake

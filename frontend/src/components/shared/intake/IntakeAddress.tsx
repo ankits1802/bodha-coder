@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
+import { useCopy } from "@/hooks/useCopy";
 import { issueIntakeAddress, retireIntakeAddress } from "@/lib/api/emailIntake";
 import type { EmailIntake } from "@/lib/api/types";
 import { formatInstantDay } from "@/lib/format";
@@ -16,7 +17,6 @@ interface IntakeAddressProps {
 }
 
 type Confirming = "replace" | "off" | null;
-type CopyState = "idle" | "copied" | "failed";
 
 const words = EMAIL_INTAKE_TEXT;
 
@@ -43,7 +43,7 @@ function EarlierAddresses({ intake }: { intake: EmailIntake }) {
 
 export function IntakeAddress({ intake, onChange }: IntakeAddressProps) {
   const [confirming, setConfirming] = useState<Confirming>(null);
-  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const copier = useCopy();
   const issue = useAction(issueIntakeAddress);
   const retire = useAction(retireIntakeAddress);
   const confirmed = confirming === "off" ? retire : issue;
@@ -52,17 +52,8 @@ export function IntakeAddress({ intake, onChange }: IntakeAddressProps) {
     const outcome = await action.run();
     if (!outcome.ok) return;
     setConfirming(null);
-    setCopyState("idle");
+    copier.reset();
     onChange(outcome.value);
-  }
-
-  async function copy(address: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopyState("copied");
-    } catch {
-      setCopyState("failed");
-    }
   }
 
   if (!intake.address) {
@@ -87,12 +78,12 @@ export function IntakeAddress({ intake, onChange }: IntakeAddressProps) {
         <output aria-label={words.address} className="min-w-0 rounded-field bg-muted-panel px-3 py-2 text-callout font-medium break-all select-all">
           {address}
         </output>
-        <Button size="sm" onClick={() => void copy(address)}>
+        <Button size="sm" onClick={() => void copier.copy(address)}>
           {words.copy}
         </Button>
-        {copyState !== "idle" ? (
+        {copier.state !== "idle" ? (
           <span role="status" className="text-subhead text-secondary">
-            {copyState === "copied" ? words.copied : words.copyFailed}
+            {copier.state === "copied" ? words.copied : words.copyFailed}
           </span>
         ) : null}
       </div>

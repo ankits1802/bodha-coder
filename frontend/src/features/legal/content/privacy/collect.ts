@@ -12,7 +12,7 @@ export const PRIVACY_COLLECT = [
       `This ${LEGAL_TITLES.privacy} explains how ${company} (“we”, “us” or “our”) collects, uses, shares and protects personal information about visitors to our website and people who use ${product} (the “Service”) through an account.`,
     ),
     paragraph(
-      `Patient information is handled differently. Visit notes and other protected health information (PHI) that our customers upload are processed on their behalf, as a business associate under HIPAA, under our ${LEGAL_TITLES.baa} and ${LEGAL_TITLES.terms} rather than under this policy. We use PHI only to provide the Service to the customer that uploaded it, as those agreements permit. If you are a patient, please contact your health care provider about your health information; we will pass on any request we receive to the customer concerned.`,
+      `Patient information is handled differently. Visit notes and other protected health information (PHI) that our customers upload, or that we retrieve from a customer’s own electronic health record system at its direction, are processed on their behalf, as a business associate under HIPAA, under our ${LEGAL_TITLES.baa} and ${LEGAL_TITLES.terms} rather than under this policy. We use PHI only to provide the Service to the customer that uploaded it, as those agreements permit. If you are a patient, please contact your health care provider about your health information; we will pass on any request we receive to the customer concerned.`,
     ),
     paragraph(
       "Our customers decide who has an account in the Service. Some information about account users, such as their role and activity, is also handled for those customers under our agreements with them.",

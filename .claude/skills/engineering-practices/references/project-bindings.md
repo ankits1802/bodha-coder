@@ -28,11 +28,12 @@ backend/app/codes/      code sets and their pure logic: ICD-10-CM releases (CDC 
 backend/app/ai/         the model contract (contracts.py), prompts, report models and the
                         bundled review call (review.py); talks to a ModelClient, never to a SDK
 backend/app/adapters/   one adapter per external service: Gemini, S3/R2 object store,
-                        SMTP/Twilio messenger, PDF text, Stripe and PayPal (one billing contract)
+                        SMTP/Twilio messenger, PDF text, Stripe and PayPal (one billing contract),
+                        EHRs over FHIR (guarded outbound HTTP, SMART backend services, FHIR client)
 backend/app/services/   domain services: findings and routing (pure), analysis pipeline,
                         uploads, review actions, addenda, auth, team, practice setup, worklists,
                         billing (claims export), plans and subscriptions, insights, note view, HQ,
-                        audit logs, practice measures, usage timing
+                        audit logs, practice measures, usage timing, the EHR connection and pull
 backend/app/api/        entry points: request bodies, wiring, routes/<area>.py (thin handlers),
                         responses/<area>.py (the response model of every JSON route)
 backend/app/worker.py   the analysis worker process (python -m app.worker)

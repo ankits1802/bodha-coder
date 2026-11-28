@@ -104,3 +104,43 @@ are never shown or stored. Accepted notes appear in Upload history as uploaded b
 
 Email between the practice and Bodha is protected by TLS, which SES requires of the sending server;
 prefer options 1 or 2 when the practice can use them.
+
+## Option 4: pull signed notes from the practice's EHR over FHIR
+
+For a practice whose EHR offers SMART on FHIR Backend Services (Epic, Oracle Health, athenahealth,
+eClinicalWorks and others; [0051](decisions/0051-ehr-connection-over-fhir.md)). Bodha signs in to the
+EHR as a system client with a key made for the practice and reads finalized notes about every 15
+minutes. Nobody moves files.
+
+What Bodha's operator does once: deploy with `EHR_KEY_ENCRYPTION_KEY` (OpenTofu creates the secret and
+gives it to the api and worker; see [DEPLOY.md](DEPLOY.md#secrets-secrets-manager)). Until then the section
+shows Not available.
+
+What the practice's admin does, in Settings, Setup, EHR connection:
+
+1. Create key (RS384 unless the vendor asks for ES384). Copy the JWKS URL and the key ID.
+2. Ask the EHR vendor, or the practice's EHR administrator, to register a backend (system-to-system)
+   client for Bodha Assure: client authentication `private_key_jwt` with the JWKS URL (or the key it
+   serves, if the vendor takes a key rather than a URL), grant type `client_credentials`, and read access
+   to DocumentReference, Encounter, Practitioner and Binary for the practice's patients. Epic calls this a
+   Backend System app activated for the organization; Oracle Health a system account in its code console;
+   athenahealth a 2-legged (system) app. The vendor gives back a client ID and the FHIR base URL.
+3. Enter the FHIR base URL and the client ID, keep the default scopes unless the vendor names others
+   (`system/*.rs` style SMART v2 scopes are accepted), choose the note types to pull and a start date,
+   and Save. Bodha reads the EHR's `.well-known/smart-configuration` and shows the token endpoint.
+4. Test connection. It must pass three steps: the SMART configuration, an access token and the
+   capability statement (FHIR R4).
+5. Watch Recent pulls and Documents. Every document fetched is listed: accepted (with Open note),
+   already uploaded, or refused with the reason.
+
+A note becomes a review when it is a current, final (`docStatus` `final`) progress, consult, history and
+physical or nursing facility note; the date of service comes from its encounter; the provider is the one
+whose NPI the EHR's Practitioner carries, so every provider needs the right NPI in Setup; the place of
+service comes from the encounter, else the provider's usual place, else the place set for intake. PDF
+attachments are used as they are; HTML and plain text notes are set into a PDF. Accepted notes appear in
+Upload history as uploaded by EHR and in one batch per provider, date and place for each pull.
+
+Pause stops pulling and keeps the settings; Resume continues from where the last pull ended. New key
+replaces the key at the same JWKS URL; a vendor that stored the key itself needs the new one. An EHR that
+allows only known source addresses cannot reach Bodha yet: tasks do not have a fixed outbound address.
+

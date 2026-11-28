@@ -16,7 +16,9 @@ provider, or compliance. Approved codes are exported for billing.
 1. A coder uploads the day's PDFs for one provider and date of service. Date, patient and billed
    code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`. A practice
    can also drop PDFs in a watched folder, or email them to its own intake address from an allowed
-   sender, in which case provider and date of service are read from page 1.
+   sender, in which case provider and date of service are read from page 1. Or Bodha pulls signed
+   notes from the practice's EHR over FHIR, taking the provider from the NPI and the date of service
+   from the encounter.
 2. The worker reads the PDF (text layer, or the PDF itself for scans), runs the review and stores
    the result as a new analysis revision with every suggestion, its reasoning and its evidence.
 3. The note lands in a lane. A coder accepts or keeps each suggestion, asks the provider, flags
@@ -109,6 +111,7 @@ Every email is sent as plain text with an HTML version; no message contains pati
 
 | Setting | Values |
 |---|---|
+| `EHR_KEY_ENCRYPTION_KEY` | Fernet keys (comma-separated to rotate) that encrypt each practice's EHR private key at rest; empty keeps the EHR connection unavailable. Generate one the same way as `MFA_ENCRYPTION_KEY`, never the same key |
 | `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
 | `ADMIN_URL` | the HQ console's own host, for example `https://admin.bodhaai.co`; empty keeps HQ on `APP_URL`. With it set, HQ accounts sign in only there and practice accounts only on `APP_URL`, so one email can hold both; locally use `http://admin.localhost:3000`, and give the web server the same `ADMIN_URL` and `SITE_URL`. More HQ owners are invited on `/hq/team` or with `python -m app.scripts.invite_hq "Full Name <email>"` ([0033](docs/decisions/0033-hq-on-its-own-host.md)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
@@ -156,6 +159,15 @@ from CMS ones. Bodha also times the work without patient data (how long a note s
 inputs per decision and where people pause); practice admins see medians by role and step under
 Insights, Usage, and HQ sees them across practices
 ([0045](docs/decisions/0045-practice-measures-and-usage-timing.md)).
+
+A practice admin can connect the practice's EHR under Settings, Setup, EHR connection: Bodha makes a key
+pair for the practice and publishes its public half at a JWKS URL the practice registers with its EHR
+vendor as a SMART on FHIR backend services client, then pulls current, final progress, consult, history
+and physical and nursing facility notes every 15 minutes into the same checks and batches as an upload.
+Every pull and every document fetched is recorded with its outcome, never with patient details. Set
+`EHR_KEY_ENCRYPTION_KEY` (a Fernet key list, like `MFA_ENCRYPTION_KEY`) on the API and the worker to turn it
+on; how a practice and its vendor connect is in [docs/DEPLOY-INTAKE.md](docs/DEPLOY-INTAKE.md#option-4-pull-signed-notes-from-the-practices-ehr-over-fhir)
+([0051](docs/decisions/0051-ehr-connection-over-fhir.md)).
 
 ### Plans and billing
 

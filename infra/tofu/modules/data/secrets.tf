@@ -9,6 +9,12 @@ ephemeral "random_password" "mfa_key" {
   override_special = "-_"
 }
 
+ephemeral "random_password" "ehr_key" {
+  length           = 43
+  special          = true
+  override_special = "-_"
+}
+
 ephemeral "random_password" "runtime" {
   length  = 40
   special = false
@@ -20,7 +26,7 @@ ephemeral "random_password" "hq_password" {
 }
 
 locals {
-  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key", "stripe-secret-key", "stripe-webhook-secret", "paypal-client-secret", "runtime-database-password", "runtime-database-url"]
+  secret_names     = ["database-url", "secret-key", "mfa-encryption-key", "ehr-key-encryption-key", "bootstrap-hq", "google-client-secret", "microsoft-client-secret", "yahoo-client-secret", "gemini-api-key", "stripe-secret-key", "stripe-webhook-secret", "paypal-client-secret", "runtime-database-password", "runtime-database-url"]
   mail_from_domain = "mail.${var.mail_domain}"
 }
 
@@ -88,6 +94,12 @@ resource "aws_secretsmanager_secret_version" "secret_key" {
 resource "aws_secretsmanager_secret_version" "mfa_key" {
   secret_id                = aws_secretsmanager_secret.this["mfa-encryption-key"].id
   secret_string_wo         = "${ephemeral.random_password.mfa_key.result}="
+  secret_string_wo_version = 1
+}
+
+resource "aws_secretsmanager_secret_version" "ehr_key" {
+  secret_id                = aws_secretsmanager_secret.this["ehr-key-encryption-key"].id
+  secret_string_wo         = "${ephemeral.random_password.ehr_key.result}="
   secret_string_wo_version = 1
 }
 

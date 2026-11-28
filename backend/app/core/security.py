@@ -7,15 +7,14 @@ from typing import Any
 import bcrypt
 import jwt
 import pyotp
-from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 from app.core.config import get_settings
 from app.core.errors import Unavailable
+from app.core.sealed_text import TextSeal, is_sealed
 
 ALGORITHM = "HS256"
 PASSWORD_MIN_LENGTH = 10
 MFA_DRIFT_STEPS = 1
-MFA_SECRET_PREFIX = "v1:"
 
 
 class TokenError(Exception):
@@ -87,41 +86,27 @@ def mfa_step_for(secret: str, code: str, *, after: int | None) -> int | None:
 
 
 def is_sealed_mfa_secret(stored: str) -> bool:
-    return stored.startswith(MFA_SECRET_PREFIX)
+    return is_sealed(stored)
 
 
 def seal_mfa_secret(secret: str) -> str:
-    return MFA_SECRET_PREFIX + _mfa_cipher().encrypt(secret.encode()).decode()
+    return _mfa_seal().seal(secret)
 
 
 def open_mfa_secret(stored: str) -> str:
-    if not is_sealed_mfa_secret(stored):
+    if not is_sealed(stored):
         return stored
-    try:
-        return _mfa_cipher().decrypt(stored.removeprefix(MFA_SECRET_PREFIX).encode()).decode()
-    except InvalidToken as error:
-        raise MfaKeyUnavailable("two-step verification cannot be read on this server") from error
+    return _mfa_seal().open(stored)
 
 
 def mfa_secret_is_current(stored: str) -> bool:
-    if not is_sealed_mfa_secret(stored):
-        return False
-    try:
-        _mfa_keys()[0].decrypt(stored.removeprefix(MFA_SECRET_PREFIX).encode())
-    except InvalidToken:
-        return False
-    return True
+    return _mfa_seal().is_current(stored)
 
 
-def _mfa_cipher() -> MultiFernet:
-    return MultiFernet(_mfa_keys())
-
-
-def _mfa_keys() -> list[Fernet]:
-    keys = [key.strip() for key in (get_settings().mfa_encryption_key or "").split(",") if key.strip()]
-    if not keys:
-        raise MfaKeyUnavailable("two-step verification is not set up on this server")
-    try:
-        return [Fernet(key) for key in keys]
-    except ValueError as error:
-        raise MfaKeyUnavailable("two-step verification is not set up on this server") from error
+def _mfa_seal() -> TextSeal:
+    return TextSeal(
+        get_settings().mfa_encryption_key,
+        not_set_up="two-step verification is not set up on this server",
+        unreadable="two-step verification cannot be read on this server",
+        error=MfaKeyUnavailable,
+    )

@@ -19,7 +19,7 @@ export const SECTION_ORDER: readonly ScoredKey[] = [
   "software",
 ];
 
-const UNSCORED: readonly SetupNavKey[] = ["checks", "intake", "mips"];
+const UNSCORED: readonly SetupNavKey[] = ["checks", "intake", "ehr", "mips"];
 
 function isScored(key: SetupNavKey): key is ScoredKey {
   return (SECTION_ORDER as readonly string[]).includes(key);

@@ -3,6 +3,7 @@ import { IntakeSettings } from "@/components/shared/intake/IntakeSettings";
 import type { PracticeSetup } from "@/lib/api/types";
 import type { SetupOpen } from "@/lib/paths";
 import { ChecksPanel } from "./ChecksPanel";
+import { EhrConnectionPanel } from "./ehr/EhrConnectionPanel";
 import { MipsSection } from "./MipsSection";
 import { PayersPanel } from "./PayersPanel";
 import { ProvidersSection } from "./ProvidersSection";
@@ -32,6 +33,7 @@ function PayersSection({ setup, open, onOpened, onSaved, onSectionSaved }: Omit<
 export function SectionContent(props: SectionContentProps) {
   const { navKey, setup, open, onOpened, onSaved, onSectionSaved } = props;
   if (navKey === "mips") return <MipsSection />;
+  if (navKey === "ehr") return <EhrConnectionPanel />;
   if (navKey === "intake") {
     return (
       <>
