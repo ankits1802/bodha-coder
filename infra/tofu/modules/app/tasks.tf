@@ -26,6 +26,7 @@ locals {
     { name = "AWS_MESSAGING_REGION", value = var.region },
     { name = "GEMINI_BACKEND", value = var.gemini_backend },
     { name = "EMAIL_INTAKE_DOMAIN", value = var.email_intake_domain },
+    { name = "EMAIL_INTAKE_BUCKET", value = var.email_intake_bucket },
   ], var.sms_origination_number == "" ? [] : [{ name = "SNS_ORIGINATION_NUMBER", value = var.sms_origination_number }], local.legal_links, local.billing_environment, [for item in local.mail : item if item.name != "MAIL_OUTBOX_DIR"])
   error_report_secrets = {
     python = contains(keys(var.secret_arns), "sentry-dsn") ? [{ name = "SENTRY_DSN", valueFrom = var.secret_arns["sentry-dsn"] }] : []

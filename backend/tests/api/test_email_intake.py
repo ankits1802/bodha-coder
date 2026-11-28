@@ -9,6 +9,7 @@ from email.message import EmailMessage
 import pytest
 from sqlalchemy import select
 
+from app.adapters.object_store import practice_prefix
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Batch, CodeSet, IntakeMessage, IntakeSender, Note
@@ -246,3 +247,17 @@ async def test_a_message_seen_twice_is_recorded_and_read_once(harness, intake_do
     async with SessionFactory() as db:
         notes = (await db.scalars(select(Note.id).where(Note.practice_id == practice.id))).all()
     assert len(notes) == 1
+
+
+async def test_mail_is_read_from_its_own_store_and_kept_with_the_documents(harness, intake_domain):
+    practice, address = await _ready(harness)
+    inbound, documents = FakeListingStore(), FakeListingStore()
+    raw = _mail()
+    _arrive(inbound, "m-split", address, raw)
+
+    async with SessionFactory() as db:
+        assert await poll_email_intake(db, documents, NOW, inbound=inbound) == 1
+
+    assert inbound.objects == {}
+    assert documents.objects["ses-retained/m-split"] == raw.as_bytes()
+    assert any(key.startswith(practice_prefix(practice.id)) for key in documents.objects)

@@ -149,12 +149,12 @@ Work from the outside in. Never open a stored message to find out: the records s
 2. SES: `aws ses describe-active-receipt-rule-set --region us-east-1` must name `bodha-staging-intake`
    with its rule enabled. If another rule set is active, someone activated it; do not switch it back
    without the owner.
-3. Storage: `aws s3 ls s3://<bucket>/ses-inbound/` lists messages not yet handled. A message without its
+3. Storage: `aws s3 ls s3://<inbound bucket>/ses-inbound/` (the bucket in `EMAIL_INTAKE_BUCKET`, `bodha-staging-mail-inbound-<account>`) lists messages not yet handled; unread objects expire after 14 days. A message without its
    `.json` envelope means the function did not run or failed: read its log group (and the function's
    errors metric). An envelope that stays more than a few minutes means the worker failed on it: search
    the worker log for `email intake message <message id> failed`; the worker retries it every minute.
    `AMAZON_SES_SETUP_NOTIFICATION` is the test object SES writes when the rule is created and stays.
-4. Worker: `EMAIL_INTAKE_DOMAIN` must be set on the worker task, or it skips email intake.
+4. Worker: `EMAIL_INTAKE_DOMAIN` must be set on the worker task, or it skips email intake, and `EMAIL_INTAKE_BUCKET` must name the inbound bucket, or it looks in the documents bucket.
 5. Records: the message's row in Received (or, for an address no practice holds, in SQL) gives the
    outcome and reason:
 

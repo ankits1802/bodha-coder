@@ -89,8 +89,8 @@ MISSING_OBJECT_CODES = ("404", "NoSuchKey", "NotFound")
 
 
 class S3ObjectStore:
-    def __init__(self, settings: Settings, *, client: Any = None) -> None:
-        self._bucket = settings.s3_bucket
+    def __init__(self, settings: Settings, *, client: Any = None, bucket: str | None = None) -> None:
+        self._bucket = bucket or settings.s3_bucket
         self._encryption = settings.s3_server_side_encryption
         self._client: Any = client or boto3.client(
             "s3",

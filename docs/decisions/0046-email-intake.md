@@ -19,18 +19,30 @@ address would make the API manage SES. The rule (`bodha-staging-intake` in the r
 matches the domain, requires TLS, has SES scan for spam and viruses, stores the raw message at
 `ses-inbound/<message id>` through a role that may write only there, and then invokes the function.
 
+**Mail lands in its own bucket.** SES cannot deliver into a bucket whose Object Lock has a default
+retention period, and the documents bucket keeps every object seven years by default, so creating the
+rule failed with "Unable to write to S3 bucket". Object Lock cannot be removed from a bucket, and the
+documents bucket must keep it. Raw mail and envelopes therefore land in
+`bodha-staging-mail-inbound-<account>`: no Object Lock, no versioning, the documents key, TLS only,
+public access blocked, and anything unread expires after 14 days (`inbound_days`). Nothing is kept there:
+the worker reads each message from that bucket, keeps the copy under `ses-retained/` in the documents
+bucket (seven years under Object Lock) before it records or files anything, and then deletes the inbound
+objects. Seven-year retention therefore holds for every message Bodha handles; the only mail that never
+reaches the documents bucket is mail that sat unread for 14 days, which means the worker was down and the
+alarms already fired. `EMAIL_INTAKE_BUCKET` names the bucket for the worker; when it is empty the worker
+reads `ses-inbound/` in the documents bucket, as tests do.
+
 **The function writes only the envelope.** The envelope recipient is not reliably in the headers (0017),
 and SES verdicts in headers can be forged by a sender. SES hands both to the Lambda action, so
 `handler.py` writes `ses-inbound/<message id>.json` (version 1: message id, received time, recipients,
 spam, virus, SPF, DKIM and DMARC verdicts) and nothing else. Its role may put only `ses-inbound/*.json`
-and use the documents key; it reads no mail. The earlier mapping, subject date and folder writing are
+in the inbound bucket and use the documents key; it reads no mail. The earlier mapping, subject date and folder writing are
 gone.
 
 **The worker decides.** `services.email_intake.poll_email_intake` runs every minute under one advisory
 lock. For each envelope it copies the raw message to `ses-retained/<message id>` first, parses it with the
 standard library, records one `intake_messages` row per address it was sent to, commits, and deletes the
-message and envelope from `ses-inbound/` (a delete marker under Object Lock; every version stays seven
-years). A message that fails is logged and left for the next poll; one bad message must not stop the
+message and envelope from the inbound bucket. A message that fails is logged and left for the next poll; one bad message must not stop the
 others, and the error log reaches the alarms and error tracking.
 
 **Refusals, in order.** Unknown address (recorded without a practice or sender), a test message (below),

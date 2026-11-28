@@ -78,6 +78,26 @@ data "aws_iam_policy_document" "app" {
     resources = [var.bucket_arn]
   }
 
+  dynamic "statement" {
+    for_each = var.email_intake_arn == "" ? [] : [1]
+
+    content {
+      sid       = "InboundMail"
+      actions   = ["s3:GetObject", "s3:DeleteObject"]
+      resources = ["${var.email_intake_arn}/ses-inbound/*"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.email_intake_arn == "" ? [] : [1]
+
+    content {
+      sid       = "InboundMailList"
+      actions   = ["s3:ListBucket"]
+      resources = [var.email_intake_arn]
+    }
+  }
+
   statement {
     sid       = "SigningKey"
     actions   = ["kms:Sign", "kms:Verify", "kms:GetPublicKey", "kms:DescribeKey"]

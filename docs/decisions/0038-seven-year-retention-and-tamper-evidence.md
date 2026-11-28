@@ -142,8 +142,8 @@ the filters used, never their values.
 - Counsel must review the Business Associate Agreement's amended return-or-destroy clause and the
   matching Terms and Privacy text.
 - Infrastructure (owner): S3 Object Lock in governance mode with 7-year retention on the documents
-  bucket and no expiry of current or noncurrent versions, `ses-inbound/` or `ses-retained/` before 2557
-  days; AWS Backup monthly snapshots kept 7 years; CloudWatch log groups kept 7 years (2557 days);
+  bucket and no expiry of current or noncurrent versions or `ses-retained/` before 2557 days (raw mail
+  waits in a separate inbound bucket until the worker keeps it there, [0046](0046-email-intake.md)); AWS Backup monthly snapshots kept 7 years; CloudWatch log groups kept 7 years (2557 days);
   CloudTrail; the migrate task on `MIGRATION_DATABASE_URL`, api and worker on the `bodha_runtime`
   `DATABASE_URL`; `APP_VERSION` from the image tag; the intake function allowed to put under
   `ses-retained/`.

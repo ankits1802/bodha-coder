@@ -29,12 +29,14 @@ variable "live" {
   type = bool
 }
 
-variable "bucket_name" {
-  type = string
-}
+variable "inbound_days" {
+  type    = number
+  default = 14
 
-variable "bucket_arn" {
-  type = string
+  validation {
+    condition     = var.inbound_days >= 1 && var.inbound_days <= 30
+    error_message = "Unread inbound mail is kept between 1 and 30 days."
+  }
 }
 
 variable "kms_key_arn" {
@@ -57,6 +59,14 @@ variable "retention_days" {
 
 output "dns_records" {
   value = [{ name = var.domain, type = "MX", value = "10 inbound-smtp.${var.region}.amazonaws.com" }]
+}
+
+output "inbound_bucket_name" {
+  value = aws_s3_bucket.inbound.bucket
+}
+
+output "inbound_bucket_arn" {
+  value = aws_s3_bucket.inbound.arn
 }
 
 output "function_name" {

@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     twilio_from: str | None = None
     sns_origination_number: str | None = None
     email_intake_domain: str = ""
+    email_intake_bucket: str = ""
     sentry_dsn: str = ""
 
     self_signup_enabled: bool = True

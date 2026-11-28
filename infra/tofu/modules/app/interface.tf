@@ -133,6 +133,16 @@ variable "email_intake_domain" {
   type = string
 }
 
+variable "email_intake_bucket" {
+  type    = string
+  default = ""
+}
+
+variable "email_intake_arn" {
+  type    = string
+  default = ""
+}
+
 output "app_url" {
   value = local.app_url
 }

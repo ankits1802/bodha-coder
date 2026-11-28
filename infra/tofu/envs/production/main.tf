@@ -106,6 +106,8 @@ module "app" {
   microsoft_client_id    = var.microsoft_client_id
   yahoo_client_id        = var.yahoo_client_id
   email_intake_domain    = var.email_intake_live ? local.intake_host : ""
+  email_intake_bucket    = try(module.intake[0].inbound_bucket_name, "")
+  email_intake_arn       = try(module.intake[0].inbound_bucket_arn, "")
 }
 
 module "intake" {
@@ -116,8 +118,6 @@ module "intake" {
   region         = var.region
   domain         = local.intake_host
   live           = var.email_intake_live
-  bucket_name    = module.data.bucket_name
-  bucket_arn     = module.data.bucket_arn
   kms_key_arn    = module.data.kms_key_arn
   source_file    = "${path.module}/../../../ses_intake/handler.py"
   retention_days = 2557

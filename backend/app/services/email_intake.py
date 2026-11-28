@@ -45,6 +45,12 @@ class Gate:
 
 
 @dataclass(frozen=True)
+class Stores:
+    inbound: ListingStore
+    documents: ListingStore
+
+
+@dataclass(frozen=True)
 class Delivery:
     envelope: Envelope
     mail: Mail
@@ -52,7 +58,9 @@ class Delivery:
     now: datetime
 
 
-async def poll_email_intake(db: AsyncSession, store: ListingStore, now: datetime) -> int:
+async def poll_email_intake(
+    db: AsyncSession, store: ListingStore, now: datetime, *, inbound: ListingStore | None = None
+) -> int:
     if now.tzinfo is None:
         raise ValueError("now needs a time zone")
     domain = get_settings().email_intake_domain
@@ -64,7 +72,7 @@ async def poll_email_intake(db: AsyncSession, store: ListingStore, now: datetime
     async with engine.connect() as guard:
         if not await guard.scalar(select(func.pg_try_advisory_xact_lock(func.hashtextextended(EMAIL_INTAKE_LOCK, 0)))):
             return 0
-        return await _poll(db, store, domain, now)
+        return await _poll(db, Stores(inbound or store, store), domain, now)
 
 
 def refusal_of(envelope: Envelope, mail: Mail, gate: Gate) -> str | None:
@@ -85,14 +93,14 @@ def refusal_of(envelope: Envelope, mail: Mail, gate: Gate) -> str | None:
     return None
 
 
-async def _poll(db: AsyncSession, store: ListingStore, domain: str, now: datetime) -> int:
+async def _poll(db: AsyncSession, stores: Stores, domain: str, now: datetime) -> int:
     handled = 0
-    for key in await store.list_keys(INBOUND_PREFIX):
+    for key in await stores.inbound.list_keys(INBOUND_PREFIX):
         message_id = envelope_message_id(key)
         if message_id is None:
             continue
         try:
-            await _handle(db, store, key, domain, now)
+            await _handle(db, stores, key, domain, now)
         except Exception:
             await db.rollback()
             logger.exception("email intake message %s failed", message_id)
@@ -101,16 +109,16 @@ async def _poll(db: AsyncSession, store: ListingStore, domain: str, now: datetim
     return handled
 
 
-async def _handle(db: AsyncSession, store: ListingStore, key: str, domain: str, now: datetime) -> None:
-    envelope = read_envelope(await store.get(key))
+async def _handle(db: AsyncSession, stores: Stores, key: str, domain: str, now: datetime) -> None:
+    envelope = read_envelope(await stores.inbound.get(key))
     if envelope.envelope_key != key:
         raise ValueError("an intake envelope names another message than its key")
-    raw = await store.get(envelope.raw_key)
-    await store.put(envelope.retained_key, raw, content_type=MESSAGE_TYPE)
+    raw = await stores.inbound.get(envelope.raw_key)
+    await stores.documents.put(envelope.retained_key, raw, content_type=MESSAGE_TYPE)
     mail = read_mail(raw)
     for address in await _addresses(db, envelope, domain):
-        await _record_once(db, store, Delivery(envelope, mail, address, now))
-    await store.delete([key, envelope.raw_key])
+        await _record_once(db, stores.documents, Delivery(envelope, mail, address, now))
+    await stores.inbound.delete([key, envelope.raw_key])
 
 
 async def _addresses(db: AsyncSession, envelope: Envelope, domain: str) -> Sequence[IntakeAddress | None]:

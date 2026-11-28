@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "function" {
   statement {
     sid       = "Envelopes"
     actions   = ["s3:PutObject"]
-    resources = ["${var.bucket_arn}/${local.inbound}*.json"]
+    resources = ["${aws_s3_bucket.inbound.arn}/${local.inbound}*.json"]
   }
 
   statement {
@@ -78,7 +78,7 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = {
-      INTAKE_BUCKET = var.bucket_name
+      INTAKE_BUCKET = aws_s3_bucket.inbound.bucket
     }
   }
 
@@ -131,7 +131,7 @@ data "aws_iam_policy_document" "receipt" {
   statement {
     sid       = "StoreMail"
     actions   = ["s3:PutObject"]
-    resources = ["${var.bucket_arn}/${local.inbound}*"]
+    resources = ["${aws_s3_bucket.inbound.arn}/${local.inbound}*"]
   }
 
   statement {
@@ -161,7 +161,7 @@ resource "aws_ses_receipt_rule" "this" {
 
   s3_action {
     position          = 1
-    bucket_name       = var.bucket_name
+    bucket_name       = aws_s3_bucket.inbound.bucket
     object_key_prefix = local.inbound
     iam_role_arn      = aws_iam_role.receipt.arn
   }
@@ -172,7 +172,7 @@ resource "aws_ses_receipt_rule" "this" {
     invocation_type = "Event"
   }
 
-  depends_on = [aws_lambda_permission.ses, aws_iam_role_policy.receipt]
+  depends_on = [aws_lambda_permission.ses, aws_iam_role_policy.receipt, aws_s3_bucket_policy.inbound]
 }
 
 resource "aws_ses_active_receipt_rule_set" "this" {

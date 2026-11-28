@@ -228,6 +228,7 @@ One cluster with Container Insights on (scaling uses its `RunningTaskCount`).
 | `EMAIL_TRANSPORT=ses`, `SMS_TRANSPORT=sns`, `SNS_ORIGINATION_NUMBER`, `MAIL_FROM`, `AWS_MESSAGING_REGION`, `SES_CONFIGURATION_SET` | yes | yes | | plain |
 | `GEMINI_MODEL`, `AI_WORKERS`, `MODEL_PRICES` | | yes | | plain |
 | `EMAIL_INTAKE_DOMAIN` (the intake host, `intake.bodhaai.co`; empty keeps email intake unavailable, [0046](decisions/0046-email-intake.md)) | yes | yes | | plain |
+| `EMAIL_INTAKE_BUCKET` (the bucket SES writes raw mail into, `bodha-staging-mail-inbound-<account>`; empty reads `ses-inbound/` in `S3_BUCKET`) | yes | yes | | plain |
 | `SENTRY_DSN` (optional; empty keeps error tracking off, [Error tracking](#error-tracking-sentry)) | yes | yes | | secret |
 | `FORWARDED_ALLOW_IPS=<VPC CIDR>`, `WEB_CONCURRENCY=1` | yes | | | plain |
 
@@ -442,19 +443,23 @@ admin's email, the practice id, the plan and the provider count.
   loudly.
 - Lifecycle: abort incomplete multipart uploads after 7 days; move current objects to Standard-IA
   after 90 days; expire noncurrent versions no sooner than 2557 days after they become noncurrent;
-  remove expired delete markers. Nothing under `practices/`, `archives/`, `ses-inbound/` or
-  `ses-retained/` expires before seven years.
+  remove expired delete markers. Nothing under `practices/`, `archives/` or `ses-retained/` expires
+  before seven years.
 - CloudTrail data events for the bucket (reads and writes) to a separate, locked log bucket.
 - No CORS configuration is needed: signed PDF links are opened, not fetched.
 - The worker deletes, once a day, objects older than 24 hours whose record does not exist (the orphan
   sweep in [ARCHITECTURE.md](ARCHITECTURE.md#records-replaced-pdfs-retention-voids-and-closing-a-practice));
   under Object Lock that only adds a delete marker. It needs no permission beyond its task role's.
-- Email intake adds the `ses-inbound/` and `ses-retained/` prefixes and changes neither the bucket policy
-  nor the key policy: SES writes `ses-inbound/<message id>` through the role `bodha-staging-ses-receipt`
-  (`s3:PutObject` on `ses-inbound/*`, `kms:GenerateDataKey` and `kms:Decrypt` on the documents key,
-  assumable only by SES for the intake receipt rule), the function `bodha-staging-ses-intake` puts only
-  `ses-inbound/*.json`, and the worker keeps every message under `ses-retained/` with its own role. Object
-  Lock and the lifecycle rules apply as to every object. OpenTofu builds all of it
+- Email intake adds the `ses-retained/` prefix and changes neither the bucket policy nor the key policy.
+  SES cannot write into a bucket with an Object Lock default retention, so raw mail lands in a separate
+  bucket, `bodha-staging-mail-inbound-<account>` (no Object Lock or versioning, the documents key, TLS
+  only, unread objects expire after 14 days; [0046](decisions/0046-email-intake.md)): SES writes
+  `ses-inbound/<message id>` there through the role `bodha-staging-ses-receipt` (`s3:PutObject` on
+  `ses-inbound/*`, `kms:GenerateDataKey` and `kms:Decrypt` on the documents key, assumable only by SES
+  for the intake receipt rule), the function `bodha-staging-ses-intake` puts only `ses-inbound/*.json`,
+  and the worker (`s3:GetObject`, `s3:DeleteObject` and `s3:ListBucket` on that bucket through the app
+  role) keeps every message under `ses-retained/` in the documents bucket before it deletes the inbound
+  objects. OpenTofu builds all of it
   (`email_intake_subdomain`, `email_intake_live`; [infra/tofu/README.md](../infra/tofu/README.md#email-intake)).
 
 ### Email: SES

@@ -8,8 +8,10 @@ the runtime provides; nothing is vendored). OpenTofu packages and deploys it wit
 SES receives mail for the intake domain (for example `intake.bodhaai.co`) with one receipt rule:
 TLS required, spam and virus scanning on, then two actions in order.
 
-1. **S3:** the raw message is stored at `ses-inbound/<message id>` in the documents bucket, through the
-   role `bodha-staging-ses-receipt`, under the bucket's SSE-KMS key and Object Lock.
+1. **S3:** the raw message is stored at `ses-inbound/<message id>` in the inbound mail bucket
+   `bodha-staging-mail-inbound-<account>`, through the role `bodha-staging-ses-receipt`, under the
+   documents key. SES cannot write into the documents bucket, whose Object Lock has a default retention;
+   the worker keeps every message there under `ses-retained/` and then deletes the inbound copy.
 2. **Lambda** (`Event`): the function writes `ses-inbound/<message id>.json`:
 
 ```json
@@ -41,8 +43,8 @@ It never logs addresses, names, subjects or file names.
 
 | Principal | May |
 |---|---|
-| function role `bodha-staging-ses-intake` | `s3:PutObject` on `ses-inbound/*.json`, `kms:GenerateDataKey` on the documents key, write its log group `/aws/lambda/bodha-staging-ses-intake` (kept 2557 days) |
-| receipt role `bodha-staging-ses-receipt` | assumed only by `ses.amazonaws.com` for this account's intake rule; `s3:PutObject` on `ses-inbound/*`, `kms:GenerateDataKey` and `kms:Decrypt` on the documents key |
+| function role `bodha-staging-ses-intake` | `s3:PutObject` on `ses-inbound/*.json` in the inbound bucket, `kms:GenerateDataKey` on the documents key, write its log group `/aws/lambda/bodha-staging-ses-intake` (kept 2557 days) |
+| receipt role `bodha-staging-ses-receipt` | assumed only by `ses.amazonaws.com` for this account's intake rule; `s3:PutObject` on `ses-inbound/*` in the inbound bucket, `kms:GenerateDataKey` and `kms:Decrypt` on the documents key |
 | `ses.amazonaws.com` | invoke the function, for this account's intake rule only |
 
 The bucket policy and the key policy are unchanged. Lambda, SES and S3 are HIPAA eligible under the AWS

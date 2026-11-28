@@ -156,9 +156,9 @@ async def poll_intake_once(store: S3ListingStore) -> None:
         await poll_intake(db, store, utcnow())
 
 
-async def poll_email_intake_once(store: S3ListingStore) -> None:
+async def poll_email_intake_once(store: S3ListingStore, inbound: S3ListingStore) -> None:
     async with SessionFactory() as db:
-        await poll_email_intake(db, store, utcnow())
+        await poll_email_intake(db, store, utcnow(), inbound=inbound)
 
 
 async def sweep_files_once(store: S3ListingStore) -> None:
@@ -220,6 +220,7 @@ async def run() -> None:
     )
     loops = [worker_loop(deps, settings) for _ in range(settings.ai_workers)]
     messenger, listing = build_messenger(settings), S3ListingStore(settings)
+    inbound = S3ListingStore(settings, bucket=settings.email_intake_bucket) if settings.email_intake_bucket else listing
     billing = build_billing_providers(settings)
     everything = asyncio.gather(
         *loops,
@@ -228,7 +229,7 @@ async def run() -> None:
         metrics_loop(),
         purge_loop(),
         every(INTAKE_INTERVAL_SECONDS, "intake", lambda: poll_intake_once(listing)),
-        every(INTAKE_INTERVAL_SECONDS, "email intake", lambda: poll_email_intake_once(listing)),
+        every(INTAKE_INTERVAL_SECONDS, "email intake", lambda: poll_email_intake_once(listing, inbound)),
         every(EVALUATION_INTERVAL_SECONDS, "evaluation", lambda: evaluate_once(deps)),
         every(ESCALATION_INTERVAL_SECONDS, "escalation", lambda: escalate_once(messenger)),
         every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),
