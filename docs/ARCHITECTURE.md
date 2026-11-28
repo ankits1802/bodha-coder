@@ -500,4 +500,4 @@ Decision: [0020](decisions/0020-measured-accuracy-and-earned-autonomy.md).
 | Journeys | `frontend/e2e/journeys`, one Playwright file per role's day; `support/` signs in (TOTP computed from the seeded secret), reads the outbox, drops files on the page and runs axe (serious or critical violations fail) |
 | Canary | `frontend/e2e/canary` with its own config, run nightly by `.github/workflows/canary.yml` in `CHARTMATE-APP` against production: readiness on both hosts, then the pages whose reads write nothing, with every API request other than reads and sign-in aborted and reported. The walk (`canary/walks.ts`) is rehearsed in every CI run by `journeys/canary-rehearsal.spec.ts` with seeded canary accounts |
 
-Decision: [0045](decisions/0045-browser-journeys-and-production-canary.md).
+Decision: [0046](decisions/0046-browser-journeys-and-production-canary.md).

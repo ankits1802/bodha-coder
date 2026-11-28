@@ -214,7 +214,7 @@ synthetic practice through `python -m tests.e2e_seed <scenario>` (`backend/tests
 tests keep a trace and a screenshot. A nightly workflow (`.github/workflows/canary.yml`) signs in to
 production read-only as two canary accounts
 ([docs/OPERATIONS.md](docs/OPERATIONS.md#production-canary),
-[0045](docs/decisions/0045-browser-journeys-and-production-canary.md)).
+[0046](docs/decisions/0046-browser-journeys-and-production-canary.md)).
 
 ## Data sources
 
