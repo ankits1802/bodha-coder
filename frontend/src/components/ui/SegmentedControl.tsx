@@ -55,7 +55,7 @@ export function SegmentedControl<V extends string>(props: SegmentedControlProps<
             tabIndex={segment.value === focusable ? 0 : -1}
             onClick={() => onChange(segment.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
-            className={`${size === "sm" ? "h-6.5 px-2.5" : "h-7 px-3"} cursor-pointer rounded-nav text-subhead font-medium tracking-snug whitespace-nowrap text-label ${on ? "bg-surface shadow-segment-on" : "bg-transparent"}`}
+            className={`${size === "sm" ? "h-6.5 px-2.5" : "h-7 px-3"} cursor-pointer rounded-nav text-subhead font-medium tracking-snug whitespace-nowrap text-label ${on ? "bg-segment-on shadow-segment-on" : "bg-transparent"}`}
           >
             {segment.label}
             {segment.count !== undefined ? (

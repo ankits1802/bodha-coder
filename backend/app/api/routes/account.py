@@ -4,13 +4,14 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
-from app.api.bodies import MfaCodeBody, PreferencesBody
-from app.api.responses.auth import Preferences, RecoveryCodes, RecoveryCodeStatus, SignedInDevice
+from app.api.account_bodies import AppearanceBody, PreferencesBody
+from app.api.bodies import MfaCodeBody
+from app.api.responses.auth import Appearance, Preferences, RecoveryCodes, RecoveryCodeStatus, SignedInDevice
 from app.api.responses.base import ExactRoute
 from app.api.wiring import RefreshCookie
 from app.core.deps import Actor, Db, require, session_actor
 from app.core.roles import NOTE_READERS
-from app.services import digests, recovery_codes, user_sessions
+from app.services import appearance, digests, recovery_codes, user_sessions
 
 router = APIRouter(prefix="/auth", tags=["account"], route_class=ExactRoute)
 Me = Annotated[Actor, Depends(session_actor)]
@@ -62,3 +63,13 @@ async def preferences(actor: Reader) -> dict[str, bool]:
 @router.put("/preferences", response_model=Preferences)
 async def save_preferences(body: PreferencesBody, db: Db, actor: Reader) -> dict[str, bool]:
     return {"notify_digest": await digests.set_digest_preference(db, actor, enabled=body.notify_digest)}
+
+
+@router.get("/appearance", response_model=Appearance)
+async def appearance_choice(actor: Me) -> dict[str, str]:
+    return appearance.appearance_of(actor.user)
+
+
+@router.put("/appearance", response_model=Appearance)
+async def save_appearance(body: AppearanceBody, db: Db, actor: Me) -> dict[str, str]:
+    return await appearance.save_appearance(db, actor.user, **body.model_dump())

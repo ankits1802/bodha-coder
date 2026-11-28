@@ -2,9 +2,10 @@ from typing import Literal
 
 from app.adapters.oidc_providers import PROVIDER_NAMES
 from app.api.responses.base import Omittable, PracticeRole, Role, View
-from app.models import ORGANIZATION_ROLES
+from app.models import MOTION_CHOICES, ORGANIZATION_ROLES, TEXT_SIZES, THEMES
 
 __all__ = [
+    "Appearance",
     "Checks",
     "MfaChallenge",
     "MfaEnrolment",
@@ -117,3 +118,9 @@ class RecoveryCodes(View):
 
 class Preferences(View):
     notify_digest: bool
+
+
+class Appearance(View):
+    theme: Literal[THEMES]
+    text_size: Literal[TEXT_SIZES]
+    reduce_motion: Literal[MOTION_CHOICES]

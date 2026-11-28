@@ -16,25 +16,50 @@ face, no separate code font: codes use the same family with tabular figures.
 | Body | 14, regular |
 | Secondary | 12.5 to 13, regular, secondary label colour |
 
+Text size follows the person's Appearance choice ([0065](decisions/0065-appearance.md)): every text token is
+its size times `--text-scale`, 1 for Default, 1.125 for Large and 1.25 for Larger (body 14, 15.75, 17.5).
+Large titles and the landing's display sizes grow by half as much (`--display-scale` 1, 1.0625, 1.125), so a
+title still fits a phone. Spacing, control heights and layout widths do not scale; rows wrap and tables
+scroll inside their panel instead. Pictures of the product on the landing page keep their drawn sizes.
+
 ## Colour
 
-| Token | Value | Use |
-|---|---|---|
-| page | #FAFAF8 | page background |
-| surface | #FFFFFF | panels |
-| sidebar | #F2F2F4 | navigation |
-| separator | #E5E5EA | lines |
-| label | #1D1D1F | text |
-| secondary | #6E6E73 | secondary text |
-| tertiary | #6E6E73 | the smallest labels; same colour as secondary so it passes 4.5:1 on the sidebar, set apart by size |
-| action | #3A2470 (hover #2D1B59) | the primary action button only |
-| ok | #34C759 | supported, matches |
-| warn | #FF9F0A | needs detail |
-| bad | #FF3B30 | not supported, billed too high |
-| low | #0A84FF | billed too low |
+Light is the default; Dark is the same tokens with other values, chosen by the person or by the system
+(`data-theme` on `<html>`, else `prefers-color-scheme`). Contrast is measured on the surface it sits on.
 
-Status is a small dot beside a word, never colour alone. Dark purple appears on the primary
-action button and nowhere else.
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| page | #FAFAF8 | #111113 | page background |
+| surface | #FFFFFF | #1C1C1E | panels, dialogs, menus |
+| sidebar | #F2F2F4 | #18181A | navigation |
+| separator | #E5E5EA | #3A3A3C | lines |
+| label | #1D1D1F | #F5F5F7 (15.6:1 on surface) | text |
+| secondary, tertiary | #6E6E73 | #AEAEB2 (7.7:1 on surface, 5.1:1 on the lightest fill) | secondary text and the smallest labels |
+| action | #3A2470 (hover #2D1B59) | #7357CC (hover #664CBA); white text 5.3:1 and 6.4:1, 3.2:1 against the surface | the primary action button only |
+| ok, warn, bad, low | #34C759, #FF9F0A, #FF3B30, #0A84FF | #30D158, #FF9F0A, #FF453A, #0A84FF | status dots and fills |
+| ok, warn, bad text | #248A3D, #C93400, #D70015 | #30D158 (8.4:1), #FFA930 (8.9:1), #FF6961 (6.0:1, 5.1:1 on row fills) | status words |
+| focus | #1D1D1F | #F5F5F7 | focus ring and the current finding's bar |
+| inverse, on inverse | #1D1D1F on #FFFFFF | #F5F5F7 on #1C1C1E | the chosen calendar day, count badges, dark fills in product pictures |
+| segment on | #FFFFFF | #48484C | the chosen segment and tab |
+| chart bar, low, ok, warn, bad | #48484A, #0A6FE0, #30A64A, #E08A00, #E0352B | #AEAEB2, #409CFF, #30D158, #FF9F0A, #FF6961 (6.0:1 or more against the surface) | charts |
+| shade | #000000 | #FFFFFF | edges drawn as rings (`color-mix` at a few percent); drop shadows stay black |
+
+Some tokens keep one value in both themes, because they stand for something that does not change with
+the screen: white (text on purple and on status fills, toggle knobs), paper and ink (#FFFFFF and #1D1D1F:
+the signature pad, adopted signatures and the two-step QR code, so a signature is always captured and
+stored dark on white), the landing's dark band (#1D1D1F with #AEAEB2) and the phone in its pictures.
+Colours exist only as tokens in `app/globals.css`; components and CSS modules use the tokens.
+
+Status is a small dot beside a word, never colour alone. Purple appears on the primary action button and
+nowhere else, in both themes.
+
+## Appearance
+
+Account (practice) and Security (HQ) end with an Appearance panel: Theme (System, Light, Dark), Text size
+(Default, Large, Larger) and Reduce motion (System, On, Off), each a segmented control on its own row with
+its name, no helper copy. A choice applies at once, without a reload, is kept on the device and saved for
+the person, so it follows them to every device. Public pages and sign-in use the system settings and
+whatever this device keeps.
 
 ## Shape and controls
 
@@ -62,7 +87,7 @@ Pages that belong together are tabs of one entry, not entries of their own.
 |---|---|
 | Entries | Admin: Today, Inbox, Upload notes, Review queue, Compliance, Billing, Insights, Settings. Compliance: Today, Inbox, Review queue, Compliance, Insights. Coder: Today, Inbox, Upload notes, Review queue. CDI: Today, Inbox, Review queue. Biller: Today, Inbox, Billing. Viewer: Today, Insights. The practice switcher, search and Help are not entries |
 | Area tabs | Billing (Ready to bill, Remittances), Insights (Overview, Quality, Access log) and Settings (Setup, Team, Plan, Security) show a tab row above the page, drawn like a segmented control (`components/ui/Tabs`). Each tab is its own address; arrow keys, Home and End move focus and Enter or Space opens a tab, so arrowing never loads a page. A role sees only the tabs it may open, the entry opens the first of them, and an area with one tab shows no row |
-| Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, Take the tour and Sign out. A billing-only session offers Sign out only |
+| Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, appearance, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, Take the tour and Sign out. A billing-only session offers Sign out only |
 | Today | The one primary button follows the role: Start reviewing (a coder's own next note, else an unassigned one, else My work), Send questions (the Questions to send view), Review compliance, Start billing; an admin gets Start reviewing once the practice has notes. Open blind coding assigned to the person is listed under Assigned to you, with a link to Training |
 | First steps | Until every step is done, an admin's Today starts with Get set up: providers (Import CSV, Add provider), payers (Add payer), the checks as switches with Save checks, Invite people (one form with a row per person), Use recommended (two-step for every role, sign-out after 7 days without use, the access log kept 7 years) and Choose a plan. Each step's name links to its place in Settings and carries the setup marker; the next open step holds the primary button while the practice has no notes. Hide appears once providers are in |
 | Single sign-on | One panel, the same for a practice (Settings → Security, admins) and an organization (its Single sign-on tab): Bodha's Entity ID and Reply URL as selectable code with Download metadata; the identity provider from a metadata file or URL with its certificates, each with its expiry and Remove; the verified domains, the break-glass admins and the switches as switch rows; Save, Turn off (confirmed) and Test sign-in, whose result lists what arrived. On the sign-in page an email whose domain requires single sign-on hides the password field and turns Continue into Continue with single sign-on, with Use a password below for break-glass admins; an optional domain adds a second Continue with single sign-on button |
@@ -175,7 +200,7 @@ control. Rules:
 | Scroll without React | `ScrollStage` writes one `--p` (0 to 1) per section in a `requestAnimationFrame`; CSS derives every act from it. Modes: `enter` (the section rises into view), `pin` (a tall track scrolls past a sticky stage), `through` (a line at 85% of the viewport passes through the element, over at least 60% of the viewport: progress lines such as the workflow timeline) |
 | Paused off screen | `MotionRoot` marks `[data-live]` elements with `data-onscreen`; infinite animations pause when false |
 | Reveals | elements with `data-reveal` below the fold wait (`data-state="waiting"`) and ease in once seen; without JavaScript everything is visible |
-| Reduced motion | `prefers-reduced-motion: reduce` shows every final state, unpins the story and lays its acts out as rows |
+| Reduced motion | the `motion-reduce` variant (Reduce motion On, or System when the system asks for less motion) shows every final state, unpins the story and lays its acts out as rows, and ends every transition and animation at once; Off lets the motion play even when the system asks for less, and the app adds none of its own |
 | Pointer | parallax and the magnetic button follow fine pointers only |
 | Haptics | `lib/haptics.ts`: `tap` (primary press), `select` (switch, in-page jump), `success` (approve). The Vibration API where it exists (Android); on touch devices without it, a hidden native switch is ticked, which iOS 18 answers with a system haptic. Only from a user gesture, never on scroll |
 
@@ -188,7 +213,7 @@ The public page at `/` (`features/landing`) follows the rules above with these a
 | One primary | "Start free trial" is the only purple button in each region; "Request a demo" is secondary, and footer actions are text links |
 | Product pictures | Mini screens are built from the app's own pieces (`CodeChip`, `CodeChange`, `StatusDot`) and plain shapes, hidden from assistive technology; every word in them still meets 4.5:1, since audits read hidden text too |
 | Animating text | Text inside a looping picture moves by transform only; opacity loops are kept to shapes, so text is never caught half transparent |
-| One dark band | The workflow timeline sits on the label colour (#1D1D1F) with secondary text in #AEAEB2 (7.6:1); status colours keep their meaning there |
+| One dark band | The workflow timeline sits on the band colour (#1D1D1F, in both themes) with secondary text in #AEAEB2 (7.6:1); status colours keep their meaning there |
 | Truthful figures | A figure is structural ("every suggested code checked against the official code set", "one in ten held") or computed from the visitor's inputs, as in the estimator, which shows its arithmetic and "Your numbers, not ours."; no customer counts, logos, testimonials, certifications or outcome statistics |
 | Controls | Role tabs follow the WAI-ARIA tabs pattern (arrows, Home, End, one tab in the tab order); questions are buttons with `aria-expanded` inside level 3 headings; the estimator pairs each range with a labelled number field and names the allowed range beside an invalid value |
 | Sample note | "Try it on a sample note." follows the story: three synthetic notes labelled Sample note (billed too high, billed too low with a missed add-on, HCC capture) as tabs, each reviewed by static data in the page, with no request and no model run. The billed codes sit above the findings and the claim below them, updating as each change is accepted, with Ready to approve once all are decided. The current finding carries the dark bar and its evidence is inked in the note, read to screen readers between "Evidence:" and "End of evidence"; after the last decision the note shows the evidence of every accepted change. Accept and Reject are toggle buttons; while focus is inside the review, `y` and `n` (the note review shortcuts) decide the finding that holds focus, else the current one, and focus moves to the next open finding. Start free trial closes the section |

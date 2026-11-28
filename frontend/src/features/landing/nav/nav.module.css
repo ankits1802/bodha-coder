@@ -1,3 +1,5 @@
+@reference "../../../app/globals.css";
+
 .menuButton {
   display: grid;
   place-items: center;
@@ -7,13 +9,13 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #1d1d1f;
+  color: var(--color-label);
   cursor: pointer;
   transition: background-color 0.25s ease;
 }
 
 .menuButton:hover {
-  background: #f0f0f3;
+  background: var(--color-fill-plain-hover);
 }
 
 .bars,
@@ -63,14 +65,14 @@
   right: 0;
   left: 0;
   padding: 8px 24px 20px;
-  border-bottom: 1px solid #e5e5ea;
-  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--color-separator);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
-  box-shadow: 0 24px 40px -28px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 24px 40px -28px color-mix(in srgb, var(--color-shadow) 25%, transparent);
 }
 
 .item {
-  border-bottom: 1px solid #ededf0;
+  border-bottom: 1px solid var(--color-hairline);
   animation: item-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(var(--i, 0) * 40ms);
 }
@@ -82,22 +84,38 @@
 .panelLink {
   display: block;
   padding: 14px 0;
-  color: #1d1d1f;
-  font-size: 20px;
+  color: var(--color-label);
+  font-size: calc(20px * var(--text-scale, 1));
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 25px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .menuButton,
-  .bars,
-  .bars::before,
-  .bars::after {
+.menuButton,
+.bars {
+  @variant motion-reduce {
     transition: none;
   }
+}
 
-  .item {
+.bars {
+  @variant motion-reduce {
+    &::before {
+      transition: none;
+    }
+  }
+}
+
+.bars {
+  @variant motion-reduce {
+    &::after {
+      transition: none;
+    }
+  }
+}
+
+.item {
+  @variant motion-reduce {
     animation: none;
   }
 }

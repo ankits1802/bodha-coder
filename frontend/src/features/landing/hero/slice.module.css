@@ -1,3 +1,5 @@
+@reference "../../../app/globals.css";
+
 .slice {
   --step: 4s;
   --loop: calc(var(--step) * 3);
@@ -18,7 +20,7 @@
   inset: 8% -18% -6%;
   z-index: -1;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-surface) 95%, transparent), transparent);
 }
 
 .rings {
@@ -35,7 +37,7 @@
 .rings span {
   position: absolute;
   inset: 0;
-  border: 1px solid rgba(29, 29, 31, 0.08);
+  border: 1px solid color-mix(in srgb, var(--color-label) 8%, transparent);
   border-radius: 50%;
   opacity: 0;
   animation: ring 9s cubic-bezier(0.2, 0.6, 0.3, 1) infinite both;
@@ -55,10 +57,10 @@
   left: 1.25rem;
   height: 60%;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.05),
-    0 20px 50px -30px rgba(0, 0, 0, 0.25);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 5%, transparent),
+    0 20px 50px -30px color-mix(in srgb, var(--color-shadow) 25%, transparent);
   transform: translate3d(calc(var(--mx, 0) * -10px), calc(var(--my, 0) * -8px), 0);
   transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -74,8 +76,8 @@
   border-radius: 999px;
   background: var(--color-surface);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 14px 34px -14px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 14px 34px -14px color-mix(in srgb, var(--color-shadow) 30%, transparent);
   transform: translate3d(calc(var(--mx, 0) * -16px), calc(var(--my, 0) * -12px), 0);
   transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
   animation:
@@ -89,9 +91,9 @@
   border-radius: 20px;
   background: var(--color-surface);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 40px 80px -40px rgba(0, 0, 0, 0.3),
-    0 24px 60px -40px rgba(10, 132, 255, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 40px 80px -40px color-mix(in srgb, var(--color-shadow) 30%, transparent),
+    0 24px 60px -40px color-mix(in srgb, var(--color-low) 30%, transparent);
 }
 
 .live {
@@ -149,8 +151,8 @@
   border-radius: 16px;
   background: var(--color-surface);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.07),
-    0 24px 48px -20px rgba(0, 0, 0, 0.28);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 7%, transparent),
+    0 24px 48px -20px color-mix(in srgb, var(--color-shadow) 28%, transparent);
   transform: translate3d(calc(var(--mx, 0) * 8px), calc(var(--my, 0) * 6px), 0);
   transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -173,7 +175,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(120% 140% at 100% 0%, rgba(52, 199, 89, 0.14), transparent 60%);
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--color-ok) 14%, transparent), transparent 60%);
   opacity: 0;
   animation: glow var(--loop) ease-out calc(var(--f) * var(--step) + var(--start)) infinite both;
 }
@@ -286,29 +288,61 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .slice,
-  .level,
-  .rings span,
-  .live::after,
-  .mark::before,
-  .track,
-  .frame::before,
-  .key,
-  .accepted,
-  .accepted::after,
-  .tick {
+.slice,
+.level,
+.rings span,
+.track,
+.key,
+.accepted,
+.tick {
+  @variant motion-reduce {
     animation: none;
   }
+}
 
-  .rings {
+.live {
+  @variant motion-reduce {
+    &::after {
+      animation: none;
+    }
+  }
+}
+
+.mark {
+  @variant motion-reduce {
+    &::before {
+      animation: none;
+    }
+  }
+}
+
+.frame {
+  @variant motion-reduce {
+    &::before {
+      animation: none;
+    }
+  }
+}
+
+.accepted {
+  @variant motion-reduce {
+    &::after {
+      animation: none;
+    }
+  }
+}
+
+.rings {
+  @variant motion-reduce {
     display: none;
   }
+}
 
-  .scene,
-  .ghost,
-  .level,
-  .card {
+.scene,
+.ghost,
+.level,
+.card {
+  @variant motion-reduce {
     transform: none;
     transition: none;
   }

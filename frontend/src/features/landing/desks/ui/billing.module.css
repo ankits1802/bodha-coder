@@ -1,3 +1,5 @@
+@reference "../../../../app/globals.css";
+
 .grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 3rem;
@@ -8,15 +10,15 @@
 
 .head {
   height: 32px;
-  background: #fafafb;
-  color: #6e6e73;
+  background: var(--color-row-hover);
+  color: var(--color-secondary);
   font-size: 11.5px;
   font-weight: 600;
 }
 
 .line {
   height: 44px;
-  border-top: 1px solid #ededf0;
+  border-top: 1px solid var(--color-hairline);
   animation: line-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(0.4s + var(--i, 0) * 0.12s);
 }
@@ -27,7 +29,7 @@
   justify-content: flex-end;
   padding: 12px 18px;
   overflow: hidden;
-  border-top: 1px solid #ededf0;
+  border-top: 1px solid var(--color-hairline);
 }
 
 .button {
@@ -50,11 +52,11 @@
   width: 38px;
   height: 28px;
   border-radius: 6px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow:
-    0 0 0 1px #d2d2d7,
-    0 6px 14px -6px rgba(0, 0, 0, 0.25);
-  color: #1d1d1f;
+    0 0 0 1px var(--color-field-border),
+    0 6px 14px -6px color-mix(in srgb, var(--color-shadow) 25%, transparent);
+  color: var(--color-label);
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -62,8 +64,8 @@
 
 .remit {
   padding: 14px 18px 16px;
-  border-top: 1px solid #ededf0;
-  background: #fafafb;
+  border-top: 1px solid var(--color-hairline);
+  background: var(--color-row-hover);
 }
 
 .flag {
@@ -71,15 +73,17 @@
   animation: nudge 6s ease-in-out 1.4s infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .line,
-  .button,
-  .file,
-  .flag {
+.line,
+.button,
+.file,
+.flag {
+  @variant motion-reduce {
     animation: none;
   }
+}
 
-  .file {
+.file {
+  @variant motion-reduce {
     transform: translate3d(-150px, 0, 0);
   }
 }

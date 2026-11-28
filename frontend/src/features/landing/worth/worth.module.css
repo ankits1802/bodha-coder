@@ -1,12 +1,14 @@
+@reference "../../../app/globals.css";
+
 .estimator {
   display: grid;
   overflow: hidden;
   border-radius: 24px;
-  background: #fff;
+  background: var(--color-surface);
   text-align: left;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 40px 80px -48px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 40px 80px -48px color-mix(in srgb, var(--color-shadow) 30%, transparent);
 }
 
 .fields {
@@ -35,22 +37,22 @@
   height: 38px;
   padding: 0 12px;
   border-radius: 10px;
-  background: #fff;
-  box-shadow: inset 0 0 0 1px #d2d2d7;
-  color: #1d1d1f;
-  font-size: 16px;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-field-border);
+  color: var(--color-label);
+  font-size: calc(16px * var(--text-scale, 1));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .number:focus-within {
   box-shadow:
-    inset 0 0 0 1px #1d1d1f,
-    0 0 0 3px rgba(29, 29, 31, 0.18);
+    inset 0 0 0 1px var(--color-label),
+    0 0 0 3px color-mix(in srgb, var(--color-label) 18%, transparent);
 }
 
 .number[data-invalid="true"] {
-  box-shadow: inset 0 0 0 1.5px #ff3b30;
+  box-shadow: inset 0 0 0 1.5px var(--color-bad);
 }
 
 .numberInput {
@@ -90,7 +92,7 @@
 .range::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 4px;
-  background: linear-gradient(to right, #1d1d1f var(--fill), #e5e5ea var(--fill));
+  background: linear-gradient(to right, var(--color-inverse) var(--fill), var(--color-separator) var(--fill));
 }
 
 .range::-webkit-slider-thumb {
@@ -98,10 +100,10 @@
   height: 24px;
   margin-top: -10px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow:
-    0 0 0 1px #86868b,
-    0 3px 8px rgba(0, 0, 0, 0.16);
+    0 0 0 1px var(--color-outline),
+    0 3px 8px color-mix(in srgb, var(--color-shadow) 16%, transparent);
   appearance: none;
   transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -113,13 +115,13 @@
 .range::-moz-range-track {
   height: 4px;
   border-radius: 4px;
-  background: #e5e5ea;
+  background: var(--color-separator);
 }
 
 .range::-moz-range-progress {
   height: 4px;
   border-radius: 4px;
-  background: #1d1d1f;
+  background: var(--color-inverse);
 }
 
 .range::-moz-range-thumb {
@@ -127,10 +129,10 @@
   height: 24px;
   border: 0;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow:
-    0 0 0 1px #86868b,
-    0 3px 8px rgba(0, 0, 0, 0.16);
+    0 0 0 1px var(--color-outline),
+    0 3px 8px color-mix(in srgb, var(--color-shadow) 16%, transparent);
 }
 
 .results {
@@ -138,30 +140,30 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.75rem 1.5rem;
-  background: #f5f5f7;
+  background: var(--color-muted-panel);
 }
 
 .note {
   padding: 4px 11px;
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
-  color: #1d1d1f;
-  font-size: 12.5px;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent);
+  color: var(--color-label);
+  font-size: calc(12.5px * var(--text-scale, 1));
   font-weight: 600;
 }
 
 .result {
   padding-top: 1.25rem;
-  border-top: 1px solid #e5e5ea;
+  border-top: 1px solid var(--color-separator);
 }
 
 .amount {
   display: block;
   margin-top: 4px;
-  color: #1d1d1f;
+  color: var(--color-label);
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: calc(34px * var(--display-scale, 1));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 40px;
@@ -170,17 +172,17 @@
 
 .per {
   display: inline-block;
-  color: #6e6e73;
+  color: var(--color-secondary);
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1));
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .formula {
   margin: 8px 0 0;
-  color: #6e6e73;
-  font-size: 12.5px;
+  color: var(--color-secondary);
+  font-size: calc(12.5px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 
@@ -195,13 +197,15 @@
   }
 
   .amount {
-    font-size: 44px;
+    font-size: calc(44px * var(--display-scale, 1));
     line-height: 50px;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .range::-webkit-slider-thumb {
-    transition: none;
+.range {
+  @variant motion-reduce {
+    &::-webkit-slider-thumb {
+      transition: none;
+    }
   }
 }

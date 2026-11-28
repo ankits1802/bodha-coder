@@ -1,10 +1,12 @@
+@reference "../../../../app/globals.css";
+
 .panel {
   position: relative;
   width: min(100%, 22rem);
   overflow: hidden;
   border-radius: 16px;
-  background: #f5f5f7;
-  color: #1d1d1f;
+  background: var(--color-muted-panel);
+  color: var(--color-label);
 }
 
 .list {
@@ -20,7 +22,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 11px 16px;
-  border-top: 1px solid #e5e5ea;
+  border-top: 1px solid var(--color-separator);
   animation: row-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(0.3s + var(--i, 0) * 0.12s);
 }
@@ -35,7 +37,7 @@
   right: 0;
   left: 0;
   height: 33.3%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.85), transparent);
+  background: linear-gradient(to right, transparent, color-mix(in srgb, var(--color-surface) 85%, transparent), transparent);
   animation: sweep 6s cubic-bezier(0.65, 0, 0.35, 1) 1.2s infinite both;
 }
 
@@ -47,13 +49,15 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .row,
-  .sweep {
+.row,
+.sweep {
+  @variant motion-reduce {
     animation: none;
   }
+}
 
-  .sweep {
+.sweep {
+  @variant motion-reduce {
     display: none;
   }
 }

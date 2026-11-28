@@ -1,3 +1,5 @@
+@reference "../../../../app/globals.css";
+
 .stack {
   display: flex;
   flex-direction: column;
@@ -8,8 +10,8 @@
 .card {
   padding: 16px;
   border-radius: 16px;
-  background: #f5f5f7;
-  color: #1d1d1f;
+  background: var(--color-muted-panel);
+  color: var(--color-label);
 }
 
 .pair {
@@ -27,10 +29,10 @@
   height: 34px;
   padding: 0 14px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.07),
-    0 10px 22px -12px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 7%, transparent),
+    0 10px 22px -12px color-mix(in srgb, var(--color-shadow) 30%, transparent);
   font-size: 15px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -48,8 +50,8 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: #ff3b30;
-  box-shadow: 0 0 0 5px rgba(255, 59, 48, 0.16);
+  background: var(--color-bad);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-bad) 16%, transparent);
   animation: spark 5s ease-out 0.4s infinite both;
 }
 
@@ -64,17 +66,17 @@
 .unitChip {
   padding: 3px 9px;
   border-radius: 6px;
-  background: #fff;
-  box-shadow: inset 0 0 0 1px #c7c7cc;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-chevron);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .left,
-  .right,
-  .spark {
+.left,
+.right,
+.spark {
+  @variant motion-reduce {
     animation: none;
   }
 }

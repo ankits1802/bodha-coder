@@ -1,7 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { SITE_ORIGIN } from "./e2e/support/app";
+import type { SweepOptions } from "./e2e/sweep/fixtures";
 
-export default defineConfig({
+const SWEEP = { testDir: "./e2e/sweep", testMatch: /\.spec\.ts$/, dependencies: ["sweep-setup"] };
+const LARGER_TEXT = { theme: "system", text_size: "larger", reduce_motion: "system" } as const;
+
+export default defineConfig<SweepOptions>({
   outputDir: "./test-results",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
@@ -23,12 +27,8 @@ export default defineConfig({
   projects: [
     { name: "chromium", testDir: "./e2e/journeys", use: { ...devices["Desktop Chrome"] } },
     { name: "sweep-setup", testDir: "./e2e/sweep", testMatch: /\.setup\.ts$/ },
-    {
-      name: "sweep",
-      testDir: "./e2e/sweep",
-      testMatch: /\.spec\.ts$/,
-      dependencies: ["sweep-setup"],
-      use: { ...devices["Desktop Chrome"] },
-    },
+    { name: "sweep", ...SWEEP, use: { ...devices["Desktop Chrome"] } },
+    { name: "sweep-dark", ...SWEEP, use: { ...devices["Desktop Chrome"], colorScheme: "dark" } },
+    { name: "sweep-larger", ...SWEEP, use: { ...devices["Desktop Chrome"], appearance: LARGER_TEXT } },
   ],
 });

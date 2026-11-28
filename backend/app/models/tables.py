@@ -20,7 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.accounts import PRACTICE_MEMBER_ROLES
+from app.models.accounts import MOTION_CHOICES, PRACTICE_MEMBER_ROLES, TEXT_SIZES, THEMES
 from app.models.base import Base, IdMixin, LedgerMixin, one_of, timestamp, utcnow
 from app.models.review_audit import OVERRIDE_NOTE_LENGTH, REQUEST_PURPOSES, override_checks
 
@@ -103,6 +103,9 @@ class User(IdMixin, Base):
     __table_args__ = (
         one_of("role", ROLES),
         one_of("status", ("invited", "active", "blocked")),
+        one_of("theme", THEMES),
+        one_of("text_size", TEXT_SIZES),
+        one_of("reduce_motion", MOTION_CHOICES),
         UniqueConstraint("email", "realm"),
         UniqueConstraint("id", "realm"),
     )
@@ -119,6 +122,9 @@ class User(IdMixin, Base):
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_last_step: Mapped[int | None] = mapped_column(Integer)
     notify_digest: Mapped[bool] = mapped_column(Boolean, default=True)
+    theme: Mapped[str] = mapped_column(String(8), default=THEMES[0], server_default=THEMES[0])
+    text_size: Mapped[str] = mapped_column(String(8), default=TEXT_SIZES[0], server_default=TEXT_SIZES[0])
+    reduce_motion: Mapped[str] = mapped_column(String(8), default=MOTION_CHOICES[0], server_default=MOTION_CHOICES[0])
     token_version: Mapped[int] = mapped_column(Integer, default=0)
     last_active_at: Mapped[datetime | None] = timestamp()
 

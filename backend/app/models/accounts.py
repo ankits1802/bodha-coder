@@ -7,6 +7,9 @@ from app.models.base import Base, IdMixin, LedgerMixin, one_of, timestamp
 
 PRACTICE_MEMBER_ROLES = ("admin", "coder", "cdi", "compliance", "biller", "viewer")
 MEMBERSHIP_STATUSES = ("invited", "active", "blocked")
+THEMES = ("system", "light", "dark")
+TEXT_SIZES = ("default", "large", "larger")
+MOTION_CHOICES = ("system", "on", "off")
 AUTH_EVENT_KINDS = (
     "sign_in_failed",
     "signed_in",

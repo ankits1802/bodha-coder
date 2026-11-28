@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
+import { SYSTEM_APPEARANCE } from "../../src/lib/appearance";
 import { notePath } from "../../src/lib/paths";
-import { expectStill } from "../support/keyboard";
+import { expectMoving, expectStill } from "../support/keyboard";
 import { SITE_ORIGIN } from "../support/app";
 import { expect, test } from "./fixtures";
 import { sweep, type Screen } from "./visit";
@@ -79,4 +80,24 @@ test.describe("reduced motion", () => {
       await expectStill(page);
     });
   }
+});
+
+test.describe("Reduce motion on", () => {
+  test.use({ reducedMotion: "no-preference", appearance: { ...SYSTEM_APPEARANCE, reduce_motion: "on" } });
+  for (const look of STILL_LOOKS) {
+    test(`${look.name} with Reduce motion on`, async ({ page, signIn }) => {
+      if (look.who) await signIn(look.who);
+      await sweep(page, SITE_ORIGIN, await screenFor(look));
+      await expect(page.locator("html")).toHaveAttribute("data-motion", "reduce");
+      await expectStill(page);
+    });
+  }
+});
+
+test.describe("Reduce motion off", () => {
+  test.use({ reducedMotion: "reduce", appearance: { ...SYSTEM_APPEARANCE, reduce_motion: "off" } });
+  test("landing with Reduce motion off moves although the system asks for less", async ({ page }) => {
+    await sweep(page, SITE_ORIGIN, { path: "/" });
+    await expectMoving(page);
+  });
 });

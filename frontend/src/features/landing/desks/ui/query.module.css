@@ -1,3 +1,5 @@
+@reference "../../../../app/globals.css";
+
 .option {
   position: relative;
   display: flex;
@@ -6,8 +8,8 @@
   height: 36px;
   padding: 0 12px;
   border-radius: 10px;
-  box-shadow: inset 0 0 0 1px #e5e5ea;
-  color: #1d1d1f;
+  box-shadow: inset 0 0 0 1px var(--color-separator);
+  color: var(--color-label);
   font-size: 13px;
   animation: option-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(0.5s + var(--i, 0) * 0.08s);
@@ -18,7 +20,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1.5px #1d1d1f;
+  box-shadow: inset 0 0 0 1.5px var(--color-label);
   opacity: 0;
 }
 
@@ -32,7 +34,7 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 1.5px #aeaeb2;
+  box-shadow: inset 0 0 0 1.5px var(--color-quaternary);
 }
 
 .radio::after {
@@ -40,7 +42,7 @@
   position: absolute;
   inset: 4px;
   border-radius: 999px;
-  background: #1d1d1f;
+  background: var(--color-inverse);
   transform: scale(0);
 }
 
@@ -53,7 +55,7 @@
   align-items: center;
   height: 44px;
   padding: 0 18px;
-  border-top: 1px solid #ededf0;
+  border-top: 1px solid var(--color-hairline);
 }
 
 .ticker {
@@ -73,23 +75,47 @@
   height: 18px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .option,
-  .option[data-chosen="true"]::before,
-  .option[data-chosen="true"] .radio::after,
-  .tickerTrack {
+.option,
+.tickerTrack {
+  @variant motion-reduce {
     animation: none;
   }
+}
 
-  .option[data-chosen="true"]::before {
-    opacity: 1;
+.option[data-chosen="true"] {
+  @variant motion-reduce {
+    &::before {
+      animation: none;
+    }
   }
+}
 
-  .option[data-chosen="true"] .radio::after {
-    transform: none;
+.option[data-chosen="true"] .radio {
+  @variant motion-reduce {
+    &::after {
+      animation: none;
+    }
   }
+}
 
-  .tickerTrack {
+.option[data-chosen="true"] {
+  @variant motion-reduce {
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.option[data-chosen="true"] .radio {
+  @variant motion-reduce {
+    &::after {
+      transform: none;
+    }
+  }
+}
+
+.tickerTrack {
+  @variant motion-reduce {
     transform: translate3d(0, -20px, 0);
   }
 }

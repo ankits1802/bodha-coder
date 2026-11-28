@@ -266,8 +266,8 @@ axe on every page. Each test seeds its own synthetic practice through
 screenshot. A WCAG 2.2 AA sweep (`frontend/e2e/sweep`) seeds one shared world and visits every screen for
 every role that can open it, HQ on its host, the public pages, the main dialogs, a phone width and
 reduced motion, with axe, keyboard reach of each primary action, its focus indicator, and focus kept in
-and returned by dialogs
-([0062](docs/decisions/0062-accessibility-sweep-of-every-screen.md)). A nightly workflow (`.github/workflows/canary.yml`) signs in to
+and returned by dialogs, in light, in dark and at Larger text
+([0062](docs/decisions/0062-accessibility-sweep-of-every-screen.md), [0065](docs/decisions/0065-appearance.md)). A nightly workflow (`.github/workflows/canary.yml`) signs in to
 production read-only as two canary accounts
 ([docs/OPERATIONS.md](docs/OPERATIONS.md#production-canary),
 [0050](docs/decisions/0050-browser-journeys-and-production-canary.md)).

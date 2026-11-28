@@ -24,7 +24,7 @@ function Count({ count, active, collapsed }: { count: number; active: boolean; c
   if (collapsed) {
     if (count === 0) return null;
     return (
-      <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-dark px-1 text-center text-micro leading-4 font-semibold text-white tabular-nums">
+      <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-inverse px-1 text-center text-micro leading-4 font-semibold text-on-inverse tabular-nums">
         {count > 99 ? "99+" : count}
       </span>
     );

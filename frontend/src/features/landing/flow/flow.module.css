@@ -1,10 +1,12 @@
+@reference "../../../app/globals.css";
+
 .section {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   padding: 7rem 1.5rem;
-  background: #1d1d1f;
-  color: #fff;
+  background: var(--color-band);
+  color: var(--color-white);
   scroll-margin-top: 4rem;
 }
 
@@ -14,14 +16,14 @@
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(45% 60% at 12% 0%, rgba(10, 132, 255, 0.16), transparent 70%),
-    radial-gradient(40% 55% at 90% 100%, rgba(52, 199, 89, 0.14), transparent 70%);
+    radial-gradient(45% 60% at 12% 0%, color-mix(in srgb, var(--color-low) 16%, transparent), transparent 70%),
+    radial-gradient(40% 55% at 90% 100%, color-mix(in srgb, var(--color-ok) 14%, transparent), transparent 70%);
 }
 
 .lead {
   margin: 1rem 0 0;
-  color: #aeaeb2;
-  font-size: 20px;
+  color: var(--color-band-secondary);
+  font-size: calc(20px * var(--text-scale, 1));
   line-height: 25px;
 }
 
@@ -40,13 +42,13 @@
   width: 2px;
   overflow: hidden;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--color-white) 14%, transparent);
 }
 
 .fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, #fff, #34c759);
+  background: linear-gradient(to bottom, var(--color-white), var(--color-ok));
   transform: scaleY(var(--p, 0));
   transform-origin: top center;
 }
@@ -77,15 +79,15 @@
   width: var(--node);
   height: var(--node);
   border-radius: 999px;
-  background: #1d1d1f;
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.28);
+  background: var(--color-band);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-white) 28%, transparent);
 }
 
 .icon {
   width: 22px;
   height: 22px;
   fill: none;
-  stroke: #8e8e93;
+  stroke: var(--color-band-secondary);
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -97,8 +99,8 @@
   display: grid;
   place-items: center;
   border-radius: inherit;
-  background: #fff;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.1);
+  background: var(--color-white);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-white) 10%, transparent);
   opacity: var(--on);
   transform: scale(calc(0.6 + var(--on) * 0.4));
   transition:
@@ -107,13 +109,13 @@
 }
 
 .lit .icon {
-  stroke: #1d1d1f;
+  stroke: var(--color-band);
 }
 
 .title {
   margin: 10px 0 0;
-  color: #fff;
-  font-size: 20px;
+  color: var(--color-white);
+  font-size: calc(20px * var(--text-scale, 1));
   font-weight: 600;
   line-height: 25px;
   letter-spacing: -0.02em;
@@ -121,8 +123,8 @@
 
 .body {
   margin: 4px 0 0;
-  color: #aeaeb2;
-  font-size: 15px;
+  color: var(--color-band-secondary);
+  font-size: calc(15px * var(--text-scale, 1));
   line-height: 22px;
 }
 
@@ -141,7 +143,7 @@
   }
 
   .fill {
-    background: linear-gradient(to right, #fff, #34c759);
+    background: linear-gradient(to right, var(--color-white), var(--color-ok));
     transform: scaleX(var(--p, 0));
     transform-origin: left center;
   }
@@ -163,8 +165,8 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lit {
+.lit {
+  @variant motion-reduce {
     transition: none;
   }
 }

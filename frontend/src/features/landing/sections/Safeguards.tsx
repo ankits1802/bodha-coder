@@ -6,7 +6,7 @@ function CheckCircle() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" className={`flex-none text-ok ${styles.check}`}>
       <circle cx="11" cy="11" r="11" fill="currentColor" />
-      <path d="M6.5 11.3l3 3 6-6.3" pathLength={1} fill="none" stroke="var(--color-white, #fff)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6.5 11.3l3 3 6-6.3" pathLength={1} fill="none" className="stroke-white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

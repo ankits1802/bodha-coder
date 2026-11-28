@@ -35,6 +35,10 @@ async function messagesTo(address: string): Promise<Message[]> {
   return messages.filter((message) => message.to.toLowerCase() === address.toLowerCase());
 }
 
+export async function messageCount(address: string, matches: (message: Message) => boolean): Promise<number> {
+  return (await messagesTo(address)).filter(matches).length;
+}
+
 export async function nextMessage(address: string, matches: (message: Message) => boolean, seen = 0): Promise<Message> {
   let found: Message | undefined;
   await expect

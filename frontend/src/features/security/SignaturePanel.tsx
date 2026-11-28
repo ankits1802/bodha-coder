@@ -33,7 +33,7 @@ function MySignatureCard() {
         {({ signature }) => (
           <div className="px-4.5 pb-4">
             <SignaturePicture src={signature?.image ?? null} alt={SIGNATURE_TEXT.preview(signature?.typed_name ?? "")}>
-              <span className="text-subhead text-secondary">{SIGNATURE_TEXT.none}</span>
+              <span className="text-subhead text-ink-soft">{SIGNATURE_TEXT.none}</span>
             </SignaturePicture>
           </div>
         )}

@@ -34,6 +34,17 @@ export const SECURITY_TEXT = {
     signOutFor: (device: string) => `Sign out ${device}`,
     signOutOthers: "Sign out everywhere else",
   },
+  appearance: {
+    title: "Appearance",
+    loading: "Loading appearance",
+    retry: "Try again",
+    theme: "Theme",
+    textSize: "Text size",
+    motion: "Reduce motion",
+    themes: { system: "System", light: "Light", dark: "Dark" },
+    textSizes: { default: "Default", large: "Large", larger: "Larger" },
+    motions: { system: "System", on: "On", off: "Off" },
+  },
   recovery: {
     title: "Recovery codes",
     loading: "Loading recovery codes",
