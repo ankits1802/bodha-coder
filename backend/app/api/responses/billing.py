@@ -1,4 +1,5 @@
 from app.api.responses.base import View
+from app.api.responses.clearinghouse import ClaimColumn, ClearinghouseSummary
 
 __all__ = ["BillingList", "BillingRow", "BillingSummary"]
 
@@ -21,6 +22,7 @@ class BillingRow(View):
     snapshot_id: str
     snapshot_revision: int
     held: bool
+    claim: ClaimColumn | None
 
 
 class BillingSummary(View):
@@ -32,6 +34,7 @@ class BillingSummary(View):
 class BillingList(View):
     items: list[BillingRow]
     summary: BillingSummary
+    clearinghouse: ClearinghouseSummary | None
     total: int
     offset: int
     page_size: int

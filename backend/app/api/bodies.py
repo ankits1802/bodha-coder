@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.codes.billing_codes import MAX_POINTERS
+from app.codes.x12_codes import CLAIM_FILING_CODES
 from app.models import (
     ACCESS_DETAIL_LENGTH,
     ACCESS_LOG_MAX_YEARS,
@@ -208,6 +209,7 @@ class PayerBody(Body):
     name: str = Field(min_length=1, max_length=120)
     payer_id: str | None = Field(default=None, max_length=15)
     plan_type: Literal["commercial", "medicare", "medicare_advantage", "medicaid", "other"]
+    claim_filing: Literal[CLAIM_FILING_CODES] | None = None
     active: bool = True
 
 

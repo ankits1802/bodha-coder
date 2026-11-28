@@ -10,8 +10,9 @@ import type { BillingRow } from "@/lib/api/types";
 import { localIsoDate } from "@/lib/dates";
 import { formatCalendarDay, formatCount, formatMoney } from "@/lib/format";
 import { groupByServiceDate, momentLabel } from "../billingRows";
-import { BILLING_TEXT } from "../strings";
+import { BILLING_TEXT, CLAIM_TEXT } from "../strings";
 import { DefensePacketButton } from "@/components/shared/defense/DefensePacketButton";
+import { ClaimCell } from "./ClaimCell";
 
 function ReviewCell({ changed, held }: { changed: number; held: boolean }) {
   if (held) return <StatusDot tone="warn">{BILLING_TEXT.heldForConfirmation}</StatusDot>;
@@ -31,7 +32,12 @@ function ApprovedCell({ row, today }: { row: BillingRow; today: string }) {
   );
 }
 
-function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
+interface ClaimColumnProps {
+  showClaims: boolean;
+  onDetails: (row: BillingRow) => void;
+}
+
+function BillingRowView({ row, today, showClaims, onDetails }: { row: BillingRow; today: string } & ClaimColumnProps) {
   return (
     <Tr>
       <Td>
@@ -47,6 +53,11 @@ function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
       <Td>
         <ReviewCell changed={row.changed} held={row.held} />
       </Td>
+      {showClaims ? (
+        <Td>
+          <ClaimCell row={row} onDetails={onDetails} />
+        </Td>
+      ) : null}
       <Td>
         <ApprovedCell row={row} today={today} />
       </Td>
@@ -57,12 +68,12 @@ function BillingRowView({ row, today }: { row: BillingRow; today: string }) {
   );
 }
 
-export function BillingTable({ rows }: { rows: BillingRow[] }) {
+export function BillingTable({ rows, showClaims, onDetails }: { rows: BillingRow[] } & ClaimColumnProps) {
   const [today] = useState(() => localIsoDate());
   const words = BILLING_TEXT.columns;
   return (
     <Panel as="div">
-      <Table label={BILLING_TEXT.tableLabel} minWidth="lg">
+      <Table label={BILLING_TEXT.tableLabel} minWidth={showClaims ? "xl" : "lg"}>
         <thead>
           <tr>
             <Th>{words.patient}</Th>
@@ -70,17 +81,18 @@ export function BillingTable({ rows }: { rows: BillingRow[] }) {
             <Th>{words.codes}</Th>
             <Th className="text-right">{words.estimate}</Th>
             <Th>{words.review}</Th>
+            {showClaims ? <Th>{CLAIM_TEXT.column}</Th> : null}
             <Th>{words.approvedBy}</Th>
             <Th>{words.packet}</Th>
           </tr>
         </thead>
         {groupByServiceDate(rows).map((group) => (
           <tbody key={group.day}>
-            <GroupRow colSpan={7}>
+            <GroupRow colSpan={showClaims ? 8 : 7}>
               {BILLING_TEXT.seenGroup(formatCalendarDay(group.day), formatCount(group.rows.length))}
             </GroupRow>
             {group.rows.map((row) => (
-              <BillingRowView key={row.id} row={row} today={today} />
+              <BillingRowView key={row.id} row={row} today={today} showClaims={showClaims} onDetails={onDetails} />
             ))}
           </tbody>
         ))}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import type { ButtonVariant } from "@/components/ui/buttonStyles";
 import { Select } from "@/components/ui/Select";
 import { useAction } from "@/hooks/useAction";
 import { downloadClaimLines } from "@/lib/api/billing";
@@ -14,10 +15,11 @@ const FORMATS: ClaimLinesFormat[] = ["csv", "json"];
 
 interface ExportClaimLinesProps {
   visits: number;
+  variant?: ButtonVariant;
   onExported: (notice: string) => void;
 }
 
-export function ExportClaimLines({ visits, onExported }: ExportClaimLinesProps) {
+export function ExportClaimLines({ visits, variant = "primary", onExported }: ExportClaimLinesProps) {
   const words = BILLING_TEXT.claimLines;
   const [format, setFormat] = useState<ClaimLinesFormat>("csv");
   const download = useAction(downloadClaimLines);
@@ -39,7 +41,7 @@ export function ExportClaimLines({ visits, onExported }: ExportClaimLinesProps) 
         options={FORMATS.map((value) => ({ value, label: words.formats[value] }))}
         onChange={setFormat}
       />
-      <Button variant="primary" pending={download.pending} onClick={() => void run()}>
+      <Button variant={variant} pending={download.pending} onClick={() => void run()}>
         {words.export(amount)}
       </Button>
       {download.error ? (

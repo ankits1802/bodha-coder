@@ -19,7 +19,7 @@ export const SECTION_ORDER: readonly ScoredKey[] = [
   "software",
 ];
 
-const UNSCORED: readonly SetupNavKey[] = ["checks", "intake", "mips"];
+const UNSCORED: readonly SetupNavKey[] = ["clearinghouse", "checks", "intake", "mips"];
 
 function isScored(key: SetupNavKey): key is ScoredKey {
   return (SECTION_ORDER as readonly string[]).includes(key);
@@ -56,10 +56,18 @@ export function sameValues(left: Record<string, string>, right: Record<string, s
 }
 
 const EIN_PATTERN = /^\d{2}-?\d{7}$/;
+const ZIP_PATTERN = /^\d{5}(-?\d{4})?$/;
+const STATE_PATTERN = /^[A-Za-z]{2}$/;
+const TAXONOMY_PATTERN = /^[0-9A-Z]{9}X$/;
+const PHONE_DIGITS = 10;
 
 const FIELD_CHECKS: Record<string, (value: string) => boolean> = {
   group_npi: isNpiShaped,
   tax_id: (value) => EIN_PATTERN.test(value.trim()),
+  zip: (value) => ZIP_PATTERN.test(value.trim()),
+  state: (value) => STATE_PATTERN.test(value.trim()),
+  phone: (value) => value.replace(/\D/g, "").length === PHONE_DIGITS,
+  taxonomy_code: (value) => TAXONOMY_PATTERN.test(value.trim().toUpperCase()),
 };
 
 export function fieldError(field: string, value: string): string | null {

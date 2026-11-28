@@ -24,6 +24,7 @@ from app.services.review_actions import current_claim, note_for
 
 __all__ = [
     "CLAIM_LINE_COLUMNS",
+    "INDIVIDUAL",
     "MAX_DIAGNOSES",
     "POINTER_LETTERS",
     "Claim",

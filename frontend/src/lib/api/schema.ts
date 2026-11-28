@@ -431,6 +431,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/billing/acknowledgments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acknowledgment_api_billing_acknowledgments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/claim-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claim_file_api_billing_claim_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/billing/claim-lines": {
         parameters: {
             query?: never;
@@ -441,6 +473,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["lines_api_billing_claim_lines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/claim-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["submissions_api_billing_claim_submissions_get"];
+        put?: never;
+        post: operations["send_api_billing_claim_submissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/claim-submissions/{submission_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["submission_file_api_billing_claim_submissions__submission_id__file_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1567,6 +1631,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notes/{note_id}/claim-details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["details_api_notes__note_id__claim_details_get"];
+        put: operations["save_details_api_notes__note_id__claim_details_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notes/{note_id}/comments": {
         parameters: {
             query?: never;
@@ -2143,6 +2223,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/practice/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["charges_api_practice_charges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/charges/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import_charges_api_practice_charges_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/charges/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["set_charge_api_practice_charges__code__put"];
+        post?: never;
+        delete: operations["remove_charge_api_practice_charges__code__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/practice/checks": {
         parameters: {
             query?: never;
@@ -2153,6 +2281,54 @@ export interface paths {
         get?: never;
         put: operations["save_checks_api_practice_checks_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/clearinghouse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["clearinghouse_api_practice_clearinghouse_get"];
+        put: operations["save_clearinghouse_api_practice_clearinghouse_put"];
+        post?: never;
+        delete: operations["remove_clearinghouse_api_practice_clearinghouse_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/clearinghouse/host-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["host_key_api_practice_clearinghouse_host_key_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practice/clearinghouse/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["check_api_practice_clearinghouse_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3350,6 +3526,13 @@ export interface components {
             id: string;
             name: string;
         };
+        AckUpload: {
+            accepted: number;
+            kind: "999" | "277CA" | "duplicate";
+            pending: number;
+            rejected: number;
+            unlinked: number;
+        };
         ActivityChange: {
             after: string | number | null;
             before: string | number | null;
@@ -3543,6 +3726,7 @@ export interface components {
             reason: components["schemas"]["OverrideBody"];
         };
         BillingList: {
+            clearinghouse: components["schemas"]["ClearinghouseSummary"] | null;
             items: components["schemas"]["BillingRow"][];
             limit: number;
             offset: number;
@@ -3554,6 +3738,7 @@ export interface components {
             approved_at: string | null;
             approved_by: string;
             changed: number;
+            claim: components["schemas"]["ClaimColumn"] | null;
             codes: string[];
             cpt: string[];
             estimate: number | null;
@@ -3599,6 +3784,9 @@ export interface components {
             purpose: "audit" | "training";
             status: "open" | "done";
         };
+        Body_acknowledgment_api_billing_acknowledgments_post: {
+            file: string;
+        };
         Body_preview_api_uploads_preview_post: {
             files: string[];
         };
@@ -3631,6 +3819,16 @@ export interface components {
             overallCDIScore: number | null;
             summaryGuidance: string | null;
         };
+        Charge: {
+            cents: number;
+            code: string;
+        };
+        ChargeBody: {
+            cents: number;
+        };
+        ChargeList: {
+            items: components["schemas"]["Charge"][];
+        };
         CheckoutBody: {
             interval: "monthly" | "annual";
             plan: "essentials" | "professional";
@@ -3655,6 +3853,69 @@ export interface components {
             payer: components["schemas"]["ClaimPayer"] | null;
             payer_flags: components["schemas"]["PayerFlag"][];
         };
+        ClaimColumn: {
+            at: string | null;
+            missing: string[];
+            reasons: components["schemas"]["ClaimReason"][];
+            status: "missing" | "ready" | "sending" | "sent" | "accepted" | "rejected" | "failed";
+        };
+        ClaimDetailsBody: {
+            city: string;
+            group_number?: string | null;
+            member_id: string;
+            patient_birth_date: string;
+            patient_first: string;
+            patient_last: string;
+            patient_sex: "F" | "M" | "U";
+            relationship: "18" | "01" | "19" | "G8";
+            state: string;
+            street: string;
+            street_2?: string | null;
+            subscriber_first?: string | null;
+            subscriber_last?: string | null;
+            zip_code: string;
+        };
+        ClaimDetailsRecord: {
+            city: string;
+            confirmed_at: string;
+            confirmed_by: string;
+            group_number: string | null;
+            member_id: string;
+            patient_birth_date: string;
+            patient_first: string;
+            patient_last: string;
+            patient_sex: "F" | "M" | "U";
+            relationship: "18" | "01" | "19" | "G8";
+            revision: number;
+            state: string;
+            street: string;
+            street_2: string | null;
+            subscriber_first: string | null;
+            subscriber_last: string | null;
+            zip_code: string;
+        };
+        ClaimDetailsSuggestion: {
+            city?: string | null;
+            group_number?: string | null;
+            member_id?: string | null;
+            patient_birth_date?: string | null;
+            patient_first?: string | null;
+            patient_last?: string | null;
+            patient_name?: string | null;
+            patient_sex?: ("F" | "M" | "U") | null;
+            relationship?: ("18" | "01" | "19" | "G8") | null;
+            source: "note" | "earlier_claim";
+            state?: string | null;
+            street?: string | null;
+            street_2?: string | null;
+            subscriber_first?: string | null;
+            subscriber_last?: string | null;
+            zip_code?: string | null;
+        };
+        ClaimDetailsView: {
+            details: components["schemas"]["ClaimDetailsRecord"] | null;
+            suggested: components["schemas"]["ClaimDetailsSuggestion"] | null;
+        };
         ClaimDiagnosis: {
             code: string;
             letter: string | null;
@@ -3676,6 +3937,29 @@ export interface components {
             release: string;
             setting: "facility" | "non_facility";
         };
+        ClaimFilePage: {
+            items: components["schemas"]["ClaimFileRecord"][];
+            offset: number;
+            page_size: number;
+            total: number;
+        };
+        ClaimFileRecord: {
+            accepted: number;
+            at: string;
+            by: string;
+            claims: number;
+            control_number: number;
+            delivery: "sftp" | "download";
+            error: string | null;
+            file_ack: ("accepted" | "rejected" | "pending") | null;
+            file_name: string;
+            id: string;
+            outcome: "sending" | "delivered" | "failed" | "downloaded";
+            rejected: number;
+            sha256: string;
+            total_cents: number;
+            usage: "test" | "production";
+        };
         ClaimLinesBody: {
             format?: "csv" | "json";
             note_ids?: string[] | null;
@@ -3690,6 +3974,47 @@ export interface components {
         ClaimPointers: {
             diagnoses: components["schemas"]["ClaimDiagnosis"][];
             lines: components["schemas"]["PointerLine"][];
+        };
+        ClaimReason: {
+            code: string;
+            text: string;
+        };
+        ClaimSendBody: {
+            note_ids?: string[] | null;
+        };
+        ClaimSent: {
+            claims: number;
+            id: string;
+            outcome: "delivered";
+        };
+        ClearinghouseConnectionView: {
+            auth_kind: ("password" | "key") | null;
+            host: string | null;
+            host_key_sha256: string | null;
+            id: string;
+            inbound_folder: string | null;
+            name: string;
+            outbound_folder: string | null;
+            port: number | null;
+            receiver_id: string;
+            receiver_name: string;
+            receiver_qualifier: "01" | "14" | "20" | "27" | "28" | "29" | "30" | "33" | "ZZ";
+            saved_at: string;
+            secret_saved: boolean;
+            sender_id: string;
+            sender_qualifier: "01" | "14" | "20" | "27" | "28" | "29" | "30" | "33" | "ZZ";
+            transport: "sftp" | "portal";
+            usage: "test" | "production";
+            username: string | null;
+        };
+        ClearinghouseSummary: {
+            name: string;
+            transport: "sftp" | "portal";
+            usage: "test" | "production";
+        };
+        ClearinghouseView: {
+            connection: components["schemas"]["ClearinghouseConnectionView"] | null;
+            encryption_ready: boolean;
         };
         CmsCdiCompliance: {
             compliant: boolean;
@@ -3804,6 +4129,28 @@ export interface components {
         };
         ConfirmPracticeBody: {
             confirm_name: string;
+        };
+        ConnectionBody: {
+            auth_kind?: ("password" | "key") | null;
+            host?: string | null;
+            host_key_sha256?: string | null;
+            inbound_folder?: string | null;
+            name: string;
+            outbound_folder?: string | null;
+            password?: string | null;
+            port?: number | null;
+            private_key?: string | null;
+            receiver_id: string;
+            receiver_name: string;
+            receiver_qualifier?: "01" | "14" | "20" | "27" | "28" | "29" | "30" | "33" | "ZZ";
+            sender_id: string;
+            sender_qualifier?: "01" | "14" | "20" | "27" | "28" | "29" | "30" | "33" | "ZZ";
+            transport: "sftp" | "portal";
+            usage: "test" | "production";
+            username?: string | null;
+        };
+        ConnectionCheck: {
+            ok: boolean;
         };
         Created: {
             id: string;
@@ -4168,6 +4515,13 @@ export interface components {
         Health: {
             status: "ok";
         };
+        HostKey: {
+            host_key_sha256: string;
+        };
+        HostKeyBody: {
+            host: string;
+            port?: number;
+        };
         HqActivityEntry: {
             action: string;
             actor: string;
@@ -4361,7 +4715,7 @@ export interface components {
             actor_name: string;
             created_at: string;
             id: string;
-            kind: "provider_answered" | "level_disagreed" | "request_expired" | "mentioned" | "training_assigned" | "payment_failed" | "plan_ending" | "compliance_returned" | "join_requested";
+            kind: "provider_answered" | "level_disagreed" | "request_expired" | "mentioned" | "training_assigned" | "payment_failed" | "plan_ending" | "compliance_returned" | "join_requested" | "claim_rejected";
             note_id: string | null;
             patient_name: string | null;
             payload: components["schemas"]["InboxPayload"];
@@ -4377,6 +4731,7 @@ export interface components {
         };
         InboxPayload: {
             access_until?: string;
+            claims?: number;
             comment_id?: string;
             ends_on?: string;
             notes?: number;
@@ -4386,6 +4741,7 @@ export interface components {
             reason?: string;
             request_id?: string;
             run_id?: string;
+            source?: "999" | "277CA";
         };
         InboxReadBody: {
             all?: boolean;
@@ -4875,6 +5231,7 @@ export interface components {
         };
         Payer: {
             active: boolean;
+            claim_filing?: ("11" | "12" | "13" | "14" | "15" | "16" | "17" | "AM" | "BL" | "CH" | "CI" | "DS" | "FI" | "HM" | "LM" | "MA" | "MB" | "MC" | "OF" | "TV" | "VA" | "WC" | "ZZ") | null;
             id: string;
             name: string;
             payer_id: string | null;
@@ -4882,6 +5239,7 @@ export interface components {
         };
         PayerBody: {
             active?: boolean;
+            claim_filing?: ("11" | "12" | "13" | "14" | "15" | "16" | "17" | "AM" | "BL" | "CH" | "CI" | "DS" | "FI" | "HM" | "LM" | "MA" | "MB" | "MC" | "OF" | "TV" | "VA" | "WC" | "ZZ") | null;
             name: string;
             payer_id?: string | null;
             plan_type: "commercial" | "medicare" | "medicare_advantage" | "medicaid" | "other";
@@ -5589,6 +5947,7 @@ export interface components {
         SetupSection: {
             complete: boolean;
             fields: string[];
+            optional: string[];
             values: {
                 [key: string]: string;
             };
@@ -7093,6 +7452,120 @@ export interface operations {
             };
         };
     };
+    acknowledgment_api_billing_acknowledgments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_acknowledgment_api_billing_acknowledgments_post"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AckUpload"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    claim_file_api_billing_claim_file_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimSendBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/edi-x12": string;
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     lines_api_billing_claim_lines_post: {
         parameters: {
             query?: never;
@@ -7115,6 +7588,173 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ClaimLinesExport"];
                     "text/csv": string;
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submissions_api_billing_claim_submissions_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimFilePage"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    send_api_billing_claim_submissions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimSendBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimSent"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submission_file_api_billing_claim_submissions__submission_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/edi-x12": string;
                 };
             };
             401: {
@@ -11234,6 +11874,120 @@ export interface operations {
             };
         };
     };
+    details_api_notes__note_id__claim_details_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimDetailsView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_details_api_notes__note_id__claim_details_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimDetailsBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimDetailsView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     comments_api_notes__note_id__comments_get: {
         parameters: {
             query?: {
@@ -13290,6 +14044,222 @@ export interface operations {
             };
         };
     };
+    charges_api_practice_charges_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeList"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    import_charges_api_practice_charges_import_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeList"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    set_charge_api_practice_charges__code__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChargeBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeList"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_charge_api_practice_charges__code__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeList"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     save_checks_api_practice_checks_put: {
         parameters: {
             query?: never;
@@ -13328,6 +14298,255 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    clearinghouse_api_practice_clearinghouse_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearinghouseView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    save_clearinghouse_api_practice_clearinghouse_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearinghouseView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_clearinghouse_api_practice_clearinghouse_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClearinghouseView"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    host_key_api_practice_clearinghouse_host_key_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HostKeyBody"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HostKey"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    check_api_practice_clearinghouse_test_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionCheck"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

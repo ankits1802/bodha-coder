@@ -20,6 +20,12 @@ from app.models import (
     Provider,
 )
 from app.services.audit_log import record_activity
+from app.services.billing_profile import (
+    OPTIONAL_DETAIL_FIELDS,
+    PRACTICE_DETAIL_FIELDS,
+    PRACTICE_DETAILS,
+    validated_practice_details,
+)
 from app.services.first_run import CHECKS_REVIEWED, SECURITY_REVIEWED, first_run_view, mark_first_run
 from app.services.payers import has_active_payer, payer_list
 from app.services.plan_limits import ensure_provider_room
@@ -27,7 +33,7 @@ from app.services.provider_channels import CHANNELS, CONTACT_FIELDS, EMAIL, TEXT
 from app.services.provider_details import DETAIL_FIELDS, validated_details
 
 SETUP_SECTIONS: dict[str, tuple[str, ...]] = {
-    "practice_details": ("legal_name", "tax_id", "group_npi", "address", "phone", "billing_contact"),
+    PRACTICE_DETAILS: PRACTICE_DETAIL_FIELDS,
     "payers": ("clearinghouse", "eft_era_status"),
     "payments": ("fee_schedule", "payment_posting", "write_off_rules"),
     "coding_rules": ("common_codes", "modifier_rules", "coding_preferences"),
@@ -44,6 +50,7 @@ CREDENTIALS = ("MD", "DO", "NP", "PA", "CNS", "CNM")
 IDLE_MINUTES_CHOICES = (5, 10, 15, 30)
 ACCESS_LOG_YEARS = range(ACCESS_LOG_MIN_YEARS, ACCESS_LOG_MAX_YEARS + 1)
 NO_CONTACT = "questions need an email or phone to be sent to"
+OPTIONAL_FIELDS = {PRACTICE_DETAILS: OPTIONAL_DETAIL_FIELDS}
 
 
 def section_complete(values: dict[str, Any], fields: tuple[str, ...]) -> bool:
@@ -55,7 +62,12 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
         await db.scalars(select(Provider).where(Provider.practice_id == practice.id, Provider.active.is_(True)))
     ).all()
     sections = {key: _section_view(practice, key, fields) for key, fields in SETUP_SECTIONS.items()}
-    sections["providers"] = {"fields": [], "values": {}, "complete": bool(providers) and all(p.npi for p in providers)}
+    sections["providers"] = {
+        "fields": [],
+        "optional": [],
+        "values": {},
+        "complete": bool(providers) and all(p.npi for p in providers),
+    }
     return {
         "sections": sections,
         "complete": sum(1 for item in sections.values() if item["complete"]),
@@ -69,8 +81,14 @@ async def setup_overview(db: AsyncSession, practice: Practice) -> dict[str, Any]
 
 def _section_view(practice: Practice, key: str, fields: tuple[str, ...]) -> dict[str, Any]:
     stored = practice.setup.get(key, {})
-    complete = section_complete(stored, fields) and (key != "payers" or has_active_payer(practice))
-    return {"fields": list(fields), "values": {field: stored.get(field, "") for field in fields}, "complete": complete}
+    required = tuple(field for field in fields if field not in OPTIONAL_FIELDS.get(key, ()))
+    complete = section_complete(stored, required) and (key != "payers" or has_active_payer(practice))
+    return {
+        "fields": list(fields),
+        "optional": list(OPTIONAL_FIELDS.get(key, ())),
+        "values": {field: stored.get(field, "") for field in fields},
+        "complete": complete,
+    }
 
 
 async def save_section(db: AsyncSession, actor: Actor, key: str, values: dict[str, str]) -> None:
@@ -84,7 +102,8 @@ async def save_section(db: AsyncSession, actor: Actor, key: str, values: dict[st
     if practice is None:
         raise NotFound("practice not found")
     kept = practice.setup.get(key, {})
-    practice.setup = {**practice.setup, key: {**kept, **{field: values.get(field, "").strip() for field in fields}}}
+    cleaned = validated_practice_details(values) if key == PRACTICE_DETAILS else values
+    practice.setup = {**practice.setup, key: {**kept, **{field: cleaned.get(field, "").strip() for field in fields}}}
     record_activity(db, actor, "setup saved", practice_id=practice.id, detail=key)
     await db.commit()
 

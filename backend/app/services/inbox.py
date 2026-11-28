@@ -42,6 +42,7 @@ PAYLOAD_KEYS: dict[str, tuple[str, ...]] = {
     "plan_ending": ("ends_on",),
     "compliance_returned": ("reason",),
     "join_requested": ("request_id",),
+    "claim_rejected": ("source", "claims"),
 }
 PayloadValue = str | int | bool
 

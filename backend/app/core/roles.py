@@ -14,5 +14,6 @@ ASKERS = ("admin", "coder", "cdi")
 ASSIGNERS = ("admin", "coder", "cdi")
 COMPLIANCE = ("admin", "compliance")
 BILLERS = ("admin", "biller")
+PAYER_SETTERS = ("admin", "coder", "biller")
 INSIGHT_READERS = ("admin", "compliance", "viewer")
 INVITABLE_ROLES = PRACTICE_ROLES

@@ -5,12 +5,13 @@ from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_listing import ListingStore
 from app.core.calendar import zone_named
 from app.core.config import get_settings
+from app.core.db import exclusive_job
 from app.core.security import same_digest
 from app.models import SENDER_LENGTH, IntakeAddress, IntakeMessage, IntakeSender, IntakeTest, Practice, utcnow
 from app.services.email_intake_files import ACCEPTED, FileOutcome, deliver_attachments
@@ -66,11 +67,8 @@ async def poll_email_intake(
     domain = get_settings().email_intake_domain
     if not domain:
         return 0
-    engine = db.bind
-    if not isinstance(engine, AsyncEngine):
-        raise RuntimeError("email intake needs a session bound to an engine")
-    async with engine.connect() as guard:
-        if not await guard.scalar(select(func.pg_try_advisory_xact_lock(func.hashtextextended(EMAIL_INTAKE_LOCK, 0)))):
+    async with exclusive_job(db, EMAIL_INTAKE_LOCK) as held:
+        if not held:
             return 0
         return await _poll(db, Stores(inbound or store, store), domain, now)
 

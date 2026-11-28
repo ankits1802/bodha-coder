@@ -48,7 +48,12 @@ export function SectionForm({ sectionKey, section, onSaved }: SectionFormProps) 
       <PanelHeader title={<span id={`${formId}-title`}>{SETUP_TEXT.sections[sectionKey]}</span>} />
       <form id={formId} onSubmit={submit} noValidate className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
         {section.fields.map((field) => (
-          <Field key={field} label={fieldLabel(field)} error={errorOf(field)}>
+          <Field
+            key={field}
+            label={fieldLabel(field)}
+            error={errorOf(field)}
+            optional={section.optional.includes(field) ? SETUP_TEXT.optional : undefined}
+          >
             {(control) => (
               <Input
                 {...control}

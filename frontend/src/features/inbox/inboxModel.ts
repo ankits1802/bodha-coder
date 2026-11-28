@@ -1,7 +1,7 @@
 import type { InboxEntry, InboxKind } from "@/lib/api/types";
 import { formatCalendarDay } from "@/lib/format";
 import { RETURN_REASON_LABELS, isReturnReason } from "@/lib/labels";
-import { TEAM_PATH, notePath, noteHistoryPath } from "@/lib/paths";
+import { BILLING_PATH, TEAM_PATH, notePath, noteHistoryPath } from "@/lib/paths";
 import { PLAN_PATH } from "@/lib/roles";
 import { INBOX_TEXT } from "./strings";
 
@@ -18,6 +18,7 @@ const SENTENCES: Record<InboxKind, (entry: InboxEntry) => string> = {
   plan_ending: (entry) => words.planEnding(formatCalendarDay(entry.payload.ends_on ?? null, "year")),
   compliance_returned: (entry) => words.complianceReturned(entry.actor_name, returnLabel(entry)),
   join_requested: (entry) => words.joinRequested(entry.actor_name),
+  claim_rejected: (entry) => words.claimsRejected(entry.payload.claims ?? 1),
 };
 
 const FIXED_TARGETS: Partial<Record<InboxKind, string>> = {
@@ -25,6 +26,7 @@ const FIXED_TARGETS: Partial<Record<InboxKind, string>> = {
   payment_failed: PLAN_PATH,
   plan_ending: PLAN_PATH,
   join_requested: TEAM_PATH,
+  claim_rejected: BILLING_PATH,
 };
 
 const HISTORY_KINDS: readonly InboxKind[] = ["mentioned"];

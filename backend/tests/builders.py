@@ -21,6 +21,7 @@ from app.worker import process_one
 from tests.fakes import (
     NOTE_TEXT,
     FakeBillingProvider,
+    FakeFileLink,
     FakeImageModel,
     FakeMessenger,
     FakeProvider,
@@ -47,6 +48,7 @@ class Harness:
     billing: dict[str, FakeBillingProvider]
     image_model: FakeImageModel
     dns: FakeTxtResolver = field(default_factory=FakeTxtResolver)
+    link: FakeFileLink = field(default_factory=FakeFileLink)
 
     @property
     def google(self) -> FakeProvider:

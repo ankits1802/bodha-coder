@@ -29,9 +29,7 @@ SAFE_MESSAGES = frozenset(
         "queue metrics failed",
         "access log purge failed",
         "email intake message %s failed",
-        "intake needs a session bound to an engine",
-        "the sweep needs a session bound to an engine",
-        "email intake needs a session bound to an engine",
+        "a job lock needs a session bound to an engine",
         "now needs a time zone",
     }
 )
