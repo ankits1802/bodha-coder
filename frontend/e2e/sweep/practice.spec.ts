@@ -1,10 +1,11 @@
 import { NAV_ORDER } from "../../src/features/setup/setupModel";
 import { PLAN_PATH } from "../../src/lib/roles";
-import { notePath, organizationPath, setupSectionPath, type OrganizationTab } from "../../src/lib/paths";
+import { noteHistoryPath, notePath, organizationPath, setupSectionPath, type OrganizationTab } from "../../src/lib/paths";
+import { expectAccessible } from "../support/accessibility";
 import { SITE_ORIGIN } from "../support/app";
 import { test } from "./fixtures";
 import { PRACTICE_ROUTES, rolesFor } from "./routes";
-import { sweep } from "./visit";
+import { open, sweep } from "./visit";
 import { sweepWorld, type NoteKey, type Who } from "./world";
 
 const NOTE_VISITS: readonly [Who, NoteKey][] = [
@@ -21,7 +22,7 @@ const NOTE_VISITS: readonly [Who, NoteKey][] = [
   ["biller", "approved"],
 ];
 const ORGANIZATION_TABS: readonly (OrganizationTab | undefined)[] = [undefined, "insights", "plan", "domains", "sign-in"];
-const EMPTY_SETUP_SECTIONS = ["providers", "payers"] as const;
+const EMPTY_SETUP_SECTIONS = ["providers", "payers", "intake"] as const;
 
 for (const route of PRACTICE_ROUTES) {
   for (const who of rolesFor(route.area)) {
@@ -61,6 +62,16 @@ for (const [who, key] of NOTE_VISITS) {
     });
   });
 }
+
+test("admin opens the history of an approved note", async ({ page, signIn }) => {
+  const note = (await sweepWorld()).notes.approved;
+  await signIn("admin");
+  await open(page, SITE_ORIGIN, {
+    path: noteHistoryPath(note.id),
+    ready: (shown) => shown.getByRole("dialog").getByRole("heading", { level: 2 }),
+  });
+  await expectAccessible(page);
+});
 
 for (const tab of ORGANIZATION_TABS) {
   test(`organization admin on the organization ${tab ?? "practices"} tab`, async ({ page, signIn }) => {

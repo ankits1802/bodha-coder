@@ -41,8 +41,22 @@ async function screenFor(look: Look): Promise<Screen> {
 }
 
 async function expectNoSidewaysScroll(page: Page): Promise<void> {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect(overflow, "the page fits the phone's width").toBeLessThanOrEqual(0);
+  const sticking = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    if (document.documentElement.scrollWidth <= width) return [];
+    const clipped = (element: Element) => {
+      for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+        if (getComputedStyle(parent).overflowX !== "visible") return parent !== document.body && parent !== document.documentElement;
+      }
+      return false;
+    };
+    const wide = [...document.querySelectorAll("body *")].filter((element) => element.getBoundingClientRect().right > width + 1 && !clipped(element));
+    const outermost = wide
+      .filter((element) => !wide.includes(element.parentElement as Element))
+      .map((element) => `<${element.tagName.toLowerCase()} class="${element.getAttribute("class") ?? ""}"> ends at ${Math.round(element.getBoundingClientRect().right)}px`);
+    return outermost.length > 0 ? outermost : [`the page is ${document.documentElement.scrollWidth}px wide`];
+  });
+  expect(sticking, `the page fits the phone's width of ${PHONE.viewport.width}px`).toEqual([]);
 }
 
 test.describe("phone width", () => {

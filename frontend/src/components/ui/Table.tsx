@@ -1,4 +1,7 @@
+"use client";
+
 import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import { useOverflowing } from "./useOverflowing";
 
 interface TableProps {
   label: string;
@@ -9,8 +12,10 @@ interface TableProps {
 const MIN_WIDTHS = { sm: "min-w-105", md: "min-w-160", lg: "min-w-205", xl: "min-w-300" } as const;
 
 export function Table({ label, minWidth = "md", children }: TableProps) {
+  const [scroller, overflowing] = useOverflowing<HTMLDivElement>();
+  const scrolling = overflowing ? { role: "region", "aria-label": label, tabIndex: 0 } : {};
   return (
-    <div className="overflow-x-auto">
+    <div ref={scroller} className="overflow-x-auto" {...scrolling}>
       <table aria-label={label} className={`w-full border-collapse ${MIN_WIDTHS[minWidth]}`}>
         {children}
       </table>

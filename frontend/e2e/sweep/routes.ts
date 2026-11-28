@@ -12,6 +12,7 @@ const OFF_NAV_ROUTES: readonly Route[] = [
   { path: "/account", area: "account" },
   { path: "/help", area: "help" },
   { path: "/practices/new", area: "account" },
+  { path: "/training", area: "queue" },
 ];
 
 function routesOf(item: NavItem): Route[] {

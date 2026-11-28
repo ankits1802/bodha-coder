@@ -69,6 +69,12 @@ async def review_work(run: SeedRun, admin: Caller, people: dict[str, Account], n
     return {"samples": samples, "verification_code": await verification_code(run.api, admin, notes["approved"]["id"])}
 
 
+async def connect_settings(run: SeedRun, admin: Caller, organization_id: str) -> None:
+    await run.api.send(admin, "POST", "/api/practice/sso")
+    await run.api.send(admin, "POST", f"/api/organizations/{organization_id}/sso")
+    await run.api.send(admin, "POST", "/api/practice/email-intake/address")
+
+
 async def busy_practice(run: SeedRun) -> dict[str, Any]:
     practice = await run.practice("Sweep Clinic")
     people = await team(run, practice)
@@ -80,6 +86,7 @@ async def busy_practice(run: SeedRun) -> dict[str, Any]:
     organization = await create_organization(
         run.api, await run.hq(), name=run.named("Sweep Health"), practices=[practice], admin=practice.admin
     )
+    await connect_settings(run, admin, organization.id)
     return {
         "practice": {"id": practice.id, "name": practice.name},
         "organization": {"id": organization.id, "name": organization.name},

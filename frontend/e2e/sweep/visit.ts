@@ -16,6 +16,15 @@ export interface Screen {
 export async function settle(page: Page, ready?: Locator): Promise<void> {
   await expect(ready ?? page.getByRole("heading", { level: 1 }).first()).toBeVisible();
   await expect(page.locator(BUSY)).toHaveCount(0);
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.playState === "running" && animation.timeline === document.timeline)
+        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
 }
 
 export function primaryAction(scope: Page | Locator): Locator {

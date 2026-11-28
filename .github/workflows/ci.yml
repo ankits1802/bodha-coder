@@ -135,6 +135,8 @@ jobs:
       BAA_URL: http://localhost:3000/legal/baa
       PRIVACY_URL: http://localhost:3000/legal/privacy
       AGREEMENT_VERSION: e2e
+      EMAIL_INTAKE_DOMAIN: intake.e2e.example.com
+      EHR_KEY_ENCRYPTION_KEY: Y2ktb25seS1laHIta2V5LW5vdC11c2VkLWFueXdoZXI=
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v7
