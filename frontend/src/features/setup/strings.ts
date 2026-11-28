@@ -206,4 +206,43 @@ export const MIPS_TEXT = {
   noneChosen: "Choose at least one measure",
 } as const;
 
+export const PRACTICE_MEASURE_TEXT = {
+  group: "Your measures",
+  add: "Add your own",
+  edit: "Edit",
+  retire: "Retire",
+  editFor: (name: string) => `Edit ${name}`,
+  retireFor: (name: string) => `Retire ${name}`,
+  dialog: {
+    addTitle: "Add your own measure",
+    editTitle: "Edit measure",
+    name: "Name",
+    identifier: "Your identifier",
+    inScope: "In scope when",
+    outOfScope: "Out of scope when",
+    toMeet: "Met when the note documents",
+    metCodes: "Codes when met",
+    notMetCodes: "Codes when not met",
+    codesPlaceholder: "3046F, G8427",
+    optional: "optional",
+    cancel: "Cancel",
+    save: "Save",
+    errors: {
+      name: "Use 3 to 80 characters",
+      identifier: "Use up to 20 letters, digits, spaces, periods, slashes, hyphens or underscores",
+      identifierNumber: "Add letters, for example QM-117",
+      inScope: "Use 10 to 600 characters",
+      outOfScope: "Use up to 600 characters",
+      toMeet: "Use 10 to 1,000 characters",
+      codes: "Use up to 4 codes such as 3046F, G8427 or 1090F-8P",
+      bothOutcomes: "A code can report only one outcome",
+    },
+  },
+  confirm: {
+    title: (name: string) => `Retire ${name}?`,
+    action: "Retire",
+    cancel: "Cancel",
+  },
+} as const;
+
 export const CREDENTIALS = ["MD", "DO", "NP", "PA", "CNS", "CNM"] as const;

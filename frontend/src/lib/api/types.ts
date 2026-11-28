@@ -146,6 +146,17 @@ export type ClaimLinesFormat = NonNullable<Schemas["ClaimLinesBody"]["format"]>;
 
 export type Outcomes = Schemas["Outcomes"];
 export type Insights = Schemas["Insights"];
+export type UsageFigures = Schemas["UsageFigures"];
+export type HqUsageFigures = Schemas["HqUsageFigures"];
+export type UsageTaskFigures = Schemas["UsageTaskFigures"];
+export type UsageStallFigures = Schemas["UsageStallFigures"];
+export type UsageSpread = Schemas["UsageSpread"];
+export type UsageTaskEvent = Schemas["UsageTaskBody"];
+export type UsageStallEvent = Schemas["UsageStallBody"];
+export type UsageEvent = UsageTaskEvent | UsageStallEvent;
+export type UsageTask = UsageTaskEvent["task"];
+export type UsageStep = UsageStallEvent["step"];
+export type UsageOutcome = UsageTaskEvent["outcome"];
 export type InsightEstimates = Schemas["InsightEstimates"];
 export type PersonProductivity = Schemas["PersonProductivity"];
 
@@ -163,6 +174,8 @@ export type FirstRun = Schemas["FirstRun"];
 export type MipsMeasure = Schemas["MipsMeasure"];
 export type MipsOverview = Schemas["MipsOverview"];
 export type MipsChoice = Schemas["MipsChoice"];
+export type PracticeMeasure = Schemas["PracticeMeasureView"];
+export type PracticeMeasureInput = Schemas["PracticeMeasureBody"];
 export type AccessLogEntry = Schemas["AccessLogEntry"];
 export type AccessLogPage = Schemas["AccessLogPage"];
 export type AccessLogPerson = Schemas["AccessLogPerson"];

@@ -27,7 +27,7 @@ export function NotePanel({ texts, findings }: NotePanelProps) {
   const marks = marksFor(findings);
   const ordered = [...texts].sort((a, b) => a.revision - b.revision);
   return (
-    <Panel aria-label={REVIEW_TEXT.notePanel} className="min-w-0 flex-[1_1_31rem]">
+    <Panel aria-label={REVIEW_TEXT.notePanel} className="min-w-0 flex-[1_1_31rem]" data-usage-step="note">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-3.5">
         <h2 className="m-0 font-sans text-body-lg font-semibold">{REVIEW_TEXT.notePanel}</h2>
         <NoteLegend />

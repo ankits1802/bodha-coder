@@ -112,6 +112,12 @@ export function formatMinutes(minutes: number | null): string {
   return `${tenthsFormat.format(minutes / (24 * 60))} d`;
 }
 
+export function formatSeconds(seconds: number | null): string {
+  if (seconds === null) return FORMAT_WORDS.empty;
+  if (seconds < 60) return `${tenthsFormat.format(seconds)} s`;
+  return formatMinutes(seconds / 60);
+}
+
 export function formatCalendarDay(isoDate: string | null, style: DayStyle = "short"): string {
   if (isoDate === null) return FORMAT_WORDS.empty;
   const local = localDateFromIso(isoDate);

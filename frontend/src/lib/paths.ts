@@ -3,6 +3,7 @@ export const SETUP_PATH = "/settings/setup";
 export const TEAM_PATH = "/settings/team";
 export const SECURITY_SETTINGS_PATH = "/settings/security";
 export const ACCESS_LOG_PATH = "/insights/access-log";
+export const USAGE_PATH = "/insights/usage";
 export const COMPLIANCE_PATH = "/compliance";
 export const HISTORY_OPEN = "1";
 export const ORGANIZATIONS_PATH = "/organizations";

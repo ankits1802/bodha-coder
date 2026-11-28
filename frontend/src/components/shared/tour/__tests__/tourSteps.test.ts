@@ -67,6 +67,7 @@ describe("tourStepsFor", () => {
       "hqPractices",
       "hqOrganizations",
       "hqSpend",
+      "hqUsage",
       "hqActivity",
       "hqDemos",
       "hqTeam",

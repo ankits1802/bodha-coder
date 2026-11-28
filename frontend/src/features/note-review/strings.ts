@@ -168,6 +168,8 @@ export const REVIEW_TEXT = {
     severity: (value: string) => `${value} risk`,
     mips: "Quality measures",
     measureStatus: { met: "Met", missing: "Missing", not_applicable: "Not applicable" },
+    practiceMeasure: (identifier: string | null) => (identifier ? `Practice measure · ${identifier}` : "Practice measure"),
+    reportCodes: (codes: string) => `Report ${codes}`,
     pass: "Pass",
     fail: "Fail",
     warning: "Warning",

@@ -32,6 +32,7 @@ export type Area =
   | "plan"
   | "security"
   | "accessLog"
+  | "usage"
   | "account"
   | "help"
   | "hq";
@@ -67,6 +68,7 @@ const AREA_ROLES: Record<Area, readonly Role[]> = {
   plan: ADMINS,
   security: ADMINS,
   accessLog: COMPLIANCE,
+  usage: ADMINS,
   account: PRACTICE_ROLES,
   help: PRACTICE_ROLES,
   hq: HQ,

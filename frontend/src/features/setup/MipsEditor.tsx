@@ -8,6 +8,7 @@ import { useAction } from "@/hooks/useAction";
 import type { MipsOverview } from "@/lib/api/types";
 import { MeasureList } from "./MeasureList";
 import { chosenIds, initialChoice, initialMode, saveMeasureList, type MipsMode } from "./mipsModel";
+import { PracticeMeasuresSection } from "./PracticeMeasuresSection";
 import { MIPS_TEXT } from "./strings";
 
 interface MipsEditorProps {
@@ -64,6 +65,7 @@ export function MipsEditor({ overview, onReload }: MipsEditorProps) {
       </div>
       <MeasureList legend={MIPS_TEXT.standardGroup} measures={overview.standard} chosen={custom ? chosen : null} onToggle={toggle} />
       {custom ? <MeasureList legend={MIPS_TEXT.addableGroup} measures={overview.addable} chosen={chosen} onToggle={toggle} /> : null}
+      {custom ? <PracticeMeasuresSection measures={overview.practice} chosen={chosen} onToggle={toggle} onChanged={onReload} /> : null}
       <div className="flex flex-wrap items-center justify-end gap-3 px-4">
         {feedback === "conflict" ? (
           <InlineAlert tone="warn" action={<Button size="sm" onClick={onReload}>{MIPS_TEXT.reload}</Button>}>

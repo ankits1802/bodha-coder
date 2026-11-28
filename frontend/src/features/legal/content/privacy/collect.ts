@@ -44,9 +44,10 @@ export const PRIVACY_COLLECT = [
       ["Signed-in devices:", "for each device where you are signed in, the time it was last used, its IP address and browser user agent, so that you can review your devices and sign them out."],
       ["Service logs:", "technical records of each request (the type of page or action, the result, the time taken and a request identifier) and of errors, used to run and secure the Service. These logs are designed to exclude names, email addresses, IP addresses, search text and note content."],
       ["Security signals:", "counts of sign-in, password reset, sign-up and demo request attempts, stored against a one-way hash of the email address or IP address involved, used to stop abuse."],
+      ["Usage timing:", "how long the steps of the work take and where they pause, used to make the Service faster: for example how long a note is open in review until it is approved or left, how many key presses and clicks each decision takes, and pauses of a minute or more with the part of the screen they happened in. Each record holds only the account, practice and role, the name of the step, times and counts; never note text, codes, patient details, free text or web addresses. Practice admins see these only as medians and ranges by role and step, and we see them only across practices. Nothing is recorded while a session is limited to billing."],
     ),
     paragraph(
-      `We do not use advertising or analytics trackers. See “${PRIVACY_HEADINGS.cookies}”.`,
+      `We do not use advertising trackers or third-party analytics. See “${PRIVACY_HEADINGS.cookies}”.`,
     ),
   ),
 ];

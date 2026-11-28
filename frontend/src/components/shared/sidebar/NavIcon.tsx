@@ -13,6 +13,7 @@ export type NavIconName =
   | "lock"
   | "gauge"
   | "clock"
+  | "timer"
   | "inbox"
   | "bell"
   | "search"
@@ -86,6 +87,12 @@ const PATHS: Record<NavIconName, ReactNode> = {
     <>
       <circle cx="8" cy="8" r="6" {...STROKE} />
       <path d="M8 4.8V8l2.2 1.4" {...STROKE} />
+    </>
+  ),
+  timer: (
+    <>
+      <circle cx="8" cy="9" r="5.2" {...STROKE} />
+      <path d="M6.5 1.8h3M8 1.8v2M8 9V6.4" {...STROKE} />
     </>
   ),
   inbox: (

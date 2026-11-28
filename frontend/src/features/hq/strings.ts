@@ -3,6 +3,7 @@ import type {
   BillingProvider,
   BillingStatus,
   HqPractice,
+  InsightDays,
   MemberStatus,
   OrganizationStatus,
   PlanStanding,
@@ -17,6 +18,15 @@ type AuditProblem = NonNullable<AuditChain["problem"]>;
 
 export const HQ_TEXT = {
   retry: "Try again",
+  usage: {
+    title: "Usage",
+    loading: "Loading usage",
+    empty: "No usage recorded in this period",
+    periodLabel: "Period",
+    periods: { 7: "7 days", 14: "14 days", 30: "30 days", 90: "90 days" } satisfies Record<InsightDays, string>,
+    totalsLabel: "Across practices",
+    practices: "Practices recording",
+  },
   status: {
     endingSoon: "Ending soon",
     renews: (day: string) => `Renews ${day}`,

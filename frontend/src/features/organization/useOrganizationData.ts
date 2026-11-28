@@ -4,7 +4,6 @@ import { useRemote, type Remote } from "@/hooks/useRemote";
 import { getOrganization, getOrganizationInsights, getOrganizationPlan } from "@/lib/api/organizations";
 import type { InsightDays, OrganizationInsights, OrganizationOverview, OrganizationPlan } from "@/lib/api/types";
 
-export const INSIGHT_DAYS: readonly InsightDays[] = [7, 14, 30, 90];
 export const DEFAULT_DAYS: InsightDays = 30;
 
 export function organizationKey(organizationId: string): string {
@@ -17,11 +16,6 @@ export function organizationPlanKey(organizationId: string): string {
 
 export function organizationInsightsKey(organizationId: string, days: InsightDays): string {
   return `organization-insights:${organizationId}:${days}`;
-}
-
-export function parseDays(value: string | null): InsightDays {
-  const days = Number(value);
-  return INSIGHT_DAYS.find((choice) => choice === days) ?? DEFAULT_DAYS;
 }
 
 export function useOrganization(organizationId: string): Remote<OrganizationOverview> {

@@ -148,6 +148,13 @@ verifies its email domain (a DNS TXT record or a link to an admin mailbox) can l
 with that domain ask to join or join automatically
 ([0044](docs/decisions/0044-organizations-and-domain-join.md)).
 
+Besides the CMS quality measures, a practice admin can add measures of the practice's own (an internal
+measure, a payer programme or a registry measure) that the review checks like any other and shows apart
+from CMS ones. Bodha also times the work without patient data (how long a note stays open in review, the
+inputs per decision and where people pause); practice admins see medians by role and step under
+Insights, Usage, and HQ sees them across practices
+([0045](docs/decisions/0045-practice-measures-and-usage-timing.md)).
+
 ### Plans and billing
 
 | Setting | Values |

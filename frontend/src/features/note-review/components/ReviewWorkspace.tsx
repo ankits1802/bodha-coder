@@ -31,12 +31,13 @@ interface ReviewWorkspaceProps {
   onReplace: (detail: NoteDetail) => void;
   onReload: () => void;
   onComplianceDone: (message: string) => void;
+  onDecided: (count: number) => void;
 }
 
 export function ReviewWorkspace(props: ReviewWorkspaceProps) {
   const { detail, placeLabel, permissions, neighbours, onGo, onReplace, onReload, onComplianceDone } = props;
   const [dialog, setDialog] = useState<OpenDialog>(null);
-  const decisions = useDecisions(detail, onReplace);
+  const decisions = useDecisions(detail, onReplace, props.onDecided);
   const prompt = useOverridePrompt(decisions);
   const comments = useNoteComments(detail.note.id, permissions.seeRemovedComments);
   const actions: ReviewActions = {
@@ -59,7 +60,7 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
 
   return (
     <CommentsContext value={comments}>
-      <div className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
+      <div data-usage-step="summary" className="mx-auto flex w-full max-w-review flex-col gap-6 px-4 pt-8 pb-10 sm:px-8">
         <NoteHeading note={detail.note} placeLabel={placeLabel} />
         <NoteTools
           note={detail.note}
@@ -101,19 +102,21 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
         onKeep={() => setDialog("keep")}
         onReturn={() => setDialog("return")}
       />
-      <ReviewDialogs
-        open={dialog}
-        detail={detail}
-        questions={questions}
-        onClose={() => setDialog(null)}
-        onChanged={() => {
-          setDialog(null);
-          onReload();
-        }}
-        onComplianceDone={onComplianceDone}
-        gate={actions.signatureGate}
-      />
-      <SignatureGateDialog gate={actions.signatureGate} />
+      <div data-usage-step="dialog" className="contents">
+        <ReviewDialogs
+          open={dialog}
+          detail={detail}
+          questions={questions}
+          onClose={() => setDialog(null)}
+          onChanged={() => {
+            setDialog(null);
+            onReload();
+          }}
+          onComplianceDone={onComplianceDone}
+          gate={actions.signatureGate}
+        />
+        <SignatureGateDialog gate={actions.signatureGate} />
+      </div>
     </CommentsContext>
   );
 }

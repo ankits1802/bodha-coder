@@ -6,6 +6,7 @@ import { AreaGuard } from "@/components/shared/AreaGuard";
 import { prefetchNoteDetail, useNoteDetail } from "@/components/shared/noteDetail";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { placeName, usePlaceNames } from "@/hooks/usePlaceNames";
+import { useUsageTask } from "@/hooks/useUsageTask";
 import { formatCalendarDay } from "@/lib/format";
 import { useSession } from "@/lib/session/useSession";
 import { NoteSkeleton } from "./components/NoteSkeleton";
@@ -24,10 +25,17 @@ function NoteReview({ noteId, scope }: { noteId: string; scope: ReviewScope }) {
   const { user } = useSession();
   const note = useNoteDetail(noteId);
   const nav = useReviewNavigation(noteId, scope);
+  const usage = useUsageTask("note_review");
   const detail = note.state.status === "success" ? note.state.data : null;
   const actions = useReviewActions(noteId, {
-    approved: () => nav.approved(detail?.note.patient_name ?? null),
-    complianceDone: (decision) => nav.complianceDone(REVIEW_TEXT.complianceDone[decision]),
+    approved: () => {
+      usage.complete();
+      nav.approved(detail?.note.patient_name ?? null);
+    },
+    complianceDone: (decision) => {
+      usage.complete();
+      nav.complianceDone(REVIEW_TEXT.complianceDone[decision]);
+    },
     changed: note.reload,
   });
   const placeNames = usePlaceNames();
@@ -70,7 +78,11 @@ function NoteReview({ noteId, scope }: { noteId: string; scope: ReviewScope }) {
                 onGo={nav.go}
                 onReplace={note.replace}
                 onReload={note.reload}
-                onComplianceDone={nav.complianceDone}
+                onComplianceDone={(message) => {
+                  usage.complete();
+                  nav.complianceDone(message);
+                }}
+                onDecided={usage.decided}
               />
             )}
           </RemoteView>

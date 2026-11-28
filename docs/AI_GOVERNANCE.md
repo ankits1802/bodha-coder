@@ -20,6 +20,7 @@ in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 | Control | How it works |
 |---|---|
 | Code validity | Every suggested ICD-10-CM code is checked against the CDC release for the date of service; every procedure code against the CMS physician fee schedule list or the E/M families. A code that fails becomes a review item, never a suggestion. |
+| Practice measures | A quality measure a practice defines for itself is sent to the model by its key (`PRACTICE #P001`, never a CMS number) with its wording quoted as data in its own block, which the prompt says is never an instruction; the model writes no codes, and the result takes its name and reporting codes from the stored definition. Each edit is a new version and every run records the versions it used. |
 | Risk adjustment | HCC categories, hierarchies and scores are computed from the CMS-HCC V28 software files, not by the model. |
 | Evidence | Every suggestion carries verbatim quotes from the note; the screen shows whether each quote is found in the note. |
 | Provider questions | Questions follow the AHIMA/ACDIS query practice: multiple choice with clinically reasonable options, an "other" option, no mention of payment or risk scores. The provider's own answers become the signed addendum. |

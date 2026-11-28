@@ -10,6 +10,7 @@ import { RemoteView } from "@/components/ui/RemoteView";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
+import { useUsageTask } from "@/hooks/useUsageTask";
 import { getBilling } from "@/lib/api/billing";
 import type { BillingShow } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
@@ -31,6 +32,7 @@ function BillingContent() {
   const offset = offsetFrom(params.get("offset"));
   const billing = useRemote(`billing:${show}:${offset}`, () => getBilling(show, offset));
   const [notice, setNotice] = useState<string | null>(null);
+  const usage = useUsageTask("billing_export");
   const page = billing.state.status === "success" ? billing.state.data : null;
   const rows = page ? page.items : null;
   const filter = (
@@ -54,6 +56,7 @@ function BillingContent() {
             <ExportClaimLines
               visits={Math.min(page.total, page.limit)}
               onExported={(message) => {
+                usage.complete();
                 setNotice(message);
                 billing.reload();
               }}
