@@ -40,7 +40,9 @@ beyond the load balancer's health probe.
   until the worker's result shows (`expect(...).toPass`). There are no retries; a failure is a
   finding.
 - **Accessibility.** Every visited page runs axe with the WCAG 2.0 to 2.2 A and AA rules; a serious or
-  critical violation fails the journey and lists the rule and the elements.
+  critical violation fails the journey and lists the rule and the elements. The check first waits for
+  the page's title, because Next streams the metadata of a dynamic route after its content on a
+  client-side navigation; a page that never gets a title still fails.
 - **Failure output.** Traces and screenshots are kept only for failed tests and uploaded with the
   server logs. All of it is synthetic.
 - **Required.** The job sits in `ci.yml` beside the others under the same repository guard, with no
