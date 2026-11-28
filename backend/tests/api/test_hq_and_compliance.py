@@ -126,3 +126,18 @@ async def test_hq_reads_demo_requests_and_renames_a_practice(harness):
     assert (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]["name"] == "Lakeside Primary Care"
     overview = (await harness.client.get("/api/hq/overview", headers=hq)).json()
     assert (overview["practices"], overview["people"]) == (1, 0)
+
+
+async def test_a_note_waiting_for_compliance_cannot_be_approved_around_it(harness, icd_catalog):
+    practice, note_id = await reviewed_note(harness, icd_catalog)
+    path = f"/api/notes/{note_id}"
+    flagged = await harness.client.post(f"{path}/flag", headers=practice.admin, json={"reason": "Exam text copied"})
+    assert flagged.status_code == 200, flagged.text
+    await adopt_signature(harness.client, practice.admin)
+
+    refused = await harness.client.post(f"{path}/approve", headers=practice.admin)
+
+    assert refused.status_code == 409, refused.text
+    assert "only compliance" in refused.json()["message"]
+    detail = (await harness.client.get(path, headers=practice.admin)).json()
+    assert (detail["note"]["status"], detail["note"]["lane"]) != ("approved", None)

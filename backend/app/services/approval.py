@@ -27,6 +27,7 @@ __all__ = ["SIGNED_STATEMENTS", "approve", "approve_many", "compliance_decision"
 MISSING_REASONS = "choose a reason for each choice that departs from Bodha before approving"
 UNDECIDED_RETURN = "decide again on what compliance returned before approving"
 RETURNED_ALONE = "a note returned by compliance is approved on its own"
+AWAITING_COMPLIANCE = "this note is waiting for compliance, so only compliance can approve it"
 NO_RETURN_REASON = "choose why the note goes back to the coder"
 SIGNED_STATEMENTS = {
     "approved": "I approve this claim as coded from the documentation.",
@@ -46,6 +47,8 @@ async def approve(
     event: str = APPROVAL_EVENT,
 ) -> Note:
     note = await open_note(db, actor, note_id)
+    if note.lane == "compliance" and event == APPROVAL_EVENT:
+        raise Conflict(AWAITING_COMPLIANCE)
     signature = await person_signature(db, actor)
     findings = await current_findings(db, note)
     await _refuse_unready(db, note, findings)
