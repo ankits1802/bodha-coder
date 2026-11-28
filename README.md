@@ -200,8 +200,20 @@ staging load test in [tools/load/README.md](tools/load/README.md).
 
 Every test, type check and build runs on GitHub Actions (`.github/workflows/ci.yml`): the hygiene
 check, the Python lock against `pyproject.toml`, ruff, the OpenAPI document and the generated
-frontend types against the code, the migrations up and down against Postgres, pytest, and the
-frontend lint, type check, tests and build.
+frontend types against the code, the migrations up and down against Postgres, pytest, the
+frontend lint, type check, tests and build, and the browser journeys.
+
+The `e2e` job builds the web app (`next build`, `next start`) and runs it with the API and the worker
+on the demo model, Postgres, moto as the S3 store and mail written to an outbox, with HQ on
+`http://admin.localhost:3000`. Playwright (`frontend/e2e/journeys`) then drives each role's day in
+Chromium: self sign-up, the admin's first day, upload and the queue, a coder's review by keyboard,
+asking the provider, a compliance return, the claim-lines export, switching practices and the
+organization area, HQ, and the public verify page, with axe on every page. Each test seeds its own
+synthetic practice through `python -m tests.e2e_seed <scenario>` (`backend/tests/e2e_seed`); failed
+tests keep a trace and a screenshot. A nightly workflow (`.github/workflows/canary.yml`) signs in to
+production read-only as two canary accounts
+([docs/OPERATIONS.md](docs/OPERATIONS.md#production-canary),
+[0045](docs/decisions/0045-browser-journeys-and-production-canary.md)).
 
 ## Data sources
 

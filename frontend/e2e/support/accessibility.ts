@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test";
 
 const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+const SNIPPET_LENGTH = 240;
 
 export async function expectAccessible(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
@@ -12,7 +13,11 @@ export async function expectAccessible(page: Page): Promise<void> {
       rule: violation.id,
       impact: violation.impact,
       help: violation.help,
-      targets: violation.nodes.map((node) => node.target.join(" ")),
+      nodes: violation.nodes.map((node) => ({
+        target: node.target.join(" "),
+        html: node.html.slice(0, SNIPPET_LENGTH),
+        why: node.failureSummary,
+      })),
     }));
   expect(blocking, `serious or critical accessibility violations on ${new URL(page.url()).pathname}`).toEqual([]);
 }

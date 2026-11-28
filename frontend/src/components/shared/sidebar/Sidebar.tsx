@@ -54,7 +54,7 @@ function Header({ user, collapsed, onToggle, onNavigate }: SidebarProps) {
   return (
     <div className="flex items-start justify-between gap-2 pl-2.5">
       <div className="flex min-w-0 flex-col gap-0.5">
-        <Link href={homeFor(user)} onClick={onNavigate} className="text-body-lg font-semibold tracking-snug text-label">
+        <Link href={homeFor(user)} onClick={onNavigate} className="inline-flex min-h-6 items-center text-body-lg font-semibold tracking-snug text-label">
           {SHARED_TEXT.brand}
         </Link>
         {hasPracticeChoice(user) ? (

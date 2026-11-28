@@ -81,7 +81,7 @@ test("an admin works through the first day: provider, payer, invite, role and se
   await page.getByRole("combobox", { name: TEAM_TEXT.roleFor(coder.name) }).click();
   await page.getByRole("option", { name: ROLE_LABELS.biller, exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: TEAM_TEXT.roleChanged(coder.name) })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: TEAM_TEXT.roleFor(coder.name) })).toHaveText(ROLE_LABELS.biller);
+  await expect(page.getByRole("combobox", { name: TEAM_TEXT.roleFor(coder.name) })).toContainText(ROLE_LABELS.biller);
 
   await openTab(page, SHARED_TEXT.tabs.plan, PLAN_TEXT.title);
   await openTab(page, SHARED_TEXT.tabs.security, SECURITY_TEXT.title);

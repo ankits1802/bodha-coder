@@ -40,6 +40,64 @@ worker's security group and ECS Exec on, run `psql` with the `bodha_runtime` cre
 `database-url` secret, and stop the task when done. Use the schema owner (`migration-database-url`)
 only for the maintenance runbook below.
 
+## Production canary
+
+`.github/workflows/canary.yml` runs every night at 08:17 UTC (and from Actions, production canary, Run
+workflow) in `CHARTMATE-APP/bodha-coder` only, in the `production` environment. It checks
+`/api/health/ready` on both hosts, signs in on `https://www.bodhaai.co` and `https://admin.bodhaai.co`
+as two canary accounts, and opens Today, Insights, the Settings tabs, Account and Help, then the HQ
+overview, practices, organizations, activity, spend, team and demo requests. It sends no request that
+changes anything beyond signing in, and fails if the app tries to ([0045](decisions/0045-browser-journeys-and-production-canary.md)).
+A failed run fails the workflow, and GitHub emails it to whoever last changed the schedule; keep Actions
+failure emails on for that account. It keeps no trace or screenshot, so read the step that failed in
+the run log.
+
+### Set it up after merge
+
+1. **Practice canary.** In HQ, Practices, Add practice: name `Bodha Canary`, plan Professional, a
+   few seats, admin `Bodha Canary` with an address you read, for example `canary-practice@bodhaai.co`.
+   A practice HQ adds has no renewal date, so its plan never ends; keep it so. Never add providers,
+   upload notes, invite anyone or take payments in it, so its Today stays empty and opening it reads no
+   patient record.
+2. Open the invitation, set a long generated password, and at "Set up two-step verification" copy the
+   **Setup key** (32 characters; drop the spaces). Add it to an authenticator too, enter the code, and
+   keep the recovery codes in the owner's password manager. When the tour opens, Skip it, so the canary
+   never meets it.
+3. **HQ canary.** In HQ, Team, invite `Bodha Canary <canary-hq@bodhaai.co>` (or
+   `python -m app.scripts.invite_hq "Bodha Canary <canary-hq@bodhaai.co>"`). Set its password on the
+   admin host, copy its Setup key the same way, keep its recovery codes, and Skip the tour. HQ has one
+   role, so this account can do anything HQ can: its secrets are owner credentials.
+4. **GitHub.** In `CHARTMATE-APP/bodha-coder`, Settings, Environments, `production`, add the secrets:
+
+   | Secret | Value |
+   |---|---|
+   | `CANARY_PRACTICE_EMAIL` | the practice canary's email |
+   | `CANARY_PRACTICE_PASSWORD` | its password |
+   | `CANARY_PRACTICE_TOTP_SECRET` | its Setup key, without spaces |
+   | `CANARY_HQ_EMAIL` | the HQ canary's email |
+   | `CANARY_HQ_PASSWORD` | its password |
+   | `CANARY_HQ_TOTP_SECRET` | its Setup key, without spaces |
+
+   Optional environment variables `CANARY_SITE_URL` and `CANARY_ADMIN_URL` point it at other hosts
+   (defaults `https://www.bodhaai.co` and `https://admin.bodhaai.co`). The environment must let the
+   default branch deploy, and it must not require a reviewer, or every night's run waits for one.
+5. Run it once from Actions and check that both sign-ins pass.
+
+### When it fails
+
+- **Readiness**: follow "Where to look"; the readiness answer names the failing check (database or
+  storage).
+- **Sign-in**: "Email or password is not correct" means a secret is stale or the account was blocked;
+  a refused code means the Setup key secret is wrong or two-step was reset (copy the new key). Two runs
+  within the same 30 seconds share a code and the second is refused; run it again.
+- **A page heading** that never shows: open that page as the canary and read the error.
+- **"refused"** in the failure lists a request the app tried to send on its own (for example a tour
+  that opened after a new tour version): sign in as that canary once by hand, Skip the tour, and run it
+  again.
+
+Each run writes only what a sign-in writes: rate-limit rows, a `signed_in` event per account with its
+access-log or activity mirror, a session, and the last-active and last-code stamps.
+
 ## Gemini is out of credits or over quota
 
 Symptoms: notes land in Failed with "The Gemini account has no credits left (HTTP 402)." (no retry)
