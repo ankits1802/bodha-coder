@@ -73,7 +73,8 @@ async def test_a_new_key_is_published_at_a_jwks_address_with_only_its_public_hal
     async with SessionFactory() as db:
         stored = await db.scalar(select(EhrKey).where(EhrKey.practice_id == practice.id))
     assert stored.private_key.startswith("v1:") and "PRIVATE KEY" not in stored.private_key
-    assert "private_key" not in str(made.json())
+    shown = str(made.json())
+    assert "PRIVATE KEY" not in shown and stored.private_key not in shown
 
 
 async def test_a_replaced_key_keeps_the_address_and_publishes_only_the_new_key(harness, ehr):

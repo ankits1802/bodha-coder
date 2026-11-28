@@ -32,17 +32,17 @@ describe("LineStats", () => {
     render(<LineStats data={data} />);
 
     const [procedures, addOns, units, place] = cells();
-    expect(procedures).toHaveTextContent("Procedure lines100%20.7%–100% · 1 case");
-    expect(addOns).toHaveTextContent("Add-on codes—0 cases");
-    expect(units).toHaveTextContent("Units0%0%–79.3% · 1 case");
-    expect(place).toHaveTextContent("Place of service100%34.2%–100% · 2 cases");
+    expect(procedures).toHaveTextContent("Procedure lines, 100%, 20.7%–100% · 1 case");
+    expect(addOns).toHaveTextContent("Add-on codes, —, 0 cases");
+    expect(units).toHaveTextContent("Units, 0%, 0%–79.3% · 1 case");
+    expect(place).toHaveTextContent("Place of service, 100%, 34.2%–100% · 2 cases");
   });
 
   it("keeps a run from before claim line scoring readable", () => {
     const older: EvalSummary = { cases: 1, scored: 1, failed: 0, em: ONE_OF_ONE, icd_f1: 1, modifiers: ONE_OF_ONE };
     render(<LineStats data={{ cases: 1, runs: [run("older", "done", older)] }} />);
 
-    expect(cells().map((cell) => cell.textContent)).toEqual(["Procedure lines—", "Add-on codes—", "Units—", "Place of service—"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Procedure lines, —", "Add-on codes, —", "Units, —", "Place of service, —"]);
   });
 
   it("reads no metric when no run has finished", () => {

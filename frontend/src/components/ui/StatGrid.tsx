@@ -13,7 +13,7 @@ const SIZES: Record<StatSize, { grid: string; gap: string; value: string; note: 
 
 const CELL = "-ml-px flex flex-col border-l border-hairline px-5 py-4.5";
 const LINKED = "hover:bg-row-hover focus-visible:-outline-offset-2";
-const PAUSE = ", ";
+const PAUSE = ",";
 
 const StatSizeContext = createContext<StatSize>("md");
 
@@ -45,7 +45,11 @@ function StatLabel({ label, tone }: { label: string; tone?: StatusTone }) {
 }
 
 function Pause() {
-  return <span className="sr-only">{PAUSE}</span>;
+  return (
+    <>
+      <span className="sr-only">{PAUSE}</span>{" "}
+    </>
+  );
 }
 
 export function StatCell(props: StatCellProps) {

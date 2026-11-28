@@ -14,7 +14,7 @@ describe("StatCell", () => {
     const grid = screen.getByRole("region", { name: "Summary" });
     expect(within(grid).queryAllByRole("link")).toEqual([]);
     expect(within(grid).getByText("4 min")).toBeInTheDocument();
-    expect(within(grid).getByText("People").parentElement).toHaveTextContent(/^People12$/);
+    expect(within(grid).getByText("People").parentElement).toHaveTextContent(/^People, 12$/);
   });
 
   it("opens its records as a real link named by the label and the figure", () => {

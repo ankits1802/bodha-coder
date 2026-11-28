@@ -23,7 +23,7 @@ function tiles(): { name: string; href: string | null }[] {
   const section = screen.getByRole("region", { name: "Waiting for review" });
   return within(section)
     .queryAllByRole("link")
-    .map((link) => ({ name: link.getAttribute("aria-label") ?? "", href: link.getAttribute("href") }));
+    .map((link) => ({ name: (link.textContent ?? "").replace(/\s+/g, " ").trim(), href: link.getAttribute("href") }));
 }
 
 describe("Today lane tiles", () => {
