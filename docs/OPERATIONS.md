@@ -254,3 +254,50 @@ commit;
 The setting is ignored for any role that does not own the tables, so `bodha_runtime` cannot use it. A
 change to `access_log` or `activity` breaks their hash chain at that entry, which the next verification
 reports; record why beforehand.
+
+## Load the synthetic gold set and report its accuracy
+
+The gold set (`tools/gold_set/`, [0049](decisions/0049-synthetic-gold-set.md)) goes into one practice
+used only for evaluation. Every upload is read by the live model, so loading costs 48 reviews, and each
+evaluation run two reads per case.
+
+Before the first load:
+
+1. In HQ, create the evaluation practice. Its plan must allow 48 notes and 5 providers.
+2. Invite an admin to it, set the password, sign in once in the browser, set up two-step verification
+   and keep the authenticator secret shown during setup. Adopt a signature (approvals need one).
+3. Keep level confirmation off in the practice's review settings, so approvals send nothing to the
+   synthetic providers.
+4. Note the practice id (`GET /api/auth/me` as that admin).
+
+Run from the repository root with the backend virtual environment:
+
+```
+backend\.venv\Scripts\python.exe tools\gold_set\load_gold_set.py --dry-run
+set BODHA_EVAL_EMAIL=<admin email>
+set BODHA_EVAL_PASSWORD=<admin password>
+set BODHA_EVAL_TOTP_SECRET=<authenticator secret>
+set BODHA_EVAL_PRACTICE_ID=<practice id>
+backend\.venv\Scripts\python.exe tools\gold_set\load_gold_set.py
+```
+
+`--base-url` defaults to https://www.bodhaai.co; `--cases GS-01,GS-02` loads a subset. The loader refuses
+any practice other than the one named, creates the synthetic providers if missing, uploads each note,
+waits up to 30 minutes per note (`--timeout-minutes`) for Bodha's review, records the expected claim with
+the override reason "coding guideline", approves it and marks it as an evaluation case. It prints one line
+per case and a summary, never a secret. Re-run it until every case is loaded or already loaded: it skips
+finished cases, picks up notes still being read, and refuses to mark a note approved with any other claim
+(reopen or void that note in the app, then run again). A case where Bodha could not confirm a billed code
+needs a person in the app.
+
+Then, as the admin, choose Run evaluation in Insights, Quality, Evaluation (or `POST
+/api/quality/evaluations`). When the run has finished:
+
+```
+backend\.venv\Scripts\python.exe tools\gold_set\report_gold_set.py
+```
+
+It writes `tools/gold_set/out/reports/evaluation-<run id>.md` (`--output` to choose the file, `--run-id`
+for an older run) with the methods, agreement by element with 95% intervals, results by group and every
+disagreement. The numbers are provisional until a certified coder has reviewed the expected answers.
+`tools\gold_set\render_notes.py` writes the PDFs to `tools/gold_set/out/pdf/` for a look without loading.

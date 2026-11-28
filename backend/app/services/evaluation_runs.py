@@ -18,7 +18,8 @@ from app.codes.mips_scope import MipsScope, practice_scope
 from app.codes.places import setting_for
 from app.models import Analysis, EvalCase, EvalRun, Note, NoteText, utcnow
 from app.services.agreement import compare_elements, elements_from_json, elements_of
-from app.services.analysis import AnalysisDeps, latest_codes
+from app.services.analysis import AnalysisDeps
+from app.services.code_sets import original_codes
 from app.services.evaluation_scores import evaluation_summary
 from app.services.findings import build_findings
 from app.services.note_texts import current_texts, note_texts
@@ -136,7 +137,7 @@ async def _case_inputs(db: AsyncSession, note: Note, store: ObjectStore) -> tupl
     sections = (analysis.context or {}).get("sections") if analysis else None
     if analysis is None or not sections:
         raise CaseUnavailable("this note has no review to repeat")
-    billed = await latest_codes(db, note.id, "billed")
+    billed = await original_codes(db, note.id, "billed")
     text = _note_text(current_texts(await note_texts(db, note.id)))
     inputs = ReviewInputs(
         sections=frozenset(sections),
@@ -144,7 +145,7 @@ async def _case_inputs(db: AsyncSession, note: Note, store: ObjectStore) -> tupl
         place_of_service=note.place_code,
         visit_type=note.visit_type,
         service_date=note.service_date,
-        billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers) for code in billed),
+        billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers, code.units) for code in billed),
         note_text=text,
         pdf=None if text else await store.get(note.file_key),
         mips_scope=await _repeated_scope(db, analysis.context),

@@ -32,7 +32,7 @@ in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 | Failure | A read that fails is marked with its reason and retried; it never produces a partial claim. |
 | Signature check | A drawn or photographed signature is sent to Gemini alone (no note, no patient details) with a fixed prompt (`SIGNATURE_CHECK_VERSION` in `backend/app/ai/signature_check.py`) that treats the image as data and answers only whether it is one handwritten signature, whether other text or several signatures appear, and named image issues. A signature that fails is refused and not kept; when the check cannot run the person can type their name instead. The verdict, model and check version are stored with the signature. The model never decides whether a record is valid: seals are checked with cryptography. |
 | Measured accuracy | Admins or compliance draw random samples of approved notes (40 by default, 150 for a specialty) and assign them to reviewers who did not approve them. Reviewers code each note blind, seeing only its text and PDF. Agreement with Bodha's suggestion and with the final claim is reported per element (E/M exact and its direction, ICD-10 precision, recall and exact set, modifiers) with Wilson 95% intervals, per provider and per note. |
-| Validation and drift | Approved notes chosen by an admin form an evaluation set. Each evaluation run reads every case twice with the current model and prompt without changing the note, records agreement with the approved claim and between the two reads, and keeps the raw replies. A run whose E/M, ICD-10 F1 or modifier agreement is more than five points below the previous run is marked dropped. The mix of suggested E/M levels in the last 30 days is compared with the 90 days before (chi-square, p below 0.05 marked shifted). |
+| Validation and drift | Approved notes chosen by an admin form an evaluation set. Each evaluation run reads every case twice with the current model and prompt, from the claim as it was billed and without changing the note, records agreement with the approved claim and between the two reads, and keeps the raw replies. A run whose E/M, ICD-10 F1 or modifier agreement is more than five points below the previous run is marked dropped. The mix of suggested E/M levels in the last 30 days is compared with the 90 days before (chi-square, p below 0.05 marked shifted). |
 | Earned autonomy | Auto-approval is off for every provider. An admin can switch it on only when the provider's latest completed blind audit has at least 30 of their notes, the Wilson 95% lower bound of E/M exact agreement is at least 90% (which takes at least 35 agreeing notes, hence the 40-note default audit) and Bodha coded higher than the auditor on at most 5%; the check is repeated for every note. Only notes Bodha found to match, with no questions, flags, compliance history or review items, are approved as Bodha (auto) with reason auto in the record, and one in ten of them is held for a person. |
 
 ## Model and change control
@@ -43,6 +43,25 @@ in ten notes is held for a person. Nothing is submitted to a payer by Bodha.
 | Platform for patient data | Vertex AI under the customer's Google Cloud business associate agreement (`GEMINI_BACKEND=vertex`); the Gemini Developer API is for synthetic data only |
 | Prompt version | `PROMPT_VERSION` in `backend/app/ai/review.py`, stored on every analysis |
 | Change process | Prompt and model changes are code changes reviewed through pull requests, recorded in `docs/decisions/`, tested on GitHub Actions, and visible per note in the analysis history |
+
+## Synthetic gold set
+
+Bodha keeps a fixed set of 48 synthetic visit notes for measuring accuracy release over release
+(`tools/gold_set/`, [0049](decisions/0049-synthetic-gold-set.md)). The notes are fictional (Synthetic
+Patient 01 to 48, invented practice, facility and providers) and cover office new and established
+visits, initial and subsequent nursing facility visits, audio-video and audio-only telehealth, visits
+set by decision-making and by time, G2211, prolonged time, modifier 25 with minor procedures, and
+diagnosis specificity, combination codes, laterality and 7th characters. Each was uploaded with a claim
+as a practice might bill it: 21 correct, 16 one level too high, 8 one level too low, 2 two levels too
+high and 1 with a visit that is not separately billable.
+
+| Item | How it works |
+|---|---|
+| Expected answers | Written by construction under the 2021 and later AMA E/M guidelines and the 2023 nursing facility rules, with a rationale for every code and modifier. A validator checks each against the ICD-10-CM release for the date of service, Bodha's code list, the NCCI edits and Bodha's Medicare rules, and rebuilds each visit level from the documented decision-making elements and time. |
+| Loading | A script uploads each note through the public API into a dedicated evaluation practice, waits for Bodha's review, records the expected claim as the coder's decision with the override reason "coding guideline", approves it and marks it as an evaluation case. It can be re-run safely. |
+| Measuring | A normal evaluation run reads every case twice with the current model and prompt; a report script writes the agreement by element with 95% intervals, by group, and lists every disagreement. |
+| Limits | Only the visit code, the set of diagnoses and the set of modifiers are scored, not procedure lines, add-on codes, units or place of service. Notes whose right outcome is a provider query are not in the set, because a run cannot score a query. Bodha's suggested claim cannot remove a visit code or a modifier, so one case can only disagree; results are shown with and without it. 48 notes give wide intervals: one case moves a rate by about two points. |
+| Status | **Provisional.** No certified coder has checked the expected answers yet. Numbers from this set are provisional until one does and the review is recorded. |
 
 ## Data handling
 

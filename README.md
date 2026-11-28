@@ -203,7 +203,8 @@ docker compose --env-file .env.compose up --build
 
 The AWS reference deployment (ECS on Fargate, RDS, S3, SES, SNS, Secrets Manager, CloudWatch) is in
 [docs/DEPLOY.md](docs/DEPLOY.md), the runbooks in [docs/OPERATIONS.md](docs/OPERATIONS.md), and the
-staging load test in [tools/load/README.md](tools/load/README.md).
+staging load test in [tools/load/README.md](tools/load/README.md). The synthetic gold set for measured
+accuracy (`tools/gold_set/`) is loaded and reported as the operations runbook describes.
 
 ## Checks
 
