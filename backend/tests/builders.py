@@ -25,6 +25,7 @@ from tests.fakes import (
     FakeFileLink,
     FakeImageModel,
     FakeMessenger,
+    FakeMetadataSource,
     FakeProvider,
     FakeStore,
     FakeTxtResolver,
@@ -50,6 +51,7 @@ class Harness:
     image_model: FakeImageModel
     dns: FakeTxtResolver = field(default_factory=FakeTxtResolver)
     link: FakeFileLink = field(default_factory=FakeFileLink)
+    metadata: FakeMetadataSource = field(default_factory=FakeMetadataSource)
 
     @property
     def google(self) -> FakeProvider:

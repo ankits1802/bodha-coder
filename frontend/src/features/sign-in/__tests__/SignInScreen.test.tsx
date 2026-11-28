@@ -21,16 +21,16 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/lib/api/auth", () => ({
-  FORGOT_PASSWORD_PATH: "/forgot-password", NEW_PRACTICE_PATH: "/practices/new",
-  SIGN_UP_PATH: "/sign-up",
+  FORGOT_PASSWORD_PATH: "/forgot-password", NEW_PRACTICE_PATH: "/practices/new", SIGN_UP_PATH: "/sign-up",
   providerStartPath: (provider: string) => `/api/auth/${provider}/start`,
   isSignedIn: (result: object) => "access_token" in result,
-  login: vi.fn(),
-  startMfaSetup: vi.fn(),
+  login: vi.fn(), startMfaSetup: vi.fn(),
   verifyMfa: vi.fn(),
   recoverMfa: vi.fn(),
   getSignInProviders: vi.fn(),
 }));
+
+vi.mock("@/lib/api/sso", () => ({ discoverSso: () => Promise.resolve({ mode: "none", start_url: null }) }));
 
 const SIGN_UP_OFF = { enabled: false, terms_url: null, baa_url: null, privacy_url: null, test_data_only: true };
 const NO_EXTRAS = { providers: [], signup: SIGN_UP_OFF };

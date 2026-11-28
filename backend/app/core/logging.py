@@ -38,7 +38,17 @@ MAX_CAUSES = 5
 INCOMING_REQUEST_ID = re.compile(r"[0-9A-Fa-f-]{16,64}")
 UVICORN_LOGGERS = ("uvicorn", "uvicorn.error")
 UVICORN_ACCESS_LOGGER = "uvicorn.access"
-QUIET_LOGGERS = ("httpx", "httpcore", "botocore", "boto3", "s3transfer", "urllib3", "google_genai", "google.auth")
+QUIET_LOGGERS = (
+    "httpx",
+    "httpcore",
+    "botocore",
+    "boto3",
+    "s3transfer",
+    "urllib3",
+    "google_genai",
+    "google.auth",
+    "signxml",
+)
 
 _request_id: ContextVar[str | None] = ContextVar("bodha_request_id", default=None)
 _access = logging.getLogger(ACCESS_LOGGER)

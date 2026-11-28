@@ -1,12 +1,18 @@
 import type { InsightDays } from "@/lib/api/types";
 
-export type OrganizationTabKey = "practices" | "insights" | "plan" | "domains";
+export type OrganizationTabKey = "practices" | "insights" | "plan" | "domains" | "sign-in";
 
 export const ORGANIZATION_TEXT = {
   notAllowed: "You can't open this organization",
   loading: "Loading organization",
   retry: "Try again",
-  tabs: { practices: "Practices", insights: "Insights", plan: "Plan", domains: "Domains" } satisfies Record<OrganizationTabKey, string>,
+  tabs: {
+    practices: "Practices",
+    insights: "Insights",
+    plan: "Plan",
+    domains: "Domains",
+    "sign-in": "Single sign-on",
+  } satisfies Record<OrganizationTabKey, string>,
   practices: {
     title: "Practices",
     tableLabel: "Practices in the organization",
@@ -86,4 +92,5 @@ export const ORGANIZATION_TEXT = {
     emptyUsage: "No practices in combined billing",
   },
   domains: { title: "Domains" },
+  signIn: { title: "Single sign-on" },
 } as const;

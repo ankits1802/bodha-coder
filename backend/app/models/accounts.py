@@ -19,6 +19,8 @@ AUTH_EVENT_KINDS = (
     "signed_out",
     "session_revoked",
     "practice_switched",
+    "sso_changed",
+    "sso_tested",
 )
 AUTH_DETAIL_LENGTH = 200
 
@@ -40,6 +42,13 @@ class PracticeMembership(IdMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="invited")
     invited_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     ended_at: Mapped[datetime | None] = timestamp()
+
+
+class RecoveryCode(IdMixin, Base):
+    __tablename__ = "recovery_codes"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(64))
+    used_at: Mapped[datetime | None] = timestamp()
 
 
 class AuthEvent(LedgerMixin, Base):

@@ -14,12 +14,13 @@ from app.core.deps import Client
 from app.core.errors import NotFound, Unauthorized
 from app.core.realms import Site
 from app.core.security import TokenError, issue_token, random_token, read_token
-from app.models import User, UserIdentity
+from app.models import PRACTICE_REALM, User, UserIdentity
 from app.services.account_lookup import account_by_email
 from app.services.auth import MfaChallenge, Tokens, sign_in_user
 from app.services.auth_events import SIGN_IN_FAILED, AuthEventFacts, record_auth_event
 from app.services.memberships import accept_invitations
 from app.services.rate_limits import IDENTITY_PER_IP, hit
+from app.services.sso_policy import SsoRequired, ensure_service_allowed
 
 START_MINUTES = 10
 START_TOKEN = "oidc_start"
@@ -81,6 +82,7 @@ async def finish(
 async def _finish_for(
     db: AsyncSession, identity: ProviderIdentity, site: Site, label: str, client: Client, *, signup: bool
 ) -> Tokens | MfaChallenge | ProviderIdentity:
+    await _refuse_sso_domain(db, identity, site.realms)
     signups_open = get_settings().self_signup_enabled and site.takes_signups
     if signups_open and signup:
         await _refuse_foreign_subject(db, identity, site.realms)
@@ -91,6 +93,18 @@ async def _finish_for(
     if not signups_open:
         raise SignInRefused("no_account")
     return identity
+
+
+async def _refuse_sso_domain(db: AsyncSession, identity: ProviderIdentity, realms: tuple[str, ...]) -> None:
+    if PRACTICE_REALM not in realms:
+        return
+    user = await account_by_email(db, identity.email, realms)
+    if user is not None and user.realm != PRACTICE_REALM:
+        return
+    try:
+        await ensure_service_allowed(db, identity.email)
+    except SsoRequired as error:
+        raise SignInRefused("sso_required") from error
 
 
 async def _note_refusal(db: AsyncSession, identity: ProviderIdentity, site: Site, detail: str, client: Client) -> None:

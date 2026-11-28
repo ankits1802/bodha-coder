@@ -17,6 +17,7 @@ from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.oidc import build_identity_providers
 from app.adapters.record_signers import build_record_signer
+from app.adapters.saml_fetch import HttpsMetadataSource
 from app.adapters.sftp import ParamikoLink
 from app.api.routes import (
     account,
@@ -55,6 +56,8 @@ from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
 from app.api.routes.review_records import router as review_records_router
+from app.api.routes.saml import router as saml_router
+from app.api.routes.sso import router as sso_router
 from app.api.routes.usage import router as usage_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
@@ -78,6 +81,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.icd = await asyncio.to_thread(load_catalog)
     app.state.image_model = build_image_model(settings)
     app.state.txt_resolver = DnsTxtResolver()
+    app.state.metadata_source = HttpsMetadataSource()
     app.state.file_link = ParamikoLink(timeout_seconds=settings.clearinghouse_timeout_seconds)
     app.state.outbound = OutboundHttp()
     yield
@@ -127,6 +131,8 @@ app.include_router(domains_router, prefix="/api")
 app.include_router(hq_organizations_router, prefix="/api")
 app.include_router(practice_measures_router, prefix="/api")
 app.include_router(usage_router, prefix="/api")
+app.include_router(saml_router, prefix="/api")
+app.include_router(sso_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

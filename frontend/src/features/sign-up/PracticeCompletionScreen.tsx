@@ -14,7 +14,7 @@ import type { LoginResult, PendingIdentity, SignUpOptions } from "@/lib/api/type
 import { homeFor } from "@/lib/roles";
 import { CompletionForm } from "./CompletionForm";
 import { IdentityJoin } from "./IdentityJoin";
-import { openPage } from "./openPage";
+import { openPage } from "@/lib/openPage";
 import { SIGN_UP_TEXT } from "./strings";
 
 function Expired() {

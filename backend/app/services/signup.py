@@ -31,6 +31,7 @@ from app.services.practice_accounts import (
 )
 from app.services.rate_limits import SIGNUP_PER_EMAIL, SIGNUP_PER_IP, hit
 from app.services.sealing import agreement_signer, seal_agreement
+from app.services.sso_policy import ensure_service_allowed, requires_sso
 from app.services.team import EMAIL_TAKEN, send_invite
 
 SIGNUP_TOKEN = "signup"
@@ -104,6 +105,9 @@ async def request_email_signup(
     if await email_in_use(db, form.email, PRACTICE_REALM):
         await _send_existing_account(messenger, normal_email(form.email))
         return
+    if await requires_sso(db, form.email):
+        await _send_single_sign_on(messenger, normal_email(form.email))
+        return
     offer = await join_offer_for(db, form.email)
     if offer is not None:
         ticket = JoinTicket(normal_email(form.email), form.name.strip(), form.practice_name.strip(), form.time_zone)
@@ -155,6 +159,7 @@ async def complete_identity_signup(
     _require_agreement(form.agreed)
     zone_named(form.time_zone)
     await hit(db, SIGNUP_PER_IP, client.ip)
+    await ensure_service_allowed(db, identity.email)
     person = await account_by_email(db, identity.email, (PRACTICE_REALM,))
     if person is None:
         created = await _identity_practice(db, identity, form)
@@ -245,6 +250,18 @@ async def _send_existing_account(messenger: Messenger, email: str) -> None:
             "Someone asked to start a Bodha Assure trial with this email, which already has an account. "
             f"To add a practice to it, sign in: {app_url}/sign-in?next={NEW_PRACTICE_PATH}. "
             f"Forgot your password? Reset it: {app_url}/forgot-password. "
+            "If this was not you, you can ignore this email."
+        ),
+    )
+
+
+async def _send_single_sign_on(messenger: Messenger, email: str) -> None:
+    await messenger.email(
+        email,
+        subject="Sign in to Bodha Assure with single sign-on",
+        body=(
+            "Someone asked to start a Bodha Assure trial with this email. Your organization signs in to "
+            f"Bodha Assure with single sign-on: {get_settings().app_url}/sign-in. "
             "If this was not you, you can ignore this email."
         ),
     )

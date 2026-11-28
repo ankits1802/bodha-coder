@@ -8,6 +8,7 @@ from app.models import User
 from app.services.account_lookup import account_by_email, normal_email
 from app.services.auth import TOKEN_HOURS, issue_user_token
 from app.services.rate_limits import FORGOT_PER_EMAIL, FORGOT_PER_IP, hit
+from app.services.sso_policy import signs_in_with_sso
 
 RESETTABLE_STATUSES = ("active", "invited")
 
@@ -19,7 +20,7 @@ async def count_reset_request(db: AsyncSession, email: str, *, ip: str | None) -
 
 async def send_reset_for_email(db: AsyncSession, messenger: Messenger, email: str, realms: tuple[str, ...]) -> None:
     user = await account_by_email(db, email, realms)
-    if user is None or user.status not in RESETTABLE_STATUSES:
+    if user is None or user.status not in RESETTABLE_STATUSES or await signs_in_with_sso(db, user):
         return
     await send_reset_email(db, messenger, user)
 

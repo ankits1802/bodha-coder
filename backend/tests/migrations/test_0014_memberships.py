@@ -82,5 +82,5 @@ def test_the_migration_names_the_same_roles_statuses_and_event_kinds_as_the_mode
     module = migration()
     assert module.PRACTICE_MEMBER_ROLES == PRACTICE_ROLES
     assert module.MEMBERSHIP_STATUSES == MEMBERSHIP_STATUSES
-    assert module.AUTH_EVENT_KINDS == AUTH_EVENT_KINDS
+    assert AUTH_EVENT_KINDS[: len(module.AUTH_EVENT_KINDS)] == module.AUTH_EVENT_KINDS
     assert module.revision == "0014"

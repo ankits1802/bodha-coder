@@ -29,7 +29,7 @@ async def switch_practice(
 ) -> Tokens | MfaChallenge:
     session = await _current_session(db, user, refresh)
     standing = await _standing_in(db, user, practice_id)
-    if needs_two_step(standing) and not user.mfa_enabled:
+    if needs_two_step(standing) and not (user.mfa_enabled or session.idp_two_step):
         return two_step_challenge(user, SWITCH_METHOD, standing)
     rotated = random_token()
     session.refresh_hash, session.last_used_at, session.practice_id = digest(rotated), utcnow(), practice_id

@@ -44,6 +44,7 @@ export const SECURITY: LegalDocumentData = {
         "Blocking a person, changing their role or resetting their password ends their sessions at once. Anyone can review their signed-in devices and sign them out.",
         "Sign-in, password reset, sign-up and one-time code attempts are rate limited.",
         "Sign-in with Google, Microsoft or Yahoo uses OpenID Connect with PKCE, and accepts only verified email addresses.",
+        "A practice or organization can sign its people in through its own identity provider with SAML 2.0 single sign-on, for email domains it has proven it owns. Each assertion must be signed with a certificate the customer pinned and is checked for its issuer, audience, recipient, validity times and the request it answers; an assertion is accepted once only, and none of its content is logged. A customer can require single sign-on for its domains, which turns off password and other sign-in for them except for the break-glass administrators it names, who keep a password and two-step verification.",
       ),
     ),
     section(

@@ -28,6 +28,7 @@ from app.services.domain_join import (
 from app.services.identity_sign_in import admit, bind_identity
 from app.services.rate_limits import SIGNUP_PER_IP, hit
 from app.services.signup import EmailSignup, ensure_signup_open, pending_identity, start_email_trial
+from app.services.sso_policy import ensure_service_allowed
 from app.services.team import EMAIL_TAKEN, send_invite
 
 __all__ = ["STARTED", "complete_email_join", "complete_identity_join", "join_page"]
@@ -57,6 +58,7 @@ async def complete_email_join(
     await hit(db, SIGNUP_PER_IP, client.ip)
     if await email_in_use(db, ticket.email, PRACTICE_REALM):
         raise Conflict(HAS_ACCOUNT)
+    await ensure_service_allowed(db, ticket.email)
     if not join:
         form = EmailSignup(ticket.name, ticket.practice_name, ticket.email, ticket.time_zone, True)
         await start_email_trial(db, messenger, signer, form, client)
@@ -87,6 +89,7 @@ async def complete_identity_join(
 ) -> Tokens | MfaChallenge | None:
     identity = pending_identity(token)
     await hit(db, SIGNUP_PER_IP, client.ip)
+    await ensure_service_allowed(db, identity.email)
     offer = await _open_offer(db, identity.email)
     if offer.mode == AUTO and await room_for(db, offer.practice_id):
         person = await _person_for(db, identity, name=name, role=offer.role, client=client)
