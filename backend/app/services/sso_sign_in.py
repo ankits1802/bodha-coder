@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.saml_request import authn_request, new_request_id, redirect_url
 from app.adapters.saml_response import ResponseRules, SamlIdentity, SamlRefused, read_response
-from app.core.deps import ACTIVE_PRACTICE_STATUSES, Client, PlanEnded, ensure_session_allowed
+from app.core.deps import ACTIVE_PRACTICE_STATUSES, Client, PlanEnded, plan_ended_on
 from app.core.errors import Conflict, Forbidden, NotFound, Unauthorized
 from app.core.realms import Site
 from app.core.security import TokenError, digest, issue_token, random_token, read_token
@@ -256,11 +256,10 @@ async def _new_person(db: AsyncSession, version: SsoVersion, claim: DomainClaim,
     practice = await db.get(Practice, claim.practice_id, with_for_update=True)
     if practice is None or practice.status not in ACTIVE_PRACTICE_STATUSES:
         raise SsoStopped("no_practice", email=identity.email)
+    if plan_ended_on(practice) is not None:
+        raise SsoStopped("plan_ended", email=identity.email)
     try:
-        ensure_session_allowed(role, practice)
         await ensure_user_room(db, practice)
-    except PlanEnded as error:
-        raise SsoStopped("plan_ended", email=identity.email) from error
     except Conflict as error:
         raise SsoStopped("no_seat", email=identity.email) from error
     name = (identity.name or identity.email.split("@", 1)[0])[:NAME_LENGTH]

@@ -6,7 +6,7 @@ import { getSignInProviders } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/errors";
 import { completeIdentitySignup, getPendingIdentity } from "@/lib/api/signup";
 import type { SignInProviders } from "@/lib/api/types";
-import { openPage } from "../openPage";
+import { openPage } from "@/lib/openPage";
 import { PracticeCompletionScreen } from "../PracticeCompletionScreen";
 
 vi.mock("next/link", () => ({
@@ -26,7 +26,7 @@ vi.mock("@/lib/api/auth", async (importOriginal) => ({
 
 vi.mock("@/lib/api/signup", () => ({ getPendingIdentity: vi.fn(), completeIdentitySignup: vi.fn() }));
 
-vi.mock("../openPage", () => ({ openPage: vi.fn() }));
+vi.mock("@/lib/openPage", () => ({ openPage: vi.fn() }));
 
 const OPTIONS: SignInProviders = {
   providers: ["microsoft"],

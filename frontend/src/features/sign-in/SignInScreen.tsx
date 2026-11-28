@@ -5,8 +5,9 @@ import { useEffect } from "react";
 import { AuthFrame } from "@/components/shared/AuthFrame";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { NEW_PRACTICE_PATH } from "@/lib/api/auth";
 import type { User } from "@/lib/api/types";
+import { openPage } from "@/lib/openPage";
+import { sameSitePath } from "@/lib/paths";
 import { homeFor } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
 import { CredentialsForm } from "./CredentialsForm";
@@ -18,8 +19,8 @@ import { SIGN_IN_TEXT } from "./strings";
 import { useSignInFlow } from "./useSignInFlow";
 
 export function pageAfterSignIn(user: User, next: string | null): string {
-  const opensNewPractice = next === NEW_PRACTICE_PATH && user.role !== "hq" && !user.billing_only;
-  return opensNewPractice ? NEW_PRACTICE_PATH : homeFor(user);
+  if (user.role === "hq" || user.billing_only) return homeFor(user);
+  return sameSitePath(next) ?? homeFor(user);
 }
 
 export function SignInScreen() {
@@ -46,6 +47,7 @@ export function SignInScreen() {
             pending={flow.signIn.pending || user !== null}
             error={flow.signIn.error}
             onSubmit={(email, password) => void flow.submitCredentials(email, password)}
+            onSingleSignOn={openPage}
           />
           <OtherWays />
         </div>

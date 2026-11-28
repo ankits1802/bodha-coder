@@ -172,6 +172,14 @@ verifies its email domain (a DNS TXT record or a link to an admin mailbox) can l
 with that domain ask to join or join automatically
 ([0044](docs/decisions/0044-organizations-and-domain-join.md)).
 
+A practice or organization admin can also turn on SAML 2.0 single sign-on for its verified domains, from
+Settings → Security or the organization's Single sign-on tab: the identity provider's metadata from a file
+or an https URL, the service provider details to give their IT admin, new people created on first sign-in
+if wanted (never as admins), and, once Test sign-in passes, single sign-on required for those domains with
+break-glass admins who keep a password and two-step. The sign-in page sends such emails to the identity
+provider. Signatures are checked with signxml against the pinned certificates only
+([0061](docs/decisions/0061-saml-single-sign-on.md)).
+
 Besides the CMS quality measures, a practice admin can add measures of the practice's own (an internal
 measure, a payer programme or a registry measure) that the review checks like any other and shows apart
 from CMS ones. Bodha also times the work without patient data (how long a note stays open in review, the

@@ -308,6 +308,21 @@ export type VerifiedDomain = Schemas["VerifiedDomain"];
 export type JoinRequestRow = Schemas["JoinRequestRow"];
 export type JoinApproval = Schemas["JoinApprovalBody"];
 
+export type SsoSettings = Schemas["SsoSettings"];
+export type SsoConnection = Schemas["SsoConnection"];
+export type SsoVersion = Schemas["SsoVersion"];
+export type SsoIdentityProvider = Schemas["SsoIdentityProvider"];
+export type SsoCertificate = Schemas["SsoCertificate"];
+export type SsoDomain = Schemas["SsoDomain"];
+export type SsoAdmin = Schemas["SsoAdmin"];
+export type SsoSettingsRequest = Schemas["SsoSettingsBody"];
+export type SsoMetadataRequest = Schemas["SsoMetadataBody"];
+export type SsoNewPersonRole = NonNullable<SsoSettingsRequest["new_person_role"]>;
+export type SsoTrialLink = Schemas["SsoTrialLink"];
+export type SsoTrialResult = Schemas["SsoTrialResult"];
+export type SsoDiscovery = Schemas["SsoDiscovery"];
+export type SsoMode = SsoDiscovery["mode"];
+
 export type PlanCatalog = Schemas["PlanCatalog"];
 export type PlanTerms = Schemas["PlanTerms"];
 export type PlanStatus = Schemas["PlanStatus"];

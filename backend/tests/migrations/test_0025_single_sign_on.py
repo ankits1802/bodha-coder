@@ -81,6 +81,6 @@ def test_the_migration_names_the_same_event_kinds_and_roles_as_the_models():
     module = _migration()
     assert module.AUTH_EVENT_KINDS == AUTH_EVENT_KINDS
     assert module.NEW_PERSON_ROLES == SSO_NEW_PERSON_ROLES
-    assert (module.revision, module.down_revision) == ("0025", "0022")
+    assert (module.revision, module.down_revision) == ("0025", "0023")
     assert set(module.APPEND_ONLY) | {module.CONNECTIONS} == set(module.NEW_TABLES)
     assert "removed_at" in module.CONNECTION_COLUMNS and "removed_by" in module.CONNECTION_COLUMNS

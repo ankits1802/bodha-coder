@@ -3,7 +3,7 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 revision = "0025"
-down_revision = "0022"
+down_revision = "0023"
 branch_labels = None
 depends_on = None
 
@@ -215,7 +215,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if op.get_bind().scalar(sa.text(KEPT_DATA)):
-        raise RuntimeError("single sign-on connections or their auth events exist; 0022 cannot hold them")
+        raise RuntimeError("single sign-on connections or their auth events exist; 0023 cannot hold them")
     _run(without_steps(_definition(ORGANIZATION_PURGE), ORGANIZATION_STEPS, ORGANIZATION_PURGE))
     _run(without_steps(_definition(PRACTICE_PURGE), PRACTICE_STEPS, PRACTICE_PURGE))
     _unprotect()
