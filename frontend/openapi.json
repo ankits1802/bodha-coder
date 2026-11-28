@@ -974,6 +974,84 @@
         "title": "AppealDraft",
         "type": "object"
       },
+      "Appearance": {
+        "additionalProperties": false,
+        "properties": {
+          "reduce_motion": {
+            "enum": [
+              "system",
+              "on",
+              "off"
+            ],
+            "title": "Reduce Motion",
+            "type": "string"
+          },
+          "text_size": {
+            "enum": [
+              "default",
+              "large",
+              "larger"
+            ],
+            "title": "Text Size",
+            "type": "string"
+          },
+          "theme": {
+            "enum": [
+              "system",
+              "light",
+              "dark"
+            ],
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "text_size",
+          "reduce_motion"
+        ],
+        "title": "Appearance",
+        "type": "object"
+      },
+      "AppearanceBody": {
+        "additionalProperties": false,
+        "properties": {
+          "reduce_motion": {
+            "enum": [
+              "system",
+              "on",
+              "off"
+            ],
+            "title": "Reduce Motion",
+            "type": "string"
+          },
+          "text_size": {
+            "enum": [
+              "default",
+              "large",
+              "larger"
+            ],
+            "title": "Text Size",
+            "type": "string"
+          },
+          "theme": {
+            "enum": [
+              "system",
+              "light",
+              "dark"
+            ],
+            "title": "Theme",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme",
+          "text_size",
+          "reduce_motion"
+        ],
+        "title": "AppearanceBody",
+        "type": "object"
+      },
       "ApprovedNotes": {
         "additionalProperties": false,
         "properties": {
@@ -20539,6 +20617,142 @@
           }
         },
         "summary": "Record Tour",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/api/auth/appearance": {
+      "get": {
+        "operationId": "appearance_choice_api_auth_appearance_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appearance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Appearance Choice",
+        "tags": [
+          "account"
+        ]
+      },
+      "put": {
+        "operationId": "save_appearance_api_auth_appearance_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppearanceBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appearance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Save Appearance",
         "tags": [
           "account"
         ]

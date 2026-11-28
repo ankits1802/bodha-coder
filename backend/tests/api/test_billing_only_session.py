@@ -40,6 +40,8 @@ BILLING_SESSION_ROUTES = {
     ("POST", "/api/auth/sessions/end-others"),
     ("GET", "/api/auth/recovery-codes"),
     ("POST", "/api/auth/recovery-codes"),
+    ("GET", "/api/auth/appearance"),
+    ("PUT", "/api/auth/appearance"),
     ("GET", "/api/plan"),
     ("POST", "/api/plan/checkout"),
     ("POST", "/api/plan/portal"),

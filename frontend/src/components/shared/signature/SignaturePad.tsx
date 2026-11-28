@@ -27,7 +27,7 @@ function paint(canvas: HTMLCanvasElement, strokes: readonly PadStroke[]): void {
   canvas.height = Math.max(1, Math.round(rect.height * ratio));
   context.setTransform(canvas.width / PAD_WIDTH, 0, 0, canvas.height / PAD_HEIGHT, 0, 0);
   context.clearRect(0, 0, PAD_WIDTH, PAD_HEIGHT);
-  drawStrokes(context, strokes, cssToken("--color-label", "black"));
+  drawStrokes(context, strokes, cssToken("--color-ink", "black"));
 }
 
 export function SignaturePad({ strokes, disabled = false, onChange }: SignaturePadProps) {
@@ -72,7 +72,7 @@ export function SignaturePad({ strokes, disabled = false, onChange }: SignatureP
         ref={canvas}
         role="img"
         aria-label={empty ? SIGNATURE_TEXT.padEmpty : SIGNATURE_TEXT.padSigned}
-        className="block aspect-[5/2] w-full cursor-crosshair touch-none rounded-field border border-separator bg-surface select-none"
+        className="block aspect-[5/2] w-full cursor-crosshair touch-none rounded-field border border-separator bg-paper select-none"
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={end}

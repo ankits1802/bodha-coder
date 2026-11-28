@@ -1,15 +1,17 @@
+@reference "../../../../app/globals.css";
+
 .screen {
   width: min(100%, 27rem);
   overflow: hidden;
   border-radius: 14px;
-  background: #fff;
-  color: #1d1d1f;
+  background: var(--color-surface);
+  color: var(--color-label);
   font-size: 13px;
   line-height: 18px;
   text-align: left;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 40px 80px -36px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 40px 80px -36px color-mix(in srgb, var(--color-shadow) 30%, transparent);
   animation: screen-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
@@ -20,7 +22,7 @@
   gap: 8px;
   height: 38px;
   padding: 0 14px;
-  border-bottom: 1px solid #ededf0;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .lights {
@@ -32,11 +34,11 @@
   width: 9px;
   height: 9px;
   border-radius: 999px;
-  background: #e5e5ea;
+  background: var(--color-separator);
 }
 
 .title {
-  color: #6e6e73;
+  color: var(--color-secondary);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -53,8 +55,8 @@
   height: 26px;
   padding: 0 12px;
   border-radius: 999px;
-  background: #1d1d1f;
-  color: #fff;
+  background: var(--color-inverse);
+  color: var(--color-on-inverse);
   font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -66,15 +68,15 @@
   height: 24px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #ebebef;
-  color: #1d1d1f;
+  background: var(--color-fill);
+  color: var(--color-label);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .label {
-  color: #6e6e73;
+  color: var(--color-secondary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -82,10 +84,10 @@
 .ink {
   padding: 1px 3px;
   border-radius: 3px;
-  background-image: linear-gradient(rgba(255, 159, 10, 0.2), rgba(255, 159, 10, 0.2));
+  background-image: linear-gradient(color-mix(in srgb, var(--color-warn) 20%, transparent), color-mix(in srgb, var(--color-warn) 20%, transparent));
   background-repeat: no-repeat;
   background-size: 100% 100%;
-  box-shadow: inset 0 -1.5px 0 #ff9f0a;
+  box-shadow: inset 0 -1.5px 0 var(--color-warn);
   animation: ink 0.8s cubic-bezier(0.3, 0.7, 0.2, 1) 0.6s both;
 }
 
@@ -95,9 +97,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .screen,
-  .ink {
+.screen,
+.ink {
+  @variant motion-reduce {
     animation: none;
   }
 }

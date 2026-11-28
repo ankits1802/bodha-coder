@@ -85,3 +85,18 @@ export async function expectStill(page: Page): Promise<void> {
   );
   expect(moving, "nothing loops when reduced motion is asked for").toEqual([]);
 }
+
+export async function expectMoving(page: Page): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document
+              .getAnimations()
+              .filter((animation) => animation.playState === "running" && animation.effect?.getComputedTiming().iterations === Infinity).length,
+        ),
+      { message: "the page's loops run when the person turned Reduce motion off" },
+    )
+    .toBeGreaterThan(0);
+}

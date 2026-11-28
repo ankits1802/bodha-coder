@@ -63,7 +63,7 @@ export function Tabs<V extends string>(props: TabsProps<V>) {
                 tabIndex={on ? 0 : -1}
                 onClick={() => onChange(tab.value)}
                 onKeyDown={(event) => onKeyDown(event, index)}
-                className={`h-7 cursor-pointer rounded-nav px-3 text-subhead font-medium tracking-snug whitespace-nowrap text-label ${on ? "bg-surface shadow-segment-on" : "bg-transparent"}`}
+                className={`h-7 cursor-pointer rounded-nav px-3 text-subhead font-medium tracking-snug whitespace-nowrap text-label ${on ? "bg-segment-on shadow-segment-on" : "bg-transparent"}`}
               >
                 {tab.label}
               </button>

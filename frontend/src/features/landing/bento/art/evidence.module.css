@@ -1,3 +1,5 @@
+@reference "../../../../app/globals.css";
+
 .board {
   display: flex;
   flex-direction: column;
@@ -12,17 +14,17 @@
   padding: 20px 22px 22px;
   overflow: hidden;
   border-radius: 16px;
-  background: #fff;
-  color: #1d1d1f;
+  background: var(--color-surface);
+  color: var(--color-label);
   text-align: left;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 30px 60px -30px rgba(0, 0, 0, 0.28);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 30px 60px -30px color-mix(in srgb, var(--color-shadow) 28%, transparent);
 }
 
 .note mark {
   background-color: transparent;
-  background-image: linear-gradient(rgba(52, 199, 89, 0.18), rgba(52, 199, 89, 0.18));
+  background-image: linear-gradient(color-mix(in srgb, var(--color-ok) 18%, transparent), color-mix(in srgb, var(--color-ok) 18%, transparent));
   background-repeat: no-repeat;
   background-size: 100% 100%;
   animation: ink 9s cubic-bezier(0.3, 0.7, 0.2, 1) 0.6s infinite both;
@@ -32,7 +34,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0%, rgba(10, 132, 255, 0.06) 12%, rgba(10, 132, 255, 0.35) 13%, transparent 13.5%);
+  background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--color-low) 6%, transparent) 12%, color-mix(in srgb, var(--color-low) 35%, transparent) 13%, transparent 13.5%);
   animation: scan 9s cubic-bezier(0.45, 0, 0.2, 1) 0.6s infinite both;
 }
 
@@ -47,7 +49,7 @@
   display: block;
   height: 7px;
   border-radius: 4px;
-  background: #ededf0;
+  background: var(--color-hairline);
 }
 
 .wire {
@@ -56,7 +58,7 @@
   width: 2px;
   height: 44px;
   margin: -4px 0;
-  background: repeating-linear-gradient(to bottom, #c7c7cc 0 4px, transparent 4px 8px);
+  background: repeating-linear-gradient(to bottom, var(--color-chevron) 0 4px, transparent 4px 8px);
 }
 
 .pulse {
@@ -66,8 +68,8 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #34c759;
-  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.18);
+  background: var(--color-ok);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-ok) 18%, transparent);
   animation: travel 9s cubic-bezier(0.65, 0, 0.35, 1) infinite both;
   animation-delay: calc(0.6s + var(--lag, 0s));
 }
@@ -79,19 +81,19 @@
   width: min(100%, 22rem);
   padding: 16px 18px;
   border-radius: 16px;
-  background: #fff;
-  color: #1d1d1f;
+  background: var(--color-surface);
+  color: var(--color-label);
   text-align: left;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 30px 60px -28px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 30px 60px -28px color-mix(in srgb, var(--color-shadow) 30%, transparent);
   animation: lift 9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s infinite both;
 }
 
 .quote {
   margin: 12px 0 0;
   padding-left: 10px;
-  border-left: 2px solid #34c759;
+  border-left: 2px solid var(--color-ok);
   font-size: 14px;
   line-height: 20px;
 }
@@ -109,7 +111,7 @@
   align-items: center;
   gap: 6px;
   margin-top: 10px;
-  color: #1d1d1f;
+  color: var(--color-label);
   font-size: 12.5px;
   font-weight: 600;
 }
@@ -118,7 +120,7 @@
   width: 14px;
   height: 14px;
   fill: none;
-  stroke: #248a3d;
+  stroke: var(--color-ok-text);
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -135,10 +137,10 @@
   margin-right: 2rem;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--color-surface);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 16px 30px -18px rgba(0, 0, 0, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--color-shade) 6%, transparent),
+    0 16px 30px -18px color-mix(in srgb, var(--color-shadow) 30%, transparent);
   animation: lift 9s cubic-bezier(0.2, 0.8, 0.2, 1) 1.4s infinite both;
 }
 
@@ -157,21 +159,25 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .note mark,
-  .beam,
-  .pulse,
-  .card,
-  .codeSet,
-  .check path {
+.note mark,
+.beam,
+.pulse,
+.card,
+.codeSet,
+.check path {
+  @variant motion-reduce {
     animation: none;
   }
+}
 
-  .beam {
+.beam {
+  @variant motion-reduce {
     display: none;
   }
+}
 
-  .pulse {
+.pulse {
+  @variant motion-reduce {
     top: auto;
     bottom: 0;
   }

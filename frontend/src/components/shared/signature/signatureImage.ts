@@ -29,7 +29,7 @@ function paper(width: number, height: number): [HTMLCanvasElement, CanvasRenderi
   canvas.height = Math.max(MIN_SIDE, Math.round(height));
   const context = canvas.getContext("2d");
   if (!context) throw new UserFacingError(SIGNATURE_TEXT.noCanvas);
-  context.fillStyle = cssToken("--color-surface", "white");
+  context.fillStyle = cssToken("--color-paper", "white");
   context.fillRect(0, 0, canvas.width, canvas.height);
   return [canvas, context];
 }
@@ -51,7 +51,7 @@ export function drawnImage(strokes: readonly PadStroke[]): string | null {
   const scale = Math.min(EXPORT_SCALE, MAX_SIDE / Math.max(width, height));
   const [canvas, context] = paper(width * scale, height * scale);
   context.setTransform(scale, 0, 0, scale, (MARGIN - bounds.left) * scale, (MARGIN - bounds.top) * scale);
-  drawStrokes(context, strokes, cssToken("--color-label", "black"));
+  drawStrokes(context, strokes, cssToken("--color-ink", "black"));
   return checkedSize(canvas.toDataURL(PNG));
 }
 
@@ -65,7 +65,7 @@ export function typedImage(name: string): string | null {
   const height = TYPED_SIZE * 1.8;
   const [canvas, context] = paper(width, height);
   context.font = font;
-  context.fillStyle = cssToken("--color-label", "black");
+  context.fillStyle = cssToken("--color-ink", "black");
   context.textBaseline = "middle";
   context.fillText(text, TYPED_SIZE / 2, height / 2, width - TYPED_SIZE);
   return checkedSize(canvas.toDataURL(PNG));

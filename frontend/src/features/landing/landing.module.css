@@ -1,3 +1,5 @@
+@reference "../../app/globals.css";
+
 .root {
   overflow-x: clip;
 }
@@ -21,15 +23,15 @@
   top: 0;
   z-index: 20;
   border-bottom: 1px solid transparent;
-  background: rgba(255, 255, 255, 0);
+  background: transparent;
   transition:
     background-color 0.4s ease,
     border-color 0.4s ease;
 }
 
 .nav[data-scrolled="true"] {
-  border-bottom-color: #e5e5ea;
-  background: rgba(255, 255, 255, 0.78);
+  border-bottom-color: var(--color-separator);
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
 }
 
@@ -55,9 +57,16 @@
   transform: scaleX(1);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .nav,
-  .link::after {
+.nav {
+  @variant motion-reduce {
     transition: none;
+  }
+}
+
+.link {
+  @variant motion-reduce {
+    &::after {
+      transition: none;
+    }
   }
 }

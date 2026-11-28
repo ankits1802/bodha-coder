@@ -12,7 +12,7 @@ export function TypedSignature({ name }: { name: string }) {
   const text = name.trim();
   return (
     <SignaturePicture src={null} alt={SIGNATURE_TEXT.typedPreview(text)}>
-      <p role="img" aria-label={SIGNATURE_TEXT.typedPreview(text)} className="m-0 truncate px-4 font-signature text-large-title text-label">
+      <p role="img" aria-label={SIGNATURE_TEXT.typedPreview(text)} className="m-0 truncate px-4 font-signature text-large-title text-ink">
         {text}
       </p>
     </SignaturePicture>

@@ -67,10 +67,6 @@ class MfaCodeBody(Body):
     code: str = Field(pattern=r"^\d{6}$")
 
 
-class PreferencesBody(Body):
-    notify_digest: bool
-
-
 class TourBody(Body):
     version: int = Field(ge=1, le=TOUR_VERSION_LIMIT)
     outcome: Literal[TOUR_OUTCOMES]

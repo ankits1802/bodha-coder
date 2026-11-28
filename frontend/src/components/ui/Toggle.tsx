@@ -18,7 +18,7 @@ export function Toggle({ label, checked, onChange, disabled = false }: TogglePro
     >
       <span
         aria-hidden="true"
-        className={`absolute top-0.5 size-5.5 rounded-full bg-surface shadow-knob transition-[left] ${checked ? "left-4.5" : "left-0.5"}`}
+        className={`absolute top-0.5 size-5.5 rounded-full bg-white shadow-knob transition-[left] ${checked ? "left-4.5" : "left-0.5"}`}
       />
     </button>
   );

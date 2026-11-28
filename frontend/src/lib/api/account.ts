@@ -1,5 +1,5 @@
 import { request, requestNothing } from "./client";
-import type { Preferences, RecoveryCodes, RecoveryCodeStatus, SignedInDevice } from "./types";
+import type { Appearance, Preferences, RecoveryCodes, RecoveryCodeStatus, SignedInDevice } from "./types";
 
 export function getSignedInDevices(): Promise<SignedInDevice[]> {
   return request<SignedInDevice[]>("/api/auth/sessions");
@@ -27,4 +27,12 @@ export function getPreferences(): Promise<Preferences> {
 
 export function savePreferences(preferences: Preferences): Promise<Preferences> {
   return request<Preferences>("/api/auth/preferences", { method: "PUT", body: preferences });
+}
+
+export function getAppearance(): Promise<Appearance> {
+  return request<Appearance>("/api/auth/appearance");
+}
+
+export function saveAppearance(appearance: Appearance): Promise<Appearance> {
+  return request<Appearance>("/api/auth/appearance", { method: "PUT", body: appearance });
 }

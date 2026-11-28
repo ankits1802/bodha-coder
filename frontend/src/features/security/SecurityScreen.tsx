@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useSession } from "@/lib/session/useSession";
+import { AppearancePanel } from "./AppearancePanel";
 import { DevicesPanel } from "./DevicesPanel";
 import { DigestPreferencePanel } from "./DigestPreferencePanel";
 import { PracticesPanel } from "./PracticesPanel";
@@ -18,6 +19,7 @@ export function SecurityScreen() {
       <SignaturePanel />
       <DevicesPanel />
       <RecoveryCodesPanel />
+      <AppearancePanel />
       <DigestPreferencePanel />
     </>
   );

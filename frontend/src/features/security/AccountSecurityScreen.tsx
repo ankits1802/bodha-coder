@@ -1,6 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
+import { AppearancePanel } from "./AppearancePanel";
 import { DevicesPanel } from "./DevicesPanel";
 import { RecoveryCodesPanel } from "./RecoveryCodesPanel";
 import { SECURITY_TEXT } from "./strings";
@@ -11,6 +12,7 @@ export function AccountSecurityScreen() {
       <PageHeader title={SECURITY_TEXT.title} />
       <DevicesPanel />
       <RecoveryCodesPanel />
+      <AppearancePanel />
     </>
   );
 }

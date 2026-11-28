@@ -1,3 +1,5 @@
+@reference "../../../../app/globals.css";
+
 .row {
   display: flex;
   align-items: center;
@@ -5,7 +7,7 @@
   gap: 12px;
   min-height: 46px;
   padding: 8px 18px;
-  border-top: 1px solid #ededf0;
+  border-top: 1px solid var(--color-hairline);
 }
 
 .row:nth-child(2) {
@@ -18,7 +20,7 @@
   width: 38px;
   height: 23px;
   border-radius: 999px;
-  background: #e5e5ea;
+  background: var(--color-separator);
 }
 
 .switch::before {
@@ -26,7 +28,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: #34c759;
+  background: var(--color-ok);
   opacity: 0;
 }
 
@@ -38,8 +40,8 @@
   width: 19px;
   height: 19px;
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-shadow) 20%, transparent);
 }
 
 .switch[data-on="true"]::before {
@@ -54,8 +56,8 @@
 
 .log {
   padding: 12px 18px 14px;
-  border-top: 1px solid #ededf0;
-  background: #fafafb;
+  border-top: 1px solid var(--color-hairline);
+  background: var(--color-row-hover);
 }
 
 .window {
@@ -84,14 +86,28 @@
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #6e6e73;
+  background: var(--color-secondary);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .switch[data-on="true"]::before,
-  .switch[data-on="true"]::after,
-  .track {
+.track {
+  @variant motion-reduce {
     animation: none;
+  }
+}
+
+.switch[data-on="true"] {
+  @variant motion-reduce {
+    &::before {
+      animation: none;
+    }
+  }
+}
+
+.switch[data-on="true"] {
+  @variant motion-reduce {
+    &::after {
+      animation: none;
+    }
   }
 }
 

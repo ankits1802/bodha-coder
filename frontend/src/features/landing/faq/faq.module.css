@@ -1,9 +1,11 @@
+@reference "../../../app/globals.css";
+
 .list {
-  border-top: 1px solid #e5e5ea;
+  border-top: 1px solid var(--color-separator);
 }
 
 .item {
-  border-bottom: 1px solid #e5e5ea;
+  border-bottom: 1px solid var(--color-separator);
 }
 
 .question {
@@ -15,10 +17,10 @@
   padding: 22px 0;
   border: 0;
   background: transparent;
-  color: #1d1d1f;
+  color: var(--color-label);
   font: inherit;
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: calc(19px * var(--text-scale, 1));
   font-weight: 600;
   line-height: 25px;
   letter-spacing: -0.02em;
@@ -27,7 +29,7 @@
 }
 
 .question:hover {
-  color: #000;
+  color: var(--color-label);
 }
 
 .plus {
@@ -36,7 +38,7 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: #ebebef;
+  background: var(--color-fill);
   transition:
     transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
     background-color 0.3s ease;
@@ -52,7 +54,7 @@
   height: 1.75px;
   margin: -0.875px 0 0 -6px;
   border-radius: 2px;
-  background: #1d1d1f;
+  background: var(--color-inverse);
 }
 
 .plus::after {
@@ -60,7 +62,7 @@
 }
 
 .question:hover .plus {
-  background: #e1e1e6;
+  background: var(--color-fill-hover);
 }
 
 .question[aria-expanded="true"] .plus {
@@ -70,18 +72,20 @@
 .answer {
   max-width: 40rem;
   padding: 0 48px 24px 0;
-  color: #3a3a3c;
-  font-size: 17px;
+  color: var(--color-label-soft);
+  font-size: calc(17px * var(--text-scale, 1));
   line-height: 26px;
   animation: answer-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .plus {
+.plus {
+  @variant motion-reduce {
     transition: none;
   }
+}
 
-  .answer {
+.answer {
+  @variant motion-reduce {
     animation: none;
   }
 }

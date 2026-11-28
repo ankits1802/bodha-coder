@@ -19,7 +19,7 @@ interface CalendarGridProps {
 const DAY_OF_MONTH = 8;
 
 function dayTone(selected: boolean, today: boolean): string {
-  if (selected) return "bg-dark font-semibold text-white";
+  if (selected) return "bg-inverse font-semibold text-on-inverse";
   if (today) return "font-semibold text-label shadow-option-on hover:bg-fill-plain-hover";
   return "text-label hover:bg-fill-plain-hover";
 }

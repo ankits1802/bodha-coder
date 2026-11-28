@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { SHARED_TEXT } from "@/components/shared/strings";
+import { APPEARANCE_COOKIE, appearanceAttributes, appearanceFromCookie } from "@/lib/appearance";
 import { encodeSettings, REPORT_ATTRIBUTE, reportSettingsFrom } from "@/lib/errorReports/settings";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
@@ -21,8 +23,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
   const reports = { [REPORT_ATTRIBUTE]: encodeSettings(reportSettingsFrom(process.env)) };
+  const appearance = appearanceFromCookie((await cookies()).get(APPEARANCE_COOKIE)?.value);
   return (
-    <html lang="en" className={inter.variable} {...reports}>
+    <html lang="en" className={inter.variable} {...reports} {...appearanceAttributes(appearance)}>
       <body>{children}</body>
     </html>
   );

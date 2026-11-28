@@ -7,7 +7,7 @@ const DOTS: Record<StatusTone, string> = {
   warn: "bg-warn",
   bad: "bg-bad",
   low: "bg-low",
-  dark: "bg-dark",
+  dark: "bg-inverse",
   neutral: "bg-neutral",
 };
 

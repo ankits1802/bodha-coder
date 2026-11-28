@@ -33,7 +33,7 @@ export function MfaSetup({ enrolment, pending, error, onSubmit, onCancel }: MfaS
           width={QR_SIZE}
           height={QR_SIZE}
           unoptimized
-          className="rounded-field bg-surface shadow-field"
+          className="rounded-field bg-paper shadow-field"
         />
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-caption text-tertiary">{SIGN_IN_TEXT.secretLabel}</span>
