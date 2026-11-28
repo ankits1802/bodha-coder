@@ -10,7 +10,7 @@ from app.core.db import SessionFactory
 from app.models import Analysis, CodeSet, NoteText, Suggestion
 from app.services.evaluation_runs import run_evaluation
 from tests.api.quality_helpers import SequenceReviewer, approved_note, higher_report, read_note
-from tests.builders import analysis_deps, marisol_report, practice_with_provider
+from tests.builders import DOCUMENTED, analysis_deps, marisol_report, practice_with_provider
 from tests.fakes import FailingReviewer, ScriptedReviewer
 
 
@@ -77,6 +77,30 @@ async def test_an_evaluation_rereads_each_case_twice_and_leaves_the_note_alone(h
     )
     note = (await harness.client.get(f"/api/notes/{note_id}", headers=practice.admin)).json()["note"]
     assert note["status"] == "approved"
+
+
+async def test_an_evaluation_reads_the_billed_claim_as_uploaded_not_the_coders_edit(harness, icd_catalog):
+    practice = await practice_with_provider(harness)
+    note_id = await read_note(harness, practice, icd_catalog, 1)
+    edited = await harness.client.put(
+        f"/api/notes/{note_id}/billed-codes",
+        headers=practice.admin,
+        json={"codes": "99214, E11.65, I12.9, N18.30, R20.2", "reason": DOCUMENTED},
+    )
+    assert edited.status_code == 200, edited.text
+    assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
+    added = await harness.client.post("/api/quality/eval-cases", headers=practice.admin, json={"note_id": note_id})
+    assert added.status_code == 200, added.text
+
+    reviewer = ScriptedReviewer(marisol_report())
+    run = await evaluate(harness, icd_catalog, practice, reviewer)
+    assert [(code.code, code.type) for code in reviewer.calls[0].billed_codes] == [
+        ("99215", "CPT"),
+        ("I10", "ICD-10"),
+        ("E11.9", "ICD-10"),
+        ("N18.30", "ICD-10"),
+    ]
+    assert run["summary"]["em"]["successes"] == 1
 
 
 async def test_a_drop_of_more_than_five_points_against_the_last_run_is_flagged(harness, icd_catalog):

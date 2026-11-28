@@ -3,10 +3,14 @@
 Each entry: what is below standard, why it was left, what would clear it. The hygiene check
 fails if the number of entries rises.
 
-### MIPS reporting codes not confirmed by a coder
+### Coder sign-off pending: MIPS reporting codes and the evaluation gold set
 
-Verified against CMS 2026 specifications on 2026-11-27; a coder's sign-off is still recommended
-([0021](decisions/0021-mips-codes-verified.md)).
+The MIPS reporting codes were verified against CMS 2026 specifications on 2026-11-27; a coder's
+sign-off is still recommended ([0021](decisions/0021-mips-codes-verified.md)). The 48 expected claims of
+the synthetic gold set (`tools/gold_set/cases.json`) were written by construction and pass the validator,
+but no certified coder has audited them, so accuracy numbers from that set are provisional
+([0049](decisions/0049-synthetic-gold-set.md)). Clear each part when a certified coder has reviewed it
+and the review (who, when, changes made) is recorded in its decision.
 
 ### ESLint plugins declare an older ESLint peer
 

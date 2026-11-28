@@ -1,0 +1,4845 @@
+{
+  "schemaVersion": 1,
+  "letterhead": {
+    "name": "Larkspur Hollow Family Medicine",
+    "address": "100 Synthetic Way, Larkspur Hollow, ZZ 00000",
+    "phone": "(000) 555-0100"
+  },
+  "facility": {
+    "name": "Bramblecrest Care Center",
+    "address": "200 Synthetic Lane, Larkspur Hollow, ZZ 00000"
+  },
+  "providers": [
+    {
+      "key": "quillfeather",
+      "name": "Avery Quillfeather",
+      "credential": "MD",
+      "specialty": "Family Medicine",
+      "email": "avery.quillfeather@example.com"
+    },
+    {
+      "key": "tessaly",
+      "name": "Rowan Tessaly",
+      "credential": "DO",
+      "specialty": "Internal Medicine",
+      "email": "rowan.tessaly@example.com"
+    },
+    {
+      "key": "marrowind",
+      "name": "Sage Marrowind",
+      "credential": "PA",
+      "specialty": "Family Medicine",
+      "email": "sage.marrowind@example.com"
+    },
+    {
+      "key": "coldbrook",
+      "name": "Imara Coldbrook",
+      "credential": "NP",
+      "specialty": "Geriatrics",
+      "email": "imara.coldbrook@example.com"
+    },
+    {
+      "key": "quellmont",
+      "name": "Dorian Quellmont",
+      "credential": "MD",
+      "specialty": "Geriatrics",
+      "email": "dorian.quellmont@example.com"
+    }
+  ],
+  "cases": [
+    {
+      "id": "GS-01",
+      "title": "Plant contact dermatitis, new patient",
+      "visit": {
+        "service_date": "2025-10-14",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 34
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Itchy rash on both forearms for 2 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "34-year-old woman, new to the practice, seen in the walk-in session. She pulled weeds along her back fence 3 days ago and the next morning noticed itchy red streaks with a few small blisters on both forearms. No rash on the face or elsewhere. No fever, no eye swelling, no trouble breathing. She has not tried any treatment and prefers to avoid medicines if possible. No similar rash before. Her primary care clinician practices elsewhere."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for itching. Negative for fever, facial swelling, shortness of breath and joint pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "118/74",
+                "72",
+                "14",
+                "98.2 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Skin: linear erythematous papules and scattered 1 to 2 mm vesicles in streaks on the volar forearms bilaterally, about 4% of body surface area. No pustules, crusting or warmth. Face, eyelids and lips normal."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Allergic contact dermatitis due to poison ivy, both forearms, localized. Cool compresses 3 times a day and colloidal oatmeal baths. No medication, at her preference. Wash the gloves and clothing worn while weeding. Expected to clear in 1 to 3 weeks. Return if the rash spreads to the face, blisters become large, or there are signs of infection."
+        }
+      ],
+      "billed": [
+        "99203",
+        "L23.7"
+      ],
+      "expected": {
+        "claim": [
+          "99202",
+          "L23.7"
+        ],
+        "scored": {
+          "em": "99202",
+          "icd": [
+            "L23.7"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM straightforward. Problems: one self-limited problem (localized plant contact dermatitis). Data: none. Risk: minimal (cool compresses and oatmeal baths, no medication). Data and risk are both minimal, so 99202 holds even if the problem were read as acute uncomplicated (low).",
+        "codes": {
+          "99202": "Office visit, new patient (first visit to this practice), straightforward MDM; no time statement.",
+          "L23.7": "Allergic contact dermatitis due to plants, except food: poison ivy named in the assessment."
+        },
+        "modifiers": {},
+        "billing": "Billed 99203 (low MDM). With minimal data and minimal risk low MDM cannot be met: one level too high."
+      }
+    },
+    {
+      "id": "GS-02",
+      "title": "Acute otitis media in a child, new patient",
+      "visit": {
+        "service_date": "2025-11-03",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "quillfeather",
+        "payer": "medicaid"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 7
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Right ear pain since last night."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "7-year-old boy brought by his mother, who gives the history because he cannot give the timeline himself. The family moved to the area last month and is establishing care here; this is his first visit. Runny nose for 4 days, then right ear pain overnight; he woke up crying. No fever measured at home. Eating, drinking and playing normally today. No ear drainage. No antibiotics in the last 30 days. No known drug allergies."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for runny nose and right ear pain. Negative for fever, vomiting, rash, sore throat and neck stiffness."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "Temp",
+              "HR",
+              "RR",
+              "SpO2",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "98.9 F",
+                "96",
+                "18",
+                "99%",
+                "24 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Alert, playful, no distress. Right tympanic membrane bulging and erythematous with purulent fluid behind it; no perforation and no drainage in the canal. Left tympanic membrane normal. Nasal mucosa congested with clear discharge. Pharynx normal. Neck supple without lymphadenopathy. Lungs clear."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acute suppurative otitis media of the right ear without rupture of the tympanic membrane. Amoxicillin 90 mg/kg/day, 1080 mg twice daily for 10 days, prescription sent. Ibuprofen as needed for pain. Return in 48 to 72 hours if not improving, or sooner for fever, ear drainage or worsening pain."
+        }
+      ],
+      "billed": [
+        "99203",
+        "H66.009"
+      ],
+      "expected": {
+        "claim": [
+          "99203",
+          "H66.001"
+        ],
+        "scored": {
+          "em": "99203",
+          "icd": [
+            "H66.001"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Low",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one acute uncomplicated illness (afebrile otitis media without systemic symptoms). Data: limited, by the assessment requiring an independent historian (the mother gives the history). Risk: moderate (prescription drug management, amoxicillin). The middle element is low: 99203.",
+        "codes": {
+          "99203": "Office visit, new patient (first visit; the family is establishing care), low MDM.",
+          "H66.001": "Acute suppurative otitis media without spontaneous rupture of ear drum, right ear: purulent effusion, no perforation, right side documented."
+        },
+        "modifiers": {},
+        "billing": "E/M billed correctly. Billed H66.009 (unspecified ear); the note documents the right ear, so H66.001."
+      }
+    },
+    {
+      "id": "GS-03",
+      "title": "Establishing care for hypertension and hyperlipidemia, new Medicare patient",
+      "visit": {
+        "service_date": "2025-11-18",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 68
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Establish primary care; blood pressure running high at home."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "68-year-old woman establishing care after her previous primary care clinician retired. Outside records from Riverbend Clinic were reviewed today: hypertension for 6 years on lisinopril 20 mg daily and hyperlipidemia on atorvastatin 20 mg daily; last lipid panel 14 months ago. Home blood pressures over the past month have been 148 to 156 systolic and 88 to 94 diastolic. She takes her medicines daily without side effects. No chest pain, headache, vision change, shortness of breath or swelling. She wants this practice to take over her ongoing care."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for chest pain, palpitations, shortness of breath, leg swelling, headache and vision change."
+        },
+        {
+          "heading": "Medications",
+          "table": {
+            "columns": [
+              "Medication",
+              "Dose",
+              "Directions"
+            ],
+            "rows": [
+              [
+                "Lisinopril",
+                "20 mg",
+                "Once daily"
+              ],
+              [
+                "Atorvastatin",
+                "20 mg",
+                "Once daily at bedtime"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "158/94, repeat 154/92",
+                "76",
+                "14",
+                "98.1 F",
+                "98%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular rate and rhythm, no murmur. Lungs clear. No carotid bruits. No peripheral edema."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Riverbend Clinic notes and medication list (outside records, one source). Ordered today: comprehensive metabolic panel and lipid panel."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Essential hypertension, above goal on lisinopril. Add amlodipine 5 mg daily, prescription sent. Continue lisinopril 20 mg daily. Keep a home blood pressure log; recheck in 4 weeks. Comprehensive metabolic panel today.\n2. Hyperlipidemia. Continue atorvastatin 20 mg daily. Lipid panel today.\nThis practice will be her continuing primary care home for both conditions."
+        }
+      ],
+      "billed": [
+        "99205",
+        "G2211",
+        "I10",
+        "E78.5"
+      ],
+      "expected": {
+        "claim": [
+          "99204",
+          "G2211",
+          "I10",
+          "E78.5"
+        ],
+        "scored": {
+          "em": "99204",
+          "icd": [
+            "E78.5",
+            "I10"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Moderate",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (hypertension above goal is a chronic illness with progression, plus stable hyperlipidemia). Data: moderate (review of external notes from one source plus two unique tests ordered: three category 1 items). Risk: moderate (prescription drug management, amlodipine added). No element reaches high: 99204.",
+        "codes": {
+          "99204": "Office visit, new patient, moderate MDM.",
+          "G2211": "Medicare visit complexity add-on: the note states this practice becomes her continuing focal point for primary care; office E/M without modifier 25.",
+          "I10": "Essential (primary) hypertension.",
+          "E78.5": "Hyperlipidemia, unspecified: documented as hyperlipidemia without a type."
+        },
+        "modifiers": {},
+        "billing": "Billed 99205 (high MDM). No element reaches high: one level too high. G2211 and the diagnoses are correct."
+      }
+    },
+    {
+      "id": "GS-04",
+      "title": "Chest pressure sent to the emergency department, new patient",
+      "visit": {
+        "service_date": "2026-01-13",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 55
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Chest pressure since this morning."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "55-year-old man, new to the practice, seen in the same-day internal medicine clinic. Substernal chest pressure began at 7 am while walking from the parking lot, rated 6 of 10, radiating to the left arm, coming and going for the past 3 hours and not related to breathing or position. He has never had this before. No known heart disease. Not currently taking any medicines."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for chest pressure. Negative for fever, cough, leg swelling, abdominal pain and recent travel."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "132/84",
+                "96",
+                "18",
+                "98.4 F",
+                "97%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Uncomfortable but alert. Heart regular, no murmur, rub or gallop. Lungs clear. Chest wall not tender to palpation. Calves soft and nontender."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Discussed his presentation by telephone with the emergency department physician at the receiving hospital before transfer."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Substernal chest pressure radiating to the left arm, concerning for acute coronary syndrome. Aspirin 324 mg chewed in clinic. Emergency medical services called; transferred to the emergency department for evaluation and monitoring. The emergency physician accepted the transfer."
+        }
+      ],
+      "billed": [
+        "99205",
+        "R07.89"
+      ],
+      "expected": {
+        "claim": [
+          "99205",
+          "R07.89"
+        ],
+        "scored": {
+          "em": "99205",
+          "icd": [
+            "R07.89"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "High",
+        "data": "Moderate",
+        "risk": "High"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM high. Problems: high (acute illness that poses a threat to life or bodily function: possible acute coronary syndrome). Data: moderate (discussion of management with an external physician). Risk: high (decision regarding hospitalization: emergency transfer). Problems and risk at high: 99205.",
+        "codes": {
+          "99205": "Office visit, new patient, high MDM.",
+          "R07.89": "Other chest pain: chest pressure. Acute coronary syndrome is only suspected, and the outpatient guidelines (Section IV.H) code the symptom rather than a diagnosis qualified as concerning for or possible."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-05",
+      "title": "Viral upper respiratory infection decided by time, new patient",
+      "visit": {
+        "service_date": "2026-02-03",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 29
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Sore throat and stuffy nose for 3 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "29-year-old woman, new patient, seen in the walk-in session. Sore throat, nasal congestion and a mild cough for 3 days. No fever, no trouble swallowing, no shortness of breath. She is worried about strep because a coworker was diagnosed last week. She brought the record of an urgent care visit from last year and asked that it be reviewed."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for sore throat, congestion and cough. Negative for fever, ear pain, rash and shortness of breath."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "116/72",
+                "78",
+                "14",
+                "98.6 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Pharynx mildly red without exudate; tonsils not enlarged. No anterior cervical lymphadenopathy. Tympanic membranes normal. Lungs clear. Centor score 0 (cough present, no fever, no exudate, no adenopathy)."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Urgent care note from last year (one outside source)."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acute viral upper respiratory infection. Strep testing is not indicated with a Centor score of 0; we went over why at length and she agreed. Rest, fluids and warm salt-water gargles. Return for fever, worsening throat pain or trouble swallowing."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 32 minutes, including review of the outside urgent care record, history and examination, counseling about viral infections and strep testing, and documentation."
+        }
+      ],
+      "billed": [
+        "99202",
+        "J06.9"
+      ],
+      "expected": {
+        "claim": [
+          "99203",
+          "J06.9"
+        ],
+        "scored": {
+          "em": "99203",
+          "icd": [
+            "J06.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": 32,
+      "rationale": {
+        "level": "Time. MDM is straightforward (one self-limited problem; one external note reviewed, below limited data; minimal risk from rest, fluids and gargles), which gives 99202. The documented total time of 32 minutes falls in the 99203 range (30-44 minutes), so time sets the level: 99203.",
+        "codes": {
+          "99203": "Office visit, new patient, selected on total time (32 minutes).",
+          "J06.9": "Acute upper respiratory infection, unspecified: acute viral upper respiratory infection. Sore throat and cough are integral to it and not coded."
+        },
+        "modifiers": {},
+        "billing": "Billed 99202 from MDM alone; the time statement supports 99203: one level too low."
+      }
+    },
+    {
+      "id": "GS-06",
+      "title": "Painful diabetic polyneuropathy with prolonged time, new Medicare patient",
+      "visit": {
+        "service_date": "2026-03-10",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 70
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Establish care for diabetes and blood pressure; burning feet."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "70-year-old man establishing care after moving from another state. Type 2 diabetes for 12 years on metformin 1000 mg twice daily. Burning and numbness in both feet for 2 years, worse at night and now interrupting his sleep; he was told elsewhere that it is diabetic nerve damage. Hypertension on losartan 50 mg daily. He brought 3 years of outside primary care and endocrinology records, which were reviewed in detail earlier the same day. Last A1c 7.4 four months ago per those records. He wants this practice to manage his care going forward."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for burning and numbness in both feet. Negative for chest pain, vision change, foot sores and urinary symptoms."
+        },
+        {
+          "heading": "Medications",
+          "table": {
+            "columns": [
+              "Medication",
+              "Dose",
+              "Directions"
+            ],
+            "rows": [
+              [
+                "Metformin",
+                "1000 mg",
+                "Twice daily"
+              ],
+              [
+                "Losartan",
+                "50 mg",
+                "Once daily"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "134/80",
+                "70",
+                "14",
+                "97.9 F",
+                "98%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular, lungs clear. Feet: no ulcers or calluses; monofilament sensation absent at 6 of 10 sites on each foot; vibration reduced at both great toes; ankle reflexes absent; dorsalis pedis pulses 2+ bilaterally."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Outside primary care and endocrinology records (3 years). Ordered today: hemoglobin A1c, basic metabolic panel and urine albumin-to-creatinine ratio."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Type 2 diabetes mellitus with diabetic polyneuropathy, painful. Continue metformin 1000 mg twice daily. Start duloxetine 30 mg daily for neuropathic pain, prescription sent. Labs as above. Daily foot checks; podiatry referral.\n2. Essential hypertension, at goal. Continue losartan 50 mg daily.\nThis practice will be his continuing primary care home."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the visit: 95 minutes, including the review of 3 years of outside records earlier the same day, history and examination, counseling on neuropathy treatment options and foot care, ordering, the referral and documentation."
+        }
+      ],
+      "billed": [
+        "99205",
+        "G2211",
+        "E11.42",
+        "Z79.84",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99205",
+          "G2212",
+          "G2211",
+          "E11.42",
+          "Z79.84",
+          "I10"
+        ],
+        "scored": {
+          "em": "99205",
+          "icd": [
+            "E11.42",
+            "I10",
+            "Z79.84"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Moderate",
+        "risk": "Moderate"
+      },
+      "total_minutes": 95,
+      "rationale": {
+        "level": "Time. MDM is moderate (painful diabetic polyneuropathy needing new treatment plus stable hypertension; external records plus three tests ordered; prescription drug management), which gives 99204. Total time of 95 minutes is above the 60 minutes of 99205, so time sets 99205. Medicare reports prolonged time with G2212 from 89 minutes with 99205 (the end of the 60-74 minute range plus 15): 95 minutes is one unit.",
+        "codes": {
+          "99205": "Office visit, new patient, selected on total time (95 minutes).",
+          "G2212": "Medicare prolonged office service, each 15 minutes beyond 89 minutes with 99205: one unit at 95 minutes. CPT 99417 is not used for Medicare.",
+          "G2211": "Medicare visit complexity add-on: this practice becomes his continuing focal point for primary care; no modifier 25.",
+          "E11.42": "Type 2 diabetes mellitus with diabetic polyneuropathy: the neuropathy is documented as diabetic.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs: required by the use-additional-code note at E11 for metformin.",
+          "I10": "Essential (primary) hypertension, at goal."
+        },
+        "modifiers": {},
+        "billing": "E/M billed correctly; the prolonged-service add-on G2212 was left off."
+      }
+    },
+    {
+      "id": "GS-07",
+      "title": "Hypothyroidism decided by time, new patient",
+      "visit": {
+        "service_date": "2026-04-07",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 45
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "New patient; hypothyroidism follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "45-year-old woman establishing care with internal medicine. Hypothyroidism diagnosed 5 years ago, treated with levothyroxine 75 mcg daily. She feels well, with no palpitations, weight change, heat or cold intolerance. She takes a calcium supplement with breakfast and has many questions about how to time her thyroid medicine and whether her dose is right."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for palpitations, weight change, tremor, constipation and hair loss."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "122/78",
+                "68",
+                "14",
+                "98.0 F",
+                "64 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Thyroid normal in size, smooth, without nodules. Heart regular. Reflexes normal with a normal relaxation phase."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Ordered today: TSH and free T4."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Hypothyroidism, clinically euthyroid. Continue levothyroxine 75 mcg daily, refill sent; take it on an empty stomach and at least 4 hours apart from calcium. TSH and free T4 today; adjust the dose if out of range."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 48 minutes, including history, examination, extended counseling on levothyroxine timing and interactions, ordering and documentation."
+        }
+      ],
+      "billed": [
+        "99204",
+        "E03.9"
+      ],
+      "expected": {
+        "claim": [
+          "99204",
+          "E03.9"
+        ],
+        "scored": {
+          "em": "99204",
+          "icd": [
+            "E03.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Low",
+        "risk": "Moderate"
+      },
+      "total_minutes": 48,
+      "rationale": {
+        "level": "Time. MDM is low (one stable chronic illness; two unique tests ordered, limited data; prescription drug management, moderate risk), which gives 99203. Total time of 48 minutes falls in the 99204 range (45-59 minutes): 99204.",
+        "codes": {
+          "99204": "Office visit, new patient (first visit with this practice), selected on total time (48 minutes).",
+          "E03.9": "Hypothyroidism, unspecified: no cause documented."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-08",
+      "title": "Acute cystitis, new patient",
+      "visit": {
+        "service_date": "2026-05-12",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 31
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Burning with urination for 2 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "31-year-old woman, new patient, seen in the walk-in session. Burning with urination, frequency and urgency for 2 days. No fever, chills, back or flank pain, vaginal discharge or visible blood in the urine. Last menstrual period 2 weeks ago; not pregnant. No urinary infections in the past year. No drug allergies."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for burning with urination, frequency and urgency. Negative for fever, flank pain, nausea and vaginal discharge."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "114/70",
+                "74",
+                "14",
+                "98.3 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Abdomen soft with mild suprapubic tenderness. No costovertebral angle tenderness."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Ordered: urine culture, sent to the outside laboratory."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acute cystitis without hematuria. Nitrofurantoin 100 mg twice daily for 5 days, prescription sent. Urine culture pending; we will call if the organism is resistant. Fluids. Return for fever, flank pain or vomiting."
+        }
+      ],
+      "billed": [
+        "99204",
+        "N30.00"
+      ],
+      "expected": {
+        "claim": [
+          "99203",
+          "N30.00"
+        ],
+        "scored": {
+          "em": "99203",
+          "icd": [
+            "N30.00"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one acute uncomplicated illness (cystitis without systemic symptoms). Data: one test ordered (urine culture), below limited. Risk: moderate (prescription drug management). The middle element is low: 99203.",
+        "codes": {
+          "99203": "Office visit, new patient, low MDM.",
+          "N30.00": "Acute cystitis without hematuria: no blood in the urine documented."
+        },
+        "modifiers": {},
+        "billing": "Billed 99204 (moderate MDM). Problems are low and data minimal, so moderate cannot be met: one level too high."
+      }
+    },
+    {
+      "id": "GS-09",
+      "title": "Common cold, established patient",
+      "visit": {
+        "service_date": "2025-10-21",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 41
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Stuffy nose and sore throat for 2 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "41-year-old man, an established patient of the practice, seen in the walk-in session. Two days of nasal congestion, sneezing and a scratchy throat. No fever, ear pain, facial pain or cough. His daughter has a cold."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for congestion and sneezing. Negative for fever, ear pain, facial pain, cough and shortness of breath."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "124/80",
+                "70",
+                "14",
+                "98.4 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Nasal mucosa swollen with clear discharge. Pharynx mildly red without exudate. Tympanic membranes normal. No sinus tenderness. Lungs clear."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acute nasopharyngitis (common cold). Rest, fluids, saline nasal rinses and warm salt-water gargles. No medication prescribed or recommended. Return if symptoms last beyond 10 days or a fever develops."
+        }
+      ],
+      "billed": [
+        "99213",
+        "J00"
+      ],
+      "expected": {
+        "claim": [
+          "99212",
+          "J00"
+        ],
+        "scored": {
+          "em": "99212",
+          "icd": [
+            "J00"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM straightforward. Problems: one self-limited problem (common cold). Data: none. Risk: minimal (rest, fluids, saline rinses, gargles). 99212.",
+        "codes": {
+          "99212": "Office visit, established patient, straightforward MDM.",
+          "J00": "Acute nasopharyngitis [common cold]."
+        },
+        "modifiers": {},
+        "billing": "Billed 99213 (low MDM); data and risk are minimal: one level too high."
+      }
+    },
+    {
+      "id": "GS-10",
+      "title": "Stable hypothyroidism, established Medicare patient",
+      "visit": {
+        "service_date": "2025-12-02",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 71
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Thyroid follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "71-year-old woman followed here for primary care since 2017. Hypothyroidism treated with levothyroxine 88 mcg daily. She feels well, with no palpitations, weight change, tremor or cold intolerance, and takes the medicine correctly. No other concerns today."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for palpitations, weight change, fatigue, constipation and hair loss."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "126/76",
+                "66",
+                "14",
+                "97.8 F",
+                "61 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Thyroid not enlarged, no nodules. Heart regular. Lungs clear. No edema."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Hypothyroidism, stable on the current dose. Continue levothyroxine 88 mcg daily, refill sent. TSH before the next visit in 12 months. We continue as her primary care home."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "E03.9"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "G2211",
+          "E03.9"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "E03.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: none. Risk: moderate (prescription drug management, levothyroxine continued with a refill). The middle element is low: 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2017, the continuing focal point; no modifier 25.",
+          "E03.9": "Hypothyroidism, unspecified."
+        },
+        "modifiers": {},
+        "billing": "Billed 99214 (moderate MDM). One stable chronic illness and no data: one level too high."
+      }
+    },
+    {
+      "id": "GS-11",
+      "title": "Diabetes with chronic kidney disease and hypertension, low-specificity diagnoses",
+      "visit": {
+        "service_date": "2026-01-20",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 74
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Diabetes and kidney follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "74-year-old man followed here for primary care since 2015. Type 2 diabetes treated with metformin 500 mg twice daily, reduced last year because of kidney function. Hypertension treated with lisinopril 20 mg daily. Chronic kidney disease stage 3a, which his nephrologist attributes to diabetes and hypertension. Home blood pressures in the 120s over 70s. No low blood sugars, swelling or urinary symptoms."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for chest pain, shortness of breath, leg swelling, low blood sugars and urinary symptoms."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "128/76",
+                "72",
+                "14",
+                "97.9 F",
+                "84 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular, lungs clear, no edema. Feet: intact skin, normal monofilament sensation."
+        },
+        {
+          "heading": "Laboratory results",
+          "table": {
+            "columns": [
+              "Test (5 days ago, ordered by nephrology)",
+              "Result"
+            ],
+            "rows": [
+              [
+                "Hemoglobin A1c",
+                "7.0%"
+              ],
+              [
+                "Creatinine",
+                "1.4 mg/dL"
+              ],
+              [
+                "eGFR",
+                "52 mL/min/1.73 m2"
+              ],
+              [
+                "Potassium",
+                "4.6 mmol/L"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Reviewed the basic metabolic panel and hemoglobin A1c drawn 5 days ago on the nephrology office's order. Ordered today: urine albumin-to-creatinine ratio."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Type 2 diabetes mellitus with diabetic chronic kidney disease, stage 3a. A1c 7.0%, at goal. Continue metformin 500 mg twice daily; eGFR 52 allows the current dose.\n2. Hypertensive chronic kidney disease, stage 3a. Blood pressure at goal; continue lisinopril 20 mg daily. Urine albumin-to-creatinine ratio today.\nReturn in 3 months; we continue as his primary care home."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "E11.9",
+        "I10",
+        "N18.9"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "G2211",
+          "E11.22",
+          "I12.9",
+          "N18.31",
+          "Z79.84"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E11.22",
+            "I12.9",
+            "N18.31",
+            "Z79.84"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Moderate",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: two stable chronic illnesses (diabetes with kidney disease, hypertension). Data: moderate (results of two unique tests ordered by another office reviewed, plus one test ordered: three category 1 items). Risk: moderate (prescription drug management). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2015, the continuing focal point; no modifier 25.",
+          "E11.22": "Type 2 diabetes mellitus with diabetic chronic kidney disease: documented as diabetic kidney disease; the ICD-10-CM 'with' convention also links them.",
+          "I12.9": "Hypertensive chronic kidney disease with stage 1 through 4 CKD: ICD-10-CM presumes the link between hypertension and CKD (guideline I.C.9.a.2).",
+          "N18.31": "Chronic kidney disease, stage 3a: required by the use-additional-code notes at E11.22 and I12.9.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs (metformin): required by the note at E11."
+        },
+        "modifiers": {},
+        "billing": "E/M and G2211 billed correctly. Diagnoses billed at low specificity: E11.9 for diabetic kidney disease (E11.22), I10 where the hypertension-with-CKD combination I12.9 applies, N18.9 where stage 3a is documented (N18.31), and Z79.84 left off."
+      }
+    },
+    {
+      "id": "GS-12",
+      "title": "Decompensated heart failure admitted from the office, established Medicare patient",
+      "visit": {
+        "service_date": "2026-02-17",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 78
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Worse shortness of breath and leg swelling for 5 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "78-year-old woman with hypertension and chronic heart failure with reduced ejection fraction (ejection fraction 30% on an echocardiogram a year ago), seen in the same-day internal medicine clinic, where Dr. Tessaly last saw her a year ago; her primary care clinician practices elsewhere. Over 5 days her breathing has worsened; she is now short of breath walking across a room, sleeps on 3 pillows, and her home scale shows a 4 kg gain. Leg swelling is worse. She takes furosemide 40 mg daily, carvedilol 12.5 mg twice daily and sacubitril-valsartan 49/51 mg twice daily, and has not missed doses."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for shortness of breath, orthopnea and leg swelling. Negative for chest pain, fever and productive cough."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "152/88",
+                "104",
+                "24",
+                "98.1 F",
+                "90% room air",
+                "79 kg (75 kg last month)"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Short of breath at rest, speaking in short sentences. Jugular venous pressure elevated to the angle of the jaw. Crackles in both lower lung fields. Heart tachycardic and regular, S3 present. Pitting edema 3+ to the knees."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Echocardiogram report from last year (hospital record). Discussed her condition and the admission by telephone with the hospitalist on call."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acute on chronic systolic heart failure with hypertension (hypertensive heart disease with heart failure), decompensated with volume overload. Not safe to manage at home given breathlessness at rest. Direct admission to the hospital arranged with the hospitalist for intravenous diuresis and monitoring. Her primary care clinician will be notified."
+        }
+      ],
+      "billed": [
+        "99214",
+        "I50.9",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99215",
+          "I11.0",
+          "I50.23"
+        ],
+        "scored": {
+          "em": "99215",
+          "icd": [
+            "I11.0",
+            "I50.23"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "High",
+        "data": "Moderate",
+        "risk": "High"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM high. Problems: high (chronic illness with severe exacerbation: decompensated heart failure with breathlessness at rest). Data: moderate (discussion of management with an external physician; external echocardiogram report). Risk: high (decision regarding hospitalization). 99215.",
+        "codes": {
+          "99215": "Office visit, established patient, high MDM.",
+          "I11.0": "Hypertensive heart disease with heart failure: ICD-10-CM presumes the link between hypertension and heart failure (guideline I.C.9.a.1).",
+          "I50.23": "Acute on chronic systolic (congestive) heart failure: reduced ejection fraction and acute decompensation documented; required with I11.0 by its use-additional-code note."
+        },
+        "modifiers": {},
+        "billing": "Billed 99214 (moderate MDM); severe exacerbation and the hospitalization decision support high: one level too low. Billed I50.9 and I10; the note supports the combination I11.0 with the type and acuity I50.23. No G2211: the same-day clinic is not her continuing focal point."
+      }
+    },
+    {
+      "id": "GS-13",
+      "title": "Hyperlipidemia counseling decided by time, established patient",
+      "visit": {
+        "service_date": "2026-03-24",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 52
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Cholesterol follow-up; questions about statin side effects."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "52-year-old man with hyperlipidemia treated with atorvastatin 40 mg daily, seen by Dr. Tessaly for the past 3 years. LDL 88 mg/dL on last month's panel, ordered at his previous visit, at his goal. He has no muscle aches or other symptoms, but read online that statins cause memory loss and diabetes and is thinking about stopping. He wants to talk through the evidence and his options."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for muscle pain, weakness, chest pain and memory problems."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "124/78",
+                "70",
+                "14",
+                "98.2 F",
+                "88 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular, lungs clear. Normal strength in all extremities."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Hyperlipidemia, at goal on atorvastatin. Long discussion of his 10-year cardiovascular risk, the evidence on memory effects and diabetes risk, and the alternatives. He chose to continue atorvastatin 40 mg daily; refill sent. Diet and exercise counseling. Lipid panel in 12 months."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 34 minutes, most of it counseling, plus documentation."
+        }
+      ],
+      "billed": [
+        "99213",
+        "E78.5"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "E78.5"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E78.5"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": 34,
+      "rationale": {
+        "level": "Time. MDM is low (one stable chronic illness; last month's panel was ordered and counted at the previous visit; prescription drug management), which gives 99213. Total time of 34 minutes falls in the 99214 range (30-39 minutes): 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, selected on total time (34 minutes).",
+          "E78.5": "Hyperlipidemia, unspecified."
+        },
+        "modifiers": {},
+        "billing": "Billed 99213 from MDM; the documented 34 minutes supports 99214: one level too low."
+      }
+    },
+    {
+      "id": "GS-14",
+      "title": "Hypertension and reflux decided by time, established patient",
+      "visit": {
+        "service_date": "2026-04-21",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 58
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Blood pressure follow-up and heartburn."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "58-year-old woman followed by Dr. Tessaly for hypertension, on amlodipine 10 mg daily with home readings in the 130s over 80s. Gastroesophageal reflux with heartburn 3 nights a week despite over-the-counter famotidine 20 mg at bedtime. No trouble swallowing, weight loss, vomiting or black stools. Late dinners most nights."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for heartburn. Negative for trouble swallowing, weight loss, vomiting, black stools, chest pain and cough."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "132/82",
+                "74",
+                "14",
+                "98.0 F",
+                "70 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular, lungs clear. Abdomen soft, nontender, no masses."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Essential hypertension, at goal. Continue amlodipine 10 mg daily.\n2. Gastroesophageal reflux disease without esophagitis, not controlled on famotidine. Stop famotidine; start omeprazole 20 mg daily before breakfast for 8 weeks, prescription sent. Detailed counseling on meal timing, raising the head of the bed and trigger foods. No alarm features, so no endoscopy now."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 46 minutes, including history, examination, extended counseling on reflux and lifestyle changes, and documentation."
+        }
+      ],
+      "billed": [
+        "99215",
+        "I10",
+        "K21.9"
+      ],
+      "expected": {
+        "claim": [
+          "99215",
+          "I10",
+          "K21.9"
+        ],
+        "scored": {
+          "em": "99215",
+          "icd": [
+            "I10",
+            "K21.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": 46,
+      "rationale": {
+        "level": "Time. MDM is moderate (two chronic illnesses, one not at goal; no data; prescription drug management), which gives 99214. Total time of 46 minutes falls in the 99215 range (40-54 minutes): 99215.",
+        "codes": {
+          "99215": "Office visit, established patient, selected on total time (46 minutes).",
+          "I10": "Essential (primary) hypertension.",
+          "K21.9": "Gastro-esophageal reflux disease without esophagitis: no esophagitis documented or suspected."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-15",
+      "title": "Worsening depression and anxiety with prolonged time, established Medicare patient",
+      "visit": {
+        "service_date": "2026-05-19",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 66
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Depression and anxiety follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "66-year-old woman followed here for primary care since 2019, treated for recurrent major depressive disorder and generalized anxiety disorder with sertraline 100 mg daily. Since her husband's hospitalization 6 weeks ago her mood has been low most days, with poor concentration, early waking and constant worry. She denies thoughts of self-harm or suicide, has no plan or intent, and lives with her daughter. No alcohol or drug use."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for low mood, poor sleep and worry. Negative for suicidal thoughts, hallucinations and weight loss."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "128/78",
+                "78",
+                "14",
+                "98.1 F",
+                "66 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Mental status: tearful at times, good eye contact, normal speech, linear thought process, no suicidal or homicidal ideation, insight and judgment intact."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Major depressive disorder, recurrent, moderate, worse with the current stressor. Increase sertraline to 150 mg daily, prescription sent. Safety plan written with her and her daughter; crisis line numbers given.\n2. Generalized anxiety disorder, worse. Referred to a therapist for cognitive behavioral therapy; called the therapy office with her to book the first appointment.\nFollow up in 3 weeks. We continue as her primary care home."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the visit: 72 minutes, including history, mental status examination, counseling, safety planning with the patient and her daughter, care coordination with the therapy office, and documentation."
+        }
+      ],
+      "billed": [
+        "99215",
+        "G2212",
+        "G2211",
+        "F33.1",
+        "F41.1"
+      ],
+      "expected": {
+        "claim": [
+          "99215",
+          "G2212",
+          "G2211",
+          "F33.1",
+          "F41.1"
+        ],
+        "scored": {
+          "em": "99215",
+          "icd": [
+            "F33.1",
+            "F41.1"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": 72,
+      "rationale": {
+        "level": "Time. MDM is moderate (chronic illnesses with exacerbation; no data; prescription drug management), which gives 99214. Total time of 72 minutes is above the 40 minutes of 99215, so time sets 99215. Medicare's G2212 starts at 69 minutes with 99215: 72 minutes is one unit.",
+        "codes": {
+          "99215": "Office visit, established patient, selected on total time (72 minutes).",
+          "G2212": "Medicare prolonged office service: 72 minutes with 99215 is one unit (69-83 minutes). CPT 99417 is not used for Medicare.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2019, the continuing focal point; no modifier 25.",
+          "F33.1": "Major depressive disorder, recurrent, moderate.",
+          "F41.1": "Generalized anxiety disorder."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-16",
+      "title": "Allergic rhinitis counseling decided by time, established patient",
+      "visit": {
+        "service_date": "2026-06-09",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 37
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Allergy symptoms and questions about allergy testing."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "37-year-old woman followed here for primary care. Allergic rhinitis each spring from tree pollen, with sneezing, itchy eyes and congestion. This year her symptoms are controlled with daily saline rinses and keeping the windows closed; she does not want medicine. She asks about allergy testing and allergy shots."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for sneezing. Negative for wheezing, shortness of breath, sinus pain and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "118/76",
+                "68",
+                "14",
+                "98.3 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Nasal mucosa pale and mildly swollen. Conjunctivae mildly injected. Lungs clear without wheeze."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Allergic rhinitis due to tree pollen, controlled without medication. Continue saline rinses and pollen avoidance. Discussed allergy testing and immunotherapy at length; she will consider a referral if her symptoms worsen. No medication started."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 24 minutes, including counseling on allergen avoidance, testing and immunotherapy, and documentation."
+        }
+      ],
+      "billed": [
+        "99214",
+        "J30.1"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "J30.1"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "J30.1"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": 24,
+      "rationale": {
+        "level": "Time. MDM is straightforward (one stable chronic illness is low on its own, but there is no data and the risk of saline rinses and avoidance is minimal, so two elements are straightforward), which gives 99212. Total time of 24 minutes falls in the 99213 range (20-29 minutes): 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, selected on total time (24 minutes).",
+          "J30.1": "Allergic rhinitis due to pollen: tree pollen documented."
+        },
+        "modifiers": {},
+        "billing": "Billed 99214. Neither MDM (straightforward) nor time (24 minutes, below 30) supports it: one level too high."
+      }
+    },
+    {
+      "id": "GS-17",
+      "title": "Hypertension above goal with an unbilled hyperlipidemia, established Medicare patient",
+      "visit": {
+        "service_date": "2026-07-14",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 69
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Blood pressure and cholesterol follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "69-year-old man followed here for primary care since 2016. Hypertension on lisinopril 10 mg daily; home readings over the past month have been 142 to 150 systolic. Hyperlipidemia on rosuvastatin 10 mg daily, tolerating it well. No chest pain, headaches, shortness of breath or swelling."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for chest pain, headache, shortness of breath, leg swelling and muscle pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "148/90",
+                "74",
+                "14",
+                "98.0 F",
+                "90 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular, no murmur. Lungs clear. No edema."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Ordered: basic metabolic panel in 2 weeks after the dose change."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Essential hypertension, above goal. Increase lisinopril to 20 mg daily, prescription sent. Basic metabolic panel in 2 weeks.\n2. Hyperlipidemia, stable. Continue rosuvastatin 10 mg daily, refill sent.\nReturn in 6 weeks; we continue as his primary care home."
+        }
+      ],
+      "billed": [
+        "99215",
+        "G2211",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "G2211",
+          "I10",
+          "E78.5"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E78.5",
+            "I10"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (hypertension above goal, a chronic illness with progression, plus stable hyperlipidemia). Data: one test ordered, below limited. Risk: moderate (prescription drug management). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2016, the continuing focal point; no modifier 25.",
+          "I10": "Essential (primary) hypertension.",
+          "E78.5": "Hyperlipidemia, unspecified: addressed and managed (rosuvastatin continued) but not billed."
+        },
+        "modifiers": {},
+        "billing": "Billed 99215 (high MDM). No element reaches high: one level too high. Hyperlipidemia was managed at the visit but left off the claim."
+      }
+    },
+    {
+      "id": "GS-18",
+      "title": "Controlled hypertension with an unsupported asthma code, established patient",
+      "visit": {
+        "service_date": "2026-08-11",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 49
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Blood pressure check."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "49-year-old woman followed here for primary care. Hypertension treated with hydrochlorothiazide 25 mg daily; home readings 118 to 126 over 72 to 80. No side effects. She has never had asthma or any lung disease and uses no inhalers. No other concerns."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for chest pain, shortness of breath, wheezing, cough, dizziness and leg cramps."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "122/78",
+                "70",
+                "14",
+                "98.1 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Heart regular. Lungs clear without wheeze. No edema."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Essential hypertension, controlled. Continue hydrochlorothiazide 25 mg daily, refill sent. Return in 6 months."
+        }
+      ],
+      "billed": [
+        "99213",
+        "I10",
+        "J45.909"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "I10"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "I10"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: none. Risk: moderate (prescription drug management). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM.",
+          "I10": "Essential (primary) hypertension."
+        },
+        "modifiers": {},
+        "billing": "E/M billed correctly. J45.909 (asthma) was billed, but the note documents no asthma and says she has never had it, so it is removed."
+      }
+    },
+    {
+      "id": "GS-19",
+      "title": "Worsening painful diabetic polyneuropathy, established Medicare patient",
+      "visit": {
+        "service_date": "2026-09-15",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 72
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Burning feet keeping me up at night."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "72-year-old man followed here for primary care since 2014. Type 2 diabetes with diabetic polyneuropathy diagnosed 2 years ago, treated with metformin 1000 mg twice daily and glipizide 5 mg daily. Over the past 3 months the burning pain in both feet has worsened and now wakes him most nights. No foot sores. Home glucose readings 110 to 150."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for burning foot pain and poor sleep. Negative for foot sores, low blood sugars, chest pain and vision change."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "130/78",
+                "72",
+                "14",
+                "98.0 F",
+                "86 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Feet: skin intact, no ulcers; monofilament sensation reduced at 5 of 10 sites on each foot; vibration reduced at both great toes; pulses intact."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Type 2 diabetes mellitus with diabetic polyneuropathy, neuropathic pain worse. Start gabapentin 100 mg at bedtime, increasing by 100 mg every 3 days to 300 mg at bedtime as tolerated, prescription sent. Continue metformin and glipizide. Daily foot checks; podiatry visit due. Return in 4 weeks; we continue as his primary care home."
+        }
+      ],
+      "billed": [
+        "99213",
+        "G2211",
+        "E11.42",
+        "Z79.84"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "G2211",
+          "E11.42",
+          "Z79.84"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E11.42",
+            "Z79.84"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (chronic illness with progression: worsening neuropathic pain). Data: none. Risk: moderate (prescription drug management, gabapentin started). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2014, the continuing focal point; no modifier 25.",
+          "E11.42": "Type 2 diabetes mellitus with diabetic polyneuropathy.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs (metformin and glipizide): required by the note at E11."
+        },
+        "modifiers": {},
+        "billing": "Billed 99213 (low MDM); progression with a new prescription supports moderate: one level too low."
+      }
+    },
+    {
+      "id": "GS-20",
+      "title": "Asthma exacerbation, established Medicaid patient",
+      "visit": {
+        "service_date": "2026-10-06",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicaid"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 24
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Wheezing and cough for 3 days."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "24-year-old woman followed here for primary care, with moderate persistent asthma on budesonide-formoterol 160/4.5 two puffs twice daily. A cold last week has resolved, but for 3 days she has had wheezing, chest tightness and cough, using albuterol every 4 hours with partial relief. No emergency visits or steroid courses this year."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for wheezing, cough and chest tightness. Negative for fever, sputum and chest pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2",
+              "Peak flow"
+            ],
+            "rows": [
+              [
+                "118/74",
+                "96",
+                "20",
+                "98.4 F",
+                "96%",
+                "300 L/min (personal best 430)"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Speaks full sentences, short of breath only with exertion. Diffuse expiratory wheeze, good air movement, no retractions."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Moderate persistent asthma with acute exacerbation, mild to moderate (peak flow 70% of personal best). Prednisone 40 mg daily for 5 days, prescription sent. Continue budesonide-formoterol; albuterol as needed. Asthma action plan reviewed. Return in 1 week, or go to the emergency department if peak flow falls below 50% or breathing worsens."
+        }
+      ],
+      "billed": [
+        "99215",
+        "J45.41"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "J45.41"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "J45.41"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (chronic illness with exacerbation, documented as mild to moderate, not severe). Data: none. Risk: moderate (prescription drug management, prednisone). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM.",
+          "J45.41": "Moderate persistent asthma with (acute) exacerbation. The resolved cold is not coded."
+        },
+        "modifiers": {},
+        "billing": "Billed 99215 (high MDM). The exacerbation is not severe and no element reaches high: one level too high."
+      }
+    },
+    {
+      "id": "GS-21",
+      "title": "Stable chronic gout billed two levels high, established patient",
+      "visit": {
+        "service_date": "2026-10-20",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 63
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Gout follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "63-year-old man followed by Dr. Tessaly for chronic gout without tophi. Last flare 14 months ago. Takes allopurinol 300 mg daily without side effects. No joint pain or swelling now."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for joint pain, joint swelling, rash and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "128/80",
+                "70",
+                "14",
+                "98.1 F",
+                "92 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "No joint swelling, warmth or deformity in the hands, knees, ankles or feet. No tophi on the ears, elbows or feet."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Chronic gout without tophus, stable without flares for 14 months. Continue allopurinol 300 mg daily, refill sent. Uric acid level at the next visit in 6 months."
+        }
+      ],
+      "billed": [
+        "99215",
+        "M1A.9XX0"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "M1A.9XX0"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "M1A.9XX0"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: none (the uric acid level is planned for a later visit, not ordered today). Risk: moderate (prescription drug management). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM.",
+          "M1A.9XX0": "Chronic gout, unspecified, without tophus (tophi): chronic gout without tophi and no type documented; placeholders X and 7th character 0 for without tophus."
+        },
+        "modifiers": {},
+        "billing": "Billed 99215 (high MDM) for low MDM: two levels too high, which Bodha routes to compliance."
+      }
+    },
+    {
+      "id": "GS-22",
+      "title": "Ingrown toenail with a time statement, established patient",
+      "visit": {
+        "service_date": "2025-12-16",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 27
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Sore big toe."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "27-year-old man, an established patient of the practice, seen in the walk-in session. The outer edge of his right great toenail has been sore for a week after he trimmed the nail short. No drainage, spreading redness or fever."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for fever, drainage and spreading redness."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "120/76",
+                "68",
+                "98.2 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Right great toe: lateral nail fold mildly tender with slight overgrowth of the fold onto the nail edge; no erythema, drainage or granulation tissue."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Ingrowing nail, right great toe, without infection. Warm water soaks twice daily, a cotton wisp under the nail edge, trim the nail straight across, wider shoes. Return for partial nail removal if it becomes infected or does not improve in 2 weeks."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 15 minutes."
+        }
+      ],
+      "billed": [
+        "99212",
+        "L60.0"
+      ],
+      "expected": {
+        "claim": [
+          "99212",
+          "L60.0"
+        ],
+        "scored": {
+          "em": "99212",
+          "icd": [
+            "L60.0"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": 15,
+      "rationale": {
+        "level": "MDM straightforward (one minor problem, no data, minimal risk from soaks and nail care) gives 99212, and total time of 15 minutes falls in the same 99212 range (10-19 minutes): 99212 either way.",
+        "codes": {
+          "99212": "Office visit, established patient, straightforward MDM; time agrees.",
+          "L60.0": "Ingrowing nail. No infection, so no paronychia code."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-23",
+      "title": "Knee injection with a separate hypertension visit, modifier 25 and an unpayable G2211",
+      "visit": {
+        "service_date": "2026-02-24",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 70
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Right knee injection; blood pressure follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "70-year-old woman followed here for primary care since 2018. Primary osteoarthritis of the right knee; at her last visit we decided on a series of three weekly hyaluronic acid injections, and the medicine, delivered by her specialty pharmacy, was brought today for the first injection. Separately, hypertension treated with amlodipine 5 mg daily: home readings 118 to 128 over 70 to 78, no ankle swelling or dizziness."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for right knee pain with stairs. Negative for chest pain, dizziness, leg swelling and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "128/78",
+                "70",
+                "14",
+                "97.9 F",
+                "68 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Heart regular, lungs clear, no edema. Right knee: crepitus, medial joint line tenderness, small effusion, no warmth or redness, range of motion 5 to 120 degrees."
+        },
+        {
+          "heading": "Procedure",
+          "text": "Right knee intra-articular injection (major joint). Risks, benefits and alternatives reviewed and consent obtained. Skin prepared with chlorhexidine. Using a lateral suprapatellar approach without imaging guidance, 2 mL of hylan G-F 20 was injected. The medicine was supplied by the patient's specialty pharmacy and is not billed by the practice. No complications; bandage applied."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Primary osteoarthritis of the right knee: hyaluronic acid injection 1 of 3 as planned; next in 1 week.\n2. Essential hypertension, controlled: continue amlodipine 5 mg daily, refill sent.\nWe continue as her primary care home."
+        }
+      ],
+      "billed": [
+        "99214-25",
+        "20610-RT",
+        "G2211",
+        "M17.11",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99213-25",
+          "20610-RT",
+          "M17.11",
+          "I10"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "I10",
+            "M17.11"
+          ],
+          "modifiers": [
+            "25",
+            "RT"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low, counting only the separately identifiable hypertension work: one stable chronic illness, no data, prescription drug management (moderate risk). The knee evaluation for the planned injection belongs to the procedure. 99213 with modifier 25.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM, for the hypertension work only.",
+          "20610": "Arthrocentesis, aspiration and/or injection, major joint, without ultrasound guidance: right knee injection. The patient-supplied drug is not billed.",
+          "M17.11": "Unilateral primary osteoarthritis, right knee.",
+          "I10": "Essential (primary) hypertension."
+        },
+        "modifiers": {
+          "25": "Significant, separately identifiable E/M (hypertension management) on the day of a minor procedure; NCCI pairs 20610 with 99213 and allows modifier 25.",
+          "RT": "Right side, for the knee injected; billed as submitted."
+        },
+        "billing": "Billed 99214-25: the separately identifiable work is low MDM, one level too high. G2211 was billed with an E/M carrying modifier 25 for a procedure; Medicare does not pay G2211 then (the CR 13705 exceptions cover preventive services, vaccine administration and the annual wellness visit only), so it is removed."
+      }
+    },
+    {
+      "id": "GS-24",
+      "title": "Cerumen removal with a separate visit, modifier 25 left off",
+      "visit": {
+        "service_date": "2026-03-31",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 75
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Muffled hearing in the left ear; blood pressure and cholesterol follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "75-year-old man followed here for primary care since 2012. Two weeks of muffled hearing and fullness in the left ear, without pain, drainage or dizziness. Separately: hypertension on lisinopril 10 mg daily with home readings of 140 to 148 systolic for a month, and hyperlipidemia on atorvastatin 20 mg daily without side effects."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for left ear fullness and muffled hearing. Negative for ear pain, drainage, dizziness, chest pain and headache."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "146/88",
+                "72",
+                "14",
+                "98.0 F",
+                "82 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Left ear canal completely occluded by hard impacted cerumen; tympanic membrane not visible. Right canal and tympanic membrane normal. Heart regular, lungs clear, no edema."
+        },
+        {
+          "heading": "Procedure",
+          "text": "Removal of impacted cerumen, left ear, by the physician using a curette and alligator forceps under direct otoscopic visualization. Canal and tympanic membrane normal afterwards; hearing improved. No bleeding or complications."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Ordered: basic metabolic panel in 2 weeks after the dose change."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Impacted cerumen, left ear: removed with instrumentation as above.\n2. Essential hypertension, above goal: increase lisinopril to 20 mg daily, prescription sent; basic metabolic panel in 2 weeks.\n3. Hyperlipidemia, stable: continue atorvastatin 20 mg daily."
+        }
+      ],
+      "billed": [
+        "99214",
+        "69210-LT",
+        "H61.22",
+        "I10",
+        "E78.5"
+      ],
+      "expected": {
+        "claim": [
+          "99214-25",
+          "69210-LT",
+          "H61.22",
+          "I10",
+          "E78.5"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E78.5",
+            "H61.22",
+            "I10"
+          ],
+          "modifiers": [
+            "25",
+            "LT"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate for the separately identifiable visit: hypertension above goal (chronic illness with progression) plus stable hyperlipidemia; one test ordered, below limited; prescription drug management. The ear complaint is part of the cerumen removal. 99214 with modifier 25.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM, for the hypertension and hyperlipidemia work.",
+          "69210": "Removal of impacted cerumen requiring instrumentation, unilateral: curette and forceps by the physician, left ear.",
+          "H61.22": "Impacted cerumen, left ear.",
+          "I10": "Essential (primary) hypertension.",
+          "E78.5": "Hyperlipidemia, unspecified."
+        },
+        "modifiers": {
+          "25": "Separately identifiable management of hypertension and hyperlipidemia on the day of a procedure; NCCI pairs 69210 with 99214 and allows modifier 25.",
+          "LT": "Left ear; billed as submitted."
+        },
+        "billing": "E/M level correct, but modifier 25 was left off 99214, so the NCCI edit with 69210 would deny the visit. G2211 is correctly absent: Medicare does not pay it with an E/M that carries modifier 25 for a procedure."
+      }
+    },
+    {
+      "id": "GS-25",
+      "title": "Wart destruction with a separate sinusitis visit, modifier 25 supported",
+      "visit": {
+        "service_date": "2026-04-28",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 33
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Warts on my fingers; sinus pain."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "33-year-old woman, an established patient of the practice. Four common warts on the right index and middle fingers for 6 months, slowly growing; she would like them treated today. Separately, 10 days of nasal congestion and left-sided facial pressure that improved and then worsened again over the last 3 days, with thick discolored nasal drainage. No fever. No penicillin allergy."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for facial pressure and nasal drainage. Negative for fever, vision change, severe headache and cough."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "116/74",
+                "76",
+                "14",
+                "98.7 F",
+                "99%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Right index and middle fingers: four 3 to 5 mm verrucous papules. Nose: purulent drainage; left maxillary sinus tender to percussion. Pharynx normal. Lungs clear."
+        },
+        {
+          "heading": "Procedure",
+          "text": "Destruction of benign lesions: cryotherapy with liquid nitrogen to the four common warts of the right hand, two freeze-thaw cycles each. Tolerated well. Wound care reviewed."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Common warts (verruca vulgaris), right hand, four lesions: destroyed with cryotherapy; may need repeat treatment in 3 weeks.\n2. Acute maxillary sinusitis, worsening after initial improvement: amoxicillin-clavulanate 875 mg twice daily for 7 days, prescription sent. Saline rinses."
+        }
+      ],
+      "billed": [
+        "99213-25",
+        "17110",
+        "B07.8",
+        "J01.00"
+      ],
+      "expected": {
+        "claim": [
+          "99213-25",
+          "17110",
+          "B07.8",
+          "J01.00"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "B07.8",
+            "J01.00"
+          ],
+          "modifiers": [
+            "25"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low for the separately identifiable sinusitis visit: one acute uncomplicated illness, no data, prescription drug management. The wart evaluation belongs to the destruction. 99213 with modifier 25.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM, for the sinusitis work only.",
+          "17110": "Destruction of benign lesions other than skin tags or cutaneous vascular proliferative lesions, up to 14 lesions: four warts treated with cryotherapy.",
+          "B07.8": "Other viral warts: common wart (verruca vulgaris).",
+          "J01.00": "Acute maxillary sinusitis, unspecified: not documented as recurrent."
+        },
+        "modifiers": {
+          "25": "Separately identifiable treatment of sinusitis on the day of a procedure with a 10-day global period; NCCI pairs 17110 with 99213 and allows modifier 25."
+        },
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-26",
+      "title": "Planned knee injection billed with an unsupported visit and modifier 25",
+      "visit": {
+        "service_date": "2026-05-05",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 67
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Second knee injection."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "67-year-old man followed here for primary care, here for the second of three planned weekly hyaluronic acid injections for primary osteoarthritis of the left knee. The first injection last week went well, with mild improvement in pain. No fever, redness or swelling since. No other concerns today. The medicine was delivered by his specialty pharmacy and brought to the visit."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for fever, knee redness and new swelling."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "128/80",
+                "70",
+                "98.1 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Left knee: no effusion, warmth or redness; last week's injection site clean."
+        },
+        {
+          "heading": "Procedure",
+          "text": "Left knee intra-articular injection (major joint). Consent confirmed. Skin prepared with chlorhexidine. Lateral suprapatellar approach without imaging guidance; 2 mL of hylan G-F 20 injected. The medicine was supplied by the patient's specialty pharmacy and is not billed by the practice. No complications."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Primary osteoarthritis of the left knee: injection 2 of 3 as planned. Next injection in 1 week."
+        }
+      ],
+      "billed": [
+        "99213-25",
+        "20610-LT",
+        "M17.12"
+      ],
+      "expected": {
+        "claim": [
+          "20610-LT",
+          "M17.12"
+        ],
+        "scored": {
+          "em": null,
+          "icd": [
+            "M17.12"
+          ],
+          "modifiers": [
+            "LT"
+          ]
+        }
+      },
+      "mdm": null,
+      "total_minutes": null,
+      "rationale": {
+        "level": "No separately reportable E/M. The visit was scheduled for a planned injection, and the only evaluation was the brief pre-procedure check of the knee, which the global surgical package of 20610 includes (CMS global surgery rules for minor procedures; NCCI Policy Manual, Chapter I). No other problem was addressed.",
+        "codes": {
+          "20610": "Arthrocentesis, aspiration and/or injection, major joint, without ultrasound guidance: left knee injection. The patient-supplied drug is not billed.",
+          "M17.12": "Unilateral primary osteoarthritis, left knee."
+        },
+        "modifiers": {
+          "LT": "Left side; billed as submitted."
+        },
+        "billing": "Billed 99213-25. Modifier 25 is not supported because no significant, separately identifiable E/M work was done, so the visit line is removed. Bodha's suggested claim can neither remove a visit code nor a modifier, so this case can only disagree; it measures that limit."
+      }
+    },
+    {
+      "id": "GS-27",
+      "title": "Diabetes visit by video with modifier 95 left off, established Medicare patient",
+      "visit": {
+        "service_date": "2026-06-16",
+        "place_of_service": "10",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 68
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Diabetes follow-up by video."
+        },
+        {
+          "heading": "Telehealth",
+          "text": "Real-time audio and video visit. The patient was at her home and the clinician at the clinic. She consented to a telehealth visit."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "68-year-old woman followed here for primary care since 2016. Type 2 diabetes treated with metformin 1000 mg twice daily. Fasting home glucose 180 to 250 over the past month. Her A1c from last week, ordered at her previous visit, is 8.6%, up from 7.4%. Hypertension on losartan 50 mg daily, home readings in the 120s over 70s. No low blood sugars."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for chest pain, vision change, foot sores and urinary symptoms."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "Source",
+              "BP",
+              "Weight",
+              "Fasting glucose"
+            ],
+            "rows": [
+              [
+                "Patient home devices",
+                "126/78",
+                "74 kg",
+                "180-250 mg/dL"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "By video: well appearing, speaking comfortably, no respiratory distress, normal mood and affect."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Type 2 diabetes mellitus with hyperglycemia, A1c 8.6% above goal. Add empagliflozin 10 mg daily, prescription sent; continue metformin. Reviewed hydration and genital hygiene with empagliflozin.\n2. Essential hypertension, controlled. Continue losartan 50 mg daily.\nFollow up in 3 months; we continue as her primary care home."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "E11.65",
+        "Z79.84",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99214-95",
+          "G2211",
+          "E11.65",
+          "Z79.84",
+          "I10"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "E11.65",
+            "I10",
+            "Z79.84"
+          ],
+          "modifiers": [
+            "95"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: diabetes above goal (chronic illness with progression) plus stable hypertension. Data: the A1c was ordered at the previous visit and counted there. Risk: moderate (prescription drug management, empagliflozin added). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM, furnished by telehealth.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2016, the continuing focal point; allowed by telehealth; no modifier 25.",
+          "E11.65": "Type 2 diabetes mellitus with hyperglycemia: documented as with hyperglycemia, A1c 8.6%.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs (metformin, now with empagliflozin): required by the note at E11.",
+          "I10": "Essential (primary) hypertension."
+        },
+        "modifiers": {
+          "95": "Synchronous audio-video telehealth; Bodha's Medicare rules and review prompt use 95 with place of service 10 (patient's home) for an audio-video visit."
+        },
+        "billing": "E/M level correct; modifier 95 was left off the telehealth visit."
+      }
+    },
+    {
+      "id": "GS-28",
+      "title": "Cold sore by video from the workplace, place of service 02",
+      "visit": {
+        "service_date": "2026-07-21",
+        "place_of_service": "02",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 66
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Cold sore starting this morning."
+        },
+        {
+          "heading": "Telehealth",
+          "text": "Real-time audio and video visit. The patient was in a private office at his workplace, not his home; the clinician was at the clinic. He consented to a telehealth visit."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "66-year-old man seen in the same-day virtual internal medicine clinic, where he was last seen a year ago; his primary care clinician practices elsewhere. Tingling on the lower lip since last night and a small cluster of blisters this morning, like his usual cold sores, which come 2 to 3 times a year. No eye symptoms, fever or other sores."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for lip tingling. Negative for fever, eye pain, mouth ulcers and rash elsewhere."
+        },
+        {
+          "heading": "Physical exam",
+          "text": "By video: well appearing; a cluster of small vesicles on a red base at the left lower lip border; no lesions near the eyes."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Recurrent herpes labialis (cold sore), lower lip. Valacyclovir 2 g twice in one day, prescription sent. Avoid kissing and sharing utensils until crusted. Return if lesions spread or involve the eye."
+        }
+      ],
+      "billed": [
+        "99214-95",
+        "B00.1"
+      ],
+      "expected": {
+        "claim": [
+          "99213-95",
+          "B00.1"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "B00.1"
+          ],
+          "modifiers": [
+            "95"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one acute uncomplicated illness. Data: none. Risk: moderate (prescription drug management). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM, by telehealth.",
+          "B00.1": "Herpesviral vesicular dermatitis: herpes labialis."
+        },
+        "modifiers": {
+          "95": "Synchronous audio-video telehealth with place of service 02 (patient not at home)."
+        },
+        "billing": "Billed 99214-95 (moderate MDM); one acute uncomplicated illness is low: one level too high. No G2211: the same-day clinic is not his continuing focal point."
+      }
+    },
+    {
+      "id": "GS-29",
+      "title": "Depression follow-up by telephone with modifier 93 left off, established Medicare patient",
+      "visit": {
+        "service_date": "2026-08-25",
+        "place_of_service": "10",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 72
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Depression follow-up by telephone."
+        },
+        {
+          "heading": "Telehealth",
+          "text": "Audio-only telephone visit. The patient was at her home and has no device that can do video; the clinician has video capability and offered a video visit. She consented to an audio-only visit."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "72-year-old woman followed here for primary care since 2013, treated for recurrent major depressive disorder with sertraline 50 mg daily. Her mood is steady with mild symptoms; she is enjoying her garden and church group and sleeping 7 hours. No thoughts of self-harm. No side effects."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for suicidal thoughts, sleep disturbance, appetite change and medication side effects."
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Not examined in person. By telephone: speech normal in rate and tone, thought process linear and goal directed, mood described as good, no suicidal ideation."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Major depressive disorder, recurrent, mild, stable. Continue sertraline 50 mg daily, refill sent. Follow up in 3 months; we continue as her primary care home."
+        }
+      ],
+      "billed": [
+        "99213",
+        "G2211",
+        "F33.0"
+      ],
+      "expected": {
+        "claim": [
+          "99213-93",
+          "G2211",
+          "F33.0"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "F33.0"
+          ],
+          "modifiers": [
+            "93"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: none. Risk: moderate (prescription drug management). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM, audio-only.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2013, the continuing focal point; no modifier 25.",
+          "F33.0": "Major depressive disorder, recurrent, mild."
+        },
+        "modifiers": {
+          "93": "Audio-only telehealth: the patient was at home without video capability and the clinician could offer video; Bodha's Medicare rules accept 93 at place of service 10."
+        },
+        "billing": "E/M level correct; modifier 93 was left off the audio-only visit."
+      }
+    },
+    {
+      "id": "GS-30",
+      "title": "Reflux medicine counseling by video decided by time, established Medicare patient",
+      "visit": {
+        "service_date": "2026-09-29",
+        "place_of_service": "10",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 70
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Questions about reflux medicine, by video."
+        },
+        {
+          "heading": "Telehealth",
+          "text": "Real-time audio and video visit. The patient was at his home and the clinician at the clinic. He consented to a telehealth visit."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "70-year-old man seen in the same-day virtual internal medicine clinic, where he has been seen twice before; his primary care clinician practices elsewhere. Gastroesophageal reflux, with no esophagitis on an endoscopy 3 years ago, well controlled on omeprazole 20 mg daily. He read about long-term risks of acid suppression and wants to know whether to stop."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for heartburn, trouble swallowing, weight loss, vomiting and black stools."
+        },
+        {
+          "heading": "Physical exam",
+          "text": "By video: well appearing, no distress, normal speech and affect."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Gastroesophageal reflux disease without esophagitis, controlled. Discussed the evidence on long-term proton pump inhibitor risks and a step-down plan: omeprazole 20 mg every other day for 4 weeks, then as needed; prescription updated. Rebound heartburn explained. Message us if symptoms return."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the encounter: 32 minutes, including counseling about long-term acid suppression and the step-down plan, and documentation."
+        }
+      ],
+      "billed": [
+        "99213-95",
+        "K21.9"
+      ],
+      "expected": {
+        "claim": [
+          "99214-95",
+          "K21.9"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "K21.9"
+          ],
+          "modifiers": [
+            "95"
+          ]
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": 32,
+      "rationale": {
+        "level": "Time. MDM is low (one stable chronic illness, no data, prescription drug management), which gives 99213. Total time of 32 minutes falls in the 99214 range (30-39 minutes): 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, selected on total time (32 minutes), by telehealth.",
+          "K21.9": "Gastro-esophageal reflux disease without esophagitis: endoscopy showed none."
+        },
+        "modifiers": {
+          "95": "Synchronous audio-video telehealth with place of service 10."
+        },
+        "billing": "Billed 99213-95 from MDM; the documented 32 minutes supports 99214: one level too low. No G2211: the same-day clinic is not his continuing focal point."
+      }
+    },
+    {
+      "id": "GS-31",
+      "title": "Initial nursing facility visit for stable Alzheimer's dementia",
+      "visit": {
+        "service_date": "2025-10-28",
+        "place_of_service": "32",
+        "visit_type": "New patient",
+        "provider": "quellmont",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 84
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Initial nursing facility visit after admission for long-term care."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "84-year-old woman admitted to Bramblecrest Care Center 2 days ago from her home for long-term custodial care, because her family can no longer provide 24-hour supervision. Alzheimer's disease of late onset with dementia of moderate severity, diagnosed 4 years ago, treated with donepezil 10 mg nightly. No agitation, wandering, hallucinations, low mood or anxiety per her family and staff. Eating well; walks with a walker. Notes from her outpatient neurologist were reviewed."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Limited by dementia. Per staff and family: no falls, fever, cough, pain or change in bowel or bladder habits."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "124/72",
+                "68",
+                "16",
+                "97.6 F",
+                "97%",
+                "55 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Pleasant, oriented to person only, follows simple commands. Heart regular, lungs clear, abdomen soft. Gait steady with a walker. No pressure injuries."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Outpatient neurology notes (one outside source)."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Alzheimer's disease with late onset; dementia of moderate severity without behavioral or psychotic disturbance, mood disturbance or anxiety. Stable. Continue donepezil 10 mg nightly. Fall precautions; help with daily activities per the care plan."
+        }
+      ],
+      "billed": [
+        "99305",
+        "G30.1",
+        "F02.B0"
+      ],
+      "expected": {
+        "claim": [
+          "99304",
+          "G30.1",
+          "F02.B0"
+        ],
+        "scored": {
+          "em": "99304",
+          "icd": [
+            "F02.B0",
+            "G30.1"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: review of external notes from one source, below limited. Risk: moderate (prescription drug management). Low MDM is 99304 (straightforward or low).",
+        "codes": {
+          "99304": "Initial nursing facility care, low MDM: first visit by this physician after admission to the facility.",
+          "G30.1": "Alzheimer's disease with late onset, sequenced first as the etiology.",
+          "F02.B0": "Dementia in other diseases classified elsewhere, moderate, without behavioral disturbance, psychotic disturbance, mood disturbance and anxiety: required with G30 by its use-additional-code note."
+        },
+        "modifiers": {},
+        "billing": "Billed 99305 (moderate MDM) for low MDM: one level too high."
+      }
+    },
+    {
+      "id": "GS-32",
+      "title": "Initial skilled nursing visit after pneumonia",
+      "visit": {
+        "service_date": "2025-12-09",
+        "place_of_service": "31",
+        "visit_type": "New patient",
+        "provider": "quellmont",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 79
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Initial visit after admission to the skilled nursing unit."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "79-year-old man admitted to the skilled nursing unit of Bramblecrest Care Center yesterday after a 5-day hospital stay for community-acquired pneumonia, for therapy and to finish antibiotics. Cough improving, no fever for 3 days, breathing comfortably. Type 2 diabetes treated with metformin and hypertension treated with amlodipine, both stable."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for a mild cough. Negative for fever, chest pain, shortness of breath at rest and urinary symptoms."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2",
+              "Glucose"
+            ],
+            "rows": [
+              [
+                "132/78",
+                "82",
+                "18",
+                "98.2 F",
+                "95% room air",
+                "148 mg/dL"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Comfortable. A few crackles at the right base. Heart regular. No edema. Strength generally reduced; walks with assistance."
+        },
+        {
+          "heading": "Laboratory results",
+          "table": {
+            "columns": [
+              "Test (day of hospital discharge)",
+              "Result"
+            ],
+            "rows": [
+              [
+                "White blood cells",
+                "9.1 x10^3/uL"
+              ],
+              [
+                "Hemoglobin",
+                "12.8 g/dL"
+              ],
+              [
+                "Sodium",
+                "138 mmol/L"
+              ],
+              [
+                "Creatinine",
+                "1.0 mg/dL"
+              ],
+              [
+                "Glucose",
+                "162 mg/dL"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Hospital discharge summary (one outside source); complete blood count and basic metabolic panel from the day of discharge."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Pneumonia, improving: complete cefpodoxime 200 mg twice daily for 2 more days.\n2. Type 2 diabetes mellitus without complications: continue metformin 500 mg twice daily; fingerstick glucose before meals.\n3. Essential hypertension, controlled: continue amlodipine 5 mg daily.\nPhysical and occupational therapy 5 days a week."
+        }
+      ],
+      "billed": [
+        "99305",
+        "J18.9",
+        "E11.9",
+        "Z79.84",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99305",
+          "J18.9",
+          "E11.9",
+          "Z79.84",
+          "I10"
+        ],
+        "scored": {
+          "em": "99305",
+          "icd": [
+            "E11.9",
+            "I10",
+            "J18.9",
+            "Z79.84"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Moderate",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (two stable chronic illnesses plus an improving acute illness). Data: moderate (external discharge summary plus the results of two unique tests: three category 1 items). Risk: moderate (prescription drug management). 99305.",
+        "codes": {
+          "99305": "Initial nursing facility care, moderate MDM.",
+          "J18.9": "Pneumonia, unspecified organism: community-acquired pneumonia still under antibiotic treatment.",
+          "E11.9": "Type 2 diabetes mellitus without complications: none documented.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs (metformin): required by the note at E11.",
+          "I10": "Essential (primary) hypertension."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-33",
+      "title": "Initial nursing facility visit for recurrent heart failure with a decision not to rehospitalize",
+      "visit": {
+        "service_date": "2026-01-06",
+        "place_of_service": "32",
+        "visit_type": "New patient",
+        "provider": "quellmont",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 88
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Initial visit after admission for long-term care; breathing worse."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "88-year-old woman admitted to long-term care at Bramblecrest Care Center yesterday after a 6-day hospital stay for heart failure. She has hypertensive heart and chronic kidney disease with chronic diastolic heart failure and stage 4 chronic kidney disease (eGFR 22 at discharge). Overnight her breathlessness at rest returned, she needed 3 pillows, and her weight is up 2 kg from her discharge weight."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for shortness of breath at rest, orthopnea and leg swelling. Negative for chest pain and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "148/84",
+                "96",
+                "24",
+                "97.8 F",
+                "91% room air",
+                "63 kg (61 kg at discharge)"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Breathless at rest. Jugular venous pressure elevated. Crackles at both bases. 2+ edema to mid-shin."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Hospital discharge summary. Ordered: basic metabolic panel in 3 days."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Acute on chronic diastolic heart failure, decompensating again within a day of discharge. Increase torsemide from 20 mg to 40 mg daily, order written; daily weights; fluid restriction.\n2. Hypertensive heart and chronic kidney disease with heart failure and stage 4 chronic kidney disease: watch potassium and creatinine during diuresis; basic metabolic panel in 3 days.\nGoals of care: I discussed rehospitalization at length with the resident and her daughter, who is her health care agent. They decided against returning to the hospital and chose treatment in the facility, accepting the risk."
+        }
+      ],
+      "billed": [
+        "99305",
+        "I13.0",
+        "I50.33",
+        "N18.4"
+      ],
+      "expected": {
+        "claim": [
+          "99306",
+          "I13.0",
+          "I50.33",
+          "N18.4"
+        ],
+        "scored": {
+          "em": "99306",
+          "icd": [
+            "I13.0",
+            "I50.33",
+            "N18.4"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "High",
+        "data": "Low",
+        "risk": "High"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM high. Problems: high (chronic illness with severe exacerbation: heart failure decompensating at rest a day after discharge). Data: limited (external discharge summary plus one test ordered). Risk: high (decision regarding hospitalization, here a decision not to rehospitalize). 99306.",
+        "codes": {
+          "99306": "Initial nursing facility care, high MDM: first visit by this physician after admission.",
+          "I13.0": "Hypertensive heart and chronic kidney disease with heart failure and stage 1 through 4 CKD: ICD-10-CM presumes the links (guideline I.C.9.a.3).",
+          "I50.33": "Acute on chronic diastolic (congestive) heart failure: required with I13.0 to name the type of heart failure.",
+          "N18.4": "Chronic kidney disease, stage 4 (severe): required with I13.0 to name the stage."
+        },
+        "modifiers": {},
+        "billing": "Billed 99305 (moderate MDM); severe exacerbation and the hospitalization decision support high: one level too low."
+      }
+    },
+    {
+      "id": "GS-34",
+      "title": "Dry skin, subsequent nursing facility visit",
+      "visit": {
+        "service_date": "2026-02-10",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 90
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Dry, itchy skin on the legs."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "90-year-old long-term resident of Bramblecrest Care Center, seen at the request of nursing for dry, flaky skin on both lower legs with mild itch for 2 weeks, worse since the heating came on. No redness, open areas, drainage or fever."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for itch. Negative for fever, pain and new rash elsewhere."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "128/70",
+                "72",
+                "16",
+                "97.7 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Both shins: dry skin with fine scale in a cracked-porcelain pattern; no redness, scratch marks, weeping or open areas."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Xerosis of the skin (asteatosis) of both lower legs. Plain petrolatum twice daily after bathing; lukewarm water and a mild soap substitute. No other changes. Nursing to call if redness or breaks in the skin appear."
+        }
+      ],
+      "billed": [
+        "99308",
+        "L85.3"
+      ],
+      "expected": {
+        "claim": [
+          "99307",
+          "L85.3"
+        ],
+        "scored": {
+          "em": "99307",
+          "icd": [
+            "L85.3"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM straightforward. Problems: one minor problem. Data: none. Risk: minimal (emollient skin care). 99307.",
+        "codes": {
+          "99307": "Subsequent nursing facility care, straightforward MDM.",
+          "L85.3": "Xerosis cutis: asteatosis."
+        },
+        "modifiers": {},
+        "billing": "Billed 99308 (low MDM); data and risk are minimal: one level too high."
+      }
+    },
+    {
+      "id": "GS-35",
+      "title": "Urinary tract infection in a nursing facility, with an inapplicable G2211",
+      "visit": {
+        "service_date": "2026-03-17",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 86
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Burning with urination."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "86-year-old long-term resident of Bramblecrest Care Center who reports 2 days of burning with urination and frequency. No fever, chills, flank pain, nausea or change in alertness per nursing. Nursing performed a urine dipstick this morning."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for burning with urination and frequency. Negative for fever, flank pain, vomiting and confusion."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "130/74",
+                "78",
+                "16",
+                "98.4 F",
+                "96%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Alert and at baseline. Mild suprapubic tenderness. No costovertebral angle tenderness."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Facility urine dipstick: positive leukocyte esterase and nitrite. Ordered: urine culture."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Urinary tract infection without systemic signs. Nitrofurantoin 100 mg twice daily for 5 days, order written. Follow the urine culture. Encourage fluids."
+        }
+      ],
+      "billed": [
+        "99309",
+        "G2211",
+        "N39.0"
+      ],
+      "expected": {
+        "claim": [
+          "99308",
+          "N39.0"
+        ],
+        "scored": {
+          "em": "99308",
+          "icd": [
+            "N39.0"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Low",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one acute uncomplicated illness. Data: limited (review of the dipstick result plus one test ordered). Risk: moderate (prescription drug management). The middle element is low: 99308.",
+        "codes": {
+          "99308": "Subsequent nursing facility care, low MDM.",
+          "N39.0": "Urinary tract infection, site not specified: documented as a urinary tract infection without a site."
+        },
+        "modifiers": {},
+        "billing": "Billed 99309 (moderate MDM); problems and data are low: one level too high. G2211 goes only with office and outpatient E/M codes (the NCCI add-on table lists no nursing facility primary), so it is removed."
+      }
+    },
+    {
+      "id": "GS-36",
+      "title": "COPD exacerbation, subsequent nursing facility visit",
+      "visit": {
+        "service_date": "2026-04-14",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 81
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "More short of breath and coughing."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "81-year-old long-term resident of Bramblecrest Care Center with chronic obstructive pulmonary disease on tiotropium daily and albuterol as needed. For 3 days he has had more cough and breathlessness walking to the dining room, using albuterol 4 times a day. Sputum unchanged and clear. No fever. Eating and sleeping normally."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for cough and breathlessness on exertion. Negative for fever, chest pain, sputum change and leg swelling."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "136/78",
+                "90",
+                "20",
+                "98.0 F",
+                "92% room air (baseline 93%)"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Speaks full sentences. Scattered expiratory wheezes, prolonged expiration, no crackles. No accessory muscle use. No edema."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Chronic obstructive pulmonary disease with acute exacerbation, mild to moderate. Prednisone 40 mg daily for 5 days, order written. Albuterol nebulizer every 4 hours as needed. Continue tiotropium. Nursing to check oxygen saturation every shift and call if below 90% or breathing worsens; reassess in 48 hours."
+        }
+      ],
+      "billed": [
+        "99310",
+        "J44.1"
+      ],
+      "expected": {
+        "claim": [
+          "99309",
+          "J44.1"
+        ],
+        "scored": {
+          "em": "99309",
+          "icd": [
+            "J44.1"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: chronic illness with exacerbation, not severe. Data: none. Risk: moderate (prescription drug management). 99309.",
+        "codes": {
+          "99309": "Subsequent nursing facility care, moderate MDM.",
+          "J44.1": "Chronic obstructive pulmonary disease with (acute) exacerbation: no lower respiratory infection documented, so not J44.0."
+        },
+        "modifiers": {},
+        "billing": "Billed 99310 (high MDM); the exacerbation is not severe and there is no hospitalization decision: one level too high."
+      }
+    },
+    {
+      "id": "GS-37",
+      "title": "Acute kidney injury with hyperkalemia sent to the emergency department from the nursing facility",
+      "visit": {
+        "service_date": "2026-05-26",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "quellmont",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 83
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Abnormal kidney function and potassium on routine labs."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "83-year-old long-term resident of Bramblecrest Care Center. Nursing called about this morning's routine monthly basic metabolic panel: creatinine 3.1 mg/dL, up from 1.0 mg/dL a month ago, and potassium 6.2 mmol/L. She reports feeling well. Hypertension treated with lisinopril 20 mg daily. No vomiting, diarrhea or new medicines. The cause of the kidney injury is not yet clear."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for nausea, vomiting, diarrhea, chest pain, palpitations and weakness."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "118/66",
+                "64",
+                "16",
+                "97.9 F",
+                "96%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Alert, at her baseline. Mucous membranes moist. Heart regular. Lungs clear. No edema."
+        },
+        {
+          "heading": "Laboratory results",
+          "table": {
+            "columns": [
+              "Test",
+              "Today",
+              "One month ago"
+            ],
+            "rows": [
+              [
+                "Creatinine",
+                "3.1 mg/dL",
+                "1.0 mg/dL"
+              ],
+              [
+                "Potassium",
+                "6.2 mmol/L",
+                "4.4 mmol/L"
+              ],
+              [
+                "BUN",
+                "48 mg/dL",
+                "18 mg/dL"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Today's basic metabolic panel (facility standing order). ECG obtained by nursing at my request and interpreted by me, interpretation not separately billed: normal sinus rhythm at 64 with peaked T waves, no QRS widening."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Acute kidney injury with hyperkalemia, potassium 6.2 with peaked T waves. This needs emergency treatment and monitoring: transfer to the emergency department now. Hold lisinopril.\n2. Essential hypertension: lisinopril held as above.\nDiscussed with her son, her health care agent, who agrees with the transfer."
+        }
+      ],
+      "billed": [
+        "99310",
+        "N17.9",
+        "E87.5",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99310",
+          "N17.9",
+          "E87.5",
+          "I10"
+        ],
+        "scored": {
+          "em": "99310",
+          "icd": [
+            "E87.5",
+            "I10",
+            "N17.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "High",
+        "data": "Moderate",
+        "risk": "High"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM high. Problems: high (acute illness posing a threat to bodily function: hyperkalemia with ECG changes and acute kidney injury). Data: moderate (independent interpretation of the ECG, plus review of the panel). Risk: high (decision regarding hospitalization: emergency transfer). 99310.",
+        "codes": {
+          "99310": "Subsequent nursing facility care, high MDM.",
+          "N17.9": "Acute kidney failure, unspecified: acute kidney injury, cause not determined.",
+          "E87.5": "Hyperkalemia.",
+          "I10": "Essential (primary) hypertension: managed at the visit (lisinopril held)."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-38",
+      "title": "Healing osteoporotic vertebral fracture decided by time, skilled nursing",
+      "visit": {
+        "service_date": "2026-06-23",
+        "place_of_service": "31",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 82
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Back fracture follow-up and family meeting."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "82-year-old woman in the skilled nursing unit of Bramblecrest Care Center for rehabilitation. Age-related osteoporosis with a compression fracture of the L1 vertebra found 5 weeks ago on imaging for back pain, without a fall or injury. Pain now 2 of 10 on scheduled acetaminophen. A follow-up spine x-ray last week, ordered by her orthopedic surgeon, showed expected healing without further collapse. She has declined prescription osteoporosis treatment and takes calcium and vitamin D. Her daughter joined today to discuss recovery and fall prevention."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for mild back pain. Negative for leg weakness, numbness, bowel or bladder changes and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "126/72",
+                "74",
+                "16",
+                "97.8 F",
+                "97%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Mild tenderness over L1 without a step-off. Strength and sensation normal in both legs. Walks 50 feet with a walker and standby assistance."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Orthopedic spine x-ray report from last week (one outside source)."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Age-related osteoporosis with current pathological fracture of the L1 vertebra, subsequent encounter, healing as expected. Continue acetaminophen 1 g three times daily, calcium and vitamin D. Brace when out of bed. Physical therapy for core strengthening and gait. Long meeting with the patient and her daughter about healing time, bracing, fall prevention and her decision to decline prescription osteoporosis medicine; coordinated the plan with physical therapy."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the visit: 35 minutes, including the family meeting, examination, coordination with physical therapy and documentation."
+        }
+      ],
+      "billed": [
+        "99308",
+        "M80.08XD"
+      ],
+      "expected": {
+        "claim": [
+          "99309",
+          "M80.08XD"
+        ],
+        "scored": {
+          "em": "99309",
+          "icd": [
+            "M80.08XD"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": 35,
+      "rationale": {
+        "level": "Time. MDM is low (one chronic illness with a healing fracture; one external report reviewed; prescription osteoporosis treatment considered and declined, which counts as moderate risk), which gives 99308. Total time of 35 minutes reaches 99309 (30 minutes or more): 99309. Even if the fracture were read as an acute complicated injury, MDM would be moderate and the code the same.",
+        "codes": {
+          "99309": "Subsequent nursing facility care, selected on total time (35 minutes).",
+          "M80.08XD": "Age-related osteoporosis with current pathological fracture, vertebra(e), subsequent encounter for fracture with routine healing: an osteoporotic fracture without trauma goes to M80 (guideline I.C.13.d.2); placeholder X and 7th character D for routine healing."
+        },
+        "modifiers": {},
+        "billing": "Billed 99308 from MDM; the documented 35 minutes supports 99309: one level too low."
+      }
+    },
+    {
+      "id": "GS-39",
+      "title": "Initial skilled nursing visit after a stroke decided by time",
+      "visit": {
+        "service_date": "2026-07-28",
+        "place_of_service": "31",
+        "visit_type": "New patient",
+        "provider": "quellmont",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 77
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Initial visit after admission for rehabilitation after a stroke."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "77-year-old right-handed man admitted to the skilled nursing unit of Bramblecrest Care Center yesterday after a 7-day hospital stay for an acute ischemic stroke in the right middle cerebral artery territory, for rehabilitation of left hemiparesis. His swallowing was evaluated in hospital and is normal. Hypertension and hyperlipidemia treated with amlodipine and atorvastatin; clopidogrel was started in hospital. His wife is present."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for left arm and leg weakness. Negative for headache, chest pain, trouble swallowing and new numbness."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "134/80",
+                "70",
+                "16",
+                "97.9 F",
+                "97%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Alert and oriented. Mild left facial droop. Strength 3 of 5 in the left arm and 4 of 5 in the left leg; right side normal. Speech clear. Heart regular, lungs clear."
+        },
+        {
+          "heading": "Laboratory results",
+          "table": {
+            "columns": [
+              "Test (hospital)",
+              "Result"
+            ],
+            "rows": [
+              [
+                "LDL cholesterol",
+                "92 mg/dL"
+              ],
+              [
+                "Hemoglobin A1c",
+                "5.6%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Hospital discharge summary (one outside source); lipid panel and hemoglobin A1c from the hospital stay."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Hemiplegia and hemiparesis following cerebral infarction affecting the left non-dominant side: physical and occupational therapy daily; continue clopidogrel 75 mg daily.\n2. Essential hypertension: continue amlodipine 10 mg daily; target below 130/80.\n3. Hyperlipidemia: continue atorvastatin 80 mg daily.\nMedication reconciliation completed against the hospital list."
+        },
+        {
+          "heading": "Time",
+          "text": "Total time on the date of the visit: 55 minutes, including review of the hospital records, examination, medication reconciliation, discussion with the patient and his wife, and coordination of the care plan with therapy and nursing."
+        }
+      ],
+      "billed": [
+        "99306",
+        "I69.354",
+        "I10",
+        "E78.5"
+      ],
+      "expected": {
+        "claim": [
+          "99306",
+          "I69.354",
+          "I10",
+          "E78.5"
+        ],
+        "scored": {
+          "em": "99306",
+          "icd": [
+            "E78.5",
+            "I10",
+            "I69.354"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Moderate",
+        "risk": "Moderate"
+      },
+      "total_minutes": 55,
+      "rationale": {
+        "level": "Time. MDM is moderate (stroke sequela plus two stable chronic illnesses; external summary and two test results; prescription drug management), which gives 99305. Total time of 55 minutes is above both the CPT threshold for 99306 (45 minutes) and the 50 minutes in Bodha's E/M table: 99306.",
+        "codes": {
+          "99306": "Initial nursing facility care, selected on total time (55 minutes).",
+          "I69.354": "Hemiplegia and hemiparesis following cerebral infarction affecting left non-dominant side: after discharge from the acute stay the deficit is a sequela (I69); he is right-handed, so the left side is non-dominant.",
+          "I10": "Essential (primary) hypertension.",
+          "E78.5": "Hyperlipidemia, unspecified."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly. Long-term antiplatelet use (Z79.02) is not expected: no use-additional-code instruction requires it (see the conventions in decision 0049)."
+      }
+    },
+    {
+      "id": "GS-40",
+      "title": "Stable hypothyroidism billed two levels high, subsequent nursing facility visit",
+      "visit": {
+        "service_date": "2026-08-18",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 85
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Thyroid medicine review."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "85-year-old long-term resident of Bramblecrest Care Center, seen at nursing's request to review his levothyroxine after this week's routine TSH of 3.2 mIU/L, drawn on the facility's annual schedule. Hypothyroidism treated with levothyroxine 50 mcg daily. No palpitations, weight change or constipation per staff."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for palpitations, weight change, constipation and lethargy."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "130/76",
+                "66",
+                "16",
+                "97.6 F",
+                "70 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Pleasant, at baseline. Thyroid not enlarged. Heart regular. No edema."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "TSH result from this week (facility annual order)."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Hypothyroidism, stable with TSH in range. Continue levothyroxine 50 mcg daily. Next TSH in 12 months."
+        }
+      ],
+      "billed": [
+        "99310",
+        "E03.9"
+      ],
+      "expected": {
+        "claim": [
+          "99308",
+          "E03.9"
+        ],
+        "scored": {
+          "em": "99308",
+          "icd": [
+            "E03.9"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: one test result reviewed, below limited. Risk: moderate (prescription drug management). 99308.",
+        "codes": {
+          "99308": "Subsequent nursing facility care, low MDM.",
+          "E03.9": "Hypothyroidism, unspecified."
+        },
+        "modifiers": {},
+        "billing": "Billed 99310 (high MDM) for low MDM: two levels too high, which Bodha routes to compliance."
+      }
+    },
+    {
+      "id": "GS-41",
+      "title": "Ankle sprain with the ligament left unspecified, new patient",
+      "visit": {
+        "service_date": "2026-09-08",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 26
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Twisted left ankle yesterday."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "26-year-old man, new patient, seen in the walk-in session. Yesterday he rolled his left ankle inward stepping off a curb. Immediate pain and swelling on the outer ankle; able to walk with a limp. No numbness and no earlier ankle injuries."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for left ankle pain and swelling. Negative for numbness, knee pain and other injuries."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "122/76",
+                "72",
+                "98.3 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Left ankle: swelling and tenderness over the calcaneofibular ligament below the lateral malleolus; anterior talofibular ligament not tender; no tenderness at the posterior edge or tip of either malleolus, the navicular or the base of the fifth metatarsal; walks 4 steps with a limp. Anterior drawer negative. Neurovascularly intact."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Sprain of the calcaneofibular ligament of the left ankle, initial encounter. Ottawa ankle rules negative, so no x-ray. Rest, ice, compression with an elastic bandage and elevation; ibuprofen 400 mg over the counter every 8 hours as needed with food. Return in 2 weeks if not improving, or sooner if he cannot bear weight."
+        }
+      ],
+      "billed": [
+        "99204",
+        "S93.402A"
+      ],
+      "expected": {
+        "claim": [
+          "99203",
+          "S93.412A"
+        ],
+        "scored": {
+          "em": "99203",
+          "icd": [
+            "S93.412A"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Low"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one acute uncomplicated injury. Data: none (no imaging ordered). Risk: low (over-the-counter drug). 99203.",
+        "codes": {
+          "99203": "Office visit, new patient, low MDM.",
+          "S93.412A": "Sprain of calcaneofibular ligament of left ankle, initial encounter: the ligament and side are documented; 7th character A for active treatment. No external cause code: reporting is voluntary (guideline I.C.20) and not expected in this set."
+        },
+        "modifiers": {},
+        "billing": "Billed 99204 (moderate MDM); one uncomplicated injury treated with an over-the-counter drug is low: one level too high. Billed S93.402A (unspecified ligament); the note names the calcaneofibular ligament."
+      }
+    },
+    {
+      "id": "GS-42",
+      "title": "Stable prostate enlargement, established Medicare patient",
+      "visit": {
+        "service_date": "2026-10-13",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 73
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Prostate follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "73-year-old man followed here for primary care since 2011. Benign prostatic hyperplasia with lower urinary tract symptoms, treated with tamsulosin 0.4 mg nightly. Symptoms mild and unchanged for a year; no lightheadedness on standing. No other concerns."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for fever, blood in the urine, lightheadedness and back pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "130/78",
+                "70",
+                "14",
+                "97.9 F",
+                "80 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Well appearing. Abdomen soft, bladder not palpable. Blood pressure unchanged on standing."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Benign prostatic hyperplasia with lower urinary tract symptoms, stable. Continue tamsulosin 0.4 mg nightly, refill sent. Return in 6 months; we continue as his primary care home."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "N40.1"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "G2211",
+          "N40.1"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "N40.1"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one stable chronic illness. Data: none. Risk: moderate (prescription drug management). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2011, the continuing focal point; no modifier 25.",
+          "N40.1": "Benign prostatic hyperplasia with lower urinary tract symptoms. No individual symptom is named, so no additional symptom codes."
+        },
+        "modifiers": {},
+        "billing": "Billed 99214 (moderate MDM) for one stable chronic illness: one level too high."
+      }
+    },
+    {
+      "id": "GS-43",
+      "title": "Severe hyperglycemia admitted from the office, established Medicare patient",
+      "visit": {
+        "service_date": "2026-11-03",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 67
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Very high sugars, thirsty and dizzy."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "67-year-old woman followed here for primary care since 2015, with type 2 diabetes treated with metformin 1000 mg twice daily and glipizide 10 mg daily. For 4 days she has been very thirsty and urinating often, with dizziness on standing since yesterday. Her home meter read 520 mg/dL this morning and has shown HIGH twice. No vomiting, abdominal pain or fever. She is drinking but cannot keep up."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for thirst, frequent urination and dizziness on standing. Negative for vomiting, abdominal pain, chest pain and fever."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "104/62 (88/56 standing)",
+                "108",
+                "18",
+                "98.2 F",
+                "98%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Tired appearing. Dry mucous membranes, reduced skin turgor. Heart tachycardic and regular. Lungs clear. Abdomen soft, nontender."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Discussed her condition and the admission by telephone with the admitting hospitalist."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Type 2 diabetes mellitus with severe hyperglycemia and dehydration, unsafe to manage at home. Direct admission to the hospital for intravenous fluids, insulin and laboratory evaluation, arranged with the hospitalist. Hold metformin and glipizide. We continue as her primary care home and will see her after discharge."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "E11.65",
+        "E86.0",
+        "Z79.84"
+      ],
+      "expected": {
+        "claim": [
+          "99215",
+          "G2211",
+          "E11.65",
+          "E86.0",
+          "Z79.84"
+        ],
+        "scored": {
+          "em": "99215",
+          "icd": [
+            "E11.65",
+            "E86.0",
+            "Z79.84"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "High",
+        "data": "Moderate",
+        "risk": "High"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM high. Problems: high (illness posing a threat to bodily function: severe hyperglycemia with dehydration). Data: moderate (discussion of management with an external physician). Risk: high (decision regarding hospitalization). 99215.",
+        "codes": {
+          "99215": "Office visit, established patient, high MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2015, the continuing focal point; no modifier 25.",
+          "E11.65": "Type 2 diabetes mellitus with hyperglycemia.",
+          "E86.0": "Dehydration: documented by the clinician; thirst and dizziness are part of it and not coded.",
+          "Z79.84": "Long term (current) use of oral hypoglycemic drugs (metformin and glipizide, held only for the admission): required by the note at E11."
+        },
+        "modifiers": {},
+        "billing": "Billed 99214 (moderate MDM); the hospitalization decision for a threat to bodily function supports high: one level too low."
+      }
+    },
+    {
+      "id": "GS-44",
+      "title": "Progressing knee osteoarthritis with the side left unspecified, new patient",
+      "visit": {
+        "service_date": "2025-11-25",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 61
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Right knee pain getting worse."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "61-year-old man, new patient, seen in the walk-in session; his primary care clinician practices elsewhere. Right knee pain for 8 months, worse over the last 2 months with stairs and walking more than a block. No injury, locking or giving way. Acetaminophen no longer helps. He brought an MRI report from 6 months ago from an outside imaging center, which was reviewed: moderate medial compartment osteoarthritis."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Positive for right knee pain. Negative for fever, other joint pain, rash and back pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "128/82",
+                "74",
+                "98.1 F",
+                "94 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Right knee: crepitus, medial joint line tenderness, no effusion, range of motion 5 to 115 degrees, stable ligaments. Left knee normal."
+        },
+        {
+          "heading": "Data reviewed",
+          "text": "Outside MRI report (one source). Ordered: standing x-rays of both knees."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Primary osteoarthritis of the right knee, progressing. Start meloxicam 15 mg daily with food, prescription sent; stop acetaminophen. Physical therapy referral. Standing knee x-rays ordered. We discussed injection options if this fails."
+        }
+      ],
+      "billed": [
+        "99204",
+        "M17.9"
+      ],
+      "expected": {
+        "claim": [
+          "99204",
+          "M17.11"
+        ],
+        "scored": {
+          "em": "99204",
+          "icd": [
+            "M17.11"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Low",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: moderate (chronic illness with progression). Data: limited (external MRI report plus one test ordered). Risk: moderate (prescription drug management). 99204.",
+        "codes": {
+          "99204": "Office visit, new patient, moderate MDM.",
+          "M17.11": "Unilateral primary osteoarthritis, right knee."
+        },
+        "modifiers": {},
+        "billing": "E/M billed correctly. Billed M17.9 (osteoarthritis of knee, unspecified); the note documents primary osteoarthritis of the right knee."
+      }
+    },
+    {
+      "id": "GS-45",
+      "title": "Stable COPD and hypertension in a former smoker, established Medicare patient",
+      "visit": {
+        "service_date": "2026-01-27",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "quillfeather",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "male",
+        "age": 76
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "COPD and blood pressure follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "76-year-old man followed here for primary care since 2010. Chronic obstructive pulmonary disease on tiotropium daily, no flare-ups this year; he walks a mile most days. He is a former smoker who quit 12 years ago after 40 pack-years. Hypertension on amlodipine 5 mg daily, home readings in the 120s over 70s."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for increased cough, sputum change, chest pain, leg swelling and dizziness."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "SpO2"
+            ],
+            "rows": [
+              [
+                "126/74",
+                "72",
+                "16",
+                "97.8 F",
+                "95%"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "No distress. Mildly prolonged expiration, no wheeze or crackles. Heart regular. No edema."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "1. Chronic obstructive pulmonary disease, stable. Continue tiotropium, refill sent.\n2. Essential hypertension, controlled. Continue amlodipine 5 mg daily, refill sent.\nReturn in 6 months; we continue as his primary care home."
+        }
+      ],
+      "billed": [
+        "99214",
+        "G2211",
+        "J44.9",
+        "Z87.891",
+        "I10"
+      ],
+      "expected": {
+        "claim": [
+          "99214",
+          "G2211",
+          "J44.9",
+          "Z87.891",
+          "I10"
+        ],
+        "scored": {
+          "em": "99214",
+          "icd": [
+            "I10",
+            "J44.9",
+            "Z87.891"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: two stable chronic illnesses. Data: none. Risk: moderate (prescription drug management). 99214.",
+        "codes": {
+          "99214": "Office visit, established patient, moderate MDM.",
+          "G2211": "Medicare visit complexity add-on: primary care here since 2010, the continuing focal point; no modifier 25.",
+          "J44.9": "Chronic obstructive pulmonary disease, unspecified: stable, no exacerbation.",
+          "Z87.891": "Personal history of nicotine dependence: former smoker; required by the use-additional-code note at J44.",
+          "I10": "Essential (primary) hypertension."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-46",
+      "title": "Improving acne on over-the-counter treatment, established patient",
+      "visit": {
+        "service_date": "2026-03-03",
+        "place_of_service": "11",
+        "visit_type": "Established patient",
+        "provider": "tessaly",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 30
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "Acne follow-up."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "30-year-old woman followed by Dr. Tessaly. Acne vulgaris on the face, improving over 8 weeks on adapalene 0.1% gel nightly, bought over the counter. Still a few new red bumps on the chin each week. No cysts or scarring. Not pregnant and not planning pregnancy."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for irregular periods, excess hair growth and skin pain."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "112/70",
+                "70",
+                "98.2 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Face: scattered closed comedones and 6 small inflammatory papules on the chin; no nodules, cysts or scars."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Acne vulgaris, improving but not yet clear. Continue adapalene 0.1% gel nightly and add a benzoyl peroxide 5% wash in the morning, both over the counter. Gentle moisturizer and sunscreen. Return in 3 months."
+        }
+      ],
+      "billed": [
+        "99213",
+        "L70.0"
+      ],
+      "expected": {
+        "claim": [
+          "99213",
+          "L70.0"
+        ],
+        "scored": {
+          "em": "99213",
+          "icd": [
+            "L70.0"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Low",
+        "data": "Straightforward",
+        "risk": "Low"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM low. Problems: one chronic illness, improving (still low even if read as not yet at goal, since moderate would need a second element). Data: none. Risk: low (over-the-counter drugs). 99213.",
+        "codes": {
+          "99213": "Office visit, established patient, low MDM.",
+          "L70.0": "Acne vulgaris."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-47",
+      "title": "Insulin adjustment for hyperglycemia, subsequent nursing facility visit",
+      "visit": {
+        "service_date": "2026-09-22",
+        "place_of_service": "32",
+        "visit_type": "Established patient",
+        "provider": "coldbrook",
+        "payer": "medicare"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 80
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "High morning sugars."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "80-year-old long-term resident of Bramblecrest Care Center with type 2 diabetes treated with insulin glargine 14 units at bedtime. The facility glucose log for the past week shows fasting values of 190 to 240 mg/dL and none below 100. Eating all meals. No symptoms of infection."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for fever, urinary symptoms, cough, increased thirst and confusion."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "RR",
+              "Temp",
+              "Weight"
+            ],
+            "rows": [
+              [
+                "134/76",
+                "74",
+                "16",
+                "97.9 F",
+                "66 kg"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Glucose log",
+          "table": {
+            "columns": [
+              "Day",
+              "Fasting",
+              "Before supper"
+            ],
+            "rows": [
+              [
+                "Mon",
+                "212",
+                "168"
+              ],
+              [
+                "Tue",
+                "198",
+                "175"
+              ],
+              [
+                "Wed",
+                "240",
+                "181"
+              ],
+              [
+                "Thu",
+                "205",
+                "160"
+              ],
+              [
+                "Fri",
+                "190",
+                "172"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "At baseline. Heart regular, lungs clear. Feet without ulcers. Insulin sites without lipohypertrophy."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Type 2 diabetes mellitus with hyperglycemia, fasting values above goal. Increase insulin glargine to 18 units at bedtime, order written. Continue fingersticks before breakfast and supper; nursing to call for values below 100 or above 350."
+        }
+      ],
+      "billed": [
+        "99309",
+        "E11.65",
+        "Z79.4"
+      ],
+      "expected": {
+        "claim": [
+          "99309",
+          "E11.65",
+          "Z79.4"
+        ],
+        "scored": {
+          "em": "99309",
+          "icd": [
+            "E11.65",
+            "Z79.4"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Moderate",
+        "data": "Straightforward",
+        "risk": "Moderate"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM moderate. Problems: chronic illness with progression (hyperglycemia above goal). Data: the facility glucose log is not counted as a test. Risk: moderate (prescription drug management, insulin dose change). 99309.",
+        "codes": {
+          "99309": "Subsequent nursing facility care, moderate MDM.",
+          "E11.65": "Type 2 diabetes mellitus with hyperglycemia.",
+          "Z79.4": "Long term (current) use of insulin: required by the use-additional-code note at E11."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    },
+    {
+      "id": "GS-48",
+      "title": "Plantar wart left to observation, new patient",
+      "visit": {
+        "service_date": "2026-10-27",
+        "place_of_service": "11",
+        "visit_type": "New patient",
+        "provider": "marrowind",
+        "payer": "commercial"
+      },
+      "patient": {
+        "sex": "female",
+        "age": 40
+      },
+      "sections": [
+        {
+          "heading": "Chief complaint",
+          "text": "A spot on my heel."
+        },
+        {
+          "heading": "History of present illness",
+          "text": "40-year-old woman, new patient, seen in the walk-in session. A small rough spot on the bottom of her left heel for 2 months. Not painful. She wants to know what it is."
+        },
+        {
+          "heading": "Review of systems",
+          "text": "Negative for pain, bleeding and other skin lesions."
+        },
+        {
+          "heading": "Vitals",
+          "table": {
+            "columns": [
+              "BP",
+              "HR",
+              "Temp"
+            ],
+            "rows": [
+              [
+                "118/74",
+                "68",
+                "98.0 F"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Physical exam",
+          "text": "Left plantar heel: a 4 mm rough papule that interrupts the skin lines, with pinpoint black dots."
+        },
+        {
+          "heading": "Assessment and plan",
+          "text": "Plantar wart, left heel, small and painless. Many resolve on their own; she prefers to watch it. Return for treatment if it becomes painful or grows."
+        }
+      ],
+      "billed": [
+        "99202",
+        "B07.0"
+      ],
+      "expected": {
+        "claim": [
+          "99202",
+          "B07.0"
+        ],
+        "scored": {
+          "em": "99202",
+          "icd": [
+            "B07.0"
+          ],
+          "modifiers": []
+        }
+      },
+      "mdm": {
+        "problems": "Straightforward",
+        "data": "Straightforward",
+        "risk": "Straightforward"
+      },
+      "total_minutes": null,
+      "rationale": {
+        "level": "MDM straightforward. Problems: one minor problem. Data: none. Risk: minimal (observation). 99202.",
+        "codes": {
+          "99202": "Office visit, new patient, straightforward MDM.",
+          "B07.0": "Plantar wart."
+        },
+        "modifiers": {},
+        "billing": "Billed correctly."
+      }
+    }
+  ]
+}
