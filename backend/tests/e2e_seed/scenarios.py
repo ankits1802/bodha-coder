@@ -130,6 +130,12 @@ async def verify_day(run: SeedRun) -> dict[str, Any]:
     return {"code": code, "practice": practice.name, "signer": practice.admin.name}
 
 
+async def canary_day(run: SeedRun) -> dict[str, Any]:
+    practice = await run.practice("Canary Clinic")
+    person = await run.hq_person("Casey Canary")
+    return {"practice": practice.admin.view(), "hq": person.view()}
+
+
 SCENARIOS: dict[str, Scenario] = {
     "admin-day": admin_day,
     "upload-day": upload_day,
@@ -140,4 +146,5 @@ SCENARIOS: dict[str, Scenario] = {
     "organization-day": organization_day,
     "hq-day": hq_day,
     "verify-day": verify_day,
+    "canary-day": canary_day,
 }

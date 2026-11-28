@@ -3,6 +3,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { TOUR_TEXT } from "../../src/components/shared/tour/strings";
 
 export const EMAIL_DOMAIN = "e2e.example.com";
+export const SITE_ORIGIN = process.env.SITE_URL ?? "http://localhost:3000";
 export const ADMIN_ORIGIN = process.env.ADMIN_URL ?? "http://admin.localhost:3000";
 
 export function marker(): string {

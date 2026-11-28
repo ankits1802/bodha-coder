@@ -1,6 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
-
-const SITE_URL = process.env.SITE_URL ?? "http://localhost:3000";
+import { SITE_ORIGIN } from "./e2e/support/app";
 
 export default defineConfig({
   testDir: "./e2e/journeys",
@@ -13,7 +12,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["list"], ["github"]] : [["list"]],
   use: {
-    baseURL: SITE_URL,
+    baseURL: SITE_ORIGIN,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "off",

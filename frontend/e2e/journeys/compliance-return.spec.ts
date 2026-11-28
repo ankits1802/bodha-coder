@@ -48,5 +48,6 @@ test("compliance returns a note with a reason and the coder finds it in the inbo
   await item.click();
   await expect(coder).toHaveURL(new RegExp(`/notes/${day.note.id}`));
   await expect(coder.getByText(REVIEW_TEXT.returned(reason, day.officer.name))).toBeVisible();
+  await expectAccessible(coder);
   await coder.context().close();
 });
