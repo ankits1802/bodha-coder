@@ -65,6 +65,9 @@ also need claim lines they can key or import into an 837P without retyping.
   only on the E/M line, and an anatomic modifier only when the other line does not carry the same
   one (RT with LT bypasses, RT with RT does not). Indicator 0 is never bypassed. The result says
   which modifier bypassed it; whether its use is clinically justified stays with the coder.
+  Amended 2026-11-28 by [0052](0052-ncci-bypass-by-relationship.md): a pair with an E/M code is
+  bypassed only by 24, 25 or 57 on the E/M line, and an anatomic modifier bypasses a pair of
+  procedures only when both lines carry one and they differ.
 - MUE: MAI 1 is per claim line, MAI 2 and 3 per date of service (the MLN chapter above), so MAI 1
   compares each line's units and MAI 2 and 3 the sum of the claim's lines for the code.
 - Add-on edits: a type 1 add-on (every primary listed) billed without any listed primary is an

@@ -330,6 +330,7 @@ class AccessLogExportBody(Body):
 
 class RenewBody(Body):
     until: date | None
+    plan: str | None = Field(default=None, min_length=1, max_length=16)
 
 
 class PlaceBody(Body):

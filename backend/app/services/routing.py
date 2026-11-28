@@ -143,7 +143,7 @@ def _apply(code: Code, item: Finding | None, choice: str) -> list[Code]:
     if item.action == "remove":
         return []
     if item.code_after and item.action in ("lower", "raise", "replace"):
-        return [replace(code, code=item.code_after)]
+        return [replace(code, code=item.code_after, units=int(item.detail.get("units", code.units)))]
     return [code]
 
 

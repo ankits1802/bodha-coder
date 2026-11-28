@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date
+from functools import partial
 from typing import Literal
 
 from app.codes.billing_codes import Code
 from app.codes.em import is_em_code
+from app.codes.prolonged import COMMERCIAL_PROLONGED, FIRST_UNIT_MINUTES, PROLONGED_CODES
 
 __all__ = [
     "AUDIO_ONLY_MODIFIERS",
@@ -30,6 +32,7 @@ __all__ = [
     "initial_nursing_visits",
     "payer_flags",
     "payer_for",
+    "prolonged_without_visit",
     "repeated_initial_visit",
 ]
 
@@ -46,6 +49,8 @@ Rule = Literal[
     "audio_only_risk_adjustment",
     "nursing_incident_to",
     "initial_visit_repeated",
+    "prolonged_medicare",
+    "prolonged_without_visit",
 ]
 
 PLAN_TYPES: tuple[PlanType, ...] = ("medicare", "medicare_advantage", "medicaid", "commercial")
@@ -170,6 +175,14 @@ def repeated_initial_visit(
     return PayerFlag("initial_visit_repeated", "denial", _labels(initial), earlier)
 
 
+def prolonged_without_visit(codes: Iterable[Code]) -> PayerFlag | None:
+    lines = tuple(code for code in codes if code.type == "CPT")
+    billed = {code.code for code in lines}
+    prolonged = tuple(code for code in lines if code.code in PROLONGED_CODES)
+    alone = tuple(code for code in prolonged if not billed & FIRST_UNIT_MINUTES[code.code].keys())
+    return PayerFlag("prolonged_without_visit", "denial", _labels(alone)) if alone else None
+
+
 def _opened_stay(visit: EarlierVisit, before: date, specialty: str | None) -> bool:
     initial = visit.code in NURSING_INITIAL_VISITS and visit.place_code in NURSING_FACILITY_PLACES
     return initial and visit.service_date < before and _same_specialty(visit.specialty, specialty)
@@ -247,11 +260,17 @@ def _nursing_incident_to(visit: Visit) -> PayerFlag | None:
     return PayerFlag("nursing_incident_to", "reminder", _labels(visits))
 
 
+def _prolonged_as_99417(visit: Visit, *, severity: Severity) -> PayerFlag | None:
+    lines = visit.billed(frozenset({COMMERCIAL_PROLONGED}))
+    return PayerFlag("prolonged_medicare", severity, _labels(lines)) if lines else None
+
+
 def _labels(codes: tuple[Code, ...]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(code.label() for code in codes))
 
 
 MEDICARE: frozenset[PlanType | None] = frozenset({"medicare"})
+MEDICARE_ADVANTAGE: frozenset[PlanType | None] = frozenset({"medicare_advantage"})
 RULES: tuple[tuple[frozenset[PlanType | None], PayerFamily | None, RuleCheck], ...] = (
     (MEDICARE, None, _telehealth_place),
     (MEDICARE, None, _audio_only_place),
@@ -259,6 +278,8 @@ RULES: tuple[tuple[frozenset[PlanType | None], PayerFamily | None, RuleCheck], .
     (MEDICARE, None, _complexity_with_25),
     (MEDICARE, None, _g2211_replaced),
     (frozenset({"commercial"}), "cigna", _level_downcode_risk),
-    (frozenset({"medicare_advantage"}), None, _audio_only_risk_adjustment),
+    (MEDICARE_ADVANTAGE, None, _audio_only_risk_adjustment),
     (MEDICARE, None, _nursing_incident_to),
+    (MEDICARE, None, partial(_prolonged_as_99417, severity="denial")),
+    (MEDICARE_ADVANTAGE, None, partial(_prolonged_as_99417, severity="risk")),
 )

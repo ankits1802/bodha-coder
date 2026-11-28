@@ -9,9 +9,6 @@ from app.codes.em import EM_FAMILIES, EmFamily, compare_em, em_position, is_em_c
 from app.codes.places import setting_for
 
 __all__ = [
-    "PROLONGED_CODE",
-    "PROLONGED_FROM",
-    "PROLONGED_STEP",
     "TELEHEALTH_MODIFIERS",
     "billed_pattern",
     "code_by_mdm",
@@ -20,13 +17,9 @@ __all__ = [
     "expected_family",
     "first_em",
     "mdm_level",
-    "prolonged_units",
     "time_decides",
 ]
 
-PROLONGED_CODE = "G2212"
-PROLONGED_FROM = {"99205": 89, "99215": 69}
-PROLONGED_STEP = 15
 TELEHEALTH_MODIFIERS = frozenset({"95", "93"})
 FAMILY_BY_VISIT = {
     ("office", "New patient"): "office_new",
@@ -78,13 +71,6 @@ def time_decides(case: GoldCase, family: EmFamily) -> bool:
         return False
     by_time = code_by_time(family, case.total_minutes)
     return by_time is not None and _index(by_time) > _index(code_by_mdm(family, mdm_level(case.mdm)))
-
-
-def prolonged_units(code: str | None, minutes: int | None) -> int:
-    start = PROLONGED_FROM.get(code or "")
-    if start is None or minutes is None or minutes < start:
-        return 0
-    return (minutes - start) // PROLONGED_STEP + 1
 
 
 def first_em(codes: tuple[Code, ...]) -> str | None:

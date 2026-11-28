@@ -5,6 +5,7 @@ import type {
   EligibilityReason,
   EvalRunChange,
   EvalRunStatus,
+  EvalSummary,
   LevelMix,
   LevelMixStatus,
   Rate,
@@ -16,10 +17,17 @@ import { QUALITY_TEXT } from "./strings";
 export type QualityView = "audits" | "training" | "evaluation" | "autonomy";
 export type Display = "chart" | "table";
 export type RateKey = "em" | "icd_precision" | "icd_recall" | "icd_exact" | "modifiers";
+export type LineMetric = "procedures" | "add_ons" | "units" | "place_of_service";
 
 export interface RateRow {
   key: RateKey;
   rate: Rate;
+}
+
+export interface LineRate {
+  key: LineMetric;
+  rate: Rate | null;
+  cases: number | null;
 }
 
 export interface LevelShare {
@@ -35,6 +43,7 @@ const ADMIN_VIEWS: readonly QualityView[] = ["training"];
 export const DISPLAYS: readonly Display[] = ["chart", "table"];
 export const SIDES: readonly AgreementSide[] = ["bodha", "claim"];
 export const RATE_KEYS: readonly RateKey[] = ["em", "icd_precision", "icd_recall", "icd_exact", "modifiers"];
+export const LINE_METRICS: readonly LineMetric[] = ["procedures", "add_ons", "units", "place_of_service"];
 export const QUALITY_ADMINS: readonly Role[] = ["admin"];
 export const TREND_RUNS = 12;
 
@@ -77,6 +86,10 @@ export function isQualityAdmin(role: Role | null | undefined): boolean {
 
 export function rateRows(summary: AgreementSummary): RateRow[] {
   return RATE_KEYS.map((key) => ({ key, rate: summary[key] }));
+}
+
+export function lineRates(summary: EvalSummary | undefined): LineRate[] {
+  return LINE_METRICS.map((key) => ({ key, rate: summary?.[key] ?? null, cases: summary?.case_counts?.[key] ?? null }));
 }
 
 export function scopeName(sample: SampleOverview): string {

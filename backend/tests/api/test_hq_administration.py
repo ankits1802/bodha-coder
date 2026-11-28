@@ -133,9 +133,9 @@ async def test_renewing_sets_the_chosen_end_date_or_no_end_date_and_refuses_toda
     today = datetime.now(ZoneInfo("America/Chicago")).date()
 
     chosen = await harness.client.post(f"{path}/renew", headers=hq, json={"until": "2099-06-30"})
-    assert chosen.json() == {"renews_on": "2099-06-30"}
+    assert chosen.json() == {"renews_on": "2099-06-30", "plan": "professional"}
     forever = await harness.client.post(f"{path}/renew", headers=hq, json={"until": None})
-    assert forever.json() == {"renews_on": None}
+    assert forever.json() == {"renews_on": None, "plan": "professional"}
     assert (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]["renews_on"] is None
 
     refused = await harness.client.post(f"{path}/renew", headers=hq, json={"until": today.isoformat()})
@@ -146,10 +146,34 @@ async def test_renewing_sets_the_chosen_end_date_or_no_end_date_and_refuses_toda
     assert tomorrow.status_code == 200
     renewed = (await harness.client.get("/api/hq/activity", headers=hq, params={"action": "practice renewed"})).json()
     assert [item["detail"] for item in renewed["items"]] == [
-        f"renews {(today + timedelta(days=1)).isoformat()}",
-        "no end date",
-        "renews 2099-06-30",
+        f"professional, renews {(today + timedelta(days=1)).isoformat()}",
+        "professional, no end date",
+        "professional, renews 2099-06-30",
     ]
+
+
+async def test_a_new_plan_from_hq_moves_a_trial_to_active_and_back(harness):
+    hq = await _hq(harness)
+    body = {"name": "Harbor", "admin_name": "Practice Admin", "admin_email": "admin@harbor.example.com", "seats": 5}
+    created = await harness.client.post("/api/hq/practices", headers=hq, json={**body, "plan": "trial"})
+    path = f"/api/hq/practices/{created.json()['id']}"
+
+    async def status_and_plan() -> tuple[str, str]:
+        row = (await harness.client.get("/api/hq/practices", headers=hq)).json()[0]
+        return row["status"], row["plan"]
+
+    assert await status_and_plan() == ("trial", "trial")
+    assert (await harness.client.patch(path, headers=hq, json={"plan": "enterprise"})).status_code == 204
+    assert await status_and_plan() == ("active", "enterprise")
+    back = await harness.client.post(f"{path}/renew", headers=hq, json={"until": "2099-01-31", "plan": "trial"})
+    assert (back.json(), await status_and_plan()) == ({"renews_on": "2099-01-31", "plan": "trial"}, ("trial", "trial"))
+    paid = await harness.client.post(f"{path}/renew", headers=hq, json={"until": None, "plan": "essentials"})
+    assert paid.json() == {"renews_on": None, "plan": "essentials"}
+    assert await status_and_plan() == ("active", "essentials")
+    unknown = await harness.client.post(f"{path}/renew", headers=hq, json={"until": None, "plan": "gold"})
+    assert (unknown.status_code, unknown.json()["message"]) == (422, "choose a plan")
+    changes = (await harness.client.get("/api/hq/activity", headers=hq, params={"action": "practice renewed"})).json()
+    assert {"field": "plan", "before": "trial", "after": "essentials"} in changes["items"][0]["changes"]
 
 
 async def _practice_with_every_record(harness, icd_catalog):

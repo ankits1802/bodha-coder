@@ -4,14 +4,16 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.ai.contracts import DiagnosisFinding, EmReview, ReviewReport
+from app.ai.contracts import CodeVerdict, DiagnosisFinding, EmReview, ReviewReport
 from app.codes.billing_codes import Code, is_known_cpt
 from app.codes.em import compare_em, describe_em, is_em_code
 from app.codes.hcc import hcc_model_for
 from app.codes.icd import IcdRelease, format_icd
-from app.services.code_additions import add_on_findings, modifier_findings
+from app.codes.prolonged import VisitTime
+from app.services.code_additions import add_on_findings, modifier_findings, prolonged_finding, visit_time
 from app.services.finding import Finding
 from app.services.risk_adjustment import risk_adjustment_findings
+from app.services.routing import choices_for, claim
 
 __all__ = [
     "Finding",
@@ -22,6 +24,7 @@ __all__ = [
     "diagnosis_findings",
     "em_finding",
     "mips_findings",
+    "suggested_claim",
     "visit_findings",
 ]
 
@@ -39,9 +42,11 @@ MIPS_DETAIL_KEYS = (
 def build_findings(report: ReviewReport, billed: tuple[Code, ...], icd: IcdRelease) -> list[Finding]:
     verdicts = {item.code.upper(): item for item in (report.code_review.items if report.code_review else [])}
     findings: list[Finding] = []
+    timing: VisitTime | None = None
     if report.em is not None:
         findings += visit_findings(report.em, billed, report.code_review.em_reason if report.code_review else "")
-    findings += cpt_findings(billed, verdicts)
+        timing = visit_time(report.em, findings[0])
+    findings += cpt_findings(billed, verdicts, timing, tuple(report.em.evidence) if report.em else ())
     if report.diagnoses is not None:
         findings += diagnosis_findings(report.diagnoses, billed, icd)
     hcc_model = hcc_model_for(report.hcc.paymentYear) if report.hcc is not None else None
@@ -50,6 +55,11 @@ def build_findings(report: ReviewReport, billed: tuple[Code, ...], icd: IcdRelea
     findings += audit_findings(_section(report.audit))
     findings += mips_findings(_section(report.mips))
     return findings
+
+
+def suggested_claim(report: ReviewReport, billed: tuple[Code, ...], icd: IcdRelease) -> tuple[Code, ...]:
+    findings = build_findings(report, billed, icd)
+    return claim(billed, findings, choices_for(findings, {}))
 
 
 def visit_findings(em: EmReview, billed: tuple[Code, ...], em_reason: str) -> list[Finding]:
@@ -83,39 +93,43 @@ def em_finding(em: EmReview, billed: tuple[Code, ...], em_reason: str) -> Findin
     )
 
 
-def cpt_findings(billed: tuple[Code, ...], verdicts: dict[str, Any]) -> list[Finding]:
-    findings: list[Finding] = []
-    for code in billed:
-        if code.type != "CPT" or is_em_code(code.code):
-            continue
-        verdict = verdicts.get(code.code)
-        if not is_known_cpt(code.code):
-            findings.append(
-                Finding(
-                    "code_review",
-                    f"cpt:{code.code}",
-                    "review",
-                    "Not in the CMS fee schedule",
-                    f"{code.code} is not a 2026 physician fee schedule code.",
-                    code.code,
-                )
-            )
-        elif verdict is not None and verdict.verdict != "keep":
-            after = verdict.suggested_code if verdict.suggested_code and is_known_cpt(verdict.suggested_code) else None
-            action = "remove" if verdict.verdict == "remove" else ("replace" if after else "review")
-            findings.append(
-                Finding(
-                    "code_review",
-                    f"cpt:{code.code}",
-                    action,
-                    "Procedure code",
-                    verdict.reason,
-                    code.code,
-                    after,
-                    tuple(verdict.evidence),
-                )
-            )
-    return findings
+def cpt_findings(
+    billed: tuple[Code, ...], verdicts: dict[str, Any], timing: VisitTime | None = None, evidence: tuple[str, ...] = ()
+) -> list[Finding]:
+    procedures = [code for code in billed if code.type == "CPT" and not is_em_code(code.code)]
+    found = [_cpt_finding(code, verdicts.get(code.code), timing, evidence) for code in procedures]
+    return [finding for finding in found if finding is not None]
+
+
+def _cpt_finding(
+    code: Code, verdict: CodeVerdict | None, timing: VisitTime | None, evidence: tuple[str, ...]
+) -> Finding | None:
+    prolonged = prolonged_finding(code, timing, evidence) if timing is not None else None
+    if prolonged is not None:
+        return prolonged
+    if not is_known_cpt(code.code):
+        return Finding(
+            "code_review",
+            f"cpt:{code.code}",
+            "review",
+            "Not in the CMS fee schedule",
+            f"{code.code} is not a 2026 physician fee schedule code.",
+            code.code,
+        )
+    if verdict is None or verdict.verdict == "keep":
+        return None
+    after = verdict.suggested_code if verdict.suggested_code and is_known_cpt(verdict.suggested_code) else None
+    action = "remove" if verdict.verdict == "remove" else ("replace" if after else "review")
+    return Finding(
+        "code_review",
+        f"cpt:{code.code}",
+        action,
+        "Procedure code",
+        verdict.reason,
+        code.code,
+        after,
+        tuple(verdict.evidence),
+    )
 
 
 def diagnosis_findings(diagnoses: list[DiagnosisFinding], billed: tuple[Code, ...], icd: IcdRelease) -> list[Finding]:

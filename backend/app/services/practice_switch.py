@@ -8,7 +8,7 @@ from app.core.deps import (
     Client,
     PracticeAccess,
     active_membership,
-    ensure_session_allowed,
+    ensure_practice_open,
     needs_two_step,
 )
 from app.core.errors import Forbidden, Unauthorized
@@ -55,5 +55,5 @@ async def _standing_in(db: AsyncSession, user: User, practice_id: str) -> Practi
     practice = await db.get_one(Practice, practice_id)
     if practice.status not in ACTIVE_PRACTICE_STATUSES:
         raise Forbidden(PRACTICE_CLOSED)
-    ensure_session_allowed(membership.role, practice)
+    await ensure_practice_open(db, user, membership.role, practice)
     return PracticeAccess(practice, membership)

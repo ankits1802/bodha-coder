@@ -16,6 +16,7 @@ import { changeTone } from "../qualityModel";
 import { QUALITY_TEXT } from "../strings";
 import { EvalCasesPanel } from "./EvalCasesPanel";
 import { LevelMixPanel } from "./LevelMixPanel";
+import { LineStats } from "./LineStats";
 import { RunTrend } from "./RunTrend";
 import { RunsTable } from "./RunsTable";
 
@@ -64,7 +65,12 @@ export function EvaluationView({ canRun }: { canRun: boolean }) {
   );
   return (
     <>
-      {runs.state.status === "success" ? <LatestStats data={runs.state.data} /> : null}
+      {runs.state.status === "success" ? (
+        <>
+          <LatestStats data={runs.state.data} />
+          <LineStats data={runs.state.data} />
+        </>
+      ) : null}
       <Panel>
         <PanelHeader title={QUALITY_TEXT.runsTitle} actions={actions} />
         {queue.error ? <InlineAlert tone="bad">{queue.error}</InlineAlert> : null}

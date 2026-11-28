@@ -48,8 +48,9 @@ async def edit_organization(organization_id: str, body: OrganizationUpdateBody, 
 
 @router.post(f"{ORGANIZATION}/renew", response_model=Renewal)
 async def renew(organization_id: str, body: RenewBody, db: Db, actor: HqActor) -> dict[str, str | None]:
-    until = await hq_organizations.renew_organization(db, actor, organization_id, body.until)
-    return {"renews_on": until.isoformat() if until else None}
+    organization = await hq_organizations.renew_organization(db, actor, organization_id, body.until, plan=body.plan)
+    renews_on = organization.renews_on
+    return {"renews_on": renews_on.isoformat() if renews_on else None, "plan": organization.plan}
 
 
 @router.post(f"{ORGANIZATION}/practices", status_code=204)

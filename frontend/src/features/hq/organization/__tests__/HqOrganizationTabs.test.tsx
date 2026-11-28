@@ -84,14 +84,14 @@ describe("HqOrganizationScreen tabs", () => {
   });
 
   it("renews the organization by hand", async () => {
-    vi.mocked(renewOrganization).mockResolvedValue({ renews_on: "2100-03-01" });
+    vi.mocked(renewOrganization).mockResolvedValue({ renews_on: "2100-03-01", plan: "professional" });
     const user = userEvent.setup();
     render(<HqOrganizationScreen organizationId="o1" />);
     await user.click(await screen.findByRole("button", { name: "Renew" }));
     const dialog = await screen.findByRole("dialog", { name: "Renew Acme Health" });
     await user.click(within(dialog).getByRole("button", { name: "Renew" }));
-    await waitFor(() => expect(renewOrganization).toHaveBeenCalledWith("o1", "2100-03-01"));
-    expect(await screen.findByText("Acme Health renews 1 Mar 2100")).toBeInTheDocument();
+    await waitFor(() => expect(renewOrganization).toHaveBeenCalledWith("o1", "2100-03-01", expect.any(String)));
+    expect(await screen.findByText("Acme Health is on Professional until 1 Mar 2100")).toBeInTheDocument();
   });
 
   it("offers no changes for a closed organization", async () => {

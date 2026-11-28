@@ -166,18 +166,26 @@ async def update_organization(
     await db.commit()
 
 
-async def renew_organization(db: AsyncSession, actor: Actor, organization_id: str, until: date | None) -> date | None:
+async def renew_organization(
+    db: AsyncSession, actor: Actor, organization_id: str, until: date | None, *, plan: str | None = None
+) -> Organization:
     organization = await hq_organization(db, organization_id)
     refuse_organization_change(await organization_subscription(db, organization.id))
     if until is not None and until <= today_in(ORGANIZATION_ZONE):
         raise Invalid(RENEWAL_IN_PAST)
-    previous, organization.renews_on = organization.renews_on, until
+    if plan is not None and plan not in PLAN_KEYS:
+        raise Invalid("choose a plan")
+    previous, previous_plan = organization.renews_on, organization.plan
+    organization.renews_on, organization.plan = until, plan or organization.plan
     await follow_all(db, organization)
     changed = [{"field": "renews_on", "before": _day(previous), "after": _day(until)}]
-    detail = f"{organization.name}: renews {until.isoformat()}" if until else f"{organization.name}: no end date"
+    if organization.plan != previous_plan:
+        changed.append({"field": "plan", "before": previous_plan, "after": organization.plan})
+    ends = f"renews {until.isoformat()}" if until else "no end date"
+    detail = f"{organization.name}: {organization.plan}, {ends}"
     record_activity(db, actor, "organization renewed", practice_id=None, detail=detail, changes=changed)
     await db.commit()
-    return until
+    return organization
 
 
 def _day(value: date | None) -> str | None:

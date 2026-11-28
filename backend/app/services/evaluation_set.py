@@ -36,9 +36,14 @@ CANDIDATE_LIMIT = 50
 ACTIVE_RUN_STATUSES = ("queued", "running")
 
 
-def expected_for(codes: Sequence[Code]) -> dict[str, Any]:
+def expected_for(codes: Sequence[Code], place_of_service: str) -> dict[str, Any]:
     elements = elements_of(codes)
-    return {**elements.as_json(), "level": em_level(elements.em), "claim": [code.as_json() for code in codes]}
+    return {
+        **elements.as_json(),
+        "level": em_level(elements.em),
+        "claim": [code.as_json() for code in codes],
+        "place_of_service": place_of_service,
+    }
 
 
 async def mark_case(db: AsyncSession, actor: Actor, note_id: str) -> dict[str, Any]:
@@ -56,7 +61,7 @@ async def mark_case(db: AsyncSession, actor: Actor, note_id: str) -> dict[str, A
     case = EvalCase(
         practice_id=actor.practice_id,
         note_id=note.id,
-        expected={**expected_for(final), "analysis_id": note.current_analysis_id},
+        expected={**expected_for(final, note.place_code), "analysis_id": note.current_analysis_id},
         created_by=actor.user.id,
     )
     db.add(case)
