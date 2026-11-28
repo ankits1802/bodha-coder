@@ -45,10 +45,12 @@ from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.hq_organizations import router as hq_organizations_router
 from app.api.routes.intake import router as intake_router
 from app.api.routes.organizations import router as organizations_router
+from app.api.routes.practice_measures import router as practice_measures_router
 from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
 from app.api.routes.review_records import router as review_records_router
+from app.api.routes.usage import router as usage_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
 from app.core.errors import CODE_BY_STATUS, SERVER_ERROR_MESSAGE, AppError, Invalid
@@ -111,6 +113,8 @@ app.include_router(review_records_router, prefix="/api")
 app.include_router(organizations_router, prefix="/api")
 app.include_router(domains_router, prefix="/api")
 app.include_router(hq_organizations_router, prefix="/api")
+app.include_router(practice_measures_router, prefix="/api")
+app.include_router(usage_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

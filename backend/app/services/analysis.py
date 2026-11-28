@@ -15,13 +15,13 @@ from app.ai.contracts import BilledCode, ModelClient, ReviewInputs, ReviewOutcom
 from app.ai.prompts.context import labelled_addendum
 from app.codes.billing_codes import Code
 from app.codes.icd import IcdCatalog
-from app.codes.mips_scope import practice_scope
 from app.codes.places import setting_for
 from app.core.model_prices import PriceBook
-from app.models import Analysis, MipsList, Note, NoteText, Practice, Suggestion, utcnow
+from app.models import Analysis, Note, NoteText, Practice, Suggestion, utcnow
 from app.services.analysis_records import billed_context, keep_run_inputs, record_failure
 from app.services.code_sets import latest_codes, next_revision
 from app.services.findings import Finding, build_findings
+from app.services.mips_lists import practice_mips_scope
 from app.services.note_texts import current_texts, note_texts
 from app.services.placement import refresh_placement
 
@@ -114,7 +114,6 @@ async def _inputs(
     )
     if billed:
         sections = sections | {"code_review"}
-    mips_list = await db.scalar(select(MipsList.measure_ids).where(MipsList.practice_id == practice.id))
     return ReviewInputs(
         sections=sections,
         setting=setting_for(note.place_code),
@@ -124,18 +123,20 @@ async def _inputs(
         billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers, code.units) for code in billed),
         note_text=source.text,
         pdf=source.pdf,
-        mips_scope=practice_scope(mips_list),
+        mips_scope=await practice_mips_scope(db, practice.id),
     )
 
 
 def _context(inputs: ReviewInputs) -> dict[str, Any]:
+    scope = inputs.mips_scope
     return {
         "sections": sorted(inputs.sections),
         "setting": inputs.setting,
         "place_of_service": inputs.place_of_service,
         "visit_type": inputs.visit_type,
         "billed": billed_context(inputs.billed_codes),
-        "mips_measures": list(inputs.mips_scope.measure_ids) if inputs.mips_scope else None,
+        "mips_measures": list(scope.listed_ids) if scope else None,
+        "practice_measures": [measure.version_id for measure in scope.practice_measures] if scope else [],
         "source": "pdf" if inputs.note_text is None else "text and pdf" if inputs.pdf else "text",
     }
 

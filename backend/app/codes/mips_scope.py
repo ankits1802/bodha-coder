@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
 from app.codes.mips_catalog import ADDABLE_MEASURE_IDS, VERIFIED_MIPS_MEASURES, list_order, rejection_for_saved_id
+from app.codes.practice_measures import PracticeMeasureDefinition, is_practice_key
 
 MipsScopeSource = Literal["practice"]
 
@@ -15,10 +17,19 @@ class MipsScope:
     measure_ids: tuple[str, ...]
     source: MipsScopeSource
     retired_ids: tuple[str, ...] = ()
+    practice_measures: tuple[PracticeMeasureDefinition, ...] = ()
 
     @property
     def added_ids(self) -> tuple[str, ...]:
         return tuple(measure_id for measure_id in self.measure_ids if measure_id in ADDABLE_MEASURE_IDS)
+
+    @property
+    def listed_ids(self) -> tuple[str, ...]:
+        return self.measure_ids + tuple(measure.key for measure in self.practice_measures)
+
+    @property
+    def allows_nothing(self) -> bool:
+        return not self.measure_ids and not self.practice_measures
 
 
 def _echo(value: object) -> str:
@@ -53,8 +64,18 @@ def catalog_ids(stored: object) -> tuple[tuple[str, ...], tuple[str, ...]]:
     return kept, tuple(retired)
 
 
-def practice_scope(stored: object) -> MipsScope | None:
+def practice_keys(stored: object) -> tuple[str, ...]:
+    if not isinstance(stored, list):
+        return ()
+    return tuple(sorted({item for item in stored if is_practice_key(item)}))
+
+
+def practice_scope(stored: object, defined: Mapping[str, PracticeMeasureDefinition] | None = None) -> MipsScope | None:
     if not isinstance(stored, list) or not stored:
         return None
-    kept, retired = catalog_ids(stored)
-    return MipsScope(measure_ids=kept, source="practice", retired_ids=retired)
+    known = defined or {}
+    keys = practice_keys(stored)
+    kept, retired = catalog_ids([item for item in stored if item not in keys])
+    unknown = tuple(key for key in keys if key not in known)
+    measures = tuple(known[key] for key in keys if key in known)
+    return MipsScope(measure_ids=kept, source="practice", retired_ids=retired + unknown, practice_measures=measures)

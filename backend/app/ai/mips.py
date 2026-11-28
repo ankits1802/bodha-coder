@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
+from app.ai.practice_mips import PracticeMeasureMark, split_practice_answers, with_practice_measures
 from app.codes.mips_reporting_codes import attach_reporting_codes, restrict_to_scope
 from app.codes.mips_scope import MipsScope
 
@@ -24,9 +25,7 @@ __all__ = [
     "scoped_mips",
 ]
 
-NO_MEASURE_IN_SCOPE = (
-    "MIPS: this practice's measure list names no current CMS quality measure, so no measure was checked."
-)
+NO_MEASURE_IN_SCOPE = "MIPS: this practice's measure list names no current measure, so no measure was checked."
 MACRO_PLACEHOLDER = "[PLACEHOLDER:"
 
 MeasureStatus = Literal["met", "missing", "not_applicable"]
@@ -95,6 +94,7 @@ class MipsMeasure(EligibleMeasure):
     addedByOrganization: bool = False
     specUrl: str | None = None
     nursingFacilityNote: str | None = None
+    practiceMeasure: PracticeMeasureMark | None = None
 
 
 class MipsReview(BaseModel):
@@ -104,12 +104,14 @@ class MipsReview(BaseModel):
 
 
 def scope_allows_nothing(scope: MipsScope | None) -> bool:
-    return scope is not None and not scope.measure_ids
+    return scope is not None and scope.allows_nothing
 
 
 def scoped_mips(answer: MIPSQualityMeasuresOutput, scope: MipsScope | None) -> MipsReview:
-    with_codes = attach_reporting_codes(answer.model_dump(mode="json"))
-    return MipsReview.model_validate(restrict_to_scope(with_codes, scope))
+    payload = answer.model_dump(mode="json")
+    cms, practice = split_practice_answers(payload["eligibleMeasures"])
+    with_codes = attach_reporting_codes({**payload, "eligibleMeasures": cms})
+    return MipsReview.model_validate(with_practice_measures(restrict_to_scope(with_codes, scope), practice, scope))
 
 
 def empty_mips(scope: MipsScope | None) -> MipsReview:

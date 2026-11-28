@@ -6712,6 +6712,41 @@
         "title": "HqTeamMember",
         "type": "object"
       },
+      "HqUsageFigures": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "practices": {
+            "title": "Practices",
+            "type": "integer"
+          },
+          "stalls": {
+            "items": {
+              "$ref": "#/components/schemas/UsageStallFigures"
+            },
+            "title": "Stalls",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/UsageTaskFigures"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days",
+          "tasks",
+          "stalls",
+          "practices"
+        ],
+        "title": "HqUsageFigures",
+        "type": "object"
+      },
       "IcdComparison": {
         "additionalProperties": false,
         "properties": {
@@ -8053,6 +8088,13 @@
             "title": "Measure Ids",
             "type": "array"
           },
+          "practice": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeMeasureView"
+            },
+            "title": "Practice",
+            "type": "array"
+          },
           "standard": {
             "items": {
               "$ref": "#/components/schemas/MipsMeasure"
@@ -8068,6 +8110,7 @@
         "required": [
           "standard",
           "addable",
+          "practice",
           "measure_ids",
           "uses_standard"
         ],
@@ -10872,6 +10915,254 @@
           "name"
         ],
         "title": "PracticeInsight",
+        "type": "object"
+      },
+      "PracticeMeasureBody": {
+        "additionalProperties": false,
+        "properties": {
+          "identifier": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "in_scope": {
+            "maxLength": 600,
+            "minLength": 10,
+            "title": "In Scope",
+            "type": "string"
+          },
+          "met_codes": {
+            "items": {
+              "maxLength": 12,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Met Codes",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 3,
+            "title": "Name",
+            "type": "string"
+          },
+          "not_met_codes": {
+            "items": {
+              "maxLength": 12,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Not Met Codes",
+            "type": "array"
+          },
+          "out_of_scope": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of Scope"
+          },
+          "to_meet": {
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "To Meet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "in_scope",
+          "to_meet"
+        ],
+        "title": "PracticeMeasureBody",
+        "type": "object"
+      },
+      "PracticeMeasureChangeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "in_scope": {
+            "maxLength": 600,
+            "minLength": 10,
+            "title": "In Scope",
+            "type": "string"
+          },
+          "met_codes": {
+            "items": {
+              "maxLength": 12,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Met Codes",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 3,
+            "title": "Name",
+            "type": "string"
+          },
+          "not_met_codes": {
+            "items": {
+              "maxLength": 12,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Not Met Codes",
+            "type": "array"
+          },
+          "out_of_scope": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of Scope"
+          },
+          "to_meet": {
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "To Meet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "in_scope",
+          "to_meet",
+          "expected_version"
+        ],
+        "title": "PracticeMeasureChangeBody",
+        "type": "object"
+      },
+      "PracticeMeasureRetireBody": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "PracticeMeasureRetireBody",
+        "type": "object"
+      },
+      "PracticeMeasureView": {
+        "additionalProperties": false,
+        "properties": {
+          "changed_at": {
+            "title": "Changed At",
+            "type": "string"
+          },
+          "identifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier"
+          },
+          "in_scope": {
+            "title": "In Scope",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "met_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Met Codes",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "not_met_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Not Met Codes",
+            "type": "array"
+          },
+          "out_of_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of Scope"
+          },
+          "to_meet": {
+            "title": "To Meet",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "version",
+          "name",
+          "identifier",
+          "in_scope",
+          "out_of_scope",
+          "to_meet",
+          "met_codes",
+          "not_met_codes",
+          "changed_at"
+        ],
+        "title": "PracticeMeasureView",
         "type": "object"
       },
       "PracticePurged": {
@@ -15744,6 +16035,407 @@
           "counts"
         ],
         "title": "UploadedBatch",
+        "type": "object"
+      },
+      "UsageBatchBody": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "stall": "#/components/schemas/UsageStallBody",
+                  "task": "#/components/schemas/UsageTaskBody"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UsageTaskBody"
+                },
+                {
+                  "$ref": "#/components/schemas/UsageStallBody"
+                }
+              ]
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "UsageBatchBody",
+        "type": "object"
+      },
+      "UsageFigures": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "stalls": {
+            "items": {
+              "$ref": "#/components/schemas/UsageStallFigures"
+            },
+            "title": "Stalls",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/UsageTaskFigures"
+            },
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days",
+          "tasks",
+          "stalls"
+        ],
+        "title": "UsageFigures",
+        "type": "object"
+      },
+      "UsageSpread": {
+        "additionalProperties": false,
+        "properties": {
+          "median": {
+            "title": "Median",
+            "type": "number"
+          },
+          "p25": {
+            "title": "P25",
+            "type": "number"
+          },
+          "p75": {
+            "title": "P75",
+            "type": "number"
+          }
+        },
+        "required": [
+          "p25",
+          "median",
+          "p75"
+        ],
+        "title": "UsageSpread",
+        "type": "object"
+      },
+      "UsageStallBody": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "maximum": 14400000.0,
+            "minimum": 0.0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "stall",
+            "title": "Kind",
+            "type": "string"
+          },
+          "step": {
+            "enum": [
+              "summary",
+              "note",
+              "findings",
+              "claim",
+              "dialog",
+              "history",
+              "navigation",
+              "queue",
+              "upload",
+              "billing"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "task": {
+            "enum": [
+              "note_review",
+              "queue",
+              "upload",
+              "billing_export"
+            ],
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "event_id",
+          "task",
+          "step",
+          "duration_ms"
+        ],
+        "title": "UsageStallBody",
+        "type": "object"
+      },
+      "UsageStallFigures": {
+        "additionalProperties": false,
+        "properties": {
+          "duration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageSpread"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people": {
+            "title": "People",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "stalls": {
+            "title": "Stalls",
+            "type": "integer"
+          },
+          "step": {
+            "enum": [
+              "summary",
+              "note",
+              "findings",
+              "claim",
+              "dialog",
+              "history",
+              "navigation",
+              "queue",
+              "upload",
+              "billing"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "task": {
+            "enum": [
+              "note_review",
+              "queue",
+              "upload",
+              "billing_export"
+            ],
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "step",
+          "role",
+          "stalls",
+          "people",
+          "duration"
+        ],
+        "title": "UsageStallFigures",
+        "type": "object"
+      },
+      "UsageTaskBody": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "maximum": 14400000.0,
+            "minimum": 0.0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "first_decision_ms": {
+            "anyOf": [
+              {
+                "maximum": 14400000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Decision Ms"
+          },
+          "key_decisions": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Key Decisions",
+            "type": "integer"
+          },
+          "key_inputs": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Key Inputs",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "task",
+            "title": "Kind",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "completed",
+              "left"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "pointer_decisions": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Pointer Decisions",
+            "type": "integer"
+          },
+          "pointer_inputs": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Pointer Inputs",
+            "type": "integer"
+          },
+          "task": {
+            "enum": [
+              "note_review",
+              "queue",
+              "upload",
+              "billing_export"
+            ],
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "event_id",
+          "task",
+          "outcome",
+          "duration_ms"
+        ],
+        "title": "UsageTaskBody",
+        "type": "object"
+      },
+      "UsageTaskFigures": {
+        "additionalProperties": false,
+        "properties": {
+          "completed": {
+            "title": "Completed",
+            "type": "integer"
+          },
+          "decided": {
+            "title": "Decided",
+            "type": "integer"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageSpread"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "first_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageSpread"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inputs_per_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageSpread"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keyboard_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyboard Share"
+          },
+          "people": {
+            "title": "People",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "coder",
+              "cdi",
+              "compliance",
+              "biller",
+              "viewer"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "task": {
+            "enum": [
+              "note_review",
+              "queue",
+              "upload",
+              "billing_export"
+            ],
+            "title": "Task",
+            "type": "string"
+          },
+          "tasks": {
+            "title": "Tasks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "task",
+          "role",
+          "tasks",
+          "completed",
+          "people",
+          "duration",
+          "first_decision",
+          "decided",
+          "inputs_per_decision",
+          "keyboard_share"
+        ],
+        "title": "UsageTaskFigures",
         "type": "object"
       },
       "User": {
@@ -22368,6 +23060,95 @@
         ]
       }
     },
+    "/api/hq/usage": {
+      "get": {
+        "operationId": "hq_figures_api_hq_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HqUsageFigures"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Hq Figures",
+        "tags": [
+          "usage"
+        ]
+      }
+    },
     "/api/inbox": {
       "get": {
         "operationId": "items_api_inbox_get",
@@ -22883,6 +23664,95 @@
         ]
       }
     },
+    "/api/insights/usage": {
+      "get": {
+        "operationId": "practice_figures_api_insights_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageFigures"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Practice Figures",
+        "tags": [
+          "usage"
+        ]
+      }
+    },
     "/api/mips": {
       "get": {
         "operationId": "mips_api_mips_get",
@@ -23034,6 +23904,284 @@
           }
         },
         "summary": "Save Mips",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/mips/practice-measures": {
+      "post": {
+        "operationId": "add_measure_api_mips_practice_measures_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeMeasureBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeMeasureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Add Measure",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/mips/practice-measures/{measure_key}": {
+      "put": {
+        "operationId": "change_measure_api_mips_practice_measures__measure_key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "measure_key",
+            "required": true,
+            "schema": {
+              "title": "Measure Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeMeasureChangeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeMeasureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Change Measure",
+        "tags": [
+          "practice"
+        ]
+      }
+    },
+    "/api/mips/practice-measures/{measure_key}/retire": {
+      "post": {
+        "operationId": "retire_measure_api_mips_practice_measures__measure_key__retire_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "measure_key",
+            "required": true,
+            "schema": {
+              "title": "Measure Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeMeasureRetireBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Retire Measure",
         "tags": [
           "practice"
         ]
@@ -34002,6 +35150,88 @@
         "summary": "Preview",
         "tags": [
           "uploads"
+        ]
+      }
+    },
+    "/api/usage/events": {
+      "post": {
+        "operationId": "record_events_api_usage_events_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsageBatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sign-in is missing or has ended"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "This role cannot do this, or the note is in the reader's blind audit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Any other error"
+          }
+        },
+        "summary": "Record Events",
+        "tags": [
+          "usage"
         ]
       }
     },

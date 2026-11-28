@@ -14,7 +14,7 @@ from app.ai.errors import ModelError
 from app.ai.prompts.context import labelled_addendum
 from app.codes.billing_codes import Code
 from app.codes.icd import IcdRelease, IcdReleaseUnavailable
-from app.codes.mips_scope import practice_scope
+from app.codes.mips_scope import MipsScope, practice_scope
 from app.codes.places import setting_for
 from app.models import Analysis, EvalCase, EvalRun, Note, NoteText, utcnow
 from app.services.agreement import compare_elements, elements_from_json, elements_of
@@ -22,6 +22,7 @@ from app.services.analysis import AnalysisDeps, latest_codes
 from app.services.evaluation_scores import evaluation_summary
 from app.services.findings import build_findings
 from app.services.note_texts import current_texts, note_texts
+from app.services.practice_measures import definitions_by_version
 from app.services.routing import choices_for, claim
 
 __all__ = [
@@ -146,9 +147,14 @@ async def _case_inputs(db: AsyncSession, note: Note, store: ObjectStore) -> tupl
         billed_codes=tuple(BilledCode(code.code, code.type, code.modifiers) for code in billed),
         note_text=text,
         pdf=None if text else await store.get(note.file_key),
-        mips_scope=practice_scope(analysis.context.get("mips_measures")),
+        mips_scope=await _repeated_scope(db, analysis.context),
     )
     return inputs, billed
+
+
+async def _repeated_scope(db: AsyncSession, context: dict[str, Any]) -> MipsScope | None:
+    defined = await definitions_by_version(db, context.get("practice_measures") or [])
+    return practice_scope(context.get("mips_measures"), defined)
 
 
 def _note_text(texts: list[NoteText]) -> str | None:

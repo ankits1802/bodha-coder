@@ -19,6 +19,7 @@ __all__ = [
     "Payer",
     "PayerOption",
     "Place",
+    "PracticeMeasureView",
     "PracticeSetup",
     "Provider",
     "ProviderDetails",
@@ -126,9 +127,23 @@ class MipsMeasure(View):
     title: str
 
 
+class PracticeMeasureView(View):
+    key: str
+    version: int
+    name: str
+    identifier: str | None
+    in_scope: str
+    out_of_scope: str | None
+    to_meet: str
+    met_codes: list[str]
+    not_met_codes: list[str]
+    changed_at: str
+
+
 class MipsOverview(View):
     standard: list[MipsMeasure]
     addable: list[MipsMeasure]
+    practice: list[PracticeMeasureView]
     measure_ids: list[str]
     uses_standard: bool
 
