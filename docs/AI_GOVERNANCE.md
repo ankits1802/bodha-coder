@@ -64,6 +64,27 @@ high and 1 with a visit that is not separately billable.
 | Limits | Procedure lines, add-on codes, units and place of service are scored only on the cases they apply to (few in this set, so their intervals are wide), and Bodha never changes the place of service. Run-to-run consistency covers the visit code, diagnoses and modifiers only. Notes whose right outcome is a provider query are not in the set, because a run cannot score a query. Bodha's suggested claim cannot remove a visit code or a modifier, so one case can only disagree; results are shown with and without it. 48 notes give wide intervals: one case moves a rate by about two points. |
 | Status | **Provisional.** No certified coder has checked the expected answers yet. Numbers from this set are provisional until one does and the review is recorded. |
 
+### First run, 2026-11-28 (provisional)
+
+Run b473489a in production, gemini-3.8-flash, prompt 2026.11.8: 48 cases, 46 scored. Two reads (GS-26 and GS-41) timed out at the model after retries and did not score.
+
+| Element | Agreement | 95% interval | Cases |
+|---|---|---|---|
+| Visit code exact | 100% | 92.3% to 100% | 46 / 46 |
+| Visit code higher or lower than expected | 0% each | 0% to 7.7% | 0 / 46 |
+| ICD-10-CM precision | 100% | 100% to 100% | 76 / 76 codes |
+| ICD-10-CM recall | 97.4% | 93.8% to 100% | 76 / 78 codes |
+| ICD-10-CM exact set | 95.7% | 85.5% to 98.8% | 44 / 46 |
+| Modifiers exact | 100% | 92.3% to 100% | 46 / 46 |
+| Procedure lines, add-ons, units | 100% | wide (3, 12 and 15 cases) | all |
+| Two reads agree on every element | 95.7% | 85.5% to 98.8% | 44 / 46 |
+
+The two diagnosis misses were codes the expected answer adds beyond what was billed: Z79.84 (long-term oral
+hypoglycemics, GS-11) and E78.5 (hyperlipidemia, GS-17). These notes were written to meet each level
+unambiguously, so the run measures the reading on clean documentation; real notes are less tidy, and the
+figures should not be quoted publicly until a certified coder has checked the expected answers and a
+sample of real, de-identified notes has been measured the same way.
+
 ## Data handling
 
 Patient information is sent to the model only to review the note it came from. Documents are stored
