@@ -32,7 +32,7 @@ describe("HelpScreen", () => {
   it("shows a viewer only what applies to them", () => {
     signIn("viewer");
     render(<HelpScreen />);
-    expect(headings()).toEqual(["Two-step verification and recovery codes", "Keyboard shortcuts"]);
+    expect(headings()).toEqual(["Upload notes", "Two-step verification and recovery codes", "Keyboard shortcuts"]);
     expect(screen.getByText("Show keyboard shortcuts")).toBeInTheDocument();
     expect(screen.queryByText("Search notes")).not.toBeInTheDocument();
   });
