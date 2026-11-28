@@ -45,8 +45,10 @@ only for the maintenance runbook below.
 
 ## Production canary
 
-`.github/workflows/canary.yml` runs every night at 08:17 UTC (and from Actions, production canary, Run
-workflow) in `CHARTMATE-APP/bodha-coder` only, in the `production` environment. It checks
+`.github/workflows/canary.yml` runs every night at 08:17 UTC once the repository variable
+`CANARY_ENABLED` is `true` (set it after the canary accounts and secrets below exist), and at any time from
+Actions, production canary, Run workflow, in `CHARTMATE-APP/bodha-coder` only, in the `production`
+environment. It checks
 `/api/health/ready` on both hosts, signs in on `https://www.bodhaai.co` and `https://admin.bodhaai.co`
 as two canary accounts, and opens Today, Insights, the Settings tabs, Account and Help, then the HQ
 overview, practices, organizations, activity, spend, team and demo requests. It sends no request that
