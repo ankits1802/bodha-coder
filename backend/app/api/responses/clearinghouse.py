@@ -101,6 +101,7 @@ class ClaimDetailsRecord(View):
 
 class ClaimDetailsSuggestion(View):
     source: Literal["note", "earlier_claim"]
+    patient_name: str | None = None
     patient_last: str | None = None
     patient_first: str | None = None
     patient_birth_date: str | None = None

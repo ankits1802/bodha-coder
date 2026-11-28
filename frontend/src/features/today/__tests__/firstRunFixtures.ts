@@ -1,7 +1,7 @@
 import type { PracticeSetup, SetupSection, TeamList, TeamMember } from "@/lib/api/types";
 
 function section(complete: boolean): SetupSection {
-  return { fields: [], values: {}, complete };
+  return { fields: [], optional: [], values: {}, complete };
 }
 
 export const ADMIN_MEMBER: TeamMember = {

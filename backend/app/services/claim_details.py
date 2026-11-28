@@ -138,17 +138,15 @@ def _text(value: str | None, shape: re.Pattern[str], label: str) -> str:
 
 
 async def _suggestion(db: AsyncSession, note: Note) -> dict[str, Any]:
-    words = (note.patient_name or "").split()
-    from_note = {
-        "patient_last": words[-1] if len(words) > 1 else None,
-        "patient_first": " ".join(words[:-1]) if len(words) > 1 else None,
+    read = {
+        "patient_name": note.patient_name,
         "patient_birth_date": note.patient_birth_date.isoformat() if note.patient_birth_date else None,
         "patient_sex": SEXES.get((note.patient_sex or "").strip().lower()),
     }
     earlier = await _earlier_details(db, note)
     if earlier is None:
-        return {**from_note, "source": "note"}
-    return {**_values(earlier), "source": "earlier_claim"}
+        return {**read, "source": "note"}
+    return {**_values(earlier), "patient_name": note.patient_name, "source": "earlier_claim"}
 
 
 async def _earlier_details(db: AsyncSession, note: Note) -> ClaimDetail | None:

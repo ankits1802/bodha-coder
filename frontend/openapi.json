@@ -2807,6 +2807,17 @@
             ],
             "title": "Patient Last"
           },
+          "patient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Name"
+          },
           "patient_sex": {
             "anyOf": [
               {
@@ -8439,6 +8450,10 @@
             "title": "Access Until",
             "type": "string"
           },
+          "claims": {
+            "title": "Claims",
+            "type": "integer"
+          },
           "comment_id": {
             "title": "Comment Id",
             "type": "string"
@@ -8481,6 +8496,14 @@
           },
           "run_id": {
             "title": "Run Id",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "999",
+              "277CA"
+            ],
+            "title": "Source",
             "type": "string"
           }
         },

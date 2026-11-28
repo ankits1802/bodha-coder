@@ -1,12 +1,14 @@
-import type { Payer, PayerInput, PlanType } from "@/lib/api/types";
+import type { ClaimFiling, Payer, PayerInput, PlanType } from "@/lib/api/types";
 import { PAYER_TEXT } from "./strings";
 
 export const PLAN_TYPES: readonly PlanType[] = ["commercial", "medicare", "medicare_advantage", "medicaid", "other"];
+export const CLAIM_FILINGS = Object.keys(PAYER_TEXT.filingCodes) as ClaimFiling[];
 
 export interface PayerDraft {
   name: string;
   payer_id: string;
   plan_type: PlanType;
+  claim_filing: ClaimFiling | "";
   active: boolean;
 }
 
@@ -19,6 +21,7 @@ export function payerDraftFrom(payer: Payer | null): PayerDraft {
     name: payer?.name ?? "",
     payer_id: payer?.payer_id ?? "",
     plan_type: payer?.plan_type ?? "commercial",
+    claim_filing: payer?.claim_filing ?? "",
     active: payer?.active ?? true,
   };
 }
@@ -34,5 +37,11 @@ export function validatePayer(draft: PayerDraft): PayerErrors {
 
 export function payerInputFrom(draft: PayerDraft): PayerInput {
   const payerId = draft.payer_id.trim().toUpperCase();
-  return { name: draft.name.trim(), payer_id: payerId || null, plan_type: draft.plan_type, active: draft.active };
+  return {
+    name: draft.name.trim(),
+    payer_id: payerId || null,
+    plan_type: draft.plan_type,
+    claim_filing: draft.claim_filing || null,
+    active: draft.active,
+  };
 }

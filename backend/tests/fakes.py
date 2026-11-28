@@ -5,8 +5,9 @@ import json
 import re
 import struct
 import zlib
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from app.adapters.billing_contract import (
@@ -19,6 +20,7 @@ from app.adapters.billing_contract import (
 )
 from app.adapters.oidc import ProviderIdentity
 from app.adapters.oidc_providers import IdentityRefused, provider_label
+from app.adapters.sftp import LinkRefused, RemoteFile, SftpTarget
 from app.ai.contracts import ModelClient, ModelReply, ModelRequest, ReviewInputs, ReviewOutcome, ReviewReport
 
 PNG_MAGIC = bytes([137, 80, 78, 71, 13, 10, 26, 10])
@@ -202,6 +204,48 @@ class FakeTxtResolver:
     async def txt_records(self, domain: str) -> list[str]:
         self.lookups.append(domain)
         return list(self.records.get(domain, []))
+
+
+FAKE_HOST_KEY = "SHA256:" + "Q" * 43
+
+
+@dataclass
+class FakeFileLink:
+    fingerprint: str = FAKE_HOST_KEY
+    refusal: str | None = None
+    uploads: list[tuple[str, str, bytes]] = field(default_factory=list)
+    inbound: dict[str, bytes] = field(default_factory=dict)
+    checked: list[tuple[str, ...]] = field(default_factory=list)
+    targets: list[SftpTarget] = field(default_factory=list)
+    downloads: list[str] = field(default_factory=list)
+
+    async def host_key(self, host: str, port: int) -> str:
+        self._refuse()
+        return self.fingerprint
+
+    async def check(self, target: SftpTarget, folders: Sequence[str]) -> None:
+        self.targets.append(target)
+        self._refuse()
+        self.checked.append(tuple(folders))
+
+    async def upload(self, target: SftpTarget, folder: str, name: str, data: bytes) -> None:
+        self.targets.append(target)
+        self._refuse()
+        self.uploads.append((folder, name, data))
+
+    async def listing(self, target: SftpTarget, folder: str) -> list[RemoteFile]:
+        self._refuse()
+        return [RemoteFile(name, len(data), datetime.now(UTC)) for name, data in self.inbound.items()]
+
+    async def download(
+        self, target: SftpTarget, folder: str, names: Sequence[str], *, limit: int
+    ) -> list[tuple[str, bytes]]:
+        self.downloads += names
+        return [(name, self.inbound[name]) for name in names]
+
+    def _refuse(self) -> None:
+        if self.refusal is not None:
+            raise LinkRefused(self.refusal)
 
 
 @dataclass

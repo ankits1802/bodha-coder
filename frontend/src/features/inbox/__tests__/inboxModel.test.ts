@@ -29,6 +29,10 @@ describe("inbox sentences", () => {
     expect(sentence({ kind: "join_requested", actor_name: "Dana Fox", note_id: null, payload: { request_id: "r-1" } })).toBe(
       "Dana Fox asked to join",
     );
+    expect(sentence({ kind: "claim_rejected", actor_name: "Bodha", payload: { source: "277CA", claims: 1 } })).toBe("A claim was rejected");
+    expect(sentence({ kind: "claim_rejected", actor_name: "Bodha", note_id: null, payload: { source: "999", claims: 3 } })).toBe(
+      "3 claims were rejected",
+    );
   });
 
   it("names the patient and the visit day only when the note is known", () => {
@@ -45,6 +49,8 @@ describe("inbox targets", () => {
     expect(inboxTarget(inboxEntry({ kind: "payment_failed", note_id: null }))).toBe("/settings/plan");
     expect(inboxTarget(inboxEntry({ kind: "plan_ending", note_id: null }))).toBe("/settings/plan");
     expect(inboxTarget(inboxEntry({ kind: "join_requested", note_id: null }))).toBe("/settings/team");
+    expect(inboxTarget(inboxEntry({ kind: "claim_rejected", note_id: null }))).toBe("/billing");
+    expect(inboxTarget(inboxEntry({ kind: "claim_rejected" }))).toBe("/billing");
     expect(inboxTarget(inboxEntry({ kind: "level_disagreed", note_id: null }))).toBeNull();
   });
 });

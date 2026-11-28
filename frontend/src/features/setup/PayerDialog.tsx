@@ -10,11 +10,15 @@ import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
 import { useAction } from "@/hooks/useAction";
 import { addPayer, changePayer } from "@/lib/api/practice";
-import type { Payer, PayerInput, PlanType } from "@/lib/api/types";
-import { PLAN_TYPES, payerDraftFrom, payerInputFrom, validatePayer, type PayerDraft, type PayerErrors } from "./payerForm";
+import type { ClaimFiling, Payer, PayerInput, PlanType } from "@/lib/api/types";
+import { CLAIM_FILINGS, PLAN_TYPES, payerDraftFrom, payerInputFrom, validatePayer, type PayerDraft, type PayerErrors } from "./payerForm";
 import { PAYER_TEXT } from "./strings";
 
 const FORM_ID = "payer-form";
+const FILING_OPTIONS = [
+  { value: "" as const, label: PAYER_TEXT.dialog.fromPlanType },
+  ...CLAIM_FILINGS.map((code) => ({ value: code, label: PAYER_TEXT.filingCodes[code] })),
+];
 
 interface PayerDialogProps {
   payer: Payer | null;
@@ -73,6 +77,16 @@ export function PayerDialog({ payer, onClose, onSaved }: PayerDialogProps) {
               value={draft.plan_type}
               options={PLAN_TYPES.map((type) => ({ value: type, label: PAYER_TEXT.planTypes[type] }))}
               onChange={(plan_type: PlanType) => setDraft({ ...draft, plan_type })}
+            />
+          )}
+        </Field>
+        <Field label={words.claimFiling} optional={words.optional} className="sm:col-span-2">
+          {(control) => (
+            <Select<ClaimFiling | "">
+              {...control}
+              value={draft.claim_filing}
+              options={FILING_OPTIONS}
+              onChange={(claim_filing) => setDraft({ ...draft, claim_filing })}
             />
           )}
         </Field>

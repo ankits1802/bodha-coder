@@ -19,6 +19,8 @@ class InboxPayload(View):
     ends_on: Omittable[str] = None
     reason: Omittable[str] = None
     request_id: Omittable[str] = None
+    source: Omittable[Literal["999", "277CA"]] = None
+    claims: Omittable[int] = None
 
 
 class InboxEntry(View):

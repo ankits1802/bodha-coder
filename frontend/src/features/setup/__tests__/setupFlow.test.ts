@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { PracticeSetup, SetupSection } from "@/lib/api/types";
 import { touchedErrors } from "../providerForm";
-import { fieldError, nextIncomplete } from "../setupModel";
+import { fieldError, isNavKey, nextIncomplete } from "../setupModel";
 
 function section(complete: boolean): SetupSection {
-  return { fields: [], values: {}, complete };
+  return { fields: [], optional: [], values: {}, complete };
 }
 
 const SETUP = {
@@ -45,6 +45,24 @@ describe("setup flow", () => {
     expect(fieldError("tax_id", "123456789")).toBeNull();
     expect(fieldError("tax_id", "")).toBeNull();
     expect(fieldError("address", "x")).toBeNull();
+  });
+
+  it("checks the ZIP+4, state, phone and taxonomy code a claim needs", () => {
+    expect(fieldError("zip", "62701")).toBeNull();
+    expect(fieldError("zip", "62701-1234")).toBeNull();
+    expect(fieldError("zip", "627011234")).toBeNull();
+    expect(fieldError("zip", "6270")).toBe("Enter a 5 or 9-digit ZIP code");
+    expect(fieldError("state", "il")).toBeNull();
+    expect(fieldError("state", "Illinois")).toBe("Use the 2-letter state code");
+    expect(fieldError("phone", "(555) 555-1234")).toBeNull();
+    expect(fieldError("phone", "555-1234")).toBe("Enter a 10-digit phone number");
+    expect(fieldError("taxonomy_code", "207q00000x")).toBeNull();
+    expect(fieldError("taxonomy_code", "207Q00000")).toBe("Use the 10-character taxonomy code ending in X");
+  });
+
+  it("lists the clearinghouse among the sections that are not scored", () => {
+    expect(isNavKey("clearinghouse")).toBe(true);
+    expect(nextIncomplete(SETUP, "clearinghouse")).toBeNull();
   });
 
   it("shows a provider field error only once the field was left", () => {

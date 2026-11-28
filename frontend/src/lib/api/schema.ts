@@ -3901,6 +3901,7 @@ export interface components {
             patient_birth_date?: string | null;
             patient_first?: string | null;
             patient_last?: string | null;
+            patient_name?: string | null;
             patient_sex?: ("F" | "M" | "U") | null;
             relationship?: ("18" | "01" | "19" | "G8") | null;
             source: "note" | "earlier_claim";
@@ -4730,6 +4731,7 @@ export interface components {
         };
         InboxPayload: {
             access_until?: string;
+            claims?: number;
             comment_id?: string;
             ends_on?: string;
             notes?: number;
@@ -4739,6 +4741,7 @@ export interface components {
             reason?: string;
             request_id?: string;
             run_id?: string;
+            source?: "999" | "277CA";
         };
         InboxReadBody: {
             all?: boolean;

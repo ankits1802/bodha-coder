@@ -11,12 +11,17 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import type { Provider } from "@/lib/api/types";
 import type { SetupOpen } from "@/lib/paths";
+import { importProviders } from "@/lib/api/practice";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { ImportDialog } from "./ImportDialog";
 import { ProviderDialog } from "./ProviderDialog";
 import { ProvidersTable } from "./ProvidersTable";
 import { PROVIDER_TEXT, SETUP_TEXT } from "./strings";
 import { useArrival } from "./useArrival";
+
+function importProviderRows(csv: string): Promise<number> {
+  return importProviders(csv).then((result) => result.imported);
+}
 
 interface ProvidersSectionProps {
   missingNpi: number;
@@ -108,6 +113,8 @@ export function ProvidersSection({ missingNpi, open, onOpened, onChanged }: Prov
       ) : null}
       {importing ? (
         <ImportDialog
+          words={PROVIDER_TEXT.importDialog}
+          run={importProviderRows}
           onClose={() => setImporting(false)}
           onImported={(total) => {
             setImporting(false);

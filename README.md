@@ -2,7 +2,8 @@
 
 Clinical coding review. Bodha Assure reads each visit note, checks the billed codes against the
 documentation, and sends the note to the right person: ready to approve, needs a coder, ask the
-provider, or compliance. Approved codes are exported for billing.
+provider, or compliance. Approved claims are exported for billing as claim lines, or sent to the
+practice's own clearinghouse as X12 837P files.
 
 | Part | Stack |
 |---|---|
@@ -23,7 +24,12 @@ provider, or compliance. Approved codes are exported for billing.
    it for compliance, or approves it.
 4. A provider opens a secure link, confirms a one-time code, answers, and signs an addendum; the
    note is read again with the addendum.
-5. Approved notes appear in Ready to bill and are exported as CSV.
+5. Approved notes appear in Ready to bill. A biller exports their claim lines as CSV or JSON, or,
+   once the practice has set up its clearinghouse, sends them as an 837P file over SFTP or downloads
+   the file to upload to the clearinghouse's portal. Each claim shows what it still needs (billing
+   details, a charge, the payer's id, the patient and subscriber details a biller confirms), then
+   sent, accepted or rejected with the reason from the clearinghouse's 999 and 277CA responses; a
+   rejected claim returns to Ready to bill to be fixed and sent again.
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -104,6 +110,22 @@ SES and SNS use the standard AWS credential chain: an IAM role on the server, or
 `AWS_SECRET_ACCESS_KEY`. The role needs `ses:SendEmail` and, for texts, `sns:Publish`. Move the SES
 account out of the sandbox and verify the sending domain (SPF, DKIM, DMARC) before inviting real users.
 Every email is sent as plain text with an HTML version; no message contains patient details.
+
+### Clearinghouse claims
+
+Before a practice's first 837P file: an admin fills in Settings, Setup, Practice details (legal name,
+EIN, group NPI, street, city, state, ZIP+4, phone, billing contact; taxonomy optional), gives each
+payer its payer id (and a claim filing code when its plan type is Other), adds a charge for every code
+it bills under Payments, gives each provider an NPI (and a group NPI or billing as an individual), and
+sets up the clearinghouse under Clearinghouse: the submitter and receiver ids the clearinghouse
+assigned, test or production, and either Portal upload or SFTP with the host, user name, password or
+private key, folders and the host key read and confirmed there ([0049](docs/decisions/0049-clearinghouse-837p.md)).
+A biller then confirms each claim's patient and subscriber details on Billing.
+
+| Setting | Values |
+|---|---|
+| `CLEARINGHOUSE_ENCRYPTION_KEY` | a Fernet key, made like `MFA_ENCRYPTION_KEY` but separate, that seals each practice's clearinghouse password or private key; needed by the API and the worker for SFTP connections, not for portal downloads. A comma-separated list rotates keys (see `docs/OPERATIONS.md`); losing it means each practice enters its password or key again |
+| `CLEARINGHOUSE_TIMEOUT_SECONDS` | seconds to wait for a clearinghouse's SFTP server (30) |
 
 ### Sign-in and two-step verification
 
