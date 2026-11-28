@@ -4490,6 +4490,50 @@
         "title": "EvalCaseBody",
         "type": "object"
       },
+      "EvalCaseCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "add_ons": {
+            "title": "Add Ons",
+            "type": "integer"
+          },
+          "em": {
+            "title": "Em",
+            "type": "integer"
+          },
+          "icd": {
+            "title": "Icd",
+            "type": "integer"
+          },
+          "modifiers": {
+            "title": "Modifiers",
+            "type": "integer"
+          },
+          "place_of_service": {
+            "title": "Place Of Service",
+            "type": "integer"
+          },
+          "procedures": {
+            "title": "Procedures",
+            "type": "integer"
+          },
+          "units": {
+            "title": "Units",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "em",
+          "icd",
+          "modifiers",
+          "procedures",
+          "add_ons",
+          "units",
+          "place_of_service"
+        ],
+        "title": "EvalCaseCounts",
+        "type": "object"
+      },
       "EvalCaseList": {
         "additionalProperties": false,
         "properties": {
@@ -4528,6 +4572,10 @@
           "input_tokens": {
             "title": "Input Tokens",
             "type": "integer"
+          },
+          "lines": {
+            "$ref": "#/components/schemas/LineComparison",
+            "title": "Lines"
           },
           "model": {
             "anyOf": [
@@ -4848,6 +4896,14 @@
       "EvalSummary": {
         "additionalProperties": false,
         "properties": {
+          "add_ons": {
+            "$ref": "#/components/schemas/Rate",
+            "title": "Add Ons"
+          },
+          "case_counts": {
+            "$ref": "#/components/schemas/EvalCaseCounts",
+            "title": "Case Counts"
+          },
           "cases": {
             "title": "Cases",
             "type": "integer"
@@ -4899,9 +4955,21 @@
             "$ref": "#/components/schemas/Rate",
             "title": "Modifiers"
           },
+          "place_of_service": {
+            "$ref": "#/components/schemas/Rate",
+            "title": "Place Of Service"
+          },
+          "procedures": {
+            "$ref": "#/components/schemas/Rate",
+            "title": "Procedures"
+          },
           "scored": {
             "title": "Scored",
             "type": "integer"
+          },
+          "units": {
+            "$ref": "#/components/schemas/Rate",
+            "title": "Units"
           }
         },
         "title": "EvalSummary",
@@ -4956,6 +5024,10 @@
             },
             "title": "Modifiers",
             "type": "array"
+          },
+          "place_of_service": {
+            "title": "Place Of Service",
+            "type": "string"
           }
         },
         "required": [
@@ -8079,6 +8151,66 @@
         "title": "LevelMixWindow",
         "type": "object"
       },
+      "LineComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "add_ons": {
+            "$ref": "#/components/schemas/LineSetComparison"
+          },
+          "place_of_service": {
+            "$ref": "#/components/schemas/PlaceComparison"
+          },
+          "procedures": {
+            "$ref": "#/components/schemas/LineSetComparison"
+          },
+          "units": {
+            "$ref": "#/components/schemas/UnitsComparison"
+          }
+        },
+        "required": [
+          "procedures",
+          "add_ons",
+          "units",
+          "place_of_service"
+        ],
+        "title": "LineComparison",
+        "type": "object"
+      },
+      "LineSetComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "compared": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Compared",
+            "type": "array"
+          },
+          "match": {
+            "title": "Match",
+            "type": "boolean"
+          },
+          "reference": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reference",
+            "type": "array"
+          },
+          "scored": {
+            "title": "Scored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reference",
+          "compared",
+          "match",
+          "scored"
+        ],
+        "title": "LineSetComparison",
+        "type": "object"
+      },
       "LocationBody": {
         "additionalProperties": false,
         "properties": {
@@ -10414,7 +10546,9 @@
               "level_downcode_risk",
               "audio_only_risk_adjustment",
               "nursing_incident_to",
-              "initial_visit_repeated"
+              "initial_visit_repeated",
+              "prolonged_medicare",
+              "prolonged_without_visit"
             ],
             "title": "Rule",
             "type": "string"
@@ -10623,6 +10757,49 @@
           "active"
         ],
         "title": "PlaceBody",
+        "type": "object"
+      },
+      "PlaceComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "compared": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compared"
+          },
+          "match": {
+            "title": "Match",
+            "type": "boolean"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "scored": {
+            "title": "Scored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reference",
+          "compared",
+          "match",
+          "scored"
+        ],
+        "title": "PlaceComparison",
         "type": "object"
       },
       "PlacementBody": {
@@ -16262,6 +16439,49 @@
           "evidence"
         ],
         "title": "TrainingSuggestion",
+        "type": "object"
+      },
+      "UnitsComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "compared": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Compared",
+            "type": "object"
+          },
+          "differing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Differing",
+            "type": "array"
+          },
+          "match": {
+            "title": "Match",
+            "type": "boolean"
+          },
+          "reference": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Reference",
+            "type": "object"
+          },
+          "scored": {
+            "title": "Scored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "reference",
+          "compared",
+          "differing",
+          "match",
+          "scored"
+        ],
+        "title": "UnitsComparison",
         "type": "object"
       },
       "UploadResult": {

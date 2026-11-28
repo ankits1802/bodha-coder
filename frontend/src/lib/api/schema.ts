@@ -3978,6 +3978,15 @@ export interface components {
         EvalCaseBody: {
             note_id: string;
         };
+        EvalCaseCounts: {
+            add_ons: number;
+            em: number;
+            icd: number;
+            modifiers: number;
+            place_of_service: number;
+            procedures: number;
+            units: number;
+        };
         EvalCaseList: {
             items: components["schemas"]["EvalCaseRow"][];
         };
@@ -3987,6 +3996,7 @@ export interface components {
             error?: string;
             expected: components["schemas"]["ExpectedClaim"];
             input_tokens?: number;
+            lines?: components["schemas"]["LineComparison"];
             model?: string | null;
             note_id: string;
             output_tokens?: number;
@@ -4041,6 +4051,8 @@ export interface components {
             runs: components["schemas"]["EvalRunView"][];
         };
         EvalSummary: {
+            add_ons?: components["schemas"]["Rate"];
+            case_counts?: components["schemas"]["EvalCaseCounts"];
             cases?: number;
             consistency?: components["schemas"]["EvalConsistency"];
             em?: components["schemas"]["Rate"];
@@ -4052,7 +4064,10 @@ export interface components {
             icd_precision?: components["schemas"]["Rate"];
             icd_recall?: components["schemas"]["Rate"];
             modifiers?: components["schemas"]["Rate"];
+            place_of_service?: components["schemas"]["Rate"];
+            procedures?: components["schemas"]["Rate"];
             scored?: number;
+            units?: components["schemas"]["Rate"];
         };
         ExpectedClaim: {
             analysis_id: string;
@@ -4061,6 +4076,7 @@ export interface components {
             icd: string[];
             level: string | null;
             modifiers: string[];
+            place_of_service?: string;
         };
         Expenditure: {
             from: string;
@@ -4549,6 +4565,18 @@ export interface components {
             notes: number;
             start: string;
         };
+        LineComparison: {
+            add_ons: components["schemas"]["LineSetComparison"];
+            place_of_service: components["schemas"]["PlaceComparison"];
+            procedures: components["schemas"]["LineSetComparison"];
+            units: components["schemas"]["UnitsComparison"];
+        };
+        LineSetComparison: {
+            compared: string[];
+            match: boolean;
+            reference: string[];
+            scored: boolean;
+        };
         LocationBody: {
             agreed: true;
             name: string;
@@ -4892,7 +4920,7 @@ export interface components {
         PayerFlag: {
             codes: string[];
             earlier?: string;
-            rule: "telehealth_place" | "audio_only_place" | "home_telehealth_ended" | "complexity_with_25" | "g2211_replaced" | "level_downcode_risk" | "audio_only_risk_adjustment" | "nursing_incident_to" | "initial_visit_repeated";
+            rule: "telehealth_place" | "audio_only_place" | "home_telehealth_ended" | "complexity_with_25" | "g2211_replaced" | "level_downcode_risk" | "audio_only_risk_adjustment" | "nursing_incident_to" | "initial_visit_repeated" | "prolonged_medicare" | "prolonged_without_visit";
             severity: "denial" | "risk" | "reminder";
         };
         PayerOption: {
@@ -4925,6 +4953,12 @@ export interface components {
         PlaceBody: {
             active: boolean;
             name?: string | null;
+        };
+        PlaceComparison: {
+            compared: string | null;
+            match: boolean;
+            reference: string | null;
+            scored: boolean;
         };
         PlacementBody: {
             practice_id: string;
@@ -5745,6 +5779,17 @@ export interface components {
             kind: "em" | "diagnosis" | "modifier" | "code_review" | "cdi_gap" | "cdi_query" | "audit_risk" | "audit_finding" | "mips";
             reasoning: string;
             title: string;
+        };
+        UnitsComparison: {
+            compared: {
+                [key: string]: number;
+            };
+            differing: string[];
+            match: boolean;
+            reference: {
+                [key: string]: number;
+            };
+            scored: boolean;
         };
         UploadResult: {
             accepted: string[];

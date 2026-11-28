@@ -9,8 +9,11 @@ The MIPS reporting codes were verified against CMS 2026 specifications on 2026-1
 sign-off is still recommended ([0021](decisions/0021-mips-codes-verified.md)). The 48 expected claims of
 the synthetic gold set (`tools/gold_set/cases.json`) were written by construction and pass the validator,
 but no certified coder has audited them, so accuracy numbers from that set are provisional
-([0049](decisions/0049-synthetic-gold-set.md)). Clear each part when a certified coder has reviewed it
-and the review (who, when, changes made) is recorded in its decision.
+([0049](decisions/0049-synthetic-gold-set.md)). The prolonged time rules (99417 only with 99205 or 99215,
+although CPT and the NCCI add-on table also list 99245, 99345, 99350 and 99483; 99417 on a Medicare
+Advantage claim as a risk) await the same review ([0052](decisions/0052-prolonged-service-99417.md)). Clear
+each part when a certified coder has reviewed it and the review (who, when, changes made) is recorded in its
+decision.
 
 ### ESLint plugins declare an older ESLint peer
 

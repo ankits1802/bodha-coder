@@ -173,6 +173,9 @@ When a documented total time IS available and yields a higher level than MDM, us
 - Use the time of each code in the STEP 1 table. 99211 and the emergency department codes have no time basis.
 - Set basis to "Time", set time_minutes to the documented total, and quote the time statement in evidence. Never
   infer a total from the length of the note.
+- When the documented total time reaches the prolonged service threshold of STEP 4 for the code (75 minutes with
+  99205, 55 with 99215), select the level by time even when MDM supports the same code, so the prolonged service
+  can be reported.
 """
 
 _STEP_4 = """
@@ -206,9 +209,10 @@ Advance care planning:
 - Trigger: an advance directive, POLST, code status or goals-of-care discussion documented, with its time
 
 Prolonged service:
-- 99417 (office, each additional 15 minutes)
-- Trigger: a documented total time of 75 minutes or more with 99205, or 55 minutes or more with 99215. Medicare
-  uses G2212 instead: 89 minutes or more with 99205, 69 minutes or more with 99215.
+- 99417 (office, each additional 15 minutes; commercial and other non-Medicare payers)
+- Trigger: the code is 99205 or 99215 with basis "Time", and a documented total time of 75 minutes or more with
+  99205, or 55 minutes or more with 99215. Never with another code, and never when the level rests on MDM.
+  Medicare uses G2212 instead, never 99417: 89 minutes or more with 99205, 69 minutes or more with 99215.
 - Units: the first unit at the trigger time and one more for each further full 15 minutes (99417 with 99215:
   55 minutes is 1 unit, 70 minutes is 2; G2212 with 99215: 69 minutes is 1 unit, 84 minutes is 2)
 

@@ -25,5 +25,7 @@ export const CLAIM_CHECK_TEXT = {
     audio_only_risk_adjustment: "Audio-only: no risk adjustment",
     nursing_incident_to: "No incident-to in a nursing facility",
     initial_visit_repeated: "Initial visit already billed this stay",
+    prolonged_medicare: "Medicare prolonged time is G2212, not 99417",
+    prolonged_without_visit: "Prolonged time needs 99205 or 99215",
   } satisfies Record<PayerFlagRule, string>,
 };

@@ -3,11 +3,12 @@ from datetime import date, timedelta
 import pytest
 from sqlalchemy import func, select
 
+from app.ai.contracts import AddOnSuggestion, DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.ai.errors import ModelUnavailable
 from app.ai.review import PROMPT_VERSION
 from app.core.config import get_settings
 from app.core.db import SessionFactory
-from app.models import Analysis, CodeSet, NoteText, Suggestion
+from app.models import Analysis, CodeSet, EvalRun, NoteText, Suggestion, User
 from app.services.evaluation_runs import run_evaluation
 from tests.api.quality_helpers import SequenceReviewer, approved_note, higher_report, read_note
 from tests.builders import DOCUMENTED, analysis_deps, marisol_report, practice_with_provider
@@ -101,6 +102,102 @@ async def test_an_evaluation_reads_the_billed_claim_as_uploaded_not_the_coders_e
         ("N18.30", "ICD-10"),
     ]
     assert run["summary"]["em"]["successes"] == 1
+
+
+def timed_report() -> ReviewReport:
+    return ReviewReport(
+        patient=PatientFacts(name="Marisol Reyes", age=52, sex="female"),
+        em=EmReview(
+            code="99215",
+            basis="Time",
+            mdm_level="Moderate",
+            time_minutes=70,
+            evidence=["Total time on the date of the encounter: 70 minutes."],
+            add_on_codes=[
+                AddOnSuggestion(code="96127", name="Depression screening", units=1),
+                AddOnSuggestion(code="99417", name="Prolonged service", units=2),
+            ],
+        ),
+        diagnoses=[DiagnosisFinding(name="Hypertension", icd10="I10", status="supported", evidence=["Hypertension"])],
+    )
+
+
+async def test_an_evaluation_scores_procedure_lines_add_ons_units_and_place_of_service(harness, icd_catalog):
+    practice = await practice_with_provider(harness)
+    note_id = await read_note(harness, practice, icd_catalog, 1, timed_report())
+    edited = await harness.client.put(
+        f"/api/notes/{note_id}/billed-codes",
+        headers=practice.admin,
+        json={"codes": "99215, 99417x2, 96127x2, I10", "reason": DOCUMENTED},
+    )
+    assert edited.status_code == 200, edited.text
+    assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
+    added = await harness.client.post("/api/quality/eval-cases", headers=practice.admin, json={"note_id": note_id})
+    assert added.status_code == 200, added.text
+
+    run = await evaluate(harness, icd_catalog, practice, ScriptedReviewer(timed_report()))
+
+    summary = run["summary"]
+    line_metrics = ("procedures", "add_ons", "units", "place_of_service")
+    counted = [(summary[key]["successes"], summary[key]["trials"]) for key in line_metrics]
+    assert counted == [(1, 1), (1, 1), (0, 1), (1, 1)]
+    assert summary["units"]["high"] == pytest.approx(0.793451, abs=1e-6)
+    assert summary["case_counts"] == {key: 1 for key in ("em", "icd", "modifiers", *line_metrics)}
+    detail = (await harness.client.get(f"/api/quality/evaluations/{run['id']}", headers=practice.admin)).json()
+    [result] = detail["results"]
+    assert result["expected"]["place_of_service"] == "11"
+    same = {"match": True, "scored": True}
+    assert result["lines"]["procedures"] == {"reference": ["96127"], "compared": ["96127"], **same}
+    assert result["lines"]["add_ons"] == {"reference": ["99417"], "compared": ["99417"], **same}
+    assert result["lines"]["units"] == {
+        "reference": {"96127": 2, "99417": 2},
+        "compared": {"96127": 1, "99417": 2},
+        "differing": ["96127"],
+        "match": False,
+        "scored": True,
+    }
+
+
+async def test_a_visit_without_procedures_scores_only_the_place_of_service_among_the_claim_lines(harness, icd_catalog):
+    practice, _ = await evaluation_case(harness, icd_catalog)
+    run = await evaluate(harness, icd_catalog, practice, ScriptedReviewer(marisol_report()))
+    counts = run["summary"]["case_counts"]
+    assert [counts[key] for key in ("procedures", "add_ons", "units", "place_of_service")] == [0, 0, 0, 1]
+    assert run["summary"]["procedures"] == {"successes": 0, "trials": 0, "value": None, "low": None, "high": None}
+
+
+async def test_a_run_from_before_claim_line_scoring_still_reads(harness, icd_catalog):
+    practice, note_id = await evaluation_case(harness, icd_catalog)
+    rate = {"successes": 1, "trials": 1, "value": 1.0, "low": 0.206549, "high": 1.0}
+    comparison = {
+        "em": {"reference": "99214", "compared": "99214", "match": True, "direction": "match"},
+        "icd": {"matched": 1, "compared": 1, "reference": 1, "missing": [], "extra": [], "match": True},
+        "modifiers": {"reference": [], "compared": [], "match": True},
+    }
+    async with SessionFactory() as db:
+        admin = await db.scalar(select(User.id).where(User.email == "admin@lakeside.example.com"))
+        expected = {"em": "99214", "icd": ["I10"], "modifiers": [], "level": None, "claim": [], "analysis_id": "a"}
+        result = {"case_id": "c", "note_id": note_id, "expected": expected, "agreement": comparison}
+        older = EvalRun(
+            practice_id=practice.id,
+            model="gemini-older",
+            prompt_version="2026.11.6",
+            status="done",
+            results=[result],
+            summary={"cases": 1, "scored": 1, "failed": 0, "em": rate, "icd_f1": 1.0, "modifiers": rate},
+            requested_by=admin,
+        )
+        db.add(older)
+        await db.commit()
+        run_id = older.id
+
+    listed = await harness.client.get("/api/quality/evaluations", headers=practice.admin)
+    assert listed.status_code == 200, listed.text
+    [summary] = [run["summary"] for run in listed.json()["runs"] if run["id"] == run_id]
+    assert "procedures" not in summary and "case_counts" not in summary
+    detail = await harness.client.get(f"/api/quality/evaluations/{run_id}", headers=practice.admin)
+    assert detail.status_code == 200, detail.text
+    assert "lines" not in detail.json()["results"][0]
 
 
 async def test_a_drop_of_more_than_five_points_against_the_last_run_is_flagged(harness, icd_catalog):

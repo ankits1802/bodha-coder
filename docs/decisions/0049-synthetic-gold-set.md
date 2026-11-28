@@ -84,12 +84,15 @@ disagreement and every unscored case. It always opens with the provisional notic
 - The expected answers have not been checked by a certified coder; numbers from this set are
   provisional until one signs off ([TECH_DEBT](../TECH_DEBT.md)).
 - What the harness cannot measure: procedure lines, add-on codes (G2211, G2212), units and place of
-  service are not scored. Bodha's suggested claim cannot remove a visit code or a modifier, so GS-26
+  service are not scored (scored since [0053](0053-evaluations-score-claim-lines.md)). Bodha's suggested claim cannot remove a visit code or a modifier, so GS-26
   (modifier 25 unsupported) can only disagree; the report shows results with and without it.
 - CPT 99417 is not in Bodha's code list (the CMS fee schedule lists it as not valid for Medicare), so a
-  commercial claim carrying it cannot be approved; the set uses Medicare G2212 instead.
+  commercial claim carrying it cannot be approved; the set uses Medicare G2212 instead (99417 added in
+  [0052](0052-prolonged-service-99417.md)).
 - Found while building the set, not changed here: the NCCI claim check treats RT or LT on a procedure as
   bypassing its edit with an E/M code that lacks modifier 25; blind audit samples freeze Bodha's
   suggestion from the latest billed codes, so they share the leak fixed above for evaluation runs; Bodha's
   E/M table gives 50 minutes for 99306 and 20 for 99308, where the CPT 2023 nursing facility thresholds
-  are 45 and 15.
+  are 45 and 15. The first two are fixed in [0050](0050-ncci-bypass-by-relationship.md) and
+  [0051](0051-blind-audits-read-the-claim-as-uploaded.md). The nursing facility times are kept: they match
+  the more recent AMA and AAPC tables, and a certified coder will confirm.

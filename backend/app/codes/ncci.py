@@ -348,16 +348,24 @@ def _row_start(rows: str, offset: int) -> int:
 
 
 def _pair_edit(edit: PtpEdit, first: Code, second: Code) -> PairEdit:
-    bypass = _bypassing_modifier(second, first) or _bypassing_modifier(first, second)
-    return PairEdit(edit.column1, edit.column2, edit.modifier_allowed, bypass if edit.modifier_allowed else None)
+    bypass = _bypassing_modifier(second, first) if edit.modifier_allowed else None
+    return PairEdit(edit.column1, edit.column2, edit.modifier_allowed, bypass)
 
 
-def _bypassing_modifier(line: Code, other: Code) -> str | None:
-    for modifier in line.modifiers:
-        if modifier in PROCEDURE_PTP_MODIFIERS:
-            return modifier
-        if modifier in VISIT_PTP_MODIFIERS and is_em_code(line.code):
-            return modifier
-        if modifier in ANATOMIC_MODIFIERS and modifier not in other.modifiers:
-            return modifier
-    return None
+def _bypassing_modifier(second: Code, first: Code) -> str | None:
+    visits = tuple(line for line in (second, first) if is_em_code(line.code))
+    if visits:
+        return _first_modifier(visits, VISIT_PTP_MODIFIERS)
+    return _first_modifier((second, first), PROCEDURE_PTP_MODIFIERS) or _different_site(second, first)
+
+
+def _first_modifier(lines: tuple[Code, ...], accepted: frozenset[str]) -> str | None:
+    return next((modifier for line in lines for modifier in line.modifiers if modifier in accepted), None)
+
+
+def _different_site(second: Code, first: Code) -> str | None:
+    sites = [modifier for modifier in second.modifiers if modifier in ANATOMIC_MODIFIERS]
+    other_sites = {modifier for modifier in first.modifiers if modifier in ANATOMIC_MODIFIERS}
+    if not sites or not other_sites or other_sites.intersection(sites):
+        return None
+    return sites[0]

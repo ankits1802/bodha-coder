@@ -3,7 +3,15 @@ from datetime import date
 import pytest
 
 from app.codes.billing_codes import parse_code_list
-from app.codes.payer_rules import EarlierVisit, Payer, PayerClaim, payer_flags, payer_for, repeated_initial_visit
+from app.codes.payer_rules import (
+    EarlierVisit,
+    Payer,
+    PayerClaim,
+    payer_flags,
+    payer_for,
+    prolonged_without_visit,
+    repeated_initial_visit,
+)
 
 MEDICARE = Payer("medicare")
 ADVANTAGE = Payer("medicare_advantage")
@@ -110,6 +118,40 @@ def test_nursing_facility_incident_to_and_no_initial_visit_reminder():
     ]
     assert _flags("99306, I10", MEDICARE, "11") == []
     assert _flags("99309, I10", MEDICARE, "32") == []
+
+
+def test_medicare_pays_prolonged_time_as_g2212_never_99417():
+    assert _flags("99215, 99417x2, I10", MEDICARE) == [("prolonged_medicare", "denial", ("99417 ×2",))]
+    assert _flags("99205, 99417, I10", MEDICARE) == [("prolonged_medicare", "denial", ("99417",))]
+    assert _flags("99215, G2212, I10", MEDICARE) == []
+
+
+def test_medicare_advantage_plans_set_their_own_prolonged_policy_so_99417_is_a_risk():
+    assert _flags("99215, 99417, I10", ADVANTAGE) == [("prolonged_medicare", "risk", ("99417",))]
+
+
+@pytest.mark.parametrize("payer", [Payer("commercial"), CIGNA, Payer("medicaid"), Payer(None)])
+def test_99417_raises_no_flag_outside_medicare(payer):
+    assert _flags("99215, 99417, I10", payer) == []
+
+
+def _alone(text: str) -> tuple | None:
+    flag = prolonged_without_visit(parse_code_list(text).codes)
+    return None if flag is None else (flag.rule, flag.severity, flag.codes)
+
+
+def test_prolonged_time_without_99205_or_99215_on_the_claim_is_a_denial():
+    assert _alone("99214, 99417, I10") == ("prolonged_without_visit", "denial", ("99417",))
+    assert _alone("99245, 99417x2, I10") == ("prolonged_without_visit", "denial", ("99417 ×2",))
+    assert _alone("99214, G2212, I10") == ("prolonged_without_visit", "denial", ("G2212",))
+    assert _alone("99417") == ("prolonged_without_visit", "denial", ("99417",))
+
+
+def test_prolonged_time_beside_its_visit_or_no_prolonged_time_raises_nothing():
+    assert _alone("99215, 99417x2, I10") is None
+    assert _alone("99205, 99417, I10") is None
+    assert _alone("99205, G2212, G2211, I10") is None
+    assert _alone("99214, 20610, I10") is None
 
 
 def test_an_unknown_plan_has_no_payer_flags():
