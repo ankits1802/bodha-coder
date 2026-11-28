@@ -61,6 +61,10 @@ beyond the load balancer's health probe.
   too. It does not sign out, because sign-out writes an event; the session lapses after 30 idle
   minutes and the runner's browser is thrown away.
 - It records no trace, screenshot or video, since production pages show real practices.
+- The walk lives in `frontend/e2e/canary/walks.ts`, and the `e2e` job rehearses it on every run
+  (`journeys/canary-rehearsal.spec.ts`) against its own stack with two seeded canary accounts and axe on
+  each page, so a change that would break the canary, or make it write, fails before merge rather than
+  at night.
 - What a run still writes: the rate-limit rows of sign-in and two-step, the `signed_in` auth events
   with their mirrors, one session per account and `users.last_active_at` and `mfa_last_step`.
 

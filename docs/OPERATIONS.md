@@ -50,7 +50,8 @@ overview, practices, organizations, activity, spend, team and demo requests. It 
 changes anything beyond signing in, and fails if the app tries to ([0045](decisions/0045-browser-journeys-and-production-canary.md)).
 A failed run fails the workflow, and GitHub emails it to whoever last changed the schedule; keep Actions
 failure emails on for that account. It keeps no trace or screenshot, so read the step that failed in
-the run log.
+the run log. CI rehearses the same walk against its own stack on every run, so a failure at night
+points at production or the canary accounts rather than the script.
 
 ### Set it up after merge
 

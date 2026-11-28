@@ -208,7 +208,8 @@ on the demo model, Postgres, moto as the S3 store and mail written to an outbox,
 `http://admin.localhost:3000`. Playwright (`frontend/e2e/journeys`) then drives each role's day in
 Chromium: self sign-up, the admin's first day, upload and the queue, a coder's review by keyboard,
 asking the provider, a compliance return, the claim-lines export, switching practices and the
-organization area, HQ, and the public verify page, with axe on every page. Each test seeds its own
+organization area, HQ, the public verify page, and a rehearsal of the nightly production canary, with
+axe on every page. Each test seeds its own
 synthetic practice through `python -m tests.e2e_seed <scenario>` (`backend/tests/e2e_seed`); failed
 tests keep a trace and a screenshot. A nightly workflow (`.github/workflows/canary.yml`) signs in to
 production read-only as two canary accounts
