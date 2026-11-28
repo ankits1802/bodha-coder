@@ -25,9 +25,10 @@ beyond the load balancer's health probe.
   parallel and need no clean-up. The seed works through the public API as HQ and the practice admin
   would: HQ adds the practice, the admin invites people, each invitation is accepted from the link in
   the outbox, notes are uploaded and read by the real worker, signatures adopted and claims
-  approved. Two steps go to the database instead: the seeding HQ account and enrolled two-step
-  secrets are written directly, and access tokens are issued with `services.auth.access_token_for`
-  rather than by signing in. Signing in is rate limited per address and per account, a two-step
+  approved; the code for the verify page is read from the note's defense packet, where a person finds
+  it. Two things bypass the API: the seeding HQ account and enrolled two-step secrets are written to
+  the database, and access tokens are issued with `services.auth.access_token_for` rather than by
+  signing in. Signing in is rate limited per address and per account, a two-step
   code is accepted once per 30-second step, and every browser request reaches the API from the one
   loopback address, so a seed that signed in would starve the journeys of sign-ins. The seed refuses
   `APP_ENVIRONMENT=production` and any model backend but the demo.
