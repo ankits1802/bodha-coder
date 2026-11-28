@@ -1,16 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
-import type { AnchorHTMLAttributes, ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
-import type { LaneCounts, ProviderReasonCounts } from "@/lib/api/types";
+import { describe, expect, it } from "vitest";
+import type { LaneCounts, ProviderReasonCounts, Role } from "@/lib/api/types";
+import type { SessionUser } from "@/lib/roles";
 import { LaneCells } from "../components/LaneCells";
-
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; children: ReactNode }) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  ),
-}));
 
 const COUNTS: LaneCounts = {
   approve: { total: 3, due_soon: 1 },
@@ -23,32 +15,46 @@ const REASONS: ProviderReasonCounts = {
   waiting_on_provider: { total: 3, due_soon: 0 },
 };
 
+function person(role: Role, billingOnly = false): SessionUser {
+  return { role, billing_only: billingOnly, organizations: [] };
+}
+
 function tiles(): { name: string; href: string | null }[] {
   const section = screen.getByRole("region", { name: "Waiting for review" });
   return within(section)
-    .getAllByRole("link")
-    .map((link) => ({ name: link.textContent ?? "", href: link.getAttribute("href") }));
+    .queryAllByRole("link")
+    .map((link) => ({ name: link.getAttribute("aria-label") ?? "", href: link.getAttribute("href") }));
 }
 
 describe("Today lane tiles", () => {
-  it("splits the provider lane into questions to send and waiting on the provider", () => {
-    render(<LaneCells counts={COUNTS} reasons={REASONS} role="coder" />);
+  it("opens each lane of the queue, the provider lane split into questions to send and waiting on the provider", () => {
+    render(<LaneCells counts={COUNTS} reasons={REASONS} user={person("coder")} />);
     expect(tiles()).toEqual([
-      { name: "Ready to approve31 due within a day", href: "/queue?lane=approve" },
-      { name: "Needs a coder42 due within a day", href: "/queue?lane=coder" },
-      { name: "Questions to send21 due within a day", href: "/queue?lane=provider&reason=questions" },
-      { name: "Waiting on provider30 due within a day", href: "/queue?lane=provider&reason=waiting_on_provider" },
-      { name: "Compliance20 due within a day", href: "/queue?lane=compliance" },
+      { name: "Ready to approve, 3, 1 due within a day", href: "/queue?lane=approve" },
+      { name: "Needs a coder, 4, 2 due within a day", href: "/queue?lane=coder" },
+      { name: "Questions to send, 2, 1 due within a day", href: "/queue?lane=provider&reason=questions" },
+      { name: "Waiting on provider, 3, 0 due within a day", href: "/queue?lane=provider&reason=waiting_on_provider" },
+      { name: "Compliance, 2, 0 due within a day", href: "/queue?lane=compliance" },
     ]);
   });
 
-  it("sends compliance to its own screen and leaves the tiles unlinked for a viewer", () => {
-    const { unmount } = render(<LaneCells counts={COUNTS} reasons={REASONS} role="compliance" />);
-    expect(tiles().at(-1)).toEqual({ name: "Compliance20 due within a day", href: "/compliance" });
+  it("names each tile by its lane, its count and what is due soon", () => {
+    render(<LaneCells counts={COUNTS} reasons={REASONS} user={person("coder")} />);
+    expect(screen.getByRole("link", { name: "Needs a coder, 4, 2 due within a day" })).toHaveAttribute("href", "/queue?lane=coder");
+  });
+
+  it("sends compliance to its own screen for a compliance reviewer", () => {
+    render(<LaneCells counts={COUNTS} reasons={REASONS} user={person("compliance")} />);
+    expect(tiles().at(-1)).toEqual({ name: "Compliance, 2, 0 due within a day", href: "/compliance" });
+  });
+
+  it("leaves every tile as plain text for a viewer and in a billing-only session", () => {
+    const { unmount } = render(<LaneCells counts={COUNTS} reasons={REASONS} user={person("viewer")} />);
+    expect(tiles()).toEqual([]);
+    expect(screen.getByText("Questions to send")).toBeInTheDocument();
     unmount();
-    render(<LaneCells counts={COUNTS} reasons={REASONS} role="viewer" />);
-    const section = screen.getByRole("region", { name: "Waiting for review" });
-    expect(within(section).queryAllByRole("link")).toEqual([]);
-    expect(within(section).getByText("Questions to send")).toBeInTheDocument();
+    render(<LaneCells counts={COUNTS} reasons={REASONS} user={person("admin", true)} />);
+    expect(tiles()).toEqual([]);
+    expect(screen.getByText("4")).toBeInTheDocument();
   });
 });

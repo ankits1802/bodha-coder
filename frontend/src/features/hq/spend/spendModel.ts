@@ -7,6 +7,7 @@ export const SPEND_PRESETS = ["thisMonth", "lastMonth", "last30Days", "thisYear"
 export type SpendPreset = (typeof SPEND_PRESETS)[number];
 
 const DEFAULT_PRESET: SpendPreset = "thisMonth";
+const SPEND_PATH = "/hq/spend";
 const TRAILING_DAYS = 30;
 const COST_PLACES = 2;
 const UNIT_COST_PLACES = 4;
@@ -48,6 +49,10 @@ export function presetOf(range: SpendRange, today: CalendarDate): SpendPreset | 
 export function rangeFrom(from: string | null, to: string | null, today: CalendarDate): SpendRange {
   if (from && to && isIsoDate(from) && isIsoDate(to) && from <= to) return { from, to };
   return presetRange(DEFAULT_PRESET, today);
+}
+
+export function spendPath(range: SpendRange): string {
+  return `${SPEND_PATH}?${new URLSearchParams({ from: range.from, to: range.to }).toString()}`;
 }
 
 export function providerCount(report: HqExpenditure): number {

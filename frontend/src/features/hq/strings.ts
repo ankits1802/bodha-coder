@@ -40,7 +40,8 @@ export const HQ_TEXT = {
     title: "Overview",
     loading: "Loading overview",
     empty: "No activity yet",
-    statsLabel: "Reading in the last 24 hours",
+    statsLabel: "Platform",
+    organizations: "Organizations",
     practices: "Practices",
     people: "People",
     read: "Read in 24 h",
@@ -51,6 +52,7 @@ export const HQ_TEXT = {
     failedShare: (share: string) => `${share} of attempts`,
     tokens: "Model tokens in 24 h",
     cost: "Model cost in 24 h",
+    costThisMonth: "Model cost this month",
     unpriced: (count: number) => `${count} without a price`,
     healthy: "No failed reads in 24 h",
     failing: (count: number) => (count === 1 ? "1 failed read in 24 h" : `${count} failed reads in 24 h`),
@@ -75,6 +77,7 @@ export const HQ_TEXT = {
     filterLabel: "Show",
     filters: {
       all: "All",
+      live: "Live",
       active: "Active",
       trial: "Trial",
       ending: "Ending soon",
@@ -145,6 +148,7 @@ export const HQ_TEXT = {
     },
     notices: {
       adminAppointed: (name: string) => `Admin added to ${name}`,
+      saved: (name: string) => `${name} saved`,
       inviteSent: (email: string) => `Invite sent to ${email}`,
       resetSent: (email: string) => `Password reset sent to ${email}`,
       closed: (name: string) => `${name} closed`,
@@ -189,6 +193,7 @@ export const HQ_TEXT = {
     title: "Practice",
     loading: "Loading practice",
     renew: "Renew",
+    edit: "Edit",
     addAdmin: "Add admin",
     tabsLabel: "Show",
     tabs: { people: "People", plan: "Plan & renewal", spend: "Spend", activity: "Activity", places: "Places" } satisfies Record<

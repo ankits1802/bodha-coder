@@ -15,6 +15,7 @@ It is never required.
 |---|---|
 | Upload screen and drop flow | the file's own choice (`details[].payer`), else the batch choice (form field `payer`), else the provider's usual payer |
 | Watched folder, email intake | the payer page one names at or above the threshold, else the provider's usual payer, else none |
+| EHR pull (FHIR) | the provider's usual payer, else none; the FHIR Coverage resource is not read yet, so a document's own coverage is not mapped |
 | API, a file's `payer` key | present (even `null`): that choice, `null` meaning none; absent: the batch choice, then the usual payer. A batch `payer` sent empty means none for every file without its own key |
 
 - The screen fills each row visibly, the way the usual place is filled: a confident page-one payer, else the
@@ -88,3 +89,5 @@ payer, and sets it before approval on a note uploaded earlier without one.
 - No `payer` in `approved_claims.content`: the payer at approval comes from the change history instead, so
   the snapshot schema stays at version 1.
 - Evaluation results do not show the payer each case was read with.
+- The EHR pull does not read the patient's FHIR Coverage to map its payor to the practice's list; it would
+  need the Coverage search scope and a mapping rule of its own.

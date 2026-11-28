@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from datetime import timedelta
 from urllib.parse import parse_qs, urlsplit
 
 import pyotp
 from httpx import AsyncClient
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.contracts import DiagnosisFinding, EmReview, PatientFacts, ReviewReport
@@ -24,6 +25,7 @@ from tests.fakes import (
     FakeFileLink,
     FakeImageModel,
     FakeMessenger,
+    FakeMetadataSource,
     FakeProvider,
     FakeStore,
     FakeTxtResolver,
@@ -49,6 +51,7 @@ class Harness:
     image_model: FakeImageModel
     dns: FakeTxtResolver = field(default_factory=FakeTxtResolver)
     link: FakeFileLink = field(default_factory=FakeFileLink)
+    metadata: FakeMetadataSource = field(default_factory=FakeMetadataSource)
 
     @property
     def google(self) -> FakeProvider:
@@ -90,6 +93,14 @@ async def pass_two_step(client: AsyncClient, email: str, mfa_token: str, secret:
 
 async def maintenance(db: AsyncSession) -> None:
     await db.execute(text("SET LOCAL bodha.maintenance = 'on'"))
+
+
+async def backdate_closure(practice_id: str, days: int) -> None:
+    async with SessionFactory() as db:
+        await maintenance(db)
+        moment = func.clock_timestamp() - timedelta(days=days)
+        await db.execute(update(PracticeRow).where(PracticeRow.id == practice_id).values(closed_at=moment))
+        await db.commit()
 
 
 async def forget_last_code(email: str) -> None:

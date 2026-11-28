@@ -24,13 +24,14 @@ from app.core.security import (
     read_token,
     verify_password,
 )
-from app.models import Session, User, UserToken, utcnow
+from app.models import PRACTICE_REALM, Session, User, UserToken, utcnow
 from app.services.account_lookup import account_by_email, normal_email
 from app.services.audit_log import AGENT_LENGTH
 from app.services.auth_events import SIGN_IN_FAILED, SIGNED_IN, AuthEventFacts, record_auth_event
 from app.services.memberships import accept_invitations, landing_access
 from app.services.rate_limits import LOGIN_PER_EMAIL, LOGIN_PER_IP, MFA_PER_USER, hit
 from app.services.recovery_codes import replace_recovery_codes, use_recovery_code
+from app.services.sso_policy import SsoRequired, SsoRoute, ensure_password_allowed
 from app.services.two_step import accept_code, enrol_secret
 from app.services.user_sessions import end_all_sessions
 
@@ -43,6 +44,8 @@ PASSWORD_METHOD = "password"
 TWO_STEP_CODE = "two-step code"
 RECOVERY_CODE = "recovery code"
 PASSWORD_CHANGED = "password changed"
+BREAK_GLASS_METHOD = "a break-glass password"
+SSO_REQUIRED_DETAIL = "password: single sign-on required"
 
 
 @dataclass(frozen=True)
@@ -81,11 +84,34 @@ async def login(
     await hit(db, LOGIN_PER_EMAIL, address)
     await hit(db, LOGIN_PER_IP, client.ip)
     user = await account_by_email(db, address, realms)
+    route = await _password_route(db, address, user, realms=realms, client=client)
     password_ok = verify_password(password, user.password_hash if user else None)
     if user is None or user.status != "active" or not password_ok:
         realm = realms[0] if len(realms) == 1 else None
         facts = AuthEventFacts(client, detail=PASSWORD_METHOD, email=address, realm=realm)
         await _refuse(db, user, facts, SIGN_IN_REFUSED)
+    return await _password_sign_in(db, user, route, client)
+
+
+async def _password_route(
+    db: AsyncSession, address: str, user: User | None, *, realms: tuple[str, ...], client: Client
+) -> SsoRoute | None:
+    if PRACTICE_REALM not in realms:
+        return None
+    try:
+        return await ensure_password_allowed(db, address, user)
+    except SsoRequired:
+        facts = AuthEventFacts(client, detail=SSO_REQUIRED_DETAIL, email=address, realm=PRACTICE_REALM)
+        await record_auth_event(db, SIGN_IN_FAILED, user, facts)
+        await db.commit()
+        raise
+
+
+async def _password_sign_in(
+    db: AsyncSession, user: User, route: SsoRoute | None, client: Client
+) -> Tokens | MfaChallenge:
+    if route is not None and route.required:
+        return two_step_challenge(user, BREAK_GLASS_METHOD, await _standing(db, user, None))
     return await sign_in_user(db, user, method=PASSWORD_METHOD, client=client)
 
 
@@ -166,7 +192,7 @@ async def mfa_recover(
 
 
 async def start_session(
-    db: AsyncSession, user: User, standing: PracticeAccess, *, method: str, client: Client
+    db: AsyncSession, user: User, standing: PracticeAccess, *, method: str, client: Client, idp_two_step: bool = False
 ) -> Tokens:
     refresh = random_token()
     settings = get_settings()
@@ -178,6 +204,7 @@ async def start_session(
             expires_at=utcnow() + timedelta(days=settings.refresh_token_days),
             ip=client.ip,
             user_agent=(client.agent or "")[:AGENT_LENGTH] or None,
+            idp_two_step=idp_two_step,
         )
     )
     user.last_active_at = utcnow()
@@ -208,7 +235,7 @@ async def refresh_session(db: AsyncSession, refresh: str, realms: tuple[str, ...
     if user.status != "active" or user.realm not in realms:
         raise Unauthorized(SIGN_IN_AGAIN)
     standing = await _standing(db, user, session.practice_id)
-    if needs_two_step(standing) and not user.mfa_enabled:
+    if needs_two_step(standing) and not (user.mfa_enabled or session.idp_two_step):
         raise Unauthorized(SIGN_IN_AGAIN)
     rotated = random_token()
     session.refresh_hash, session.last_used_at, session.practice_id = digest(rotated), now, standing.practice_id
@@ -245,7 +272,8 @@ async def set_password(
     db: AsyncSession, token: str, password: str, realms: tuple[str, ...], client: Client
 ) -> Tokens | MfaChallenge:
     user = await _store_password(db, token, password, realms, client)
-    return await sign_in_user(db, user, method=PASSWORD_METHOD, client=client)
+    route = await ensure_password_allowed(db, user.email, user) if user.realm == PRACTICE_REALM else None
+    return await _password_sign_in(db, user, route, client)
 
 
 async def _store_password(db: AsyncSession, token: str, password: str, realms: tuple[str, ...], client: Client) -> User:
@@ -259,6 +287,8 @@ async def _store_password(db: AsyncSession, token: str, password: str, realms: t
         raise Unauthorized("this link has expired")
     if user.status == "blocked":
         raise Unauthorized("this account is blocked")
+    if user.realm == PRACTICE_REALM:
+        await ensure_password_allowed(db, user.email, user)
     await accept_invitations(db, user, client)
     user.password_hash, user.status, row.used_at = hash_password(password), "active", utcnow()
     await record_auth_event(db, PASSWORD_EVENTS[row.purpose], user, AuthEventFacts(client))

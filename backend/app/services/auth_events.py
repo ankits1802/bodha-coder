@@ -33,6 +33,8 @@ AUTH_EVENT_LABELS = {
     "signed_out": "signed out",
     "session_revoked": "sessions ended",
     "practice_switched": "practice switched",
+    "sso_changed": "single sign-on changed",
+    "sso_tested": "single sign-on tested",
 }
 UNKNOWN_PERSON = "Unknown"
 ACTIVITY_DETAIL_LENGTH = 300

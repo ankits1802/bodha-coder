@@ -9,8 +9,8 @@ import { BAA_SUPPORT } from "./support";
 export const BAA: LegalDocumentData = {
   slug: "baa",
   title: LEGAL_TITLES.baa,
-  summary: `The HIPAA terms that govern protected health information you upload to ${LEGAL_PARTY.product}.`,
-  version: "1.1",
+  summary: `The HIPAA terms that govern protected health information you upload to ${LEGAL_PARTY.product} or let it retrieve.`,
+  version: "1.2",
   updated: "2026-11-28",
   numbered: true,
   sections: [...BAA_OPENING, ...BAA_DUTIES, ...BAA_SUPPORT, ...BAA_CLOSING],

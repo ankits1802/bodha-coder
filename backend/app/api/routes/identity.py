@@ -46,7 +46,7 @@ async def provider_start(chosen: ChosenProvider, site: CurrentSite, intent: Inte
     try:
         started = await identity_sign_in.start(chosen, site, intent=intent)
     except ProviderUnreachable:
-        return _to_sign_in(site, urlencode({"error": "failed", "provider": chosen.name}))
+        return sign_in_redirect(site, urlencode({"error": "failed", "provider": chosen.name}))
     response = RedirectResponse(started.url, status_code=302)
     set_oidc_cookie(response, chosen.name, started.cookie, minutes=identity_sign_in.START_MINUTES)
     return response
@@ -84,15 +84,15 @@ def _completed(site: Site, result: auth.Tokens | auth.MfaChallenge | ProviderIde
         set_signup_cookie(response, signup.identity_token(result), minutes=signup.SIGNUP_MINUTES)
         return response
     if isinstance(result, auth.MfaChallenge):
-        return _to_sign_in(site, urlencode({"mfa": result.token, "setup": "1" if result.step == "setup" else "0"}))
-    response = _to_sign_in(site, SIGNED_IN_FRAGMENT)
+        return sign_in_redirect(site, urlencode({"mfa": result.token, "setup": "1" if result.step == "setup" else "0"}))
+    response = sign_in_redirect(site, SIGNED_IN_FRAGMENT)
     set_refresh_cookie(response, result.refresh)
     return response
 
 
 def _refused(site: Site, reason: str, provider: str) -> RedirectResponse:
-    return _to_sign_in(site, urlencode({"error": reason, "provider": provider}))
+    return sign_in_redirect(site, urlencode({"error": reason, "provider": provider}))
 
 
-def _to_sign_in(site: Site, fragment: str) -> RedirectResponse:
-    return RedirectResponse(f"{site.url}/sign-in#{fragment}", status_code=302)
+def sign_in_redirect(site: Site, fragment: str, *, query: str = "", status_code: int = 302) -> RedirectResponse:
+    return RedirectResponse(f"{site.url}/sign-in{query}#{fragment}", status_code=status_code)

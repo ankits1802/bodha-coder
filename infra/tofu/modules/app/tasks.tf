@@ -15,7 +15,7 @@ locals {
     { name = "APP_ENVIRONMENT", value = var.environment },
     { name = "APP_URL", value = local.app_url },
     { name = "COOKIE_SECURE", value = "true" },
-    { name = "AGREEMENT_VERSION", value = "1.0" },
+    { name = "AGREEMENT_VERSION", value = "Terms 1.1, BAA 1.2" },
     { name = "SIGNING_KEY_ID", value = var.signing_key_arn },
     { name = "ADMIN_URL", value = var.admin_ready ? "https://${var.admin_host}" : "" },
     { name = "S3_BUCKET", value = var.bucket_name },
@@ -65,6 +65,7 @@ locals {
   shared_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns[var.runtime_database ? "runtime-database-url" : "database-url"] },
   ], local.base_secrets, local.error_report_secrets.python)
+  ehr_secrets = [{ name = "EHR_KEY_ENCRYPTION_KEY", valueFrom = var.secret_arns["ehr-key-encryption-key"] }]
   migration_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
     { name = "MIGRATION_DATABASE_URL", valueFrom = var.secret_arns["database-url"] },
@@ -83,7 +84,7 @@ locals {
         { name = "FORWARDED_ALLOW_IPS", value = var.vpc_cidr },
         { name = "WEB_CONCURRENCY", value = "1" },
       ])
-      secrets = concat(local.shared_secrets, local.identity_secrets, local.clearinghouse_secrets, [
+      secrets = concat(local.shared_secrets, local.identity_secrets, local.clearinghouse_secrets, local.ehr_secrets, [
         { name = "MFA_ENCRYPTION_KEY", valueFrom = var.secret_arns["mfa-encryption-key"] },
       ])
     }
@@ -96,7 +97,7 @@ locals {
       port        = null
       stop        = 120
       environment = local.shared_environment
-      secrets     = concat(local.shared_secrets, local.clearinghouse_secrets)
+      secrets     = concat(local.shared_secrets, local.clearinghouse_secrets, local.ehr_secrets)
     }
     migrate = {
       image       = local.api_image

@@ -9,7 +9,14 @@ from sqlalchemy.exc import DBAPIError
 
 from app.core.db import SessionFactory
 from app.models import AccessLog, Activity, Analysis, Decision, Note, Practice, PracticeMembership
-from tests.builders import maintenance, practice_with_provider, read_next_note, reviewed_note, sign_in, upload_note
+from tests.builders import (
+    backdate_closure,
+    practice_with_provider,
+    read_next_note,
+    reviewed_note,
+    sign_in,
+    upload_note,
+)
 
 KEPT_TABLES = (Note, Analysis, Decision, PracticeMembership, AccessLog)
 PURGE = text("SELECT bodha_purge_practice(:practice, :days)").bindparams(
@@ -31,14 +38,6 @@ async def _counts(practice_id: str) -> dict[str, int]:
             table.__tablename__: await db.scalar(select(func.count()).select_from(table).where(condition))
             for table, condition in conditions.items()
         }
-
-
-async def _backdate_closure(practice_id: str, days: int) -> None:
-    async with SessionFactory() as db:
-        await maintenance(db)
-        moment = func.clock_timestamp() - timedelta(days=days)
-        await db.execute(update(Practice).where(Practice.id == practice_id).values(closed_at=moment))
-        await db.commit()
 
 
 async def _closed_practice(harness, icd_catalog):
@@ -98,11 +97,11 @@ async def test_a_practice_is_purged_only_2557_days_after_closing_and_its_access_
     assert (
         await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
     ).status_code == 409
-    await _backdate_closure(practice.id, 2556)
+    await backdate_closure(practice.id, 2556)
     assert (
         await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
     ).status_code == 409
-    await _backdate_closure(practice.id, 2558)
+    await backdate_closure(practice.id, 2558)
     purged = await harness.client.post(f"{path}/purge", headers=hq, json={"confirm_name": "Lakeside"})
 
     assert purged.status_code == 200, purged.text

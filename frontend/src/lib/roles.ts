@@ -107,6 +107,10 @@ export function canReach(user: SessionUser | null | undefined, area: Area): bool
   return !user.billing_only || BILLING_ONLY_AREAS.includes(area);
 }
 
+export function reachableHref(user: SessionUser | null | undefined, area: Area, href: string): string | null {
+  return canReach(user, area) ? href : null;
+}
+
 export function canSearch(user: SessionUser | null | undefined): boolean {
   return user != null && !user.billing_only && canDo(user.role, "search");
 }
@@ -127,6 +131,8 @@ export function canOpenPath(user: SessionUser, pathname: string): boolean {
 const HOMES: Partial<Record<Role, string>> = { hq: "/hq", biller: "/billing", compliance: "/compliance" };
 
 export function homeFor(user: SessionUser): string {
+  const paying = user.organizations?.[0];
+  if (user.billing_only && user.role !== "admin" && paying) return organizationPath(paying.id, "plan");
   if (user.billing_only) return PLAN_PATH;
   return HOMES[user.role] ?? "/today";
 }

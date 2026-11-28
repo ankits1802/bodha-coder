@@ -1,6 +1,6 @@
 import type { AuthKind, ClaimFiling, ClaimTransport, ClaimUsage, SetupSectionKey } from "@/lib/api/types";
 
-export type SetupNavKey = SetupSectionKey | "providers" | "checks" | "clearinghouse" | "intake" | "mips";
+export type SetupNavKey = SetupSectionKey | "providers" | "checks" | "clearinghouse" | "intake" | "ehr" | "mips";
 
 export const SETUP_TEXT = {
   title: "Practice setup",
@@ -27,6 +27,7 @@ export const SETUP_TEXT = {
     checks: "Checks",
     clearinghouse: "Clearinghouse",
     intake: "Automatic intake",
+    ehr: "EHR connection",
     mips: "Quality measures",
   } satisfies Record<SetupNavKey, string>,
   fields: {

@@ -263,6 +263,51 @@ Work from the outside in. Never open a stored message to find out: the records s
 A practice whose address may have leaked chooses New address; mail to the old one is then refused and
 recorded. Raw messages stay under `ses-retained/` for seven years like every stored document.
 
+## Single sign-on: set up and recover
+
+Bodha support never configures a customer's single sign-on and never signs in for them
+([0061](decisions/0061-saml-single-sign-on.md)). The customer's practice admin (Settings → Security) or
+organization admin (the organization's Single sign-on tab) does it; support guides them.
+
+Set up with the customer:
+
+1. The domain must be verified first (Team → Email domains, or the organization's Domains tab). Single
+   sign-on can only cover verified domains of the same practice or organization.
+2. The admin chooses Set up single sign-on, then gives their IT admin the Entity ID and Reply URL (ACS),
+   or the downloaded metadata. NameID format: email address. The identity provider must sign the
+   assertion or the response with SHA-256 or stronger, must not encrypt the assertion, and must offer
+   the HTTP-Redirect binding for sign-in requests. If it sends the email in an attribute instead of the
+   NameID, the admin enters that attribute's name; for the person's name, the name attribute.
+3. The admin uploads the identity provider's metadata file or enters its https metadata URL, chooses the
+   domains, saves, and runs Test sign-in. Test sign-in signs no one in: it shows whether the response was
+   accepted, the email's domain, whether the account exists and whether two-step came from the identity
+   provider, or the reason it was refused.
+4. To skip Bodha's two-step for people the identity provider already verified, the admin enters the
+   `AuthnContextClassRef` their provider sends after multi-factor sign-in (Entra ID:
+   `http://schemas.microsoft.com/claims/multipleauthn`; Okta and Google Workspace send their own value
+   only when configured; Test sign-in shows what arrived).
+5. Only then Require single sign-on, with at least one break-glass admin who has a password and two-step.
+
+Certificate rollover: upload the new metadata while the old certificate is still in use. Bodha keeps the
+current certificates beside the new ones, so both verify; remove the old one after the identity provider
+switched. Certificates show their expiry; one past it no longer verifies.
+
+A broken identity provider (expired certificate, deleted application, wrong entity ID):
+
+1. Look at the refusals without opening anything: in SQL,
+   `select created_at, detail from auth_events where kind = 'sign_in_failed' and detail like 'single sign-on:%' order by created_at desc limit 20;`
+   The reason says what failed (`signature`, `audience`, `issuer`, `recipient`, `expired`, `request`,
+   `replayed`, `domain`). The practice's access log shows `single sign-on refused` with the same reason.
+2. A break-glass admin signs in with email, password and two-step, and either uploads corrected metadata
+   or turns Require single sign-on off. Everyone else can then use passwords or Google, Microsoft or Yahoo
+   again until it is fixed (people who never had a password use Forgot password).
+3. Only if no break-glass admin can sign in (they left, or lost two-step and recovery codes), and only on
+   a written request from the customer's contract contact confirmed by phone on file: run, from the API
+   task, `python -m app.scripts.lift_sso_requirement <connection id> "<who asked, ticket>"`. The connection
+   id is the last path part of the customer's Entity ID. It appends a version with Require single sign-on
+   off, written as Bodha support in the access log and in HQ activity, and changes nothing else; the
+   customer's admin then fixes the configuration.
+
 ## Restore from backup
 
 Decide first what was lost: a mistaken change in the database, deleted documents, or the whole

@@ -1,11 +1,17 @@
 import type { BillingRow, BillingShow } from "@/lib/api/types";
 import { localIsoDate } from "@/lib/dates";
 import { formatDateTime, formatTime } from "@/lib/format";
+import { BILLING_PATH } from "@/lib/paths";
 
-export const BILLING_SHOWS: readonly BillingShow[] = ["ready", "exported", "all"];
+export const BILLING_SHOWS: readonly BillingShow[] = ["ready", "exported", "today", "all"];
+export const DEFAULT_BILLING_SHOW: BillingShow = "ready";
 
 export function isBillingShow(value: string | null): value is BillingShow {
   return value !== null && (BILLING_SHOWS as readonly string[]).includes(value);
+}
+
+export function billingPath(show: BillingShow): string {
+  return show === DEFAULT_BILLING_SHOW ? BILLING_PATH : `${BILLING_PATH}?show=${show}`;
 }
 
 export interface DayGroup {

@@ -39,6 +39,10 @@ DOMAIN_EMAILS_PER_CLAIM = RateRule("domain_email", 3, timedelta(hours=1))
 DOMAIN_LINKS_PER_IP = RateRule("domain_link_ip", 30, timedelta(minutes=15))
 INTAKE_TESTS_PER_PRACTICE = RateRule("intake_test", 5, timedelta(hours=1))
 CLEARINGHOUSE_CHECKS_PER_PRACTICE = RateRule("clearinghouse_check", 20, timedelta(hours=1))
+EHR_TESTS_PER_PRACTICE = RateRule("ehr_test", 10, timedelta(hours=1))
+SSO_PER_IP = RateRule("sso_ip", 30, timedelta(minutes=15))
+SSO_LOOKUPS_PER_IP = RateRule("sso_lookup_ip", 60, timedelta(minutes=15))
+SSO_METADATA_PER_OWNER = RateRule("sso_metadata", 20, timedelta(hours=1))
 RULES = (
     LOGIN_PER_EMAIL,
     LOGIN_PER_IP,
@@ -57,6 +61,10 @@ RULES = (
     DOMAIN_LINKS_PER_IP,
     INTAKE_TESTS_PER_PRACTICE,
     CLEARINGHOUSE_CHECKS_PER_PRACTICE,
+    EHR_TESTS_PER_PRACTICE,
+    SSO_PER_IP,
+    SSO_LOOKUPS_PER_IP,
+    SSO_METADATA_PER_OWNER,
 )
 LONGEST_WINDOW = max(rule.window for rule in RULES)
 

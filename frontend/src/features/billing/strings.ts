@@ -1,4 +1,4 @@
-import type { ClaimFileOutcome, ClaimLinesFormat, ClaimStatus, PatientSex, Relationship } from "@/lib/api/types";
+import type { BillingShow, ClaimFileOutcome, ClaimLinesFormat, ClaimStatus, PatientSex, Relationship } from "@/lib/api/types";
 
 export const BILLING_TEXT = {
   title: "Ready to bill",
@@ -14,8 +14,9 @@ export const BILLING_TEXT = {
   show: {
     ready: "Not exported",
     exported: "Exported",
+    today: "Exported today",
     all: "All",
-  },
+  } satisfies Record<BillingShow, string>,
   statsLabel: "Billing summary",
   visits: "Visits",
   readyToBill: "Ready to bill",

@@ -33,6 +33,8 @@ describe("OrganizationArea", () => {
     expect(screen.getByRole("tab", { name: "Insights" })).toHaveAttribute("aria-selected", "true");
     await events.click(screen.getByRole("tab", { name: "Domains" }));
     expect(navigation.push).toHaveBeenCalledWith("/organizations/org-1/domains");
+    await events.click(screen.getByRole("tab", { name: "Single sign-on" }));
+    expect(navigation.push).toHaveBeenCalledWith("/organizations/org-1/sign-in");
     await events.click(screen.getByRole("tab", { name: "Practices" }));
     expect(navigation.push).toHaveBeenCalledWith("/organizations/org-1");
   });

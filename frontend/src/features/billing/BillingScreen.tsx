@@ -14,8 +14,9 @@ import { useUsageTask } from "@/hooks/useUsageTask";
 import { getBilling } from "@/lib/api/billing";
 import type { BillingRow, BillingShow } from "@/lib/api/types";
 import { formatCount } from "@/lib/format";
+import { canReach } from "@/lib/roles";
 import { useSession } from "@/lib/session/useSession";
-import { BILLING_SHOWS, isBillingShow } from "./billingRows";
+import { BILLING_SHOWS, DEFAULT_BILLING_SHOW, isBillingShow } from "./billingRows";
 import { BillingStats } from "./components/BillingStats";
 import { BillingTable } from "./components/BillingTable";
 import { ClaimDetailsDialog } from "./components/ClaimDetailsDialog";
@@ -28,10 +29,10 @@ import { BILLING_TEXT } from "./strings";
 const REMOTE_TEXT = { loading: BILLING_TEXT.loading, empty: BILLING_TEXT.empty, retry: BILLING_TEXT.retry };
 const SEGMENTS = BILLING_SHOWS.map((value) => ({ value, label: BILLING_TEXT.show[value] }));
 
-function BillingContent() {
+function BillingContent({ linked }: { linked: boolean }) {
   const params = useQueryParams();
   const showParam = params.get("show");
-  const show: BillingShow = isBillingShow(showParam) ? showParam : "ready";
+  const show: BillingShow = isBillingShow(showParam) ? showParam : DEFAULT_BILLING_SHOW;
   const offset = offsetFrom(params.get("offset"));
   const billing = useRemote(`billing:${show}:${offset}`, () => getBilling(show, offset));
   const [notice, setNotice] = useState<string | null>(null);
@@ -54,7 +55,7 @@ function BillingContent() {
         label={BILLING_TEXT.showLabel}
         value={show}
         segments={SEGMENTS}
-        onChange={(value) => params.update({ show: value === "ready" ? null : value, offset: null })}
+        onChange={(value) => params.update({ show: value === DEFAULT_BILLING_SHOW ? null : value, offset: null })}
       />
     </div>
   );
@@ -65,7 +66,7 @@ function BillingContent() {
         title={BILLING_TEXT.title}
         subtitle={page ? BILLING_TEXT.subtitle(formatCount(page.total)) : undefined}
         actions={
-          show === "ready" && page && page.items.length > 0 ? (
+          show === DEFAULT_BILLING_SHOW && page && page.items.length > 0 ? (
             <span className="flex flex-wrap items-center justify-end gap-2">
               {clearinghouse ? <SendClaims clearinghouse={clearinghouse} rows={page.items} onDone={finished} /> : null}
               <ExportClaimLines
@@ -82,7 +83,7 @@ function BillingContent() {
       <RemoteView state={billing.state} text={REMOTE_TEXT} isEmpty={(data) => data.items.length === 0 && data.offset === 0} onRetry={billing.reload}>
         {(data) => (
           <>
-            <BillingStats billing={data} />
+            <BillingStats billing={data} linked={linked} />
             {filter}
             <BillingTable rows={data.items} showClaims={data.clearinghouse !== null} onDetails={setDetailsRow} />
             <Pager
@@ -114,5 +115,5 @@ function BillingContent() {
 
 export function BillingScreen() {
   const { user } = useSession();
-  return <AreaGuard area="billing">{user ? <BillingContent /> : null}</AreaGuard>;
+  return <AreaGuard area="billing">{user ? <BillingContent linked={canReach(user, "billing")} /> : null}</AreaGuard>;
 }

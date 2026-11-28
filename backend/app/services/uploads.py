@@ -26,8 +26,11 @@ HISTORY_PAGE = 50
 UPLOADED_NOTES = "uploaded notes"
 UPLOAD_SOURCE = "upload"
 INTAKE_SOURCE = "intake"
-INTAKE_UPLOADER = "Intake"
+FHIR_SOURCE = "fhir"
 INTAKE_ACTOR = SystemActor("bodha-intake", "Bodha intake")
+FHIR_ACTOR = SystemActor("bodha-ehr", "Bodha EHR connection")
+SYSTEM_ACTORS = {INTAKE_SOURCE: INTAKE_ACTOR, FHIR_SOURCE: FHIR_ACTOR}
+UPLOADER_LABELS = {INTAKE_SOURCE: "Intake", FHIR_SOURCE: "EHR"}
 NO_PAYER = ""
 
 
@@ -80,6 +83,7 @@ class Uploader:
 
 
 PlannedBatch = tuple[UploadPlan, list[UploadFile]]
+OpenBatches = dict[UploadPlan, str]
 
 
 def grouped_files(
@@ -113,7 +117,7 @@ async def create_upload(
     db: AsyncSession, store: ObjectStore, actor: Actor, batches: list[PlannedBatch]
 ) -> UploadResult:
     uploader = Uploader(actor.practice_id, actor.zone, actor.user.id, UPLOAD_SOURCE)
-    result = await _store_batches(db, store, uploader, batches)
+    result = await _store_batches(db, store, uploader, batches, {})
     record_access(db, actor, UPLOADED_NOTES, detail=result.detail())
     await db.commit()
     return result
@@ -128,16 +132,22 @@ async def create_intake_upload(
 
 
 async def stage_intake_upload(
-    db: AsyncSession, store: ObjectStore, practice: Practice, batches: list[PlannedBatch]
+    db: AsyncSession,
+    store: ObjectStore,
+    practice: Practice,
+    batches: list[PlannedBatch],
+    *,
+    source: str = INTAKE_SOURCE,
+    opened: OpenBatches | None = None,
 ) -> UploadResult:
-    uploader = Uploader(practice.id, zone_named(practice.time_zone), None, INTAKE_SOURCE)
-    result = await _store_batches(db, store, uploader, batches)
-    record_system_access(db, INTAKE_ACTOR, practice.id, UPLOADED_NOTES, detail=result.detail())
+    uploader = Uploader(practice.id, zone_named(practice.time_zone), None, source)
+    result = await _store_batches(db, store, uploader, batches, {} if opened is None else opened)
+    record_system_access(db, SYSTEM_ACTORS[source], practice.id, UPLOADED_NOTES, detail=result.detail())
     return result
 
 
 async def _store_batches(
-    db: AsyncSession, store: ObjectStore, uploader: Uploader, batches: list[PlannedBatch]
+    db: AsyncSession, store: ObjectStore, uploader: Uploader, batches: list[PlannedBatch], opened: OpenBatches
 ) -> UploadResult:
     if not batches or not all(files for _, files in batches):
         raise Invalid("add at least one PDF")
@@ -153,7 +163,7 @@ async def _store_batches(
     duplicates: list[str] = []
     for plan, files in batches:
         usual = await _usual_payer(db, practice, plan.provider_id)
-        stored = await _store_batch(db, store, uploader, plan, files, usual=usual)
+        stored = await _store_batch(db, store, uploader, (plan, files), opened, usual=usual)
         batch_ids.append(stored.batch_id)
         accepted += stored.accepted
         duplicates += stored.duplicates
@@ -180,11 +190,24 @@ async def _store_batch(
     db: AsyncSession,
     store: ObjectStore,
     uploader: Uploader,
-    plan: UploadPlan,
-    files: list[UploadFile],
+    planned: PlannedBatch,
+    opened: OpenBatches,
     *,
     usual: str | None,
 ) -> UploadResult:
+    plan, files = planned
+    batch = await _open_batch(db, uploader, plan, opened)
+    accepted, duplicates = [], []
+    for file in files:
+        note = await _add_note(db, store, uploader, batch, file, payer=_note_payer(file, usual))
+        (accepted if note else duplicates).append(file.name)
+    return UploadResult([batch.id], accepted, duplicates)
+
+
+async def _open_batch(db: AsyncSession, uploader: Uploader, plan: UploadPlan, opened: OpenBatches) -> Batch:
+    held = await db.get(Batch, opened[plan]) if plan in opened else None
+    if held is not None:
+        return held
     batch = Batch(
         practice_id=uploader.practice_id,
         provider_id=plan.provider_id,
@@ -196,11 +219,8 @@ async def _store_batch(
     )
     db.add(batch)
     await db.flush()
-    accepted, duplicates = [], []
-    for file in files:
-        note = await _add_note(db, store, uploader, batch, file, payer=_note_payer(file, usual))
-        (accepted if note else duplicates).append(file.name)
-    return UploadResult([batch.id], accepted, duplicates)
+    opened[plan] = batch.id
+    return batch
 
 
 async def _check_plan(db: AsyncSession, practice_id: str, plan: UploadPlan) -> None:
@@ -318,9 +338,7 @@ async def _status_counts(db: AsyncSession, batch_ids: list[str]) -> dict[str, di
 
 
 def _uploader_label(batch: Batch, user_name: str | None) -> str:
-    if batch.source == INTAKE_SOURCE:
-        return INTAKE_UPLOADER
-    return user_name or ""
+    return UPLOADER_LABELS.get(batch.source) or user_name or ""
 
 
 def _history_row(batch: Batch, provider: str, uploader: str | None, counts: dict[str, int]) -> dict[str, Any]:

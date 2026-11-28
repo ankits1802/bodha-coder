@@ -17,7 +17,9 @@ practice's own clearinghouse as X12 837P files.
 1. A coder uploads the day's PDFs for one provider and date of service. Date, patient and billed
    code are read from file names like `2026-11-25 - REYES MARISOL - 99215 - Progress.pdf`. A practice
    can also drop PDFs in a watched folder, or email them to its own intake address from an allowed
-   sender, in which case provider and date of service are read from page 1.
+   sender, in which case provider and date of service are read from page 1. Or Bodha pulls signed
+   notes from the practice's EHR over FHIR, taking the provider from the NPI and the date of service
+   from the encounter.
 2. The worker reads the PDF (text layer, or the PDF itself for scans), runs the review and stores
    the result as a new analysis revision with every suggestion, its reasoning and its evidence.
 3. The note lands in a lane. A coder accepts or keeps each suggestion, asks the provider, flags
@@ -131,6 +133,7 @@ A biller then confirms each claim's patient and subscriber details on Billing.
 
 | Setting | Values |
 |---|---|
+| `EHR_KEY_ENCRYPTION_KEY` | Fernet keys (comma-separated to rotate) that encrypt each practice's EHR private key at rest; empty keeps the EHR connection unavailable. Generate one the same way as `MFA_ENCRYPTION_KEY`, never the same key |
 | `MFA_ENCRYPTION_KEY` | a Fernet key that encrypts every two-step secret at rest; required once anyone sets up two-step verification. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and keep it with the other secrets: losing it means everyone sets up two-step again. A comma-separated list rotates keys without an outage (see `docs/OPERATIONS.md`) |
 | `ADMIN_URL` | the HQ console's own host, for example `https://admin.bodhaai.co`; empty keeps HQ on `APP_URL`. With it set, HQ accounts sign in only there and practice accounts only on `APP_URL`, so one email can hold both; locally use `http://admin.localhost:3000`, and give the web server the same `ADMIN_URL` and `SITE_URL`. More HQ owners are invited on `/hq/team` or with `python -m app.scripts.invite_hq "Full Name <email>"` ([0033](docs/decisions/0033-hq-on-its-own-host.md)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | an OAuth 2.0 client of type "Web application" in Google Cloud. Sign in with Google stays off until both are set |
@@ -172,12 +175,29 @@ verifies its email domain (a DNS TXT record or a link to an admin mailbox) can l
 with that domain ask to join or join automatically
 ([0044](docs/decisions/0044-organizations-and-domain-join.md)).
 
+A practice or organization admin can also turn on SAML 2.0 single sign-on for its verified domains, from
+Settings → Security or the organization's Single sign-on tab: the identity provider's metadata from a file
+or an https URL, the service provider details to give their IT admin, new people created on first sign-in
+if wanted (never as admins), and, once Test sign-in passes, single sign-on required for those domains with
+break-glass admins who keep a password and two-step. The sign-in page sends such emails to the identity
+provider. Signatures are checked with signxml against the pinned certificates only
+([0061](docs/decisions/0061-saml-single-sign-on.md)).
+
 Besides the CMS quality measures, a practice admin can add measures of the practice's own (an internal
 measure, a payer programme or a registry measure) that the review checks like any other and shows apart
 from CMS ones. Bodha also times the work without patient data (how long a note stays open in review, the
 inputs per decision and where people pause); practice admins see medians by role and step under
 Insights, Usage, and HQ sees them across practices
 ([0045](docs/decisions/0045-practice-measures-and-usage-timing.md)).
+
+A practice admin can connect the practice's EHR under Settings, Setup, EHR connection: Bodha makes a key
+pair for the practice and publishes its public half at a JWKS URL the practice registers with its EHR
+vendor as a SMART on FHIR backend services client, then pulls current, final progress, consult, history
+and physical and nursing facility notes every 15 minutes into the same checks and batches as an upload.
+Every pull and every document fetched is recorded with its outcome, never with patient details. Set
+`EHR_KEY_ENCRYPTION_KEY` (a Fernet key list, like `MFA_ENCRYPTION_KEY`) on the API and the worker to turn it
+on; how a practice and its vendor connect is in [docs/DEPLOY-INTAKE.md](docs/DEPLOY-INTAKE.md#option-4-pull-signed-notes-from-the-practices-ehr-over-fhir)
+([0060](docs/decisions/0060-ehr-connection-over-fhir.md)).
 
 ### Plans and billing
 

@@ -11,11 +11,13 @@ from starlette.exceptions import HTTPException
 
 from app.adapters.billing_providers import build_billing_providers
 from app.adapters.dns_txt import DnsTxtResolver
+from app.adapters.guarded_http import OutboundHttp
 from app.adapters.image_models import build_image_model
 from app.adapters.messenger import build_messenger
 from app.adapters.object_store import S3ObjectStore
 from app.adapters.oidc import build_identity_providers
 from app.adapters.record_signers import build_record_signer
+from app.adapters.saml_fetch import HttpsMetadataSource
 from app.adapters.sftp import ParamikoLink
 from app.api.routes import (
     account,
@@ -43,6 +45,7 @@ from app.api.routes.claims import router as claims_router
 from app.api.routes.clearinghouse import router as clearinghouse_router
 from app.api.routes.defensibility import router as defensibility_router
 from app.api.routes.domains import router as domains_router
+from app.api.routes.ehr_connection import router as ehr_connection_router
 from app.api.routes.email_intake import router as email_intake_router
 from app.api.routes.expenditure import router as expenditure_router
 from app.api.routes.hq_organizations import router as hq_organizations_router
@@ -53,6 +56,8 @@ from app.api.routes.quality import router as quality_router
 from app.api.routes.query_governance import router as query_governance_router
 from app.api.routes.remittances import router as remittances_router
 from app.api.routes.review_records import router as review_records_router
+from app.api.routes.saml import router as saml_router
+from app.api.routes.sso import router as sso_router
 from app.api.routes.usage import router as usage_router
 from app.codes.icd import load_catalog
 from app.core.config import get_settings
@@ -76,7 +81,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.icd = await asyncio.to_thread(load_catalog)
     app.state.image_model = build_image_model(settings)
     app.state.txt_resolver = DnsTxtResolver()
+    app.state.metadata_source = HttpsMetadataSource()
     app.state.file_link = ParamikoLink(timeout_seconds=settings.clearinghouse_timeout_seconds)
+    app.state.outbound = OutboundHttp()
     yield
     await app.state.image_model.aclose()
 
@@ -113,6 +120,7 @@ app.include_router(blind_review_router, prefix="/api")
 app.include_router(remittances_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
 app.include_router(email_intake_router, prefix="/api")
+app.include_router(ehr_connection_router, prefix="/api")
 app.include_router(query_governance_router, prefix="/api")
 app.include_router(claims_router, prefix="/api")
 app.include_router(clearinghouse_router, prefix="/api")
@@ -123,6 +131,8 @@ app.include_router(domains_router, prefix="/api")
 app.include_router(hq_organizations_router, prefix="/api")
 app.include_router(practice_measures_router, prefix="/api")
 app.include_router(usage_router, prefix="/api")
+app.include_router(saml_router, prefix="/api")
+app.include_router(sso_router, prefix="/api")
 
 
 @app.exception_handler(AppError)

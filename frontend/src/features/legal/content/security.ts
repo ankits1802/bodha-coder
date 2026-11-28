@@ -10,7 +10,7 @@ export const SECURITY: LegalDocumentData = {
   slug: "security",
   title: LEGAL_TITLES.security,
   summary: `The safeguards built into ${product}.`,
-  version: "1.2",
+  version: "1.3",
   updated: "2026-11-28",
   numbered: false,
   sections: [
@@ -30,6 +30,7 @@ export const SECURITY: LegalDocumentData = {
         `Document storage blocks all public access, refuses any request that does not use TLS, and keeps every version of every file under a ${facts.documentLockYears}-year retention lock.`,
         "Connections to the Service use HTTPS, and the database accepts only encrypted connections.",
         "Passwords are stored as salted bcrypt hashes. Two-step verification secrets are stored encrypted and recovery codes only as hashes.",
+        "A connection to a practice’s EHR signs in with a key pair made for that practice: only its public half is published, and the private half is stored encrypted and never shown. Bodha reads only from the EHR address the practice sets, over HTTPS with the certificate checked, and never follows a link to another host or to a private network address.",
       ),
     ),
     section(
@@ -43,6 +44,7 @@ export const SECURITY: LegalDocumentData = {
         "Blocking a person, changing their role or resetting their password ends their sessions at once. Anyone can review their signed-in devices and sign them out.",
         "Sign-in, password reset, sign-up and one-time code attempts are rate limited.",
         "Sign-in with Google, Microsoft or Yahoo uses OpenID Connect with PKCE, and accepts only verified email addresses.",
+        "A practice or organization can sign its people in through its own identity provider with SAML 2.0 single sign-on, for email domains it has proven it owns. Each assertion must be signed with a certificate the customer pinned and is checked for its issuer, audience, recipient, validity times and the request it answers; an assertion is accepted once only, and none of its content is logged. A customer can require single sign-on for its domains, which turns off password and other sign-in for them except for the break-glass administrators it names, who keep a password and two-step verification.",
       ),
     ),
     section(
@@ -54,6 +56,7 @@ export const SECURITY: LegalDocumentData = {
         `The access log is kept for ${facts.accessLogYears} years by default; a practice can choose up to ${facts.accessLogMaxYears}, and nothing in it is removed before ${facts.accessLogYears} years.`,
         "Every model run, suggestion with its reasoning and evidence, decision, code-set change, note revision and provider answer is kept as its own record and never overwritten. Changes to a note’s flag, payer, assignment and visit type, and our changes to a practice’s account, are kept with their values before and after.",
         "A note that arrives by email keeps the original message as it was received.",
+        "A note pulled from a practice’s EHR is recorded with the EHR’s document, encounter and practitioner identifiers and its outcome, never with patient details.",
         "These records are append-only in the database: it rejects any change or deletion by the application, and records the time of each entry with its own clock.",
         "The access log and our activity record are hash-chained: the database stores with each entry a SHA-256 hash of the previous entry’s hash and the entry’s content, and we can verify the chain and find the first entry that does not match.",
         "A decision that departs from Bodha’s suggestion, and every hand edit of the billed codes or diagnosis links, carries the reason the person chose, with who, their role and when.",

@@ -217,6 +217,22 @@ export type IntakeMessage = Schemas["IntakeMessageRow"];
 export type IntakeMessageOutcome = IntakeMessage["outcome"];
 export type IntakeRefusal = NonNullable<IntakeMessage["reason"]>;
 export type IntakeFile = Schemas["IntakeMessageFile"];
+export type EhrConnection = Schemas["EhrConnectionView"];
+export type EhrStatus = EhrConnection["status"];
+export type EhrRegistration = Schemas["EhrRegistrationView"];
+export type EhrKeyAlgorithm = EhrRegistration["algorithm"];
+export type EhrSettings = Schemas["EhrConnectionSettingsView"];
+export type EhrSettingsInput = Schemas["EhrConnectionBody"];
+export type EhrNoteType = EhrSettingsInput["note_types"][number];
+export type EhrCheck = Schemas["EhrCheckView"];
+export type EhrCheckStep = Schemas["EhrCheckStepView"];
+export type EhrPullRun = Schemas["EhrPullRunView"];
+export type EhrPullOutcome = EhrPullRun["outcome"];
+export type EhrPullReason = NonNullable<EhrPullRun["reason"]>;
+export type EhrPullRunPage = Schemas["EhrPullRunPage"];
+export type EhrDocument = Schemas["EhrDocumentView"];
+export type EhrDocumentReason = NonNullable<EhrDocument["reason"]>;
+export type EhrDocumentPage = Schemas["EhrDocumentPage"];
 
 export type TeamMember = Schemas["TeamMember"];
 export type MemberStatus = TeamMember["status"];
@@ -307,6 +323,21 @@ export type DomainJoinRequest = Schemas["DomainJoinBody"];
 export type VerifiedDomain = Schemas["VerifiedDomain"];
 export type JoinRequestRow = Schemas["JoinRequestRow"];
 export type JoinApproval = Schemas["JoinApprovalBody"];
+
+export type SsoSettings = Schemas["SsoSettings"];
+export type SsoConnection = Schemas["SsoConnection"];
+export type SsoVersion = Schemas["SsoVersion"];
+export type SsoIdentityProvider = Schemas["SsoIdentityProvider"];
+export type SsoCertificate = Schemas["SsoCertificate"];
+export type SsoDomain = Schemas["SsoDomain"];
+export type SsoAdmin = Schemas["SsoAdmin"];
+export type SsoSettingsRequest = Schemas["SsoSettingsBody"];
+export type SsoMetadataRequest = Schemas["SsoMetadataBody"];
+export type SsoNewPersonRole = NonNullable<SsoSettingsRequest["new_person_role"]>;
+export type SsoTrialLink = Schemas["SsoTrialLink"];
+export type SsoTrialResult = Schemas["SsoTrialResult"];
+export type SsoDiscovery = Schemas["SsoDiscovery"];
+export type SsoMode = SsoDiscovery["mode"];
 
 export type PlanCatalog = Schemas["PlanCatalog"];
 export type PlanTerms = Schemas["PlanTerms"];
@@ -463,7 +494,7 @@ export interface UploadPlan extends FilePlacement {
   visit_type: string;
 }
 
-export type BillingShow = "ready" | "exported" | "all";
+export type BillingShow = "ready" | "exported" | "today" | "all";
 export type InsightDays = 7 | 14 | 30 | 90;
 export type RemittanceFilter = "all" | "downcoded" | "denied" | "unmatched";
 

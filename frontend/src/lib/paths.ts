@@ -9,7 +9,7 @@ export const BILLING_PATH = "/billing";
 export const HISTORY_OPEN = "1";
 export const ORGANIZATIONS_PATH = "/organizations";
 
-export type OrganizationTab = "insights" | "plan" | "domains";
+export type OrganizationTab = "insights" | "plan" | "domains" | "sign-in";
 
 export function organizationPath(organizationId: string, tab?: OrganizationTab): string {
   const base = `${ORGANIZATIONS_PATH}/${encodeURIComponent(organizationId)}`;
@@ -45,4 +45,13 @@ export interface DayRange {
 
 export function accessLogPath(userId: string, range: DayRange): string {
   return `${ACCESS_LOG_PATH}?${new URLSearchParams({ user: userId, start: range.start, end: range.end }).toString()}`;
+}
+
+const SAME_SITE_PATH = /^\/(?![/\\])[A-Za-z0-9\-._~!$&'()*+,;=:@%/?]*$/;
+const NEXT_PATH_LENGTH = 512;
+const NOT_A_PAGE = ["/api/", "/sign-in"];
+
+export function sameSitePath(value: string | null | undefined): string | null {
+  if (!value || value.length > NEXT_PATH_LENGTH || !SAME_SITE_PATH.test(value)) return null;
+  return NOT_A_PAGE.some((prefix) => value.startsWith(prefix)) ? null : value;
 }

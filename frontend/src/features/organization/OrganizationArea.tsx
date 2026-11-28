@@ -16,7 +16,7 @@ interface OrganizationAreaProps {
   children: ReactNode;
 }
 
-const TAB_KEYS: readonly OrganizationTabKey[] = ["practices", "insights", "plan", "domains"];
+const TAB_KEYS: readonly OrganizationTabKey[] = ["practices", "insights", "plan", "domains", "sign-in"];
 
 function tabPath(organizationId: string, key: OrganizationTabKey): string {
   return key === "practices" ? organizationPath(organizationId) : organizationPath(organizationId, key);

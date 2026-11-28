@@ -8,7 +8,7 @@ from app.core.deps import (
     Client,
     PracticeAccess,
     active_membership,
-    ensure_session_allowed,
+    ensure_practice_open,
     needs_two_step,
 )
 from app.core.errors import Forbidden, Unauthorized
@@ -29,7 +29,7 @@ async def switch_practice(
 ) -> Tokens | MfaChallenge:
     session = await _current_session(db, user, refresh)
     standing = await _standing_in(db, user, practice_id)
-    if needs_two_step(standing) and not user.mfa_enabled:
+    if needs_two_step(standing) and not (user.mfa_enabled or session.idp_two_step):
         return two_step_challenge(user, SWITCH_METHOD, standing)
     rotated = random_token()
     session.refresh_hash, session.last_used_at, session.practice_id = digest(rotated), utcnow(), practice_id
@@ -55,5 +55,5 @@ async def _standing_in(db: AsyncSession, user: User, practice_id: str) -> Practi
     practice = await db.get_one(Practice, practice_id)
     if practice.status not in ACTIVE_PRACTICE_STATUSES:
         raise Forbidden(PRACTICE_CLOSED)
-    ensure_session_allowed(membership.role, practice)
+    await ensure_practice_open(db, user, membership.role, practice)
     return PracticeAccess(practice, membership)

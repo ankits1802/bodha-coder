@@ -65,6 +65,7 @@ Pages that belong together are tabs of one entry, not entries of their own.
 | Account menu | The person's name and role at the foot of the sidebar (the avatar when collapsed) opens a menu: Account (signed-in devices, recovery codes, the daily email and the practices), each practice with the role and the current one checked (choosing one switches), Leave for each practice (confirmed in a dialog), New practice, Take the tour and Sign out. A billing-only session offers Sign out only |
 | Today | The one primary button follows the role: Start reviewing (a coder's own next note, else an unassigned one, else My work), Send questions (the Questions to send view), Review compliance, Start billing; an admin gets Start reviewing once the practice has notes. Open blind coding assigned to the person is listed under Assigned to you, with a link to Training |
 | First steps | Until every step is done, an admin's Today starts with Get set up: providers (Import CSV, Add provider), payers (Add payer), the checks as switches with Save checks, Invite people (one form with a row per person), Use recommended (two-step for every role, sign-out after 15 minutes, the access log kept 7 years) and Choose a plan. Each step's name links to its place in Settings and carries the setup marker; the next open step holds the primary button while the practice has no notes. Hide appears once providers are in |
+| Single sign-on | One panel, the same for a practice (Settings → Security, admins) and an organization (its Single sign-on tab): Bodha's Entity ID and Reply URL as selectable code with Download metadata; the identity provider from a metadata file or URL with its certificates, each with its expiry and Remove; the verified domains, the break-glass admins and the switches as switch rows; Save, Turn off (confirmed) and Test sign-in, whose result lists what arrived. On the sign-in page an email whose domain requires single sign-on hides the password field and turns Continue into Continue with single sign-on, with Use a password below for break-glass admins; an optional domain adds a second Continue with single sign-on button |
 | Forms | A field's optional marker is read after a pause ("NPI, optional"). The provider dialog shows name, credential, NPI, usual place, usual payer (while the practice lists payers) and email; specialty, questions by text, active and credentialing sit behind More, which opens by itself when one of its fields needs fixing |
 
 ## Upload notes
@@ -85,6 +86,16 @@ block). Loads that fill a screen show a skeleton of its layout; small panels kee
 note review the finding that `y` and `n` act on carries a dark bar at its left edge, and focus moves
 to the next finding after each decision, then to Approve. Form fields are checked when they lose
 focus, not only on submit.
+
+## Figures
+
+A figure on a dashboard opens the records it counts ([0058](decisions/0058-figures-open-their-records.md)).
+
+| Rule | How |
+|---|---|
+| Link | `StatCell` with an `href`: the whole cell is the link, named by every word it shows with pauses ("Organizations, 3"; "Waiting, 12, 3 reading now"); the row-hover background on hover and an inset focus ring. The figure keeps the label colour: no purple, underline or chevron. Today's lanes are the same cells, larger, with the lane's dot |
+| Destination | A list that already exists, with its filter in the address, counted by the same query: HQ Organizations to `/hq/organizations`, Practices to `/hq/practices?status=live` (Live is active or trial), Model cost this month to `/hq/spend` for the month so far; each Today lane to its queue lane (Compliance to `/compliance` for those who can open it); Ready to bill to `/billing`, Exported today to `/billing?show=today` |
+| Plain | Rates, medians, money estimates, figures over a rolling window, an Insights period or a whole organization, totals of the table right below, and any figure whose list the viewer's role cannot open stay text; so does every figure in a billing-only session |
 
 ## Note review
 
