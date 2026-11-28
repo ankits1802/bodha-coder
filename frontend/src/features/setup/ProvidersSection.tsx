@@ -11,6 +11,7 @@ import { useQueryParams } from "@/hooks/useQueryParams";
 import { useRemote } from "@/hooks/useRemote";
 import type { Provider } from "@/lib/api/types";
 import type { SetupOpen } from "@/lib/paths";
+import { getPayers } from "@/lib/api/notes";
 import { importProviders } from "@/lib/api/practice";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { ImportDialog } from "./ImportDialog";
@@ -33,6 +34,7 @@ interface ProvidersSectionProps {
 export function ProvidersSection({ missingNpi, open, onOpened, onChanged }: ProvidersSectionProps) {
   const providers = useRemote("setup-providers", getProviders);
   const places = useRemote("setup-places", getPlaces);
+  const payers = useRemote("setup-payers", getPayers);
   const canSendTexts = useCanSendTexts();
   const query = useQueryParams();
   const onlyMissing = query.get("npi") === "missing";
@@ -41,6 +43,7 @@ export function ProvidersSection({ missingNpi, open, onOpened, onChanged }: Prov
   useArrival(open !== null, onOpened);
   const [imported, setImported] = useState<number | null>(null);
   const placeList = places.state.status === "success" ? places.state.data : [];
+  const payerList = payers.state.status === "success" ? payers.state.data : [];
   const placeNames = new Map(placeList.map((place) => [place.code, place.name]));
   const count = providers.state.status === "success" ? providers.state.data.length : null;
 
@@ -104,6 +107,7 @@ export function ProvidersSection({ missingNpi, open, onOpened, onChanged }: Prov
         <ProviderDialog
           provider={editing === "new" ? null : editing}
           places={placeList}
+          payers={payerList}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);

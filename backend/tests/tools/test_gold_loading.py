@@ -61,6 +61,7 @@ def test_a_mis_billed_case_is_uploaded_corrected_approved_and_marked():
             "provider_id": "provider-3",
             "service_date": "2025-10-14",
             "place_code": "11",
+            "payer": "payer-1",
         }
     ]
     edits = [body for method, path, body in fake.calls if path.endswith("/billed-codes")]
@@ -174,3 +175,32 @@ def test_preflight_refuses_a_practice_other_than_the_evaluation_one():
 def test_the_summary_counts_outcomes_and_lists_what_needs_attention():
     outcomes = [Outcome("GS-01", "loaded"), Outcome("GS-02", "already loaded"), Outcome("GS-03", "failed", "boom")]
     assert summary_lines(outcomes) == ["1 loaded, 1 already loaded, 0 still reading, 1 failed", "GS-03: failed (boom)"]
+
+
+def test_each_plan_type_is_listed_as_the_pdfs_print_it_and_a_medicare_case_uploads_with_medicare():
+    fake = FakeBodha()
+    assert run(fake, ["GS-03"])[0].status == "loaded"
+    assert [(payer["id"], payer["name"], payer["plan_type"]) for payer in fake.payers] == [
+        ("payer-1", "Commercial PPO", "commercial"),
+        ("payer-2", "Medicaid", "medicaid"),
+        ("payer-3", "Medicare Part B", "medicare"),
+    ]
+    assert [upload["payer"] for upload in fake.uploads] == ["payer-3"]
+    assert "/api/notes/note-1/payer" not in fake.paths("PUT")
+
+
+def test_payers_the_practice_already_lists_are_reused():
+    listed = [{"id": "medicare-1", "name": "Medicare Part B", "plan_type": "medicare"}]
+    fake = FakeBodha(payers=list(listed))
+    run(fake, ["GS-03"])
+    assert [payer["name"] for payer in fake.payers] == ["Medicare Part B", "Commercial PPO", "Medicaid"]
+    assert [upload["payer"] for upload in fake.uploads] == ["medicare-1"]
+
+
+def test_a_note_uploaded_before_the_payer_was_set_gets_it_before_approval():
+    fake = FakeBodha()
+    fake.notes["note-1"] = FakeNote("note-1", GS01_FILE, ["99203", "L23.7"], ["99202", "L23.7"])
+    assert run(fake, ["GS-01"])[0].status == "loaded"
+    assert fake.notes["note-1"].payer == "payer-1"
+    order = [path for method, path, _ in fake.calls if method in ("PUT", "POST") and path.startswith("/api/notes/")]
+    assert order.index("/api/notes/note-1/payer") < order.index("/api/notes/note-1/approve")

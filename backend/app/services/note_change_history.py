@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -11,7 +12,7 @@ from app.models import Note, NoteChange, Practice
 from app.services.memberships import member_names
 from app.services.payers import payer_list
 
-__all__ = ["LABELLED_FIELDS", "note_change_rows", "record_note_change"]
+__all__ = ["LABELLED_FIELDS", "note_change_rows", "record_note_change", "value_at"]
 
 LABELLED_FIELDS = ("assignee", "payer")
 
@@ -47,6 +48,23 @@ async def note_change_rows(db: AsyncSession, note_id: str, practice_id: str) -> 
         }
         for row in rows
     ]
+
+
+async def value_at(db: AsyncSession, note: Note, field: str, at: datetime | None) -> str | None:
+    current = getattr(note, field)
+    if at is None:
+        return current
+    rows = list(
+        await db.scalars(
+            select(NoteChange)
+            .where(NoteChange.note_id == note.id, NoteChange.field == field)
+            .order_by(NoteChange.created_at, NoteChange.id)
+        )
+    )
+    before = [row for row in rows if row.created_at <= at]
+    if before:
+        return before[-1].new_value
+    return rows[0].old_value if rows else current
 
 
 async def _labels(db: AsyncSession, practice_id: str) -> dict[str, str]:

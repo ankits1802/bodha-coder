@@ -1,8 +1,10 @@
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, UniqueConstraint, text
+from datetime import datetime
+
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, LedgerMixin
+from app.models.base import Base, IdMixin, LedgerMixin, utcnow
 
 MEASURE_NAME_LENGTH = 80
 MEASURE_IDENTIFIER_LENGTH = 20
@@ -30,3 +32,11 @@ class PracticeMeasure(LedgerMixin, Base):
     not_met_codes: Mapped[list[str]] = mapped_column(JSONB)
     retired: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+
+
+class MipsList(IdMixin, Base):
+    __tablename__ = "mips_lists"
+    practice_id: Mapped[str] = mapped_column(ForeignKey("practices.id"), unique=True)
+    measure_ids: Mapped[list[str]] = mapped_column(JSONB)
+    updated_by: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

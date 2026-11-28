@@ -20,6 +20,16 @@ describe("reviewPermissions", () => {
     expect(reviewPermissions("coder", detail("ready")).retry).toBe(false);
   });
 
+  it("offers to read a ready note again only when its payer changed since the read, to those who may retry", () => {
+    const changed = (status: NoteStatus) => ({ ...detail(status), analysis: { payer_changed: true } }) as unknown as NoteDetail;
+    expect(reviewPermissions("coder", changed("ready")).readAgain).toBe(true);
+    expect(reviewPermissions("admin", changed("ready")).readAgain).toBe(true);
+    expect(reviewPermissions("biller", changed("ready")).readAgain).toBe(false);
+    expect(reviewPermissions("coder", changed("approved")).readAgain).toBe(false);
+    expect(reviewPermissions("coder", detail("ready")).readAgain).toBe(false);
+    expect(reviewPermissions("coder", detail("ready", false)).readAgain).toBe(false);
+  });
+
   it("lets a coder void only a note Bodha never read and an admin any note not being read", () => {
     expect(reviewPermissions("coder", detail("queued", false)).voidNote).toBe(true);
     expect(reviewPermissions("coder", detail("failed", false)).voidNote).toBe(true);

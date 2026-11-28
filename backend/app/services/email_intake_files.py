@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 from collections import Counter
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any
 
@@ -18,6 +18,7 @@ from app.models import Note, Practice
 from app.services.intake import ALREADY_UPLOADED, arrival_name
 from app.services.intake_mail import Attachment
 from app.services.intake_settings import IntakeConfig, intake_config
+from app.services.payer_matching import PayerRef, confident_payer, payer_in, payer_refs
 from app.services.upload_matching import CHECK_BELOW, FileMatch, ProviderRef, match_file
 from app.services.upload_preview import active_places, active_providers, first_page_text
 from app.services.uploads import PlannedBatch, UploadFile, UploadPlan, file_problem, stage_intake_upload
@@ -74,14 +75,14 @@ class Directory:
     places: Mapping[str, str]
     config: IntakeConfig
     today: date
+    payers: Sequence[PayerRef]
 
 
 async def deliver_attachments(
     db: AsyncSession, store: ObjectStore, practice: Practice, attachments: Sequence[Attachment], *, today: date
 ) -> list[FileOutcome]:
-    directory = Directory(
-        await active_providers(db, practice.id), await active_places(db), intake_config(practice), today
-    )
+    providers, places = await active_providers(db, practice.id), await active_places(db)
+    directory = Directory(providers, places, intake_config(practice), today, payer_refs(practice))
     placed = [await _place(attachment, directory) for attachment in attachments]
     ready = [item for item in placed if item.plan is not None]
     if not ready:
@@ -122,7 +123,8 @@ async def _place(attachment: Attachment, directory: Directory) -> PlacedFile:
     facts = parse_note_filename(attachment.name)
     match = match_file(text, facts, directory.providers, directory.places, today=directory.today)
     plan, reason = plan_for(match, directory.config)
-    return PlacedFile(file, plan, reason)
+    payer = confident_payer(payer_in(text, directory.payers))
+    return PlacedFile(replace(file, payer=payer), plan, reason)
 
 
 def _batches(ready: Sequence[PlacedFile]) -> list[PlannedBatch]:

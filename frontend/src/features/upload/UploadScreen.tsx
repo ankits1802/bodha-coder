@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RemoteView } from "@/components/ui/RemoteView";
 import { useRemote } from "@/hooks/useRemote";
 import { useUsageTask } from "@/hooks/useUsageTask";
-import type { Place, Provider } from "@/lib/api/types";
+import { getPayers } from "@/lib/api/notes";
+import type { PayerOption, Place, Provider } from "@/lib/api/types";
 import { getPlaces, getProviders } from "@/lib/api/uploads";
 import { setupSectionPath } from "@/lib/paths";
 import { canUse } from "@/lib/roles";
@@ -19,11 +20,12 @@ import { UPLOAD_TEXT } from "./strings";
 interface UploadReferences {
   providers: Provider[];
   places: Place[];
+  payers: PayerOption[];
 }
 
 async function loadReferences(): Promise<UploadReferences> {
-  const [providers, places] = await Promise.all([getProviders(), getPlaces()]);
-  return { providers: providers.filter((provider) => provider.active), places };
+  const [providers, places, payers] = await Promise.all([getProviders(), getPlaces(), getPayers()]);
+  return { providers: providers.filter((provider) => provider.active), places, payers };
 }
 
 const REMOTE_TEXT = { loading: UPLOAD_TEXT.loading, empty: UPLOAD_TEXT.noProviders, retry: UPLOAD_TEXT.retry };
@@ -49,8 +51,7 @@ function UploadContent() {
       >
         {(data) => (
           <UploadWorkspace
-            providers={data.providers}
-            places={data.places}
+            references={data}
             onUploaded={() => {
               usage.complete();
               setUploads((count) => count + 1);

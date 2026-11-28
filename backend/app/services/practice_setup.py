@@ -27,7 +27,7 @@ from app.services.billing_profile import (
     validated_practice_details,
 )
 from app.services.first_run import CHECKS_REVIEWED, SECURITY_REVIEWED, first_run_view, mark_first_run
-from app.services.payers import has_active_payer, payer_list
+from app.services.payers import has_active_payer, payer_list, require_active_payer
 from app.services.plan_limits import ensure_provider_room
 from app.services.provider_channels import CHANNELS, CONTACT_FIELDS, EMAIL, TEXT, usable_channel
 from app.services.provider_details import DETAIL_FIELDS, validated_details
@@ -192,6 +192,7 @@ async def validated_provider(db: AsyncSession, values: dict[str, Any]) -> dict[s
 
 async def save_provider(db: AsyncSession, actor: Actor, values: dict[str, Any], *, provider_id: str | None) -> Provider:
     clean = {**await validated_provider(db, values), "active": bool(values.get("active", True))}
+    clean["payer"] = _usual_payer(actor.own_practice, values.get("payer"))
     if values.get("details") is not None:
         clean["details"] = validated_details(values["details"])
     provider = await _provider_to_save(db, actor, provider_id)
@@ -203,6 +204,13 @@ async def save_provider(db: AsyncSession, actor: Actor, values: dict[str, Any], 
     record_activity(db, actor, "provider saved", practice_id=actor.practice_id, detail=clean["name"] or "")
     await db.commit()
     return provider
+
+
+def _usual_payer(practice: Practice, chosen: Any) -> str | None:
+    payer_key = str(chosen or "").strip() or None
+    if payer_key is not None:
+        require_active_payer(practice, payer_key)
+    return payer_key
 
 
 async def _provider_to_save(db: AsyncSession, actor: Actor, provider_id: str | None) -> Provider:

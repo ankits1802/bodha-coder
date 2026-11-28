@@ -15,6 +15,7 @@ from app.core.db import SessionFactory
 from app.models import Batch, CodeSet, IntakeMessage, IntakeSender, Note
 from app.services.email_intake import poll_email_intake
 from app.services.email_intake_files import NO_PROVIDER, ONLY_PDF
+from tests.api.payer_helpers import add_payer, set_usual_payer
 from tests.builders import invite_member, practice_with_provider, sign_in
 from tests.fakes import FakeListingStore, text_pdf
 
@@ -261,3 +262,20 @@ async def test_mail_is_read_from_its_own_store_and_kept_with_the_documents(harne
     assert inbound.objects == {}
     assert documents.objects["ses-retained/m-split"] == raw.as_bytes()
     assert any(key.startswith(practice_prefix(practice.id)) for key in documents.objects)
+
+
+async def test_mailed_notes_take_a_clear_page_one_payer_else_the_providers_usual_payer(harness, intake_domain):
+    practice, address = await _ready(harness)
+    medicare = await add_payer(harness, practice, "Medicare Part B", "medicare")
+    aetna = await add_payer(harness, practice, "Aetna", "commercial")
+    await set_usual_payer(harness, practice, medicare)
+    insured = text_pdf("Elena Varga MD NPI 1234567893 Date of service 2026-11-20 Insurance: Aetna PPO")
+    store = FakeListingStore()
+    _arrive(store, "m-payers", address, _mail(files=((insured, "insured.pdf"), (PAGE_ONE, NOTE_NAME))))
+
+    assert await _poll(store) == 1
+
+    async with SessionFactory() as db:
+        notes = (await db.scalars(select(Note).where(Note.practice_id == practice.id))).all()
+    by_checksum = {note.file_sha256: note.payer for note in notes}
+    assert by_checksum == {hashlib.sha256(insured).hexdigest(): aetna, hashlib.sha256(PAGE_ONE).hexdigest(): medicare}

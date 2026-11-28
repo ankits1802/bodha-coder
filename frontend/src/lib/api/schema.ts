@@ -3599,6 +3599,7 @@ export interface components {
             id: string;
             mips_scope: components["schemas"]["MipsScope"] | null;
             model: string | null;
+            payer_changed: boolean;
             prompt_version: string | null;
             revision: number;
             status: "queued" | "running" | "succeeded" | "failed" | "superseded";
@@ -3799,6 +3800,7 @@ export interface components {
         Body_upload_api_uploads_post: {
             details: string;
             files: string[];
+            payer?: string | null;
             place_code?: string | null;
             provider_id?: string | null;
             service_date?: string | null;
@@ -4485,6 +4487,9 @@ export interface components {
             file_name: string;
             overall: number;
             patient_name: string | null;
+            payer_confidence: number;
+            payer_confident: boolean;
+            payer_id: string | null;
             place_code: string | null;
             provider_id: string | null;
             service_date: string | null;
@@ -5507,6 +5512,7 @@ export interface components {
             id: string;
             name: string;
             npi: string | null;
+            payer: string | null;
             phone: string | null;
             place_code: string | null;
             specialty: string | null;
@@ -5536,6 +5542,7 @@ export interface components {
             email?: string | null;
             name: string;
             npi?: string | null;
+            payer?: string | null;
             phone?: string | null;
             place_code?: string | null;
             specialty?: string | null;

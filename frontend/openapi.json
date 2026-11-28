@@ -751,6 +751,10 @@
             ],
             "title": "Model"
           },
+          "payer_changed": {
+            "title": "Payer Changed",
+            "type": "boolean"
+          },
           "prompt_version": {
             "anyOf": [
               {
@@ -788,7 +792,8 @@
           "failed_sections",
           "cdi",
           "audit",
-          "mips_scope"
+          "mips_scope",
+          "payer_changed"
         ],
         "title": "AnalysisView",
         "type": "object"
@@ -2055,6 +2060,18 @@
             },
             "title": "Files",
             "type": "array"
+          },
+          "payer": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payer"
           },
           "place_code": {
             "anyOf": [
@@ -6735,6 +6752,25 @@
             ],
             "title": "Patient Name"
           },
+          "payer_confidence": {
+            "title": "Payer Confidence",
+            "type": "number"
+          },
+          "payer_confident": {
+            "title": "Payer Confident",
+            "type": "boolean"
+          },
+          "payer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payer Id"
+          },
           "place_code": {
             "anyOf": [
               {
@@ -6779,7 +6815,10 @@
           "patient_name",
           "confidence",
           "overall",
-          "check"
+          "check",
+          "payer_id",
+          "payer_confidence",
+          "payer_confident"
         ],
         "title": "FilePreview",
         "type": "object"
@@ -13537,6 +13576,17 @@
             ],
             "title": "Npi"
           },
+          "payer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payer"
+          },
           "phone": {
             "anyOf": [
               {
@@ -13582,7 +13632,8 @@
           "phone",
           "channel",
           "active",
-          "details"
+          "details",
+          "payer"
         ],
         "title": "Provider",
         "type": "object"
@@ -13742,6 +13793,18 @@
               }
             ],
             "title": "Npi"
+          },
+          "payer": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payer"
           },
           "phone": {
             "anyOf": [

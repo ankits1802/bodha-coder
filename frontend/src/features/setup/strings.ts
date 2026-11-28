@@ -119,6 +119,8 @@ export const PROVIDER_TEXT = {
     npi: "NPI",
     place: "Usual place of service",
     noPlace: "None",
+    payer: "Usual payer",
+    noPayer: "None",
     email: "Email",
     phone: "Mobile phone",
     channel: "Send questions by",

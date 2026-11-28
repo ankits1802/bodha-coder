@@ -6,10 +6,12 @@ from sqlalchemy import func, select
 from app.ai.contracts import AddOnSuggestion, DiagnosisFinding, EmReview, PatientFacts, ReviewReport
 from app.ai.errors import ModelUnavailable
 from app.ai.review import PROMPT_VERSION
+from app.codes.payer_rules import Payer
 from app.core.config import get_settings
 from app.core.db import SessionFactory
 from app.models import Analysis, CodeSet, EvalRun, NoteText, Suggestion, User
 from app.services.evaluation_runs import run_evaluation
+from tests.api.payer_helpers import add_payer
 from tests.api.quality_helpers import SequenceReviewer, approved_note, higher_report, read_note
 from tests.builders import DOCUMENTED, analysis_deps, marisol_report, practice_with_provider
 from tests.fakes import FailingReviewer, ScriptedReviewer
@@ -255,3 +257,34 @@ async def test_the_level_mix_compares_the_last_thirty_days_with_the_ninety_befor
     assert (recent[1] - recent[0], prior[1] - prior[0]) == (timedelta(days=29), timedelta(days=89))
     assert prior[1] + timedelta(days=1) == recent[0]
     assert (mix["status"], mix["test"]) == ("not_enough", None)
+
+
+async def _choose_payer(harness, practice, note_id: str, payer: str) -> None:
+    chosen = await harness.client.put(f"/api/notes/{note_id}/payer", headers=practice.admin, json={"payer": payer})
+    assert chosen.status_code == 200, chosen.text
+
+
+async def test_an_evaluation_rereads_with_the_payer_the_note_had_when_it_was_approved(harness, icd_catalog):
+    practice = await practice_with_provider(harness)
+    medicare = await add_payer(harness, practice, "Medicare Part B", "medicare")
+    aetna = await add_payer(harness, practice, "Aetna", "commercial")
+    note_id = await read_note(harness, practice, icd_catalog, 1)
+    await _choose_payer(harness, practice, note_id, medicare)
+    assert (await harness.client.post(f"/api/notes/{note_id}/approve", headers=practice.admin)).status_code == 200
+    await _choose_payer(harness, practice, note_id, aetna)
+    added = await harness.client.post("/api/quality/eval-cases", headers=practice.admin, json={"note_id": note_id})
+    assert added.status_code == 200, added.text
+
+    reviewer = ScriptedReviewer(marisol_report())
+    await evaluate(harness, icd_catalog, practice, reviewer)
+
+    assert [inputs.payer for inputs in reviewer.calls] == [Payer("medicare"), Payer("medicare")]
+
+
+async def test_a_case_approved_without_a_payer_is_reread_without_one(harness, icd_catalog):
+    practice, _ = await evaluation_case(harness, icd_catalog)
+
+    reviewer = ScriptedReviewer(marisol_report())
+    await evaluate(harness, icd_catalog, practice, reviewer)
+
+    assert [inputs.payer for inputs in reviewer.calls] == [None, None]

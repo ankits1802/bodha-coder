@@ -54,7 +54,9 @@ on pages 5 and 15 to 17). A partial period is not a unit. These are the threshol
 ## Choices
 
 - The payer is not known when the note is read (it is set later), so the model cannot choose between 99417
-  and G2212 for certain; the claim check catches the wrong one once the payer is set.
+  and G2212 for certain; the claim check catches the wrong one once the payer is set. Amended 2026-11-28 by
+  [0059](0059-payer-known-when-the-note-is-read.md): the payer can be known at upload, and the read then gets
+  its plan type, so the model names G2212 for Medicare and 99417 for the rest.
 - Only 99205 and 99215, as asked. CPT 2023 and later, and the NCCI add-on table, also list 99245, 99345,
   99350 and 99483 (and the 2025 telemedicine codes) as primaries of 99417; Bodha refuses those pairs until a
   certified coder confirms which to allow.

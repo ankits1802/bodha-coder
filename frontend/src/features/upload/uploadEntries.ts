@@ -1,8 +1,9 @@
 import { isPdf } from "@/components/shared/upload-drop/droppedFiles";
 import { buildUploadForm } from "@/lib/api/uploads";
-import type { FileDetail, FilePreview, Place, Provider } from "@/lib/api/types";
+import type { FileDetail, FilePreview, PayerOption, Place, Provider } from "@/lib/api/types";
 import { isIsoDate } from "@/lib/dates";
 import { parseCodeList } from "@/lib/validation";
+import { previewPayer, providerPayer, type PayerSource } from "./uploadPayers";
 
 export { isPdf };
 
@@ -15,6 +16,9 @@ export interface UploadEntry {
   providerId: string;
   serviceDate: string;
   placeCode: string;
+  payerId: string;
+  payerSource: PayerSource | null;
+  suggestedPayer: string | null;
   check: boolean;
   confidence: number | null;
   serverDuplicate: boolean;
@@ -29,6 +33,7 @@ export type EntryStatus = "ready" | "check" | "fix" | "duplicate" | "uploaded" |
 export interface References {
   providers: Provider[];
   places: Place[];
+  payers: PayerOption[];
 }
 
 const LEFT_OUT: readonly EntryStatus[] = ["duplicate", "uploaded"];
@@ -43,6 +48,9 @@ export function newEntry(file: File, id: string): UploadEntry {
     providerId: "",
     serviceDate: "",
     placeCode: "",
+    payerId: "",
+    payerSource: null,
+    suggestedPayer: null,
     check: false,
     confidence: null,
     serverDuplicate: false,
@@ -61,16 +69,18 @@ export function withDuplicates(entries: UploadEntry[]): UploadEntry[] {
   });
 }
 
-export function applyPreview(entries: UploadEntry[], ids: string[], previews: FilePreview[]): UploadEntry[] {
+export function applyPreview(entries: UploadEntry[], ids: string[], previews: FilePreview[], references: References): UploadEntry[] {
   const byId = new Map(ids.map((id, index) => [id, previews[index]]));
   return entries.map((entry) => {
     const preview = byId.get(entry.id);
     if (!preview) return entry;
+    const providerId = entry.providerId || (preview.provider_id ?? "");
     return {
       ...entry,
+      ...previewPayer(entry, preview, providerId, references),
       patientName: entry.patientName ?? preview.patient_name,
       billed: entry.billed ?? preview.cpt,
-      providerId: entry.providerId || (preview.provider_id ?? ""),
+      providerId,
       serviceDate: entry.serviceDate || (preview.service_date ?? ""),
       placeCode: entry.placeCode || (preview.place_code ?? ""),
       check: preview.check,
@@ -88,8 +98,10 @@ export function usualPlace(providerId: string, references: References): string |
 
 export function placed(entry: UploadEntry, change: Partial<Placement>, references: References): UploadEntry {
   const next = { ...entry, ...change, check: false };
-  if (change.providerId === undefined || change.placeCode !== undefined) return next;
-  return { ...next, placeCode: usualPlace(change.providerId, references) ?? entry.placeCode };
+  if (change.providerId === undefined) return next;
+  const payer = providerPayer(entry, change.providerId, references);
+  if (change.placeCode !== undefined) return { ...next, ...payer };
+  return { ...next, ...payer, placeCode: usualPlace(change.providerId, references) ?? entry.placeCode };
 }
 
 export function hasPlacement(entry: UploadEntry): boolean {
@@ -120,6 +132,7 @@ export function uploadDetails(entries: UploadEntry[]): FileDetail[] {
     provider_id: entry.providerId,
     service_date: entry.serviceDate,
     place_code: entry.placeCode,
+    payer: entry.payerId || null,
   }));
 }
 

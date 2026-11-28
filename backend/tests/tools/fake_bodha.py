@@ -34,9 +34,16 @@ class FakeNote:
     reads_left: int = 0
     final: list[str] | None = None
     billed_revisions: int = 1
+    payer: str | None = None
 
     def header(self) -> dict[str, Any]:
-        return {"id": self.id, "status": self.status, "lane": self.lane, "file_name": self.file_name}
+        return {
+            "id": self.id,
+            "status": self.status,
+            "lane": self.lane,
+            "file_name": self.file_name,
+            "payer": self.payer,
+        }
 
     def detail(self) -> dict[str, Any]:
         if self.status == "reading" and self.reads_left <= 0:
@@ -52,6 +59,7 @@ class FakeBodha:
     notes: dict[str, FakeNote] = field(default_factory=dict)
     marked: set[str] = field(default_factory=set)
     providers: list[dict[str, Any]] = field(default_factory=list)
+    payers: list[dict[str, Any]] = field(default_factory=list)
     calls: list[tuple[str, str, Any]] = field(default_factory=list)
     practice_id: str = PRACTICE_ID
     reads_after_upload: int = 1
@@ -94,6 +102,7 @@ class FakeBodha:
             "/api/practice/setup": {"review": {"confirm_level_changes": False, "hold_until_confirmed": False}},
             "/api/places": [{"code": code, "name": code} for code in ("02", "10", "11", "31", "32")],
             "/api/providers": self.providers,
+            "/api/payers": self.payers,
             "/api/quality/eval-cases": {"items": [{"note_id": note_id} for note_id in sorted(self.marked)]},
             "/api/search": {"items": self._search(request.url.params.get("q", ""))},
         }
@@ -106,6 +115,9 @@ class FakeBodha:
         if path == "/api/providers":
             self.providers.append({**body, "id": f"provider-{len(self.providers) + 1}", "active": True})
             return httpx.Response(200, json={"id": self.providers[-1]["id"]})
+        if path == "/api/practice/payers":
+            self.payers.append({**body, "id": f"payer-{len(self.payers) + 1}"})
+            return httpx.Response(200, json={"id": self.payers[-1]["id"]})
         if path == "/api/uploads":
             return self._upload(request)
         if path == "/api/quality/eval-cases":
@@ -125,6 +137,7 @@ class FakeBodha:
             self.findings_after_upload,
             self.lane_after_upload,
         )
+        note.payer = detail.get("payer")
         self.notes[note.id] = note
         return httpx.Response(200, json={"batch_id": "b", "batch_ids": ["b"], "accepted": [name], "duplicates": []})
 
@@ -134,6 +147,9 @@ class FakeBodha:
         if note is None:
             return None
         action = found[2] or ""
+        if action == "/payer":
+            note.payer = body["payer"]
+            return httpx.Response(200, json={"payer": note.payer})
         if action == "/billed-codes":
             note.billed, note.billed_revisions = body["codes"].split(", "), note.billed_revisions + 1
             _derive(note)

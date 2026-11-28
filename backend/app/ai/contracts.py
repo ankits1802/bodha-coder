@@ -11,6 +11,7 @@ from app.ai.cdi import CDIGapScanOutput
 from app.ai.hcc import HccReview
 from app.ai.mips import MipsReview
 from app.codes.mips_scope import MipsScope
+from app.codes.payer_rules import Payer
 
 Section = Literal["em", "diagnoses", "code_review", "cdi", "audit", "mips", "hcc"]
 Setting = Literal["office", "nursing_facility", "inpatient", "emergency", "home", "telehealth"]
@@ -38,6 +39,7 @@ class ReviewInputs:
     note_text: str | None = None
     pdf: bytes | None = None
     mips_scope: MipsScope | None = None
+    payer: Payer | None = None
 
 
 @dataclass(frozen=True)

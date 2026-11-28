@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from app.ai.prompts.payer import PAYER_STEP
 from app.codes.em import EM_FAMILIES, EmFamily, EmLevel
 from app.codes.modifiers import PROCEDURE_MODIFIERS, VISIT_MODIFIERS
 
@@ -215,6 +216,7 @@ Prolonged service:
   Medicare uses G2212 instead, never 99417: 89 minutes or more with 99205, 69 minutes or more with 99215.
 - Units: the first unit at the trigger time and one more for each further full 15 minutes (99417 with 99215:
   55 minutes is 1 unit, 70 minutes is 2; G2212 with 99215: 69 minutes is 1 unit, 84 minutes is 2)
+- When the ENCOUNTER CONTEXT gives the payer, STEP 6 says which of the two codes it takes.
 
 Wound debridement:
 - 97597 and 97598
@@ -328,5 +330,6 @@ EM_TASK = (
     + _STEP_5_MIDDLE
     + render_modifier_list(PROCEDURE_MODIFIERS)
     + _STEP_5_TAIL
+    + PAYER_STEP
     + _OUTPUT
 )

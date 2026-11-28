@@ -154,6 +154,7 @@ class AnalysisView(View):
     cdi: CdiOverview
     audit: AuditOverview
     mips_scope: MipsScope | None
+    payer_changed: bool
 
 
 class Finding(View):

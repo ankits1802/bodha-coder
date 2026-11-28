@@ -114,6 +114,7 @@ class Provider(View):
     channel: Channel
     active: bool
     details: ProviderDetails
+    payer: str | None
 
 
 class ImportedProviders(View):

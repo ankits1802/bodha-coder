@@ -65,7 +65,9 @@ export function ReviewWorkspace(props: ReviewWorkspaceProps) {
         <NoteTools
           note={detail.note}
           permissions={permissions}
+          readAgainPending={actions.pending}
           onVisitType={(visitType) => void actions.changeVisitType(visitType)}
+          onReadAgain={() => void actions.retry()}
           onChanged={onReload}
         />
         <StatusBanner

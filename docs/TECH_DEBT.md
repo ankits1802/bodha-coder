@@ -11,9 +11,10 @@ the synthetic gold set (`tools/gold_set/cases.json`) were written by constructio
 but no certified coder has audited them, so accuracy numbers from that set are provisional
 ([0049](decisions/0049-synthetic-gold-set.md)). The prolonged time rules (99417 only with 99205 or 99215,
 although CPT and the NCCI add-on table also list 99245, 99345, 99350 and 99483; 99417 on a Medicare
-Advantage claim as a risk) await the same review ([0054](decisions/0054-prolonged-service-99417.md)). Clear
-each part when a certified coder has reviewed it and the review (who, when, changes made) is recorded in its
-decision.
+Advantage claim as a risk) await the same review ([0054](decisions/0054-prolonged-service-99417.md)), as do
+the payer rules the E/M prompt gives the model in its step 6 and the page-one payer confidences
+([0059](decisions/0059-payer-known-when-the-note-is-read.md)). Clear each part when a certified coder has
+reviewed it and the review (who, when, changes made) is recorded in its decision.
 
 ### ESLint plugins declare an older ESLint peer
 

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useDroppedFiles } from "@/components/shared/upload-drop/droppedFiles";
 import { InlineAlert } from "@/components/ui/InlineAlert";
 import { useAction } from "@/hooks/useAction";
-import type { Place, Provider, UploadResult } from "@/lib/api/types";
+import type { UploadResult } from "@/lib/api/types";
 import { uploadNotes } from "@/lib/api/uploads";
 import { VISIT_TYPES } from "@/lib/labels";
 import { UPLOAD_TEXT } from "../strings";
-import { canStartUpload, includedEntries, makeUploadForm } from "../uploadEntries";
+import { canStartUpload, includedEntries, makeUploadForm, type References } from "../uploadEntries";
 import { useUploadEntries } from "../useUploadEntries";
 import { EmptyDrop } from "./FilePicker";
 import { FileTable } from "./FileTable";
@@ -17,13 +17,11 @@ import { UploadBar } from "./UploadBar";
 import { UploadDone } from "./UploadDone";
 
 interface UploadWorkspaceProps {
-  providers: Provider[];
-  places: Place[];
+  references: References;
   onUploaded: () => void;
 }
 
-export function UploadWorkspace({ providers, places, onUploaded }: UploadWorkspaceProps) {
-  const references = { providers, places };
+export function UploadWorkspace({ references, onUploaded }: UploadWorkspaceProps) {
   const [visitType, setVisitType] = useState<string>(VISIT_TYPES[0]);
   const [result, setResult] = useState<UploadResult | null>(null);
   const files = useUploadEntries(references);
@@ -63,7 +61,14 @@ export function UploadWorkspace({ providers, places, onUploaded }: UploadWorkspa
 
   return (
     <>
-      <PlanPanel entries={files.entries} references={references} visitType={visitType} onPlace={files.placeAll} onVisitType={setVisitType} />
+      <PlanPanel
+        entries={files.entries}
+        references={references}
+        visitType={visitType}
+        onPlace={files.placeAll}
+        onPayer={files.choosePayerAll}
+        onVisitType={setVisitType}
+      />
       {files.skipped.length > 0 ? <InlineAlert tone="warn">{UPLOAD_TEXT.files.onlyPdf(files.skipped.join(", "))}</InlineAlert> : null}
       {files.previewError ? <InlineAlert tone="warn">{UPLOAD_TEXT.files.previewFailed}</InlineAlert> : null}
       <FileTable
@@ -73,6 +78,7 @@ export function UploadWorkspace({ providers, places, onUploaded }: UploadWorkspa
         onFiles={addFiles}
         onUpdate={files.update}
         onPlace={files.place}
+        onPayer={files.choosePayer}
         onConfirm={files.confirm}
         onRemove={files.remove}
       />

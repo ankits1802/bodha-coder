@@ -73,6 +73,7 @@ from app.models.practice_measures import (
     MEASURE_NAME_LENGTH,
     MEASURE_SCOPE_LENGTH,
     MEASURE_TO_MEET_LENGTH,
+    MipsList,
     PracticeMeasure,
 )
 from app.models.quality import AuditRun, AuditSample, EvalCase, EvalRun
@@ -130,7 +131,6 @@ from app.models.tables import (
     Batch,
     CodeSet,
     Decision,
-    MipsList,
     Note,
     NoteText,
     PlaceOfService,

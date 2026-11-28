@@ -14,6 +14,7 @@ import {
   type References,
   type UploadEntry,
 } from "./uploadEntries";
+import { chosenPayer } from "./uploadPayers";
 
 export interface UploadEntries {
   entries: UploadEntry[];
@@ -24,6 +25,8 @@ export interface UploadEntries {
   update: (id: string, change: EntryEdit) => void;
   place: (id: string, change: Partial<Placement>) => void;
   placeAll: (change: Partial<Placement>) => void;
+  choosePayer: (id: string, payerId: string) => void;
+  choosePayerAll: (payerId: string) => void;
   confirm: (id: string) => void;
   remove: (id: string) => void;
   reset: () => void;
@@ -47,7 +50,7 @@ export function useUploadEntries(references: References): UploadEntries {
     const outcome = await preview.run(pdfs);
     if (!outcome.ok) return;
     const ids = added.map((entry) => entry.id);
-    setEntries((current) => applyPreview(current, ids, outcome.value));
+    setEntries((current) => applyPreview(current, ids, outcome.value, references));
   }
 
   function edit(id: string, change: (entry: UploadEntry) => UploadEntry): void {
@@ -73,6 +76,8 @@ export function useUploadEntries(references: References): UploadEntries {
     update: (id, change) => edit(id, (entry) => ({ ...entry, ...change })),
     place: (id, change) => edit(id, (entry) => placed(entry, change, references)),
     placeAll: (change) => setEntries((current) => current.map((entry) => placed(entry, change, references))),
+    choosePayer: (id, payerId) => edit(id, (entry) => chosenPayer(entry, payerId)),
+    choosePayerAll: (payerId) => setEntries((current) => current.map((entry) => chosenPayer(entry, payerId))),
     confirm: (id) => edit(id, (entry) => ({ ...entry, check: false })),
     remove,
     reset,

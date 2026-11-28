@@ -25,9 +25,15 @@ class FileDetail(BaseModel):
     provider_id: str | None = Field(default=None, max_length=36)
     service_date: date | None = None
     place_code: str | None = Field(default=None, max_length=2)
+    payer: str | None = Field(default=None, max_length=64)
 
     def placement(self) -> uploads.FilePlacement:
         return uploads.FilePlacement(self.provider_id, self.service_date, self.place_code)
+
+    def payer_choice(self, batch: str | None) -> str | None:
+        if "payer" in self.model_fields_set:
+            return self.payer or uploads.NO_PAYER
+        return batch
 
 
 DETAILS = TypeAdapter(list[FileDetail])
@@ -51,6 +57,7 @@ async def upload(
     provider_id: Annotated[str | None, Form()] = None,
     service_date: Annotated[date | None, Form()] = None,
     place_code: Annotated[str | None, Form(max_length=2)] = None,
+    payer: Annotated[str | None, Form(max_length=64)] = None,
 ) -> dict[str, Any]:
     try:
         parsed = DETAILS.validate_json(details)
@@ -60,7 +67,13 @@ async def upload(
         raise Invalid("send one detail entry per file")
     chosen = [
         (
-            uploads.UploadFile(file.filename or DEFAULT_FILE_NAME, await file.read(), detail.billed, detail.visit_type),
+            uploads.UploadFile(
+                file.filename or DEFAULT_FILE_NAME,
+                await file.read(),
+                detail.billed,
+                detail.visit_type,
+                detail.payer_choice(payer),
+            ),
             detail.placement(),
         )
         for file, detail in zip(files, parsed, strict=True)

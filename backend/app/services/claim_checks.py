@@ -23,7 +23,7 @@ from app.codes.payer_rules import (
 from app.core.deps import Actor
 from app.models import VOIDED, Note, Provider
 from app.services.audit_log import record_access
-from app.services.payers import payer_list
+from app.services.payers import listed_payer
 from app.services.remittance_matching import same_person
 from app.services.review_actions import current_claim, note_for
 from app.services.visit_levels import visit_codes
@@ -98,9 +98,7 @@ def _same_patient(note: Note, name: str, birth_date: date | None) -> bool:
 
 
 def _note_payer(actor: Actor, note: Note) -> Mapping[str, Any] | None:
-    if note.payer is None or actor.practice is None:
-        return None
-    return next((payer for payer in payer_list(actor.practice) if payer.get("id") == note.payer), None)
+    return listed_payer(actor.practice, note.payer)
 
 
 def _supervised_nonphysician(provider: Provider) -> bool:
