@@ -127,6 +127,8 @@ export function canOpenPath(user: SessionUser, pathname: string): boolean {
 const HOMES: Partial<Record<Role, string>> = { hq: "/hq", biller: "/billing", compliance: "/compliance" };
 
 export function homeFor(user: SessionUser): string {
+  const paying = user.organizations?.[0];
+  if (user.billing_only && user.role !== "admin" && paying) return organizationPath(paying.id, "plan");
   if (user.billing_only) return PLAN_PATH;
   return HOMES[user.role] ?? "/today";
 }

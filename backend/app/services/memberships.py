@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import HQ_ACCESS, Client, PracticeAccess, ensure_session_allowed
+from app.core.deps import HQ_ACCESS, Client, PracticeAccess, ensure_practice_open
 from app.core.errors import Conflict, Forbidden, NotFound, Unauthorized
 from app.core.roles import ADMINS
 from app.models import HQ_REALM, Practice, PracticeMembership, User, utcnow
@@ -119,15 +119,15 @@ async def landing_access(db: AsyncSession, user: User) -> PracticeAccess:
     if not rows:
         raise Unauthorized(NO_PRACTICE)
     for membership, practice in rows:
-        if _session_allowed(membership.role, practice):
+        if await _session_allowed(db, user, membership.role, practice):
             return PracticeAccess(practice, membership)
-    ensure_session_allowed(rows[0][0].role, rows[0][1])
+    await ensure_practice_open(db, user, rows[0][0].role, rows[0][1])
     raise Unauthorized(NO_PRACTICE)
 
 
-def _session_allowed(role: str, practice: Practice) -> bool:
+async def _session_allowed(db: AsyncSession, user: User, role: str, practice: Practice) -> bool:
     try:
-        ensure_session_allowed(role, practice)
+        await ensure_practice_open(db, user, role, practice)
     except (Unauthorized, Forbidden):
         return False
     return True

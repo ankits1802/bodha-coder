@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getHqActivity, getHqExpenditure, getHqPracticePage, getHqPracticePeople } from "@/lib/api/hq";
+import { getHqActivity, getHqExpenditure, getHqPracticePage, getHqPracticePeople, updatePractice } from "@/lib/api/hq";
 import { HqPracticeScreen } from "../HqPracticeScreen";
 import { ACTIVITY, PAGE, PEOPLE, QUIET_SPEND } from "./practiceFixtures";
 
@@ -18,6 +18,7 @@ vi.mock("@/lib/api/hq", () => ({
   getHqExpenditure: vi.fn(),
   getHqActivity: vi.fn(),
   renewPractice: vi.fn(),
+  updatePractice: vi.fn(),
   appointAdmin: vi.fn(),
 }));
 
@@ -61,6 +62,19 @@ describe("HqPracticeScreen", () => {
     expect(await screen.findByRole("heading", { name: "Lakeside Primary Care" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Renew" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add admin" })).not.toBeInTheDocument();
+  });
+
+  it("edits the practice's plan from the header", async () => {
+    vi.mocked(updatePractice).mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<HqPracticeScreen practiceId="p1" />);
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    const dialog = await screen.findByRole("dialog", { name: "Edit Lakeside Primary Care" });
+    await user.click(within(dialog).getByRole("combobox", { name: "Plan" }));
+    await user.click(await screen.findByRole("option", { name: "Enterprise" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(updatePractice).toHaveBeenCalledWith("p1", { plan: "enterprise" });
+    expect(await screen.findByText("Lakeside Primary Care saved")).toBeInTheDocument();
   });
 
   it("keeps the chosen tab in the address", async () => {

@@ -145,6 +145,7 @@ export const HQ_TEXT = {
     },
     notices: {
       adminAppointed: (name: string) => `Admin added to ${name}`,
+      saved: (name: string) => `${name} saved`,
       inviteSent: (email: string) => `Invite sent to ${email}`,
       resetSent: (email: string) => `Password reset sent to ${email}`,
       closed: (name: string) => `${name} closed`,
@@ -189,6 +190,7 @@ export const HQ_TEXT = {
     title: "Practice",
     loading: "Loading practice",
     renew: "Renew",
+    edit: "Edit",
     addAdmin: "Add admin",
     tabsLabel: "Show",
     tabs: { people: "People", plan: "Plan & renewal", spend: "Spend", activity: "Activity", places: "Places" } satisfies Record<
