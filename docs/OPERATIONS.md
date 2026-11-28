@@ -45,8 +45,10 @@ only for the maintenance runbook below.
 
 ## Production canary
 
-`.github/workflows/canary.yml` runs every night at 08:17 UTC (and from Actions, production canary, Run
-workflow) in `CHARTMATE-APP/bodha-coder` only, in the `production` environment. It checks
+`.github/workflows/canary.yml` runs every night at 08:17 UTC once the repository variable
+`CANARY_ENABLED` is `true` (set it after the canary accounts and secrets below exist), and at any time from
+Actions, production canary, Run workflow, in `CHARTMATE-APP/bodha-coder` only, in the `production`
+environment. It checks
 `/api/health/ready` on both hosts, signs in on `https://www.bodhaai.co` and `https://admin.bodhaai.co`
 as two canary accounts, and opens Today, Insights, the Settings tabs, Account and Help, then the HQ
 overview, practices, organizations, activity, spend, team and demo requests. It sends no request that
@@ -179,6 +181,38 @@ rotates without an outage.
    not can have two-step reset by their admin.
 4. Store `<new key>` alone and redeploy. If the old key may have been exposed, skip the wait: store the
    new key alone at once and have admins reset two-step for everyone.
+
+## Rotate CLEARINGHOUSE_ENCRYPTION_KEY
+
+`CLEARINGHOUSE_ENCRYPTION_KEY` also takes a comma-separated list, the first key encrypting and every key
+decrypting. A clearinghouse password or key is sealed again only when an admin saves the connection
+with it, so the old key stays listed until every SFTP connection has been saved again.
+
+1. Generate a key as above and store `<new key>,<old key>` as a new version of
+   `bodha/<env>/clearinghouse-encryption-key`; redeploy `api` and `worker`.
+2. Ask each practice that sends over SFTP to enter its password or key again in Settings, Setup,
+   Clearinghouse and save (the access log shows `saved clearinghouse connection`).
+3. Store `<new key>` alone and redeploy both. If the old key may have been exposed, store the new key
+   alone at once: sending and response polling stop for each SFTP practice (503 `the saved clearinghouse
+   password or key cannot be read on this server; save it again`) until an admin saves it again, and the
+   practice should change that password or key at its clearinghouse.
+
+## Clearinghouse responses not arriving
+
+The worker polls each SFTP connection's response folder every ten minutes and logs only counts and
+error codes: `clearinghouse responses fetched` (`practice`, `files`) and `clearinghouse poll failed`
+(`practice`, `reason`, the error code such as `unavailable` or `invalid`).
+
+```
+filter message like /clearinghouse/
+| fields @timestamp, message, practice, files, reason
+```
+
+A repeated failure is almost always on the practice's side: a changed password, a rotated host key (the
+admin reads and confirms the new one in Setup), a removed folder, or an address allowlist at the
+clearinghouse that lacks the NAT gateways' addresses. Test connection in Setup shows the same message
+the poll meets. Files that are not 999 or 277CA acknowledgments (reports, 835s) are stored and kept as
+`other` or `unreadable` and never fetched again.
 
 ## Stored files without records
 
@@ -357,6 +391,7 @@ backend\.venv\Scripts\python.exe tools\gold_set\report_gold_set.py
 ```
 
 It writes `tools/gold_set/out/reports/evaluation-<run id>.md` (`--output` to choose the file, `--run-id`
-for an older run) with the methods, agreement by element with 95% intervals, results by group and every
-disagreement. The numbers are provisional until a certified coder has reviewed the expected answers.
+for an older run) with the methods, agreement by element with 95% intervals (procedure lines, add-on codes,
+units and place of service included, as n/a for runs from before they were scored), results by group and
+every disagreement, the claim line ones in their own table. The numbers are provisional until a certified coder has reviewed the expected answers.
 `tools\gold_set\render_notes.py` writes the PDFs to `tools/gold_set/out/pdf/` for a look without loading.

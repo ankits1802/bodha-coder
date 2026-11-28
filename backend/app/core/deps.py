@@ -17,7 +17,7 @@ from app.core.errors import Forbidden, Unauthorized
 from app.core.realms import request_site
 from app.core.roles import HQ, HQ_ROLE, PLAN_MANAGERS
 from app.core.security import TokenError, read_token
-from app.models import HQ_REALM, Practice, PracticeMembership, User, utcnow
+from app.models import HQ_REALM, OrganizationMembership, Practice, PracticeMembership, User, utcnow
 
 ACTIVE_PRACTICE_STATUSES = ("trial", "active")
 ACTIVE_MEMBERSHIP = "active"
@@ -25,6 +25,7 @@ ACTIVITY_WRITE_INTERVAL = timedelta(minutes=1)
 NO_ROLE = ""
 SESSION_ENDED = "session ended"
 PRACTICE_CLAIM = "prc"
+ORGANIZATION_ADMIN = "admin"
 ROLE_CLAIM = "rol"
 
 Db = Annotated[AsyncSession, Depends(get_session)]
@@ -114,14 +115,28 @@ def role_of(user: User, membership: PracticeMembership | None) -> str:
     return HQ_ROLE if user.realm == HQ_REALM else NO_ROLE
 
 
-def ensure_session_allowed(role: str, practice: Practice | None) -> None:
+async def ensure_practice_open(db: AsyncSession, user: User, role: str, practice: Practice | None) -> None:
     if role in HQ:
         return
     if practice is None or practice.status not in ACTIVE_PRACTICE_STATUSES:
         raise Unauthorized("your practice is not active")
     ended_on = plan_ended_on(practice)
-    if ended_on is not None and role not in PLAN_MANAGERS:
+    if ended_on is not None and role not in PLAN_MANAGERS and not await pays_for(db, user, practice):
         raise PlanEnded(ended_on)
+
+
+async def pays_for(db: AsyncSession, user: User, practice: Practice) -> bool:
+    if practice.organization_id is None:
+        return False
+    found = await db.scalar(
+        select(OrganizationMembership.id).where(
+            OrganizationMembership.user_id == user.id,
+            OrganizationMembership.organization_id == practice.organization_id,
+            OrganizationMembership.role == ORGANIZATION_ADMIN,
+            OrganizationMembership.ended_at.is_(None),
+        )
+    )
+    return found is not None
 
 
 def billing_only_since(role: str, practice: Practice | None) -> date | None:
@@ -152,7 +167,7 @@ async def practice_access(db: AsyncSession, user: User, practice_id: str | None)
     if membership is None:
         raise Unauthorized(SESSION_ENDED)
     practice = await db.get_one(Practice, membership.practice_id)
-    ensure_session_allowed(membership.role, practice)
+    await ensure_practice_open(db, user, membership.role, practice)
     return PracticeAccess(practice, membership)
 
 

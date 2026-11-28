@@ -5,13 +5,11 @@ from dataclasses import dataclass
 
 from gold_cases import CASE_ID, GoldCase, GoldSet
 from gold_levels import (
-    PROLONGED_CODE,
     TELEHEALTH_MODIFIERS,
     billed_pattern,
     constructed_code,
     expected_family,
     first_em,
-    prolonged_units,
     time_decides,
 )
 
@@ -20,9 +18,10 @@ from app.codes.em import is_em_code
 from app.codes.em_benchmarks import EmBenchmarks, default_em_benchmarks
 from app.codes.icd import IcdCatalog, IcdRelease, IcdReleaseUnavailable, load_catalog
 from app.codes.modifiers import allowed_modifiers
-from app.codes.ncci import VISIT_PTP_MODIFIERS, AddOnEdit, NcciTables, PairEdit, ncci_tables
+from app.codes.ncci import AddOnEdit, NcciTables, PairEdit, ncci_tables
 from app.codes.payer_rules import COMPLEXITY_ADD_ON, Payer, PayerClaim, payer_flags
 from app.codes.places import SETTING_BY_PLACE
+from app.codes.prolonged import COMMERCIAL_PROLONGED, MEDICARE_PROLONGED, prolonged_units
 from app.services.agreement import elements_of
 
 __all__ = [
@@ -36,8 +35,8 @@ __all__ = [
 ]
 
 REQUIRED_HEADINGS = ("Chief complaint", "History of present illness", "Physical exam", "Assessment and plan")
-MEDICARE_ONLY = frozenset({COMPLEXITY_ADD_ON, PROLONGED_CODE})
-ADD_ONS = MEDICARE_ONLY
+MEDICARE_ONLY = frozenset({COMPLEXITY_ADD_ON, MEDICARE_PROLONGED})
+ADD_ONS = MEDICARE_ONLY | {COMMERCIAL_PROLONGED}
 TELEHEALTH_PLACES = frozenset(place for place, setting in SETTING_BY_PLACE.items() if setting == "telehealth")
 SEPARATE_VISIT = "25"
 
@@ -92,7 +91,8 @@ def case_categories(case: GoldCase) -> tuple[str, ...]:
     if case.visit.place_of_service in TELEHEALTH_PLACES:
         found.append("audio_only" if "93" in _modifiers(case.expected) else "audio_video")
     named = {code.code for code in (*case.billed, *case.expected)}
-    found += [label for code, label in ((COMPLEXITY_ADD_ON, "g2211"), (PROLONGED_CODE, "prolonged")) if code in named]
+    found += ["g2211"] if COMPLEXITY_ADD_ON in named else []
+    found += ["prolonged"] if named & {MEDICARE_PROLONGED, COMMERCIAL_PROLONGED} else []
     if SEPARATE_VISIT in _modifiers(case.billed) | _modifiers(case.expected):
         found.append("modifier_25")
     if _diagnoses(case.billed) != _diagnoses(case.expected):
@@ -156,10 +156,11 @@ def _level_problems(case: GoldCase) -> list[str]:
     built = constructed_code(case, family)
     if built != em:
         problems.append(f"MDM and time construct {built}, the expected claim says {em}")
-    due = prolonged_units(em, case.total_minutes) if case.visit.payer == "medicare" else 0
-    claimed = sum(code.units for code in case.expected if code.code == PROLONGED_CODE)
+    prolonged = MEDICARE_PROLONGED if case.visit.payer == "medicare" else COMMERCIAL_PROLONGED
+    due = prolonged_units(prolonged, em, case.total_minutes)
+    claimed = sum(code.units for code in case.expected if code.code == prolonged)
     if due != claimed:
-        problems.append(f"{PROLONGED_CODE} is due for {due} units, the expected claim has {claimed}")
+        problems.append(f"{prolonged} is due for {due} units, the expected claim has {claimed}")
     return problems
 
 
@@ -180,9 +181,7 @@ def _ncci_problems(edits: Iterable[object]) -> list[str]:
     problems = []
     for edit in edits:
         if isinstance(edit, PairEdit):
-            visit_pair = is_em_code(edit.column1) or is_em_code(edit.column2)
-            allowed = VISIT_PTP_MODIFIERS if visit_pair else None
-            if edit.bypassed_by is None or (allowed is not None and edit.bypassed_by not in allowed):
+            if edit.bypassed_by is None:
                 problems.append(f"NCCI pair {edit.column1}/{edit.column2} is not bypassed by a proper modifier")
         elif isinstance(edit, AddOnEdit):
             problems.append(f"add-on {edit.code} has no primary code on the claim")

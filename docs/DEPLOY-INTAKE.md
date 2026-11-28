@@ -108,7 +108,7 @@ prefer options 1 or 2 when the practice can use them.
 ## Option 4: pull signed notes from the practice's EHR over FHIR
 
 For a practice whose EHR offers SMART on FHIR Backend Services (Epic, Oracle Health, athenahealth,
-eClinicalWorks and others; [0051](decisions/0051-ehr-connection-over-fhir.md)). Bodha signs in to the
+eClinicalWorks and others; [0060](decisions/0060-ehr-connection-over-fhir.md)). Bodha signs in to the
 EHR as a system client with a key made for the practice and reads finalized notes about every 15
 minutes. Nobody moves files.
 

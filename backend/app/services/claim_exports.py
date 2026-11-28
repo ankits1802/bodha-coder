@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_store import ObjectStore, claim_export_key
@@ -26,10 +26,12 @@ from app.services.worklists import count_of
 __all__ = [
     "EXPORT_PAGE",
     "ExportedFile",
+    "approved_unexported",
     "export_claim_lines",
     "export_csv",
     "export_page",
     "export_view",
+    "mark_exported",
     "note_exports",
     "stored_export",
 ]
@@ -71,7 +73,7 @@ async def export_csv(
     notes = [ExportedNote(row["id"], row["snapshot_id"], row["snapshot_revision"]) for row in rows]
     exported = await _record(db, store, actor, "csv", notes=notes, content=billing_csv(rows).encode(), again=again)
     if not again:
-        await _mark_exported(db, [row["id"] for row in rows])
+        await mark_exported(db, [row["id"] for row in rows])
     action = "downloaded an export again" if again else "exported claims"
     record_access(db, actor, action, detail=_detail(len(rows), exported.export))
     await db.commit()
@@ -81,13 +83,7 @@ async def export_csv(
 async def export_claim_lines(
     db: AsyncSession, store: ObjectStore, actor: Actor, note_ids: list[str] | None, *, as_json: bool
 ) -> ExportedFile:
-    query = (
-        select(Note, Provider)
-        .join(Provider, Provider.id == Note.provider_id)
-        .where(Note.practice_id == actor.practice_id, Note.status == "approved", Note.exported_at.is_(None))
-        .order_by(Note.service_date, Note.approved_at)
-        .limit(ROW_LIMIT)
-    )
+    query = approved_unexported(actor.practice_id)
     if note_ids is not None:
         query = query.where(Note.id.in_(note_ids))
     found = list((await db.execute(query)).all())
@@ -102,7 +98,7 @@ async def export_claim_lines(
     content = json.dumps(claims_json(claims)) if as_json else claims_csv(claims)
     file_format = "claim_lines_json" if as_json else "claim_lines_csv"
     exported = await _record(db, store, actor, file_format, notes=notes, content=content.encode(), again=False)
-    await _mark_exported(db, [note.id for note, _ in rows])
+    await mark_exported(db, [note.id for note, _ in rows])
     record_access(db, actor, "built claim lines", detail=_detail(len(rows), exported.export))
     await db.commit()
     return exported
@@ -212,7 +208,17 @@ def _items(practice_id: str, export_id: str, notes: list[ExportedNote]) -> list[
     ]
 
 
-async def _mark_exported(db: AsyncSession, note_ids: list[str]) -> None:
+def approved_unexported(practice_id: str) -> Select[tuple[Note, Provider]]:
+    return (
+        select(Note, Provider)
+        .join(Provider, Provider.id == Note.provider_id)
+        .where(Note.practice_id == practice_id, Note.status == "approved", Note.exported_at.is_(None))
+        .order_by(Note.service_date, Note.approved_at)
+        .limit(ROW_LIMIT)
+    )
+
+
+async def mark_exported(db: AsyncSession, note_ids: list[str]) -> None:
     stamp = utcnow()
     for note in (await db.scalars(select(Note).where(Note.id.in_(note_ids)))).all():
         note.status, note.exported_at = "exported", stamp

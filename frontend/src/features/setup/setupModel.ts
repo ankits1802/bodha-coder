@@ -1,4 +1,5 @@
 import type { PracticeSetup, SetupSectionKey } from "@/lib/api/types";
+import { sentenceCase } from "@/lib/format";
 import { isNpiShaped } from "@/lib/validation";
 import { SETUP_TEXT, type SetupNavKey } from "./strings";
 
@@ -19,7 +20,7 @@ export const SECTION_ORDER: readonly ScoredKey[] = [
   "software",
 ];
 
-const UNSCORED: readonly SetupNavKey[] = ["checks", "intake", "ehr", "mips"];
+const UNSCORED: readonly SetupNavKey[] = ["clearinghouse", "checks", "intake", "ehr", "mips"];
 
 function isScored(key: SetupNavKey): key is ScoredKey {
   return (SECTION_ORDER as readonly string[]).includes(key);
@@ -42,8 +43,7 @@ export function markerFor(key: SetupNavKey, setup: PracticeSetup): SectionMarker
 export function fieldLabel(field: string): string {
   const known = SETUP_TEXT.fields[field];
   if (known) return known;
-  const words = field.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return sentenceCase(field.replaceAll("_", " "));
 }
 
 export function valuesFor(fields: string[], stored: Record<string, string>): Record<string, string> {
@@ -56,10 +56,18 @@ export function sameValues(left: Record<string, string>, right: Record<string, s
 }
 
 const EIN_PATTERN = /^\d{2}-?\d{7}$/;
+const ZIP_PATTERN = /^\d{5}(-?\d{4})?$/;
+const STATE_PATTERN = /^[A-Za-z]{2}$/;
+const TAXONOMY_PATTERN = /^[0-9A-Z]{9}X$/;
+const PHONE_DIGITS = 10;
 
 const FIELD_CHECKS: Record<string, (value: string) => boolean> = {
   group_npi: isNpiShaped,
   tax_id: (value) => EIN_PATTERN.test(value.trim()),
+  zip: (value) => ZIP_PATTERN.test(value.trim()),
+  state: (value) => STATE_PATTERN.test(value.trim()),
+  phone: (value) => value.replace(/\D/g, "").length === PHONE_DIGITS,
+  taxonomy_code: (value) => TAXONOMY_PATTERN.test(value.trim().toUpperCase()),
 };
 
 export function fieldError(field: string, value: string): string | null {

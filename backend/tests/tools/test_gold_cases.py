@@ -7,7 +7,7 @@ from collections import Counter
 import pytest
 from gold_cases import CASES_FILE, GoldSetInvalid, Mdm, load_gold_set, parse_gold_set
 from gold_checks import CodeSets, check_gold_set, pipeline_can_express
-from gold_levels import billed_pattern, code_by_mdm, code_by_time, mdm_level, prolonged_units
+from gold_levels import billed_pattern, code_by_mdm, code_by_time, mdm_level
 
 from app.codes.em import EM_FAMILIES
 from app.codes.em_benchmarks import default_em_benchmarks
@@ -86,14 +86,6 @@ def test_the_lowest_initial_nursing_facility_code_covers_straightforward_and_low
         "99305",
         "99306",
     ]
-
-
-@pytest.mark.parametrize(
-    ("code", "minutes", "units"),
-    [("99205", 88, 0), ("99205", 89, 1), ("99205", 103, 1), ("99205", 104, 2), ("99215", 69, 1), ("99214", 90, 0)],
-)
-def test_medicare_prolonged_units_start_at_89_and_69_minutes(code, minutes, units):
-    assert prolonged_units(code, minutes) == units
 
 
 def test_a_level_the_mdm_does_not_support_is_refused(raw, code_sets):

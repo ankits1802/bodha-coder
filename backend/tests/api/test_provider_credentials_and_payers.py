@@ -84,7 +84,9 @@ async def test_payers_are_added_changed_and_removed_in_the_setup(harness):
     assert added.status_code == 200, added.text
     payer_key = added.json()["id"]
     setup = (await harness.client.get("/api/practice/setup", headers=practice.admin)).json()
-    assert setup["payers"] == [{"id": payer_key, **BLUE_CROSS, "payer_id": "G84980", "active": True}]
+    assert setup["payers"] == [
+        {"id": payer_key, **BLUE_CROSS, "payer_id": "G84980", "claim_filing": None, "active": True}
+    ]
     assert setup["sections"]["payers"]["fields"] == ["clearinghouse", "eft_era_status"]
     assert setup["sections"]["payers"]["complete"] is False
 

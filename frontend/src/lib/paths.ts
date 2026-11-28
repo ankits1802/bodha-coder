@@ -5,6 +5,7 @@ export const SECURITY_SETTINGS_PATH = "/settings/security";
 export const ACCESS_LOG_PATH = "/insights/access-log";
 export const USAGE_PATH = "/insights/usage";
 export const COMPLIANCE_PATH = "/compliance";
+export const BILLING_PATH = "/billing";
 export const HISTORY_OPEN = "1";
 export const ORGANIZATIONS_PATH = "/organizations";
 

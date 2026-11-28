@@ -35,10 +35,19 @@ const ROW: BillingRow = {
   service_date: "2026-11-25",
   snapshot_id: "snapshot-1",
   snapshot_revision: 1,
+  claim: null,
 };
 
 function billing(items: BillingRow[]): BillingList {
-  return { items, limit: 500, offset: 0, page_size: 100, summary: { exported_today: 0, held_for_provider: 0, ready: items.length }, total: 2 };
+  return {
+    items,
+    clearinghouse: null,
+    limit: 500,
+    offset: 0,
+    page_size: 100,
+    summary: { exported_today: 0, held_for_provider: 0, ready: items.length },
+    total: 2,
+  };
 }
 
 describe("exporting claim lines", () => {

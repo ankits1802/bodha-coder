@@ -9,19 +9,22 @@ import { InlineAlert } from "@/components/ui/InlineAlert";
 import { RadioOption } from "@/components/ui/RadioOption";
 import { useAction } from "@/hooks/useAction";
 import { renewPractice } from "@/lib/api/hq";
-import type { HqPractice, Renewal } from "@/lib/api/types";
+import type { HqPractice, Plan, Renewal } from "@/lib/api/types";
 import { addDays } from "@/lib/dates";
 import { formatCalendarDay } from "@/lib/format";
+import { PLAN_LABELS } from "@/lib/labels";
 import { HQ_TEXT } from "../strings";
+import { ChoiceField } from "./FormFields";
+import { PLANS } from "./practiceForm";
 import { canRenew, choosePreset, practiceToday, RENEWAL_PRESETS, renewalBase, type RenewalChoice } from "./renewal";
 
 const FORM_ID = "renew-practice";
 
-export type RenewalSubject = Pick<HqPractice, "id" | "name" | "renews_on" | "time_zone">;
+export type RenewalSubject = Pick<HqPractice, "id" | "name" | "renews_on" | "time_zone" | "plan">;
 
 interface RenewDialogProps {
   subject: RenewalSubject;
-  renewOne?: (id: string, until: string | null) => Promise<Renewal>;
+  renewOne?: (id: string, until: string | null, plan: Plan) => Promise<Renewal>;
   onDone: (notice: string) => void;
   onClose: () => void;
 }
@@ -31,6 +34,7 @@ export function RenewDialog({ subject, renewOne = renewPractice, onDone, onClose
   const today = practiceToday(subject);
   const base = renewalBase(subject, today);
   const [choice, setChoice] = useState<RenewalChoice>(() => choosePreset("year1", base));
+  const [plan, setPlan] = useState<Plan>(subject.plan);
   const renew = useAction(renewOne);
   const ready = canRenew(choice, today);
 
@@ -38,10 +42,11 @@ export function RenewDialog({ subject, renewOne = renewPractice, onDone, onClose
     event.preventDefault();
     if (!ready) return;
     const until = choice.preset === "noEnd" ? null : choice.until;
-    const outcome = await renew.run(subject.id, until);
+    const outcome = await renew.run(subject.id, until, plan);
     if (!outcome.ok) return;
     const ends = outcome.value.renews_on;
-    onDone(ends ? words.renewed(subject.name, formatCalendarDay(ends, "year")) : words.renewedNoEnd(subject.name));
+    const label = PLAN_LABELS[outcome.value.plan as Plan] ?? outcome.value.plan;
+    onDone(ends ? words.renewed(subject.name, label, formatCalendarDay(ends, "year")) : words.renewedNoEnd(subject.name, label));
   }
 
   return (
@@ -59,6 +64,7 @@ export function RenewDialog({ subject, renewOne = renewPractice, onDone, onClose
       }
     >
       <form id={FORM_ID} onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
+        <ChoiceField label={words.plan} value={plan} options={PLANS} labels={PLAN_LABELS} onChange={setPlan} />
         <fieldset className="m-0 grid grid-cols-2 gap-2 border-0 p-0 sm:grid-cols-3">
           <legend className="mb-2 text-callout font-medium text-label">{words.length}</legend>
           {RENEWAL_PRESETS.map((preset) => (

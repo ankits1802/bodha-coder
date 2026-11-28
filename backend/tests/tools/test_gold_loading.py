@@ -155,7 +155,7 @@ def test_credentials_come_from_the_environment_and_stay_out_of_repr():
         "BODHA_EVAL_EMAIL": EMAIL,
         "BODHA_EVAL_PASSWORD": PASSWORD,
         "BODHA_EVAL_PRACTICE_ID": PRACTICE_ID,
-        "BODHA_EVAL_TOTP_SECRET": "JBSW Y3DP EHPK 3PXP",
+        "BODHA_EVAL_TOTP_SECRET": "JBSW Y3DP EHPK 3PXP JBSW Y3DP EHPK 3PXP",
     }
     credentials = Credentials.from_environment(environ)
     assert credentials == CREDENTIALS

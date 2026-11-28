@@ -7,11 +7,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.object_listing import ListingStore, StoredObject
 from app.adapters.object_store import practice_prefix
+from app.core.db import exclusive_job
 from app.models import EvalRun, Note, Practice, Remittance
 from app.services.intake_settings import INBOX_NAME
 
@@ -44,11 +45,8 @@ class StoredFile:
 async def sweep_orphan_files(db: AsyncSession, store: ListingStore, now: datetime) -> int:
     if now.tzinfo is None:
         raise ValueError("now needs a time zone")
-    engine = db.bind
-    if not isinstance(engine, AsyncEngine):
-        raise RuntimeError("the sweep needs a session bound to an engine")
-    async with engine.connect() as guard:
-        if not await guard.scalar(select(func.pg_try_advisory_xact_lock(func.hashtextextended(SWEEP_LOCK, 0)))):
+    async with exclusive_job(db, SWEEP_LOCK) as held:
+        if not held:
             return 0
         counts = await _sweep(db, store, now - ORPHAN_AGE)
     logger.info("orphan file sweep", extra={"fields": {key: counts[key] for key in sorted(counts)}})

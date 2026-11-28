@@ -11,18 +11,20 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.contracts import ReviewReport
 from app.codes.billing_codes import Code
+from app.codes.icd import IcdCatalog
 from app.core.deps import Actor
 from app.core.errors import Invalid, NotFound
 from app.core.roles import NOTE_READERS
-from app.models import AuditRun, AuditSample, Note, PracticeMembership, Provider, User
+from app.models import Analysis, AuditRun, AuditSample, Note, PracticeMembership, Provider, User
 from app.services.agreement import elements_of, summarize, visit_agreement
-from app.services.analysis import latest_codes
 from app.services.audit_log import record_access, record_activity
+from app.services.code_sets import latest_codes, original_codes
+from app.services.findings import suggested_claim
 from app.services.inbox import Notice, notify
 from app.services.memberships import active_members, member_names
-from app.services.placement import SETTLED_STATUSES, current_findings
-from app.services.routing import choices_for, claim
+from app.services.placement import SETTLED_STATUSES
 
 __all__ = [
     "DEFAULT_SAMPLE_SIZE",
@@ -71,7 +73,7 @@ class Names:
     providers: dict[str, str]
 
 
-async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest) -> str:
+async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest, icd: IcdCatalog) -> str:
     _check_request(request)
     reviewers = await _reviewers(db, actor.practice_id, request.reviewer_ids)
     candidates = await _candidates(db, actor.practice_id, request)
@@ -93,7 +95,7 @@ async def draw_sample(db: AsyncSession, actor: Actor, request: SampleRequest) ->
                 purpose=request.purpose,
                 status="open",
                 answer={},
-                result={"position": position, "reference": await _reference(db, note)},
+                result={"position": position, "reference": await _reference(db, note, icd)},
             )
         )
     detail = f"{len(chosen)} notes, seed {seed}"
@@ -323,8 +325,16 @@ def _new_run(actor: Actor, request: SampleRequest) -> AuditRun:
     )
 
 
-async def _reference(db: AsyncSession, note: Note) -> dict[str, list[dict[str, object]]]:
-    findings = await current_findings(db, note)
-    suggested = claim(await latest_codes(db, note.id, "billed"), findings, choices_for(findings, {}))
+async def _reference(db: AsyncSession, note: Note, icd: IcdCatalog) -> dict[str, list[dict[str, object]]]:
+    billed = await original_codes(db, note.id, "billed")
+    report = await _current_report(db, note)
+    suggested = suggested_claim(report, billed, icd.for_service_date(note.service_date)) if report else billed
     final = await latest_codes(db, note.id, "final")
     return {"bodha": [code.as_json() for code in suggested], "claim": [code.as_json() for code in final]}
+
+
+async def _current_report(db: AsyncSession, note: Note) -> ReviewReport | None:
+    analysis = await db.get(Analysis, note.current_analysis_id) if note.current_analysis_id else None
+    if analysis is None or not analysis.report:
+        return None
+    return ReviewReport.model_validate(analysis.report)

@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.codes.x12_codes import CLAIM_FILING_CODES
 from app.core.deps import Actor
 from app.core.errors import Conflict, Invalid, NotFound
 from app.models import Practice, new_id
@@ -87,7 +88,11 @@ def _validated(values: Mapping[str, Any], others: list[dict[str, Any]]) -> dict[
         raise Invalid(f"plan type must be one of: {', '.join(PLAN_TYPES)}")
     if any(other["name"].lower() == name.lower() for other in others):
         raise Conflict(f"{name} is already in the payer list")
-    return {"name": name, "payer_id": payer_id, "plan_type": plan_type, "active": bool(values.get("active", True))}
+    filing = values.get("claim_filing") or None
+    if filing is not None and filing not in CLAIM_FILING_CODES:
+        raise Invalid(f"{filing} is not a claim filing indicator")
+    active = bool(values.get("active", True))
+    return {"name": name, "payer_id": payer_id, "plan_type": plan_type, "claim_filing": filing, "active": active}
 
 
 def _store(practice: Practice, payers: list[dict[str, Any]]) -> None:

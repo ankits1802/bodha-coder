@@ -17,6 +17,7 @@ from app.codes.payer_rules import (
     initial_nursing_visits,
     payer_flags,
     payer_for,
+    prolonged_without_visit,
     repeated_initial_visit,
 )
 from app.core.deps import Actor
@@ -43,7 +44,7 @@ async def claim_checks(db: AsyncSession, actor: Actor, note_id: str) -> dict[str
     payer_kind = payer_for(payer.get("plan_type"), payer.get("name")) if payer else None
     flags = payer_flags(facts, payer_kind, note.place_code, note.service_date) if payer_kind else []
     repeated = await _repeated_initial_visit(db, note, provider, codes)
-    flags += [repeated] if repeated else []
+    flags += [flag for flag in (prolonged_without_visit(codes), repeated) if flag is not None]
     record_access(db, actor, "checked claim edits", note_id=note.id)
     await db.commit()
     return {

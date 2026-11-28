@@ -8,6 +8,7 @@ import type {
   OverrideReason,
   RequestPurpose,
 } from "@/lib/api/types";
+import { sentenceCase } from "@/lib/format";
 
 export const REVIEW_TEXT = {
   pageTitle: "Note review",
@@ -132,7 +133,7 @@ export const REVIEW_TEXT = {
     note: "Comment on the note",
     post: "Post",
     remove: "Remove",
-    role: (role: string) => role.charAt(0).toUpperCase() + role.slice(1),
+    role: (role: string) => sentenceCase(role),
     removedBy: (name: string, when: string) => `Removed by ${name} · ${when}`,
     showRemoved: "Show removed",
   },

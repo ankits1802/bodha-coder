@@ -13,13 +13,14 @@ const PRACTICE = {
   name: "Lakeside Primary Care",
   renews_on: "2099-01-31",
   time_zone: "America/Chicago",
+  plan: "trial",
 } as HqPractice;
 
 describe("RenewDialog", () => {
   beforeEach(() => vi.mocked(renewPractice).mockReset());
 
   it("starts on a year from the current end date and renews to the preset chosen", async () => {
-    vi.mocked(renewPractice).mockResolvedValue({ renews_on: "2099-04-30" });
+    vi.mocked(renewPractice).mockResolvedValue({ renews_on: "2099-04-30", plan: "trial" });
     const onDone = vi.fn();
     render(<RenewDialog subject={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
 
@@ -28,12 +29,12 @@ describe("RenewDialog", () => {
     fireEvent.click(screen.getByRole("radio", { name: "3 months" }));
     fireEvent.click(screen.getByRole("button", { name: "Renew" }));
 
-    await waitFor(() => expect(renewPractice).toHaveBeenCalledWith("p1", "2099-04-30"));
-    expect(onDone).toHaveBeenCalledWith("Lakeside Primary Care renews 30 Apr 2099");
+    await waitFor(() => expect(renewPractice).toHaveBeenCalledWith("p1", "2099-04-30", "trial"));
+    expect(onDone).toHaveBeenCalledWith("Lakeside Primary Care is on Trial until 30 Apr 2099");
   });
 
   it("renews with no end date", async () => {
-    vi.mocked(renewPractice).mockResolvedValue({ renews_on: null });
+    vi.mocked(renewPractice).mockResolvedValue({ renews_on: null, plan: "trial" });
     const onDone = vi.fn();
     render(<RenewDialog subject={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
 
@@ -41,8 +42,24 @@ describe("RenewDialog", () => {
     expect(screen.getAllByText("No end date").length).toBeGreaterThan(1);
     fireEvent.click(screen.getByRole("button", { name: "Renew" }));
 
-    await waitFor(() => expect(renewPractice).toHaveBeenCalledWith("p1", null));
-    expect(onDone).toHaveBeenCalledWith("Lakeside Primary Care has no end date");
+    await waitFor(() => expect(renewPractice).toHaveBeenCalledWith("p1", null, "trial"));
+    expect(onDone).toHaveBeenCalledWith("Lakeside Primary Care is on Trial with no end date");
+  });
+
+  it("changes the plan along with the renewal", async () => {
+    vi.mocked(renewPractice).mockResolvedValue({ renews_on: null, plan: "enterprise" });
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<RenewDialog subject={PRACTICE} onDone={onDone} onClose={vi.fn()} />);
+
+    expect(screen.getByRole("combobox", { name: "Plan" })).toHaveTextContent("Trial");
+    await user.click(screen.getByRole("combobox", { name: "Plan" }));
+    await user.click(await screen.findByRole("option", { name: "Enterprise" }));
+    fireEvent.click(screen.getByRole("radio", { name: "No end date" }));
+    fireEvent.click(screen.getByRole("button", { name: "Renew" }));
+
+    await waitFor(() => expect(renewPractice).toHaveBeenCalledWith("p1", null, "enterprise"));
+    expect(onDone).toHaveBeenCalledWith("Lakeside Primary Care is on Enterprise with no end date");
   });
 
   it("shows why the server refused", async () => {

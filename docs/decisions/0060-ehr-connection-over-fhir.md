@@ -1,4 +1,4 @@
-# 0051 EHR connection: signed visit notes pulled over FHIR
+# 0060 EHR connection: signed visit notes pulled over FHIR
 
 Date: 2026-11-28
 
@@ -23,7 +23,8 @@ holds. Tokens are kept in memory for one run, refreshed 30 seconds before they l
 algorithms SMART requires servers to accept. The `kid` is the RFC 7638 thumbprint of the public JWK.
 The private key is PKCS#8 PEM sealed as `v1:<Fernet token>` under `EHR_KEY_ENCRYPTION_KEY`, a key of its
 own in Secrets Manager rather than `MFA_ENCRYPTION_KEY`, so either can be rotated or lost without the
-other. The Fernet code for two-step secrets moved into `core.sealed_text.TextSeal`, which both use. The
+other. It is sealed with the shared `core.secret_box.SecretBox`, as two-step secrets and clearinghouse
+credentials are, which gained `ready` for the Not available state. The
 private key is never in an API answer, a log or the access log; only the API (to sign a test) and the
 worker (to pull) open it. A new key retires the current one (`retired_at`, kept) and keeps the same
 JWKS address; the JWKS lists only the current key, since Bodha signs only with it.

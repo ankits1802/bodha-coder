@@ -13,7 +13,7 @@ from app.codes.billing_codes import parse_code_list
 PRACTICE_ID = "practice-eval"
 EMAIL = "eval-admin@example.com"
 PASSWORD = "not-a-real-password-1"
-TOTP_SECRET = "JBSWY3DPEHPK3PXP"
+TOTP_SECRET = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
 NOW = 1_790_000_000.0
 ACCESS_TOKEN = "access-1"
 DRIFT = "Z00.00"

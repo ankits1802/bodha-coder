@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_listing import ListingStore
 from app.core.calendar import zone_named
 from app.core.config import get_settings
-from app.core.db import try_advisory_lock
+from app.core.db import exclusive_job
 from app.core.security import same_digest
 from app.models import SENDER_LENGTH, IntakeAddress, IntakeMessage, IntakeSender, IntakeTest, Practice, utcnow
 from app.services.email_intake_files import ACCEPTED, FileOutcome, deliver_attachments
@@ -67,8 +67,10 @@ async def poll_email_intake(
     domain = get_settings().email_intake_domain
     if not domain:
         return 0
-    async with try_advisory_lock(db, EMAIL_INTAKE_LOCK) as held:
-        return await _poll(db, Stores(inbound or store, store), domain, now) if held else 0
+    async with exclusive_job(db, EMAIL_INTAKE_LOCK) as held:
+        if not held:
+            return 0
+        return await _poll(db, Stores(inbound or store, store), domain, now)
 
 
 def refusal_of(envelope: Envelope, mail: Mail, gate: Gate) -> str | None:

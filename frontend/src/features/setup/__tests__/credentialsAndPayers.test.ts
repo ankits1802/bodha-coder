@@ -77,8 +77,15 @@ describe("payers", () => {
   });
 
   it("sends the payer ID in capitals, or nothing when it is blank", () => {
-    const blue = { name: " Blue Cross Blue Shield of Texas ", payer_id: "g84980", plan_type: "commercial" as const, active: true };
-    expect(payerInputFrom(blue)).toEqual({ name: "Blue Cross Blue Shield of Texas", payer_id: "G84980", plan_type: "commercial", active: true });
+    const blue = { name: " Blue Cross Blue Shield of Texas ", payer_id: "g84980", plan_type: "commercial" as const, claim_filing: "" as const, active: true };
+    expect(payerInputFrom(blue)).toEqual({
+      name: "Blue Cross Blue Shield of Texas",
+      payer_id: "G84980",
+      plan_type: "commercial",
+      claim_filing: null,
+      active: true,
+    });
+    expect(payerInputFrom({ ...blue, claim_filing: "BL" }).claim_filing).toBe("BL");
     expect(payerInputFrom({ ...blue, payer_id: "  " }).payer_id).toBeNull();
   });
 });

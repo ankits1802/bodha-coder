@@ -22,6 +22,7 @@ from app.api.responses.quality import (
     SampleList,
     SampleResults,
 )
+from app.api.wiring import Icd
 from app.core.deps import Actor, Db, require
 from app.core.roles import ADMINS, COMPLIANCE
 from app.services import audit_samples, autonomy, evaluation_set, level_mix
@@ -43,7 +44,7 @@ async def samples(db: Db, actor: Overseer) -> dict[str, Any]:
 
 
 @router.post("/samples", response_model=Created)
-async def start_sample(body: SampleBody, db: Db, actor: Overseer) -> dict[str, str]:
+async def start_sample(body: SampleBody, db: Db, actor: Overseer, icd: Icd) -> dict[str, str]:
     request = SampleRequest(
         purpose="audit",
         scope=body.scope,
@@ -54,7 +55,7 @@ async def start_sample(body: SampleBody, db: Db, actor: Overseer) -> dict[str, s
         provider_id=body.provider_id,
         specialty=body.specialty,
     )
-    return {"id": await audit_samples.draw_sample(db, actor, request)}
+    return {"id": await audit_samples.draw_sample(db, actor, request, icd)}
 
 
 @router.get("/samples/{sample_id}", response_model=SampleResults)

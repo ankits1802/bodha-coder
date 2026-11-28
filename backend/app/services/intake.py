@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.object_listing import ListingStore
 from app.codes.billing_codes import parse_note_filename
 from app.core.calendar import zone_named
-from app.core.db import try_advisory_lock
+from app.core.db import exclusive_job
 from app.core.deps import ACTIVE_PRACTICE_STATUSES
 from app.core.errors import AppError
 from app.models import Practice
@@ -151,8 +151,10 @@ def accepts_intake(practice: Practice, now: datetime) -> bool:
 
 
 async def _locked_poll(db: AsyncSession, store: ListingStore, practice: Practice, now: datetime) -> int:
-    async with try_advisory_lock(db, f"intake:{practice.id}") as held:
-        return await _poll_practice(db, store, practice, now) if held else 0
+    async with exclusive_job(db, f"intake:{practice.id}") as held:
+        if not held:
+            return 0
+        return await _poll_practice(db, store, practice, now)
 
 
 async def _poll_practice(db: AsyncSession, store: ListingStore, practice: Practice, now: datetime) -> int:

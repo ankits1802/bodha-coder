@@ -52,7 +52,7 @@ async def training_sets(db: Db, actor: Admin) -> dict[str, Any]:
 
 
 @router.post("/training/sets", response_model=Created)
-async def assign_training(body: TrainingBody, db: Db, actor: Admin) -> dict[str, str]:
+async def assign_training(body: TrainingBody, db: Db, actor: Admin, icd: Icd) -> dict[str, str]:
     request = SampleRequest(
         purpose="training",
         scope="provider" if body.provider_id else "practice",
@@ -62,4 +62,4 @@ async def assign_training(body: TrainingBody, db: Db, actor: Admin) -> dict[str,
         size=body.size,
         provider_id=body.provider_id,
     )
-    return {"id": await audit_samples.draw_sample(db, actor, request)}
+    return {"id": await audit_samples.draw_sample(db, actor, request, icd)}

@@ -15,8 +15,9 @@ from app.adapters.gemini import GeminiClient
 from app.adapters.guarded_http import OutboundHttp
 from app.adapters.messenger import Messenger, build_messenger
 from app.adapters.object_listing import S3ListingStore
-from app.adapters.object_store import S3ObjectStore
+from app.adapters.object_store import ObjectStore, S3ObjectStore
 from app.adapters.pdf_text import DocumentUnreadable
+from app.adapters.sftp import FileLink, ParamikoLink
 from app.ai.contracts import ModelClient
 from app.ai.errors import ModelRefused, ModelRequestRejected, ModelUnavailable
 from app.ai.review import review_note
@@ -28,6 +29,7 @@ from app.core.error_reports import start_error_reports
 from app.core.logging import configure_logging, log_queue_metrics
 from app.core.model_prices import PriceBook
 from app.models import Analysis, utcnow
+from app.services.ack_polling import poll_acknowledgments
 from app.services.analysis import AnalysisDeps, claim_next, fail_attempt, run_analysis, stale_running
 from app.services.digests import send_due_digests
 from app.services.ehr_pull import poll_ehr_connections
@@ -55,6 +57,7 @@ ESCALATION_INTERVAL_SECONDS = 3_600
 SWEEP_INTERVAL_SECONDS = 86_400
 QUANTITY_SYNC_INTERVAL_SECONDS = 900
 PLAN_NOTICE_INTERVAL_SECONDS = 3_600
+ACKNOWLEDGMENT_INTERVAL_SECONDS = 600
 STALE_EVALUATION = timedelta(hours=6)
 PERMANENT_FAILURES = (DocumentUnreadable, ModelRefused, ModelRequestRejected, IcdReleaseUnavailable)
 
@@ -174,6 +177,11 @@ async def sweep_files_once(store: S3ListingStore) -> None:
         await sweep_orphan_files(db, store, utcnow())
 
 
+async def poll_acknowledgments_once(store: ObjectStore, link: FileLink) -> None:
+    async with SessionFactory() as db:
+        await poll_acknowledgments(db, store, link, utcnow())
+
+
 async def escalate_once(messenger: Messenger) -> None:
     async with SessionFactory() as db:
         await escalate_unanswered(db, messenger, utcnow())
@@ -230,6 +238,7 @@ async def run() -> None:
     messenger, listing = build_messenger(settings), S3ListingStore(settings)
     inbound = S3ListingStore(settings, bucket=settings.email_intake_bucket) if settings.email_intake_bucket else listing
     billing = build_billing_providers(settings)
+    link = ParamikoLink(timeout_seconds=settings.clearinghouse_timeout_seconds)
     everything = asyncio.gather(
         *loops,
         recovery_loop(settings),
@@ -244,6 +253,11 @@ async def run() -> None:
         every(SWEEP_INTERVAL_SECONDS, "orphan file sweep", lambda: sweep_files_once(listing)),
         every(QUANTITY_SYNC_INTERVAL_SECONDS, "subscription quantity sync", lambda: sync_quantities_once(billing)),
         every(PLAN_NOTICE_INTERVAL_SECONDS, "plan ending notices", notify_plans_ending_once),
+        every(
+            ACKNOWLEDGMENT_INTERVAL_SECONDS,
+            "clearinghouse responses",
+            lambda: poll_acknowledgments_once(deps.store, link),
+        ),
     )
     with suppress(NotImplementedError):
         asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, everything.cancel)

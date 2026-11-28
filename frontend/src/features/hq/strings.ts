@@ -145,6 +145,7 @@ export const HQ_TEXT = {
     },
     notices: {
       adminAppointed: (name: string) => `Admin added to ${name}`,
+      saved: (name: string) => `${name} saved`,
       inviteSent: (email: string) => `Invite sent to ${email}`,
       resetSent: (email: string) => `Password reset sent to ${email}`,
       closed: (name: string) => `${name} closed`,
@@ -152,6 +153,7 @@ export const HQ_TEXT = {
     },
     renewal: {
       title: (name: string) => `Renew ${name}`,
+      plan: "Plan",
       length: "Length",
       presets: { days14: "14 days", month1: "1 month", month3: "3 months", month6: "6 months", year1: "1 year", noEnd: "No end date" },
       until: "Renews until",
@@ -159,8 +161,8 @@ export const HQ_TEXT = {
       noEnd: "No end date",
       cancel: "Cancel",
       action: "Renew",
-      renewed: (name: string, day: string) => `${name} renews ${day}`,
-      renewedNoEnd: (name: string) => `${name} has no end date`,
+      renewed: (name: string, plan: string, day: string) => `${name} is on ${plan} until ${day}`,
+      renewedNoEnd: (name: string, plan: string) => `${name} is on ${plan} with no end date`,
     },
     form: {
       addTitle: "Add practice",
@@ -188,6 +190,7 @@ export const HQ_TEXT = {
     title: "Practice",
     loading: "Loading practice",
     renew: "Renew",
+    edit: "Edit",
     addAdmin: "Add admin",
     tabsLabel: "Show",
     tabs: { people: "People", plan: "Plan & renewal", spend: "Spend", activity: "Activity", places: "Places" } satisfies Record<

@@ -61,6 +61,7 @@ locals {
   base_secrets = concat([
     { name = "SECRET_KEY", valueFrom = var.secret_arns["secret-key"] },
   ], var.gemini_backend == "developer" ? [{ name = "GEMINI_API_KEY", valueFrom = var.secret_arns["gemini-api-key"] }] : [], local.billing_secrets)
+  clearinghouse_secrets = [{ name = "CLEARINGHOUSE_ENCRYPTION_KEY", valueFrom = var.secret_arns["clearinghouse-encryption-key"] }]
   shared_secrets = concat([
     { name = "DATABASE_URL", valueFrom = var.secret_arns[var.runtime_database ? "runtime-database-url" : "database-url"] },
   ], local.base_secrets, local.error_report_secrets.python)
@@ -83,7 +84,7 @@ locals {
         { name = "FORWARDED_ALLOW_IPS", value = var.vpc_cidr },
         { name = "WEB_CONCURRENCY", value = "1" },
       ])
-      secrets = concat(local.shared_secrets, local.identity_secrets, local.ehr_secrets, [
+      secrets = concat(local.shared_secrets, local.identity_secrets, local.clearinghouse_secrets, local.ehr_secrets, [
         { name = "MFA_ENCRYPTION_KEY", valueFrom = var.secret_arns["mfa-encryption-key"] },
       ])
     }
@@ -96,7 +97,7 @@ locals {
       port        = null
       stop        = 120
       environment = local.shared_environment
-      secrets     = concat(local.shared_secrets, local.ehr_secrets)
+      secrets     = concat(local.shared_secrets, local.clearinghouse_secrets, local.ehr_secrets)
     }
     migrate = {
       image       = local.api_image

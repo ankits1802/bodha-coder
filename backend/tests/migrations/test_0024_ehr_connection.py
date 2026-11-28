@@ -16,8 +16,19 @@ def _load(name: str, file_name: str):
 
 
 def _purge_before() -> str:
-    work_items = _load("migration_0016", "0016_inbox_views_impact.py").purge_with_work_items()
-    return _load("migration_0021", "0021_email_intake.py").purge_with_intake(work_items)
+    body = _load("migration_0016", "0016_inbox_views_impact.py").purge_with_work_items()
+    signatures = _load("migration_0017", "0017_signatures.py")
+    body = body.replace(signatures.PURGE_ANCHOR, signatures.SEALED_PURGE_STEPS + signatures.PURGE_ANCHOR, 1)
+    body = _load("migration_0018", "0018_review_list.py").purge_with_returns(body)
+    body = _load("migration_0019", "0019_organizations.py").purge_with_organizations(body)
+    body = _load("migration_0020", "0020_practice_measures_and_usage.py").purge_with_measures_and_usage(body)
+    body = _load("migration_0021", "0021_email_intake.py").purge_with_intake(body)
+    return _load("migration_0022", "0022_clearinghouse_claims.py").purge_with_claims(body)
+
+
+def test_the_migration_follows_the_clearinghouse_and_plan_status_migrations():
+    module = _load("migration_0024", "0024_ehr_connection.py")
+    assert (module.revision, module.down_revision) == ("0024", "0023")
 
 
 def test_the_purge_removes_documents_runs_connections_and_keys_before_the_notes():

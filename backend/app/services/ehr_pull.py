@@ -18,12 +18,11 @@ from app.codes.npi import is_valid_npi
 from app.codes.places import SETTING_BY_PLACE
 from app.core.calendar import zone_named
 from app.core.config import get_settings
-from app.core.db import try_advisory_lock
+from app.core.db import exclusive_job
 from app.core.deps import ACTIVE_PRACTICE_STATUSES
-from app.core.errors import Unavailable
 from app.models import PULL_REASONS, EhrConnection, EhrDocument, EhrKey, EhrPullRun, Practice, utcnow
 from app.services.ehr_documents import ACCEPTED, DUPLICATE, Directory, Shelf, take_document
-from app.services.ehr_keys import current_key, ehr_ready, smart_client
+from app.services.ehr_keys import EhrKeyUnavailable, current_key, ehr_ready, smart_client
 from app.services.ehr_resources import DocumentReference, documents_in, fhir_day, fhir_id, is_wanted
 from app.services.ehr_settings import latest_connection
 from app.services.intake import accepts_intake
@@ -141,7 +140,7 @@ async def pull_practice(
     except OutboundError as error:
         await db.rollback()
         ending = Ending("failed", error.reason if error.reason in PULL_REASONS else FALLBACK_REASON)
-    except Unavailable:
+    except EhrKeyUnavailable:
         await db.rollback()
         ending = Ending("failed", KEY_REASON)
     await _finish(db, run_id, ending, tally)
@@ -163,7 +162,7 @@ def search_params(connection: EhrConnection, start: datetime, end: datetime) -> 
 async def _locked_pull(
     db: AsyncSession, store: ObjectStore, http: OutboundHttp, practice_id: str, now: datetime
 ) -> int:
-    async with try_advisory_lock(db, f"{EHR_PULL_LOCK}:{practice_id}") as held:
+    async with exclusive_job(db, f"{EHR_PULL_LOCK}:{practice_id}") as held:
         return await pull_practice(db, store, http, practice_id, now) if held else 0
 
 

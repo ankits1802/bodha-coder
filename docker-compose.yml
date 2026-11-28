@@ -14,6 +14,7 @@ x-backend: &backend
     DATABASE_URL: postgresql+asyncpg://bodha:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.compose}@postgres:5432/bodha
     SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.compose}
     MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY in .env.compose}
+    CLEARINGHOUSE_ENCRYPTION_KEY: ${CLEARINGHOUSE_ENCRYPTION_KEY:-}
     EHR_KEY_ENCRYPTION_KEY: ${EHR_KEY_ENCRYPTION_KEY:-}
     APP_URL: ${APP_URL:-http://localhost:3000}
     ADMIN_URL: ${ADMIN_URL:-}

@@ -59,6 +59,8 @@ class Settings(BaseSettings):
     session_idle_minutes: int = 30
     mfa_issuer: str = "Bodha Assure"
     mfa_encryption_key: str | None = None
+    clearinghouse_encryption_key: str | None = None
+    clearinghouse_timeout_seconds: int = Field(default=30, ge=5, le=120)
     ehr_key_encryption_key: str | None = None
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None

@@ -13,6 +13,7 @@ import { getHqPracticePage } from "@/lib/api/hq";
 import type { HqPractice, HqPracticePage } from "@/lib/api/types";
 import { isClosed, practiceStatusView } from "../practiceStatus";
 import { AppointAdminDialog } from "../practices/AppointAdminDialog";
+import { EditPracticeDialog } from "../practices/EditPracticeDialog";
 import { RenewDialog } from "../practices/RenewDialog";
 import { HQ_TEXT } from "../strings";
 import { ActivityTab } from "./ActivityTab";
@@ -22,7 +23,7 @@ import { PlanTab } from "./PlanTab";
 import { PRACTICE_TABS, tabFrom, type PracticeTab } from "./practiceTabs";
 import { SpendTab } from "./SpendTab";
 
-type OpenDialog = "renew" | "appoint" | null;
+type OpenDialog = "renew" | "edit" | "appoint" | null;
 
 const words = HQ_TEXT.practice;
 const SEGMENTS = PRACTICE_TABS.map((value) => ({ value, label: words.tabs[value] }));
@@ -44,6 +45,7 @@ function HeaderActions({ onOpen }: { onOpen: (dialog: OpenDialog) => void }) {
   return (
     <>
       <Button onClick={() => onOpen("appoint")}>{words.addAdmin}</Button>
+      <Button onClick={() => onOpen("edit")}>{words.edit}</Button>
       <Button variant="primary" onClick={() => onOpen("renew")}>
         {words.renew}
       </Button>
@@ -88,6 +90,13 @@ export function HqPracticeScreen({ practiceId }: { practiceId: string }) {
         {(data) => <TabBody tab={tab} page={data} />}
       </RemoteView>
       {practice && dialog === "renew" ? <RenewDialog subject={practice} onDone={finished} onClose={() => setDialog(null)} /> : null}
+      {practice && dialog === "edit" ? (
+        <EditPracticeDialog
+          practice={practice}
+          onClose={() => setDialog(null)}
+          onSaved={() => finished(HQ_TEXT.practices.notices.saved(practice.name))}
+        />
+      ) : null}
       {practice && dialog === "appoint" ? (
         <AppointAdminDialog
           practice={practice}

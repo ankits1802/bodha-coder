@@ -2,7 +2,9 @@ import { EmailIntake } from "@/components/shared/intake/EmailIntake";
 import { IntakeSettings } from "@/components/shared/intake/IntakeSettings";
 import type { PracticeSetup } from "@/lib/api/types";
 import type { SetupOpen } from "@/lib/paths";
+import { ChargesPanel } from "./ChargesPanel";
 import { ChecksPanel } from "./ChecksPanel";
+import { ClearinghouseSection } from "./ClearinghouseSection";
 import { EhrConnectionPanel } from "./ehr/EhrConnectionPanel";
 import { MipsSection } from "./MipsSection";
 import { PayersPanel } from "./PayersPanel";
@@ -33,6 +35,7 @@ function PayersSection({ setup, open, onOpened, onSaved, onSectionSaved }: Omit<
 export function SectionContent(props: SectionContentProps) {
   const { navKey, setup, open, onOpened, onSaved, onSectionSaved } = props;
   if (navKey === "mips") return <MipsSection />;
+  if (navKey === "clearinghouse") return <ClearinghouseSection />;
   if (navKey === "ehr") return <EhrConnectionPanel />;
   if (navKey === "intake") {
     return (
@@ -54,6 +57,14 @@ export function SectionContent(props: SectionContentProps) {
     return <ProvidersSection missingNpi={setup.missing_npi} open={open} onOpened={onOpened} onChanged={onSaved} />;
   }
   if (navKey === "payers") return <PayersSection {...props} />;
+  if (navKey === "payments") {
+    return (
+      <>
+        <ChargesPanel />
+        <SectionForm sectionKey="payments" section={setup.sections.payments} onSaved={onSectionSaved} />
+      </>
+    );
+  }
   const section = setup.sections[navKey];
   return section ? <SectionForm sectionKey={navKey} section={section} onSaved={onSectionSaved} /> : null;
 }

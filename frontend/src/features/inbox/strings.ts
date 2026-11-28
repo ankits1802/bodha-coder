@@ -21,5 +21,6 @@ export const INBOX_TEXT = {
     planEnding: (day: string) => `The plan ends on ${day}`,
     complianceReturned: (actor: string, reason: string | null) => (reason ? `${actor} returned a note: ${reason}` : `${actor} returned a note`),
     joinRequested: (actor: string) => `${actor} asked to join`,
+    claimsRejected: (claims: number) => (claims === 1 ? "A claim was rejected" : `${claims} claims were rejected`),
   },
 } as const;

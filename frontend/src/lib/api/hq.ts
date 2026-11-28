@@ -21,6 +21,7 @@ import type {
   HqTeamMember,
   NewPractice,
   PracticePurged,
+  Plan,
   PracticeUpdate,
   Renewal,
   SpendRange,
@@ -64,8 +65,8 @@ export function appointAdmin(practiceId: string, body: AdminAppointment): Promis
   return request<AdminAppointed>(practicePath(practiceId, "/admins"), { body });
 }
 
-export function renewPractice(practiceId: string, until: string | null): Promise<Renewal> {
-  return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST", body: { until } });
+export function renewPractice(practiceId: string, until: string | null, plan: Plan): Promise<Renewal> {
+  return request<Renewal>(practicePath(practiceId, "/renew"), { method: "POST", body: { until, plan } });
 }
 
 export function closePractice(practiceId: string, confirmName: string): Promise<void> {

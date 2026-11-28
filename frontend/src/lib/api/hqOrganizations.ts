@@ -7,6 +7,7 @@ import type {
   OrganizationAdminAppointment,
   OrganizationPurged,
   OrganizationUpdate,
+  Plan,
   Renewal,
 } from "./types";
 
@@ -34,8 +35,8 @@ export function updateOrganization(organizationId: string, update: OrganizationU
   return requestNothing(organizationPath(organizationId), { method: "PATCH", body: update });
 }
 
-export function renewOrganization(organizationId: string, until: string | null): Promise<Renewal> {
-  return request<Renewal>(organizationPath(organizationId, "/renew"), { method: "POST", body: { until } });
+export function renewOrganization(organizationId: string, until: string | null, plan: Plan): Promise<Renewal> {
+  return request<Renewal>(organizationPath(organizationId, "/renew"), { method: "POST", body: { until, plan } });
 }
 
 export function attachPractice(organizationId: string, practiceId: string): Promise<void> {

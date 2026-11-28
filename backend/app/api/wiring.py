@@ -12,6 +12,7 @@ from app.adapters.messenger import Messenger
 from app.adapters.object_store import ObjectStore
 from app.adapters.oidc import IdentityProvider
 from app.adapters.seal_keys import RecordSigner
+from app.adapters.sftp import FileLink
 from app.codes.icd import IcdCatalog
 from app.core.config import get_settings
 from app.core.deps import Client, PracticeAccess, billing_only_since
@@ -62,6 +63,10 @@ def txt_resolver(request: Request) -> TxtResolver:
     return request.app.state.txt_resolver
 
 
+def file_link(request: Request) -> FileLink:
+    return request.app.state.file_link
+
+
 def outbound(request: Request) -> OutboundHttp:
     return request.app.state.outbound
 
@@ -85,6 +90,7 @@ IdentityProviders = Annotated[dict[str, IdentityProvider], Depends(identity_prov
 ChosenProvider = Annotated[IdentityProvider, Depends(identity_provider)]
 BillingProviders = Annotated[dict[str, BillingProvider], Depends(billing_providers)]
 Sealer = Annotated[RecordSigner, Depends(record_signer)]
+Link = Annotated[FileLink, Depends(file_link)]
 Outbound = Annotated[OutboundHttp, Depends(outbound)]
 Resolver = Annotated[TxtResolver, Depends(txt_resolver)]
 SigningTools = Annotated[SignatureTools, Depends(signature_tools)]

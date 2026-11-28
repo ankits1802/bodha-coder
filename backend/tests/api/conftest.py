@@ -21,6 +21,7 @@ from tests.builders import ADMIN_SITE, Harness, maintenance
 from tests.ehr_fakes import FakeEhr
 from tests.fakes import (
     FakeBillingProvider,
+    FakeFileLink,
     FakeImageModel,
     FakeMessenger,
     FakeProvider,
@@ -47,6 +48,13 @@ async def clean_tables() -> None:
 
 
 @pytest.fixture
+def clearinghouse_key(monkeypatch) -> str:
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(get_settings(), "clearinghouse_encryption_key", key)
+    return key
+
+
+@pytest.fixture
 def two_hosts(monkeypatch) -> str:
     monkeypatch.setattr(get_settings(), "admin_url", ADMIN_SITE)
     return ADMIN_SITE
@@ -61,10 +69,10 @@ async def harness(icd_catalog) -> AsyncIterator[Harness]:
     app.state.identity_providers = providers
     billing = {name: FakeBillingProvider(name) for name in BILLING_NAMES}
     app.state.billing_providers = billing
-    dns = FakeTxtResolver()
-    app.state.txt_resolver = dns
+    dns, link = FakeTxtResolver(), FakeFileLink()
+    app.state.txt_resolver, app.state.file_link = dns, link
     async with AsyncClient(transport=ASGITransport(app=app), base_url="https://app.test") as client:
-        yield Harness(client, store, messenger, providers, billing, image_model, dns)
+        yield Harness(client, store, messenger, providers, billing, image_model, dns, link)
 
 
 @pytest.fixture

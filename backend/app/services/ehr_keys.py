@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.smart_backend import SmartClient, new_key_pair
 from app.core.config import get_settings
 from app.core.deps import Actor
-from app.core.errors import Conflict, Invalid, NotFound
-from app.core.sealed_text import TextSeal
+from app.core.errors import Conflict, Invalid, NotFound, Unavailable
+from app.core.secret_box import SecretBox
 from app.models import EHR_KEY_ALGORITHMS, EhrConnection, EhrKey, Practice, utcnow
 from app.services.audit_log import record_access
 
@@ -20,10 +20,11 @@ __all__ = [
     "KEY_CREATED",
     "KEY_REPLACED",
     "NOT_SET_UP",
+    "EhrKeyUnavailable",
     "create_key",
     "current_key",
     "ehr_ready",
-    "ehr_seal",
+    "ehr_box",
     "jwks_url",
     "key_id_of",
     "published_keys",
@@ -35,18 +36,21 @@ KEY_REPLACED = "connection key replaced for the EHR"
 NOT_SET_UP = "the EHR connection is not set up for Bodha yet"
 JWKS_PATH = "/api/ehr/jwks"
 KEY_SET_BYTES = 16
+KEY_PREFIX = "v1:"
+UNREADABLE = "this practice's EHR key cannot be read on this server; create a new key"
 
 
-def ehr_seal() -> TextSeal:
-    return TextSeal(
-        get_settings().ehr_key_encryption_key,
-        not_set_up=NOT_SET_UP,
-        unreadable="this practice's EHR key cannot be read on this server",
-    )
+class EhrKeyUnavailable(Unavailable):
+    pass
+
+
+def ehr_box() -> SecretBox:
+    keys = get_settings().ehr_key_encryption_key
+    return SecretBox(KEY_PREFIX, keys, EhrKeyUnavailable, NOT_SET_UP, UNREADABLE)
 
 
 def ehr_ready() -> bool:
-    return ehr_seal().ready
+    return ehr_box().ready
 
 
 def jwks_url(key_set: str) -> str:
@@ -60,8 +64,8 @@ async def current_key(db: AsyncSession, practice_id: str) -> EhrKey | None:
 async def create_key(db: AsyncSession, actor: Actor, algorithm: str) -> None:
     if algorithm not in EHR_KEY_ALGORITHMS:
         raise Invalid(f"choose one of {', '.join(EHR_KEY_ALGORITHMS)}")
-    seal = ehr_seal()
-    if not seal.ready:
+    box = ehr_box()
+    if not box.ready:
         raise Conflict(NOT_SET_UP)
     await db.get_one(Practice, actor.practice_id, with_for_update=True, populate_existing=True)
     previous = await current_key(db, actor.practice_id)
@@ -75,7 +79,7 @@ async def create_key(db: AsyncSession, actor: Actor, algorithm: str) -> None:
             key_set=previous.key_set if previous else secrets.token_hex(KEY_SET_BYTES),
             algorithm=algorithm,
             public_jwk=pair.public_jwk,
-            private_key=seal.seal(pair.private_pem),
+            private_key=box.seal(pair.private_pem),
             created_by=actor.user.id,
         )
     )
@@ -108,5 +112,5 @@ def smart_client(connection: EhrConnection, key: EhrKey) -> SmartClient:
         scopes=connection.scopes,
         kid=key_id_of(key),
         algorithm=key.algorithm,
-        private_pem=ehr_seal().open(key.private_key),
+        private_pem=ehr_box().open(key.private_key),
     )

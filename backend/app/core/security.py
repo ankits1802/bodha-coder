@@ -10,11 +10,14 @@ import pyotp
 
 from app.core.config import get_settings
 from app.core.errors import Unavailable
-from app.core.sealed_text import TextSeal, is_sealed
+from app.core.secret_box import SecretBox
 
 ALGORITHM = "HS256"
 PASSWORD_MIN_LENGTH = 10
 MFA_DRIFT_STEPS = 1
+MFA_SECRET_PREFIX = "v1:"
+MFA_MISSING = "two-step verification is not set up on this server"
+MFA_UNREADABLE = "two-step verification cannot be read on this server"
 
 
 class TokenError(Exception):
@@ -86,27 +89,23 @@ def mfa_step_for(secret: str, code: str, *, after: int | None) -> int | None:
 
 
 def is_sealed_mfa_secret(stored: str) -> bool:
-    return is_sealed(stored)
+    return _mfa_box().is_sealed(stored)
 
 
 def seal_mfa_secret(secret: str) -> str:
-    return _mfa_seal().seal(secret)
+    return _mfa_box().seal(secret)
 
 
 def open_mfa_secret(stored: str) -> str:
-    if not is_sealed(stored):
-        return stored
-    return _mfa_seal().open(stored)
+    box = _mfa_box()
+    return box.open(stored) if box.is_sealed(stored) else stored
 
 
 def mfa_secret_is_current(stored: str) -> bool:
-    return _mfa_seal().is_current(stored)
+    return _mfa_box().is_current(stored)
 
 
-def _mfa_seal() -> TextSeal:
-    return TextSeal(
-        get_settings().mfa_encryption_key,
-        not_set_up="two-step verification is not set up on this server",
-        unreadable="two-step verification cannot be read on this server",
-        error=MfaKeyUnavailable,
+def _mfa_box() -> SecretBox:
+    return SecretBox(
+        MFA_SECRET_PREFIX, get_settings().mfa_encryption_key, MfaKeyUnavailable, MFA_MISSING, MFA_UNREADABLE
     )
